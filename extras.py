@@ -47,8 +47,8 @@ class Extras:
         msg('Fetching and installing libtorch package ...')
 
         with cd(torch_dir):
-            zip_file = 'libtorch-cxx11-abi-shared-with-deps-1.5.1.zip'
-            zip_url = f'https://download.pytorch.org/libtorch/cu102/{zip_file}'
+            zip_file = 'libtorch-cxx11-abi-shared-with-deps-1.7.0+cu110.zip'
+            zip_url = f'https://download.pytorch.org/libtorch/cu110/libtorch-cxx11-abi-shared-with-deps-1.7.0%2Bcu110.zip'
             msg(f'Dowloading and unpacking {zip_url} ...')
             os.system(f'wget {zip_url}')
             os.system(f'unzip {zip_file}')
