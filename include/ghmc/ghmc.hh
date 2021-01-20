@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2020, Roland Grinis, GrinisRIT ltd.
+ * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

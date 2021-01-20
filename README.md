@@ -124,4 +124,4 @@ auto net = [&jitmodel](const auto& x){
         return jitmodel.forward(inputs).toTensor();
 };
 ```
-(c) 2020 Roland Grinis, GrinisRIT ltd.
+(c) 2021 Roland Grinis, GrinisRIT ltd.
