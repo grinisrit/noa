@@ -78,3 +78,8 @@ if(INSTALL_LIBRARY)
           	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 endif(INSTALL_LIBRARY)
+
+option(BUILD_SAMPLER_APPS "Build sampler apps " OFF)
+if(BUILD_SAMPLER_APPS)
+	add_subdirectory(apps/sampler)
+endif(BUILD_SAMPLER_APPS)
