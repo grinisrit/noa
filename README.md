@@ -29,7 +29,7 @@ $ python extras.py
 Now, test & install the library (to turn testing off add `-DBUILD_TESTING=OFF`):
 ```
 $ mkdir -p build && cd build
-$ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}
+$ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
 $ cmake --build . --config Release --target install
 $ ctest -V
 ```

@@ -17,6 +17,9 @@ project(
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
 
+# Add custom modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 add_library(${PROJECT_NAME} INTERFACE)
 # add alias so the project can be uses with add_subdirectory
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
@@ -71,9 +74,10 @@ if(INSTALL_LIBRARY)
     	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 
   	install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-                  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-          	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
-
+				  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+				  ${PROJECT_SOURCE_DIR}/cmake/pumas-materials.cmake
+			  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+			  
   	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ghmc
           	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -83,3 +87,9 @@ option(BUILD_SAMPLER_APPS "Build sampler apps " OFF)
 if(BUILD_SAMPLER_APPS)
 	add_subdirectory(apps/sampler)
 endif(BUILD_SAMPLER_APPS)
+
+option(BUILD_PMS_APPS "Build PMS apps " OFF)
+if(BUILD_PMS_APPS)
+	include(pumas-materials)
+	add_subdirectory(apps/pms)
+endif(BUILD_PMS_APPS)

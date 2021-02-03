@@ -28,57 +28,20 @@
 
 #pragma once
 
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <optional>
-#include <regex>
-
-namespace ghmc::utils
+namespace ghmc::pms
 {
-
-    using Path = std::filesystem::path;
-    using Status = bool;
-    using Line = std::string;
-
-    inline const auto TOLERANCE = 1E-6f;
-
-    inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
-
-    inline Status check_path_exists(Path path)
+    using MeanExcitation = float;
+    using MaterialDensity = float;
+    using ParticleMass = float;
+    using DecayLength = float;
+    using AtomicNumber = float;
+    using AtomicMass = float;
+    struct AtomicElement
     {
-        if (!std::filesystem::exists(path))
-        {
-            std::cerr << "Cannot find " << path << std::endl;
-            return false;
-        }
-        return true;
-    }
+        AtomicNumber Z;
+        AtomicMass A;
+        MeanExcitation I;
+    };
 
-    inline std::optional<Line> find_line(
-        std::ifstream &stream, const std::regex &line_pattern)
-    {
-        auto line = Line{};
-        while (std::getline(stream, line))
-            if (std::regex_search(line, line_pattern))
-                return line;
-        return std::nullopt;
-    }
 
-    template <typename Numeric>
-    inline std::optional<std::vector<Numeric>> get_numerics(
-        const std::string &line, int size)
-    {
-        auto no_data = std::sregex_iterator();
-        auto nums = std::sregex_iterator(line.begin(), line.end(), num_pattern);
-        if (std::distance(nums, no_data) != size)
-            return std::nullopt;
-
-        auto vec = std::vector<Numeric>{};
-        vec.reserve(size);
-        for (auto &num = nums; num != no_data; num++)
-            vec.emplace_back(std::stof(num->str()));
-        return vec;
-    }
-
-} // namespace ghmc::utils
+} // namespace ghmc::pms
