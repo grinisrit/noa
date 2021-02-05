@@ -65,8 +65,6 @@ namespace ghmc::pms
         // tabulated values for kinetic energy
         TableK table_K;
 
-        PhysicsModel(torch::Device device_) : device{device_} {}
-
         inline Status load_physics_from(const MDFSettings &mdf_settings,
                                         const MaterialsDEDXData &dedx_data)
         {
@@ -79,7 +77,6 @@ namespace ghmc::pms
         }
 
     protected:
-        torch::Device device;
 
         inline Status check_mass(const MaterialsDEDXData &dedx_data)
         {
@@ -103,8 +100,7 @@ namespace ghmc::pms
             auto tensor = torch::from_blob(vals.data(), n, torch::kFloat32);
             table_K = static_cast<Physics *>(this)->scale_table_K(
                 tensor.to(torch::dtype(torch::kFloat32)
-                              .layout(torch::kStrided)
-                              .device(device)));
+                              .layout(torch::kStrided)));
             data++;
             for (auto &it = data; it != dedx_data.end(); it++)
             {
@@ -204,19 +200,17 @@ namespace ghmc::pms
         }
 
     public:
-        MuonPhysics(torch::Device device_ = torch::kCPU) : PhysicsModel(device_)
+        MuonPhysics() : PhysicsModel{}
         {
-            // in GeV/c^2
-            mass = 0.10565839f;
-            // in m
-            ctau = 658.654f;
+            mass = MUON_MASS;
+            ctau = MUON_CTAU;
         }
     };
 
     template <typename PumasPhysics>
     inline std::optional<PumasPhysics> load_pumas_physics_from(
         const ParticleName &particle_name, const MDFFilePath &mdf,
-        const DEDXFolderPath &dedx, torch::Device device = torch::kCPU)
+        const DEDXFolderPath &dedx)
     {
         if (!ghmc::utils::check_path_exists(mdf))
             return std::nullopt;
@@ -232,7 +226,7 @@ namespace ghmc::pms
         if (!dedx_data.has_value())
             return std::nullopt;
 
-        auto pumas_physics = PumasPhysics(device);
+        auto pumas_physics = PumasPhysics{};
         if (!pumas_physics.load_physics_from(*mdf_settings, *dedx_data))
             return std::nullopt;
 
@@ -240,10 +234,9 @@ namespace ghmc::pms
     }
 
     inline std::optional<MuonPhysics> load_muon_physics_from(
-        const MDFFilePath &mdf, const DEDXFolderPath &dedx,
-        torch::Device device = torch::kCPU)
+        const MDFFilePath &mdf, const DEDXFolderPath &dedx)
     {
-        return load_pumas_physics_from<MuonPhysics>("Muon", mdf, dedx, device);
+        return load_pumas_physics_from<MuonPhysics>("Muon", mdf, dedx);
     }
 
 } // namespace ghmc::pms

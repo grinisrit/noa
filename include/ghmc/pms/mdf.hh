@@ -28,15 +28,15 @@
 
 #pragma once
 
+#include "ghmc/pms/physics.hh"
+#include "ghmc/utils.hh"
+
 #include <algorithm>
 #include <regex>
 #include <unordered_map>
 #include <vector>
 
 #include <pugixml.hpp>
-
-#include "ghmc/utils.hh"
-#include "ghmc/pms/physics.hh"
 
 namespace ghmc::pms
 {
@@ -191,9 +191,9 @@ namespace ghmc::pms
         {
             auto node = xnode.node();
             elements.emplace(node.attribute("name").value(),
-                             AtomicElement{node.attribute("Z").as_float(),
-                                           node.attribute("A").as_float(),
-                                           node.attribute("I").as_float()});
+                             AtomicElement{node.attribute("A").as_float(),
+                                           node.attribute("I").as_float(),
+                                           node.attribute("Z").as_int()});
         }
 
         auto material_xnodes =
