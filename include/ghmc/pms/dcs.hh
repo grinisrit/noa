@@ -29,6 +29,7 @@
 #pragma once
 
 #include "ghmc/pms/physics.hh"
+#include "ghmc/numerics.hh"
 
 #include <torch/torch.h>
 
@@ -118,12 +119,6 @@ namespace ghmc::pms
         const int Z = element.Z;
         const float A = element.A;
 
-        constexpr int N_GQ = 8;
-        const float xGQ[N_GQ] = {0.01985507f, 0.10166676f, 0.2372338f,
-                                 0.40828268f, 0.59171732f, 0.7627662f, 0.89833324f, 0.98014493f};
-        const float wGQ[N_GQ] = {0.05061427f, 0.11119052f, 0.15685332f,
-                                 0.18134189f, 0.18134189f, 0.15685332f, 0.11119052f, 0.05061427f};
-
         /*  Check the bounds of the energy transfer. */
         if (q <= 4.f * ELECTRON_MASS)
             return 0.f;
@@ -153,11 +148,8 @@ namespace ghmc::pms
         const float tmin = log(argmin);
 
         /*  Compute the integral over t = ln(1-rho). */
-        float I = 0.f;
-        int i;
-        for (i = 0; i < 8; i++)
-        {
-            const float eps = exp(xGQ[i] * tmin);
+        float I = ghmc::numerics::quadrature_f8(0.f, 1.f, [&](const float &t) {
+            const float eps = exp(t * tmin);
             const float rho = 1.f - eps;
             const float rho2 = rho * rho;
             const float rho21 = eps * (2.f - eps);
@@ -203,10 +195,8 @@ namespace ghmc::pms
             float Phi_mu = Bmu * Lmu;
             if (Phi_mu < 0.f)
                 Phi_mu = 0.f;
-
-            /* Update the t-integral. */
-            I -= (Phi_e + Phi_mu / (r * r)) * (1.f - rho) * wGQ[i] * tmin;
-        }
+            return -(Phi_e + Phi_mu / (r * r)) * (1.f - rho) * tmin;
+        });
 
         /* Atomic electrons form factor. */
         float zeta;
@@ -372,17 +362,6 @@ namespace ghmc::pms
                                                    const KineticEnergy &K,
                                                    const RecoilEnergy &q) {
         const float A = element.A;
-
-        constexpr int N_GQ = 9;
-        const float xGQ[N_GQ] = {0.0000000000000000f, -0.8360311073266358f,
-                                 0.8360311073266358f, -0.9681602395076261f, 0.9681602395076261f,
-                                 -0.3242534234038089f, 0.3242534234038089f, -0.6133714327005904f,
-                                 0.6133714327005904f};
-        const float wGQ[N_GQ] = {0.3302393550012598f, 0.1806481606948574f,
-                                 0.1806481606948574f, 0.0812743883615744f, 0.0812743883615744f,
-                                 0.3123470770400029f, 0.3123470770400029f, 0.2606106964029354f,
-                                 0.2606106964029354f};
-
         const float M = 0.931494f;
         const float mpi = 0.134977f;
         const float E = K + mu;
@@ -408,12 +387,10 @@ namespace ghmc::pms
          * a Gaussian quadrature. Note that 9 points are enough to get a
          * better than 0.1 % accuracy.
          */
-        int i;
-        for (i = 0; i < N_GQ; i++)
-        {
-            const float Q2 = exp(pQ2c + 0.5f * dpQ2 * xGQ[i]);
-            ds += dcs_photonuclear_d2(A, mu, K, q, Q2) * Q2 * wGQ[i];
-        }
+        ds = ghmc::numerics::quadrature_f9(0.f, 1.f, [&](const float &t) {
+            const float Q2 = exp(pQ2c + 0.5f * dpQ2 * t);
+            return dcs_photonuclear_d2(A, mu, K, q, Q2) * Q2;
+        });
 
         return (ds < 0.f) ? 0.f : 0.5f * ds * dpQ2 * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A;
     };
@@ -436,8 +413,8 @@ namespace ghmc::pms
         const float P2 = K * (K + 2.f * mu);
         const float E = K + mu;
         const float Wmax = 2.f * ELECTRON_MASS * P2 /
-                            (mu * mu +
-                             ELECTRON_MASS * (ELECTRON_MASS + 2.f * E));
+                           (mu * mu +
+                            ELECTRON_MASS * (ELECTRON_MASS + 2.f * E));
         if ((Wmax < X_FRACTION * K) || (q > Wmax))
             return 0.f;
         const float Wmin = 0.62f * I;

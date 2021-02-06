@@ -43,15 +43,15 @@ namespace ghmc::pms
     };
     using MaterialDensity = float;
 
-    inline const float AVOGADRO_NUMBER = 6.02214076E+23f;
-    inline const ParticleMass ELECTRON_MASS = 0.510998910E-03f; // GeV/c^2
-    inline const ParticleMass MUON_MASS = 0.10565839f;          // GeV/c^2
-    inline const DecayLength MUON_CTAU = 658.654f;              // m
+    constexpr float AVOGADRO_NUMBER = 6.02214076E+23f;
+    constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03f; // GeV/c^2
+    constexpr ParticleMass MUON_MASS = 0.10565839f;          // GeV/c^2
+    constexpr DecayLength MUON_CTAU = 658.654f;              // m
     
     // Relative switch between Continuous Energy Loss (CEL) and DELs.
-    inline const float X_FRACTION = 5E-02f;
+    constexpr float X_FRACTION = 5E-02f;
 
-    inline const auto STANDARD_ROCK = AtomicElement{
+    constexpr AtomicElement STANDARD_ROCK = AtomicElement{
         22.0f,      // g/mol
         0.1364E-6f, // GeV
         11};
