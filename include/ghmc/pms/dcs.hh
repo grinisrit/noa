@@ -39,21 +39,21 @@ namespace ghmc::pms
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
 
-    template <typename DCS>
-    inline auto map_dcs(const DCS &dcs)
+    template <typename DCSKernel>
+    inline auto map_dcs_kernel(const DCSKernel &dcs_kernel)
     {
-        return [&dcs](const AtomicNumber Z,
-                      const AtomicMass &A,
-                      const ParticleMass &mu,
-                      const KineticEnergies &K,
-                      const RecoilEnergies &q) {
+        return [&dcs_kernel](const AtomicNumber Z,
+                             const AtomicMass &A,
+                             const ParticleMass &mu,
+                             const KineticEnergies &K,
+                             const RecoilEnergies &q) {
             const float *pK = K.data_ptr<float>();
             const float *pq = q.data_ptr<float>();
             auto res = torch::zeros_like(K);
             float *pres = res.data_ptr<float>();
             const int n = res.numel();
             for (int i = 0; i < n; i++)
-                pres[i] = dcs(Z, A, mu, pK[i], pq[i]);
+                pres[i] = dcs_kernel(Z, A, mu, pK[i], pq[i]);
             return res;
         };
     }
@@ -63,12 +63,12 @@ namespace ghmc::pms
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
      */
-    inline const auto default_dcs_bremsstrahlung = [](
-                                                       const AtomicNumber Z,
-                                                       const AtomicMass &A,
-                                                       const ParticleMass &mu,
-                                                       const KineticEnergy &K,
-                                                       const RecoilEnergy &q) {
+    inline const auto dcs_bremsstrahlung_kernel = [](
+                                                      const AtomicNumber Z,
+                                                      const AtomicMass &A,
+                                                      const ParticleMass &mu,
+                                                      const KineticEnergy &K,
+                                                      const RecoilEnergy &q) {
         const float me = ELECTRON_MASS;
         const float sqrte = 1.648721271f;
         const float phie_factor = mu / (me * me * sqrte);
@@ -105,19 +105,19 @@ namespace ghmc::pms
         return (dcs < 0.f) ? 0.f : dcs * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A;
     };
 
-    inline const auto dcs_bremsstrahlung = map_dcs(default_dcs_bremsstrahlung);
+    inline const auto dcs_bremsstrahlung = map_dcs_kernel(dcs_bremsstrahlung_kernel);
 
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9221
      */
-    inline const auto default_dcs_pair_production = [](
-                                                        const AtomicNumber Z,
-                                                        const AtomicMass &A_,
-                                                        const ParticleMass &mu,
-                                                        const KineticEnergy &K,
-                                                        const RecoilEnergy &q) {
+    inline const auto dcs_pair_production_kernel = [](
+                                                       const AtomicNumber Z,
+                                                       const AtomicMass &A_,
+                                                       const ParticleMass &mu,
+                                                       const KineticEnergy &K,
+                                                       const RecoilEnergy &q) {
         constexpr int N_GQ = 8;
         const float xGQ[N_GQ] = {0.01985507f, 0.10166676f, 0.2372338f,
                                  0.40828268f, 0.59171732f, 0.7627662f, 0.89833324f, 0.98014493f};
@@ -245,6 +245,180 @@ namespace ghmc::pms
         return (dcs < 0.f) ? 0.f : dcs * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A_;
     };
 
-    inline const auto dcs_pair_production = map_dcs(default_dcs_pair_production);
+    inline const auto dcs_pair_production = map_dcs_kernel(dcs_pair_production_kernel);
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9371
+     */
+    inline float dcs_photonuclear_f2_allm(const float &x, const float &Q2)
+    {
+        const float m02 = 0.31985f;
+        const float mP2 = 49.457f;
+        const float mR2 = 0.15052f;
+        const float Q02 = 0.52544f;
+        const float Lambda2 = 0.06527f;
+
+        const float cP1 = 0.28067f;
+        const float cP2 = 0.22291f;
+        const float cP3 = 2.1979f;
+        const float aP1 = -0.0808f;
+        const float aP2 = -0.44812f;
+        const float aP3 = 1.1709f;
+        const float bP1 = 0.36292f;
+        const float bP2 = 1.8917f;
+        const float bP3 = 1.8439f;
+
+        const float cR1 = 0.80107f;
+        const float cR2 = 0.97307f;
+        const float cR3 = 3.4942f;
+        const float aR1 = 0.58400f;
+        const float aR2 = 0.37888f;
+        const float aR3 = 2.6063f;
+        const float bR1 = 0.01147f;
+        const float bR2 = 3.7582f;
+        const float bR3 = 0.49338f;
+
+        const float M2 = 0.8803505929f;
+        const float W2 = M2 + Q2 * (1.f / x - 1.f);
+        const float t = log(log((Q2 + Q02) / Lambda2) / log(Q02 / Lambda2));
+        const float xP = (Q2 + mP2) / (Q2 + mP2 + W2 - M2);
+        const float xR = (Q2 + mR2) / (Q2 + mR2 + W2 - M2);
+        const float lnt = log(t);
+        const float cP =
+            cP1 + (cP1 - cP2) * (1.f / (1.f + exp(cP3 * lnt)) - 1.f);
+        const float aP =
+            aP1 + (aP1 - aP2) * (1.f / (1.f + exp(aP3 * lnt)) - 1.f);
+        const float bP = bP1 + bP2 * exp(bP3 * lnt);
+        const float cR = cR1 + cR2 * exp(cR3 * lnt);
+        const float aR = aR1 + aR2 * exp(aR3 * lnt);
+        const float bR = bR1 + bR2 * exp(bR3 * lnt);
+
+        const float F2P = cP * exp(aP * log(xP) + bP * log(1 - x));
+        const float F2R = cR * exp(aR * log(xR) + bR * log(1 - x));
+
+        return Q2 / (Q2 + m02) * (F2P + F2R);
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9433
+     */
+    inline float dcs_photonuclear_f2a_drss(const float &x, const float &F2p, const float &A)
+    {
+        float a = 1.f;
+        if (x < 0.0014f)
+            a = exp(-0.1f * log(A));
+        else if (x < 0.04f)
+            a = exp((0.069f * log10(x) + 0.097f) * log(A));
+
+        return (0.5f * A * a *
+                (2.f + x * (-1.85f + x * (2.45f + x * (-2.35f + x)))) * F2p);
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9453
+     */
+    inline float dcs_photonuclear_r_whitlow(const float &x, const float &Q2)
+    {
+        float q2 = Q2;
+        if (Q2 < 0.3f)
+            q2 = 0.3f;
+
+        const float theta =
+            1.f + 12.f * q2 / (1.f + q2) * 0.015625f / (0.015625f + x * x);
+
+        return (0.635f / log(q2 / 0.04f) * theta + 0.5747f / q2 -
+                0.3534f / (0.09f + q2 * q2));
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9478
+     */
+
+    float dcs_photonuclear_d2(const float &A, const float &ml, const float &K, const float &q, const float &Q2)
+    {
+        const float cf = 2.603096E-35f;
+        const float M = 0.931494f;
+        const float E = K + ml;
+
+        const float y = q / E;
+        const float x = 0.5f * Q2 / (M * q);
+        const float F2p = dcs_photonuclear_f2_allm(x, Q2);
+        const float F2A = dcs_photonuclear_f2a_drss(x, F2p, A);
+        const float R = dcs_photonuclear_r_whitlow(x, Q2);
+
+        const float dds = (1.f - y +
+                           0.5f * (1.f - 2.f * ml * ml / Q2) *
+                               (y * y + Q2 / (E * E)) / (1.f + R)) /
+                              (Q2 * Q2) -
+                          0.25f / (E * E * Q2);
+
+        return cf * F2A * dds / q;
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9515
+     */
+    inline const auto dcs_photonuclear_kernel = [](
+                                                    const AtomicNumber,
+                                                    const AtomicMass &A,
+                                                    const ParticleMass &mu,
+                                                    const KineticEnergy &K,
+                                                    const RecoilEnergy &q) {
+        constexpr int N_GQ = 9;
+        const float xGQ[N_GQ] = {0.0000000000000000f, -0.8360311073266358f,
+                                 0.8360311073266358f, -0.9681602395076261f, 0.9681602395076261f,
+                                 -0.3242534234038089f, 0.3242534234038089f, -0.6133714327005904f,
+                                 0.6133714327005904f};
+        const float wGQ[N_GQ] = {0.3302393550012598f, 0.1806481606948574f,
+                                 0.1806481606948574f, 0.0812743883615744f, 0.0812743883615744f,
+                                 0.3123470770400029f, 0.3123470770400029f, 0.2606106964029354f,
+                                 0.2606106964029354f};
+
+        const float M = 0.931494f;
+        const float mpi = 0.134977f;
+        const float E = K + mu;
+
+        float ds = 0.f;
+        if ((q >= (E - mu)) || (q <= (mpi * (1.f + 0.5f * mpi / M))))
+            return ds;
+
+        const float y = q / E;
+        const float Q2min = mu * mu * y * y / (1.f - y);
+        const float Q2max = 2.f * M * (q - mpi) - mpi * mpi;
+        if ((Q2max < Q2min) | (Q2min < 0.f))
+            return ds;
+
+        /* Set the binning. */
+        const float pQ2min = log(Q2min);
+        const float pQ2max = log(Q2max);
+        const float dpQ2 = pQ2max - pQ2min;
+        const float pQ2c = 0.5f * (pQ2max + pQ2min);
+
+        /*
+         * Integrate the doubly differential cross-section over Q2 using
+         * a Gaussian quadrature. Note that 9 points are enough to get a
+         * better than 0.1 % accuracy.
+         */
+        int i;
+        for (i = 0; i < N_GQ; i++)
+        {
+            const float Q2 = exp(pQ2c + 0.5f * dpQ2 * xGQ[i]);
+            ds += dcs_photonuclear_d2(A, mu, K, q, Q2) * Q2 * wGQ[i];
+        }
+
+        return (ds < 0.f) ? 0.f : 0.5f * ds * dpQ2 * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A;
+    };
+
+    inline const auto dcs_photonuclear = map_dcs_kernel(dcs_photonuclear_kernel);
 
 } // namespace ghmc::pms
