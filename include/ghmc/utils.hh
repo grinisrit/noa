@@ -34,6 +34,8 @@
 #include <optional>
 #include <regex>
 
+#include <torch/torch.h>
+
 namespace ghmc::utils
 {
 
@@ -79,6 +81,18 @@ namespace ghmc::utils
         for (auto &num = nums; num != no_data; num++)
             vec.emplace_back(std::stof(num->str()));
         return vec;
+    }
+
+    template <typename Lambda>
+    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda)
+    {
+        const float *pvals = values.data_ptr<float>();
+        auto res = torch::zeros_like(values);
+        float *pres = res.data_ptr<float>();
+        const int n = res.numel();
+        for (int i = 0; i < n; i++)
+            pres[i] = lambda(pvals[i]);
+        return res;
     }
 
 } // namespace ghmc::utils

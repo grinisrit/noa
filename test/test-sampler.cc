@@ -1,4 +1,4 @@
-#include "sampler.hh"
+#include "unit-sampler.hh"
 
 #include <gtest/gtest.h>
 

@@ -1,4 +1,4 @@
-#include "pms.hh"
+#include "unit-pms.hh"
 
 #include <benchmark/benchmark.h>
 
@@ -45,3 +45,27 @@ static void BM_DCSIonisation(benchmark::State &state)
         dcs_ionisation_kernel(element, mu, k, q);
 }
 BENCHMARK(BM_DCSIonisation);
+
+static void BM_CSIonisationAnalytic(benchmark::State &state)
+{
+    const auto element = STANDARD_ROCK;
+    const auto mu = MUON_MASS;
+    const auto k = kinetic_analytic_ion[0].item<float>();
+    const auto xlow = ghmc::pms::X_FRACTION;
+    for (auto _ : state)
+        cs_ionisation_analytic_kernel(
+        element, mu, k, xlow); 
+}
+BENCHMARK(BM_CSIonisationAnalytic);
+
+static void BM_CELBremsstrahlung(benchmark::State &state)
+{
+    const auto element = STANDARD_ROCK;
+    const auto mu = MUON_MASS;
+    const auto k = kinetic_analytic_ion[0].item<float>();
+    const auto xlow = ghmc::pms::X_FRACTION;
+    for (auto _ : state)
+        compute_dcs_integral_kernel(dcs_bremsstrahlung_kernel)(
+        element, mu, k, xlow, true); 
+}
+BENCHMARK(BM_CELBremsstrahlung);

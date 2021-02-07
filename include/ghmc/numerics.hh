@@ -61,9 +61,9 @@ namespace ghmc::numerics
                                const int min_points = 1)
     {
         constexpr int N_GQ = 6;
-        const double xGQ[N_GQ] = {0.03376524f, 0.16939531f, 0.38069041f,
+        const float xGQ[N_GQ] = {0.03376524f, 0.16939531f, 0.38069041f,
                                   0.61930959f, 0.83060469f, 0.96623476f};
-        const double wGQ[N_GQ] = {0.08566225f, 0.18038079f, 0.23395697f,
+        const float wGQ[N_GQ] = {0.08566225f, 0.18038079f, 0.23395697f,
                                   0.23395697f, 0.18038079f, 0.08566225f};
 
         return legendre_gaussian_quadrature(

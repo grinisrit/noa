@@ -30,6 +30,7 @@
 
 #include "ghmc/pms/physics.hh"
 #include "ghmc/numerics.hh"
+#include "ghmc/utils.hh"
 
 #include <torch/torch.h>
 
@@ -39,6 +40,46 @@ namespace ghmc::pms
     using RecoilEnergy = float;
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
+    using ComputeCEL = bool; // Compute Continuous Energy Loss (CEL) flag
+
+    template <typename DCSKernel>
+    inline auto compute_dcs_integral_kernel(const DCSKernel &dcs_kernel)
+    {
+        return [&dcs_kernel](const AtomicElement &element,
+                             const ParticleMass &mu,
+                             const KineticEnergy &K,
+                             const EnergyTransferMin &xlow,
+                             const int min_points,
+                             const ComputeCEL cel = false) {
+            return ghmc::numerics::quadrature_f6(
+                       (float)log(K * xlow), (float)log(K),
+                       [&](const float &t) {
+                           const float q = exp(t);
+                           float s = dcs_kernel(element, mu, K, q) * q;
+                           if (cel)
+                               s *= q;
+                           return s;
+                       },
+                       min_points) /
+                   (K + mu);
+        };
+    }
+
+    template <typename DCSKernel>
+    inline auto compute_dcs_integral(const DCSKernel &dcs_kernel)
+    {
+        return [&dcs_kernel](const AtomicElement &element,
+                             const ParticleMass &mu,
+                             const KineticEnergies &K,
+                             const EnergyTransferMin &xlow,
+                             const int min_points,
+                             const ComputeCEL cel = false) {
+            return ghmc::utils::vmap(K, [&](const auto &k) {
+                return compute_dcs_integral_kernel(dcs_kernel)(
+                    element, mu, k, xlow, min_points, cel);
+            });
+        };
+    }
 
     template <typename DCSKernel>
     inline auto map_dcs_kernel(const DCSKernel &dcs_kernel)
@@ -47,14 +88,11 @@ namespace ghmc::pms
                              const ParticleMass &mu,
                              const KineticEnergies &K,
                              const RecoilEnergies &q) {
-            const float *pK = K.data_ptr<float>();
             const float *pq = q.data_ptr<float>();
-            auto res = torch::zeros_like(K);
-            float *pres = res.data_ptr<float>();
-            const int n = res.numel();
-            for (int i = 0; i < n; i++)
-                pres[i] = dcs_kernel(element, mu, pK[i], pq[i]);
-            return res;
+            int i = 0;
+            return ghmc::utils::vmap(K, [&](const auto &k) {
+                return dcs_kernel(element, mu, k, pq[i++]);
+            });
         };
     }
 
@@ -104,8 +142,6 @@ namespace ghmc::pms
             dcs_factor * (Z * Phi_n + Phi_e) * (4.f / 3.f * (1.f / nu - 1.f) + nu);
         return (dcs < 0.f) ? 0.f : dcs * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A;
     };
-
-    inline const auto dcs_bremsstrahlung = map_dcs_kernel(dcs_bremsstrahlung_kernel);
 
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
@@ -233,8 +269,6 @@ namespace ghmc::pms
 
         return (dcs < 0.f) ? 0.f : dcs * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A;
     };
-
-    inline const auto dcs_pair_production = map_dcs_kernel(dcs_pair_production_kernel);
 
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
@@ -395,8 +429,6 @@ namespace ghmc::pms
         return (ds < 0.f) ? 0.f : 0.5f * ds * dpQ2 * 1E+03f * AVOGADRO_NUMBER * (mu + K) / A;
     };
 
-    inline const auto dcs_photonuclear = map_dcs_kernel(dcs_photonuclear_kernel);
-
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
@@ -442,6 +474,75 @@ namespace ghmc::pms
         return cs * (1.f + Delta);
     };
 
-    inline const auto dcs_ionisation = map_dcs_kernel(dcs_ionisation_kernel);
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9669
+     */
+    inline const auto cs_ionisation_analytic_kernel = [](const AtomicElement &element,
+                                                         const ParticleMass &mu,
+                                                         const KineticEnergy &K,
+                                                         const EnergyTransferMin &xlow,
+                                                         const ComputeCEL cel = false) {
+        const float P2 = K * (K + 2.f * mu);
+        const float E = K + mu;
+        const float Wmax = 2.f * ELECTRON_MASS * P2 /
+                           (mu * mu +
+                            ELECTRON_MASS * (ELECTRON_MASS + 2.f * E));
+        if (Wmax < X_FRACTION * K)
+            return 0.f;
+        float Wmin = 0.62f * element.I;
+        const float qlow = K * xlow;
+        if (qlow >= Wmin)
+            Wmin = qlow;
+
+        /* Check the bounds. */
+        if (Wmax <= Wmin)
+            return 0.f;
+
+        /* Close interactions for Q >> atomic binding energies. */
+        const float a0 = 0.5f / P2;
+        const float a1 = -1.f / Wmax;
+        const float a2 = E * E / P2;
+
+        float S;
+        if (!cel)
+        {
+            S = a0 * (Wmax - Wmin) + a1 * log(Wmax / Wmin) +
+                a2 * (1.f / Wmin - 1.f / Wmax);
+        }
+        else
+        {
+            S = 0.5f * a0 * (Wmax * Wmax - Wmin * Wmin) +
+                a1 * (Wmax - Wmin) + a2 * log(Wmax / Wmin);
+        }
+        return 1.535336E-05f * element.Z / element.A * S;
+    };
+
+    template <>
+    inline auto compute_dcs_integral_kernel(const decltype(dcs_ionisation_kernel) &dcs_kernel)
+    {
+        return [&dcs_kernel](const AtomicElement &element,
+                             const ParticleMass &mu,
+                             const KineticEnergy &K,
+                             const EnergyTransferMin &xlow,
+                             const int min_points,
+                             const ComputeCEL cel = false) {
+            const float m1 = mu - ELECTRON_MASS;
+            if (K <= 0.5 * m1 * m1 / ELECTRON_MASS)
+                return cs_ionisation_analytic_kernel(element, mu, K, xlow, cel);
+            return ghmc::numerics::quadrature_f6(
+                       (float)log(K * xlow), (float)log(K),
+                       [&](const float &t) {
+                           const float q = exp(t);
+                           float s = dcs_kernel(element, mu, K, q) * q;
+                           if (cel)
+                               s *= q;
+                           return s;
+                       },
+                       min_points) /
+                   (K + mu);
+        };
+    }
 
 } // namespace ghmc::pms
