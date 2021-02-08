@@ -2,6 +2,8 @@
 
 #include <ghmc/ghmc.hh>
 
+inline const int SEED = 987654;
+
 inline const auto alog_funnel = [](const auto &theta) {
     auto dim = theta.numel() - 1;
     return -0.5 * ((torch::exp(theta[0]) * theta.slice(0, 1, dim + 1).pow(2).sum()) +
@@ -29,6 +31,7 @@ inline const auto expected_flow_moment = torch::tensor({-0.5150f, -0.3777f, -0.1
 
 inline ghmc::FisherInfo get_fisher_info(torch::DeviceType device)
 {
+    torch::manual_seed(987654);
     auto theta = _theta.clone().to(device).requires_grad_();
     auto log_prob = alog_funnel(theta);
     return ghmc::fisher_info(log_prob, theta);
@@ -36,6 +39,7 @@ inline ghmc::FisherInfo get_fisher_info(torch::DeviceType device)
 
 inline ghmc::SymplecticFlow get_symplectic_flow(torch::DeviceType device)
 {
+    torch::manual_seed(987654);
     auto theta = _theta.clone().to(device);
     auto momentum = _momentum.clone().to(device);
 
@@ -47,6 +51,7 @@ inline ghmc::SymplecticFlow get_symplectic_flow(torch::DeviceType device)
 
 inline ghmc::SoftAbsMap get_metric()
 {
+    torch::manual_seed(987654);
     auto theta = _theta.clone().requires_grad_();
     auto log_prob = alog_funnel(theta);
     return ghmc::softabs_map(log_prob, theta, 0.);
@@ -54,6 +59,7 @@ inline ghmc::SoftAbsMap get_metric()
 
 inline ghmc::Hamiltonian get_hamiltonian()
 {
+    torch::manual_seed(987654);
     auto theta = _theta.clone().requires_grad_();
     auto momentum = _momentum.clone().requires_grad_();
     return ghmc::hamiltonian(alog_funnel, theta, momentum, 0.);
