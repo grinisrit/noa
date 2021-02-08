@@ -65,7 +65,7 @@ static void BM_CELBremsstrahlung(benchmark::State &state)
     const auto k = kinetic_analytic_ion[0].item<float>();
     const auto xlow = ghmc::pms::X_FRACTION;
     for (auto _ : state)
-        compute_dcs_integral_kernel(dcs_bremsstrahlung_kernel)(
+        cs_kernel(dcs_bremsstrahlung_kernel)(
         element, mu, k, xlow, true); 
 }
 BENCHMARK(BM_CELBremsstrahlung);

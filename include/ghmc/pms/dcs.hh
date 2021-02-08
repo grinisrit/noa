@@ -43,7 +43,7 @@ namespace ghmc::pms
     using ComputeCEL = bool; // Compute Continuous Energy Loss (CEL) flag
 
     template <typename DCSKernel>
-    inline auto compute_dcs_integral_kernel(const DCSKernel &dcs_kernel)
+    inline auto cs_kernel(const DCSKernel &dcs_kernel)
     {
         return [&dcs_kernel](const AtomicElement &element,
                              const ParticleMass &mu,
@@ -75,7 +75,7 @@ namespace ghmc::pms
                              const int min_points,
                              const ComputeCEL cel = false) {
             return ghmc::utils::vmap(K, [&](const auto &k) {
-                return compute_dcs_integral_kernel(dcs_kernel)(
+                return cs_kernel(dcs_kernel)(
                     element, mu, k, xlow, min_points, cel);
             });
         };
@@ -520,7 +520,7 @@ namespace ghmc::pms
     };
 
     template <>
-    inline auto compute_dcs_integral_kernel(const decltype(dcs_ionisation_kernel) &dcs_kernel)
+    inline auto cs_kernel(const decltype(dcs_ionisation_kernel) &dcs_kernel)
     {
         return [&dcs_kernel](const AtomicElement &element,
                              const ParticleMass &mu,
@@ -544,5 +544,11 @@ namespace ghmc::pms
                    (K + mu);
         };
     }
+
+    inline const auto default_dcs_kernels = std::tuple{
+        dcs_bremsstrahlung_kernel,
+        dcs_pair_production_kernel,
+        dcs_photonuclear_kernel,
+        dcs_ionisation_kernel};
 
 } // namespace ghmc::pms

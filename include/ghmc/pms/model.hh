@@ -29,6 +29,7 @@
 #pragma once
 
 #include "ghmc/pms/mdf.hh"
+#include "ghmc/pms/dcs.hh"
 #include "ghmc/utils.hh"
 
 #include <torch/torch.h>
@@ -40,45 +41,28 @@ namespace ghmc::pms
 
     using Elements = std::vector<AtomicElement>;
     using ElementId = int;
-    using ElementIds = std::unordered_map<MDFElementName, ElementId>;
+    using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
     using MaterialComposition =
         std::vector<std::tuple<ComponentFraction, ElementId>>;
     using Material = std::tuple<MaterialDensity, MaterialComposition>;
     using MaterialId = int;
     using Materials = std::vector<Material>;
-    using MaterialIds = std::unordered_map<MDFMaterialName, MaterialId>;
-    using TableK = torch::Tensor;
+    using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
+    using Table = std::vector<torch::Tensor>;
+    using TableK = torch::Tensor;        // Kinetic energy tabulations
+    using TableCSn = std::vector<Table>; // CS normalisation tabulations
 
-    template <typename Physics>
+    template <typename Physics, typename DCSKernels>
     class PhysicsModel
     {
-    public:
-        ParticleMass mass;
-        DecayLength ctau;
 
-        Elements elements;
-        ElementIds element_id;
-
-        Materials materials;
-        MaterialIds material_id;
-
-        // tabulated values for kinetic energy
-        TableK table_K;
-
-        inline Status load_physics_from(const MDFSettings &mdf_settings,
-                                        const MaterialsDEDXData &dedx_data)
-        {
-            if (!perform_initial_checks(mdf_settings, dedx_data))
-                return false;
-            if (!initialise_physics(mdf_settings, dedx_data))
-                return false;
-
-            return true;
-        }
+        using DCSBremsstrahlung = typename std::tuple_element<0, DCSKernels>::type;
+        using DCSPairProduction = typename std::tuple_element<1, DCSKernels>::type;
+        using DCSPhotonuclear = typename std::tuple_element<2, DCSKernels>::type;
+        using DCSIonisation = typename std::tuple_element<3, DCSKernels>::type;
 
     protected:
-
-        inline Status check_mass(const MaterialsDEDXData &dedx_data)
+        inline Status check_mass(const mdf::MaterialsDEDXData &dedx_data)
         {
             for (const auto &[material, data] : dedx_data)
                 if (static_cast<Physics *>(this)->scale_mass(
@@ -92,10 +76,10 @@ namespace ghmc::pms
             return true;
         }
 
-        inline Status set_table_K(const MaterialsDEDXData &dedx_data)
+        inline Status set_table_K(const mdf::MaterialsDEDXData &dedx_data)
         {
             auto data = dedx_data.begin();
-            auto vals = std::get<DEDXTable>(data->second).T;
+            auto vals = std::get<mdf::DEDXTable>(data->second).T;
             auto n = vals.size();
             auto tensor = torch::from_blob(vals.data(), n, torch::kFloat32);
             table_K = static_cast<Physics *>(this)->scale_table_K(
@@ -104,7 +88,7 @@ namespace ghmc::pms
             data++;
             for (auto &it = data; it != dedx_data.end(); it++)
             {
-                auto it_vals = std::get<DEDXTable>(it->second).T;
+                auto it_vals = std::get<mdf::DEDXTable>(it->second).T;
                 auto it_ten = torch::from_blob(
                     it_vals.data(), n, torch::kFloat32);
                 if (!torch::equal(tensor, it_ten))
@@ -118,8 +102,8 @@ namespace ghmc::pms
             return true;
         }
 
-        inline Status perform_initial_checks(const MDFSettings &mdf_settings,
-                                             const MaterialsDEDXData &dedx_data)
+        inline Status perform_initial_checks(const mdf::Settings &mdf_settings,
+                                             const mdf::MaterialsDEDXData &dedx_data)
         {
             if (!check_ZoA(mdf_settings, dedx_data))
                 return false;
@@ -128,7 +112,7 @@ namespace ghmc::pms
             return true;
         }
 
-        inline void set_elements(const MDFElements &mdf_elements)
+        inline void set_elements(const mdf::Elements &mdf_elements)
         {
             int id = 0;
             elements.reserve(mdf_elements.size());
@@ -142,7 +126,7 @@ namespace ghmc::pms
             }
         }
 
-        inline void set_materials(const MDFMaterials &mdf_materials)
+        inline void set_materials(const mdf::Materials &mdf_materials)
         {
             int id = 0;
             for (const auto &[name, material] : mdf_materials)
@@ -163,21 +147,66 @@ namespace ghmc::pms
             }
         }
 
-        inline Status initialise_physics(
-            const MDFSettings &mdf_settings, const MaterialsDEDXData &dedx_data)
+        inline TableCSn compute_del(const TableK& K, const ComputeCEL cel = false)
         {
-            set_elements(std::get<MDFElements>(mdf_settings));
-            set_materials(std::get<MDFMaterials>(mdf_settings));
+            const auto &[br, pp, ph, io] = dcs_kernels;
+            auto table = TableCSn{};
+            table.reserve(elements.size());
+            for (const auto &el : elements)
+                table.emplace_back(
+                    Table{
+                        compute_dcs_integral(br)(el, mass, K, X_FRACTION, 180, cel),
+                        compute_dcs_integral(pp)(el, mass, K, X_FRACTION, 180, cel),
+                        compute_dcs_integral(ph)(el, mass, K, X_FRACTION, 180, cel),
+                        compute_dcs_integral(io)(el, mass, K, X_FRACTION, 180, cel)});
+            return table;
+        }
+
+        inline Status initialise_physics(
+            const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
+        {
+            set_elements(std::get<mdf::Elements>(mdf_settings));
+            set_materials(std::get<mdf::Materials>(mdf_settings));
             if (!set_table_K(dedx_data))
+                return false;
+            table_CSn = compute_del(table_K);
+            auto table_cel = compute_del(table_K, true);
+            return true;
+        }
+
+    public:
+        const DCSKernels dcs_kernels;
+        const ParticleMass mass;
+        const DecayLength ctau;
+
+        PhysicsModel(DCSKernels dcs_kernels_, ParticleMass mass_, DecayLength ctau_)
+            : dcs_kernels{dcs_kernels_}, mass{mass_}, ctau{ctau_} {}
+
+        Elements elements;
+        ElementIds element_id;
+
+        Materials materials;
+        MaterialIds material_id;
+
+        TableK table_K;
+        TableCSn table_CSn;
+
+        inline Status load_physics_from(const mdf::Settings &mdf_settings,
+                                        const mdf::MaterialsDEDXData &dedx_data)
+        {
+            if (!perform_initial_checks(mdf_settings, dedx_data))
+                return false;
+            if (!initialise_physics(mdf_settings, dedx_data))
                 return false;
             return true;
         }
     };
 
-    class MuonPhysics : public PhysicsModel<MuonPhysics>
+    template <typename DCSKernels>
+    class MuonPhysics : public PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>
     {
 
-        friend class PhysicsModel<MuonPhysics>;
+        friend class PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>;
 
         inline ParticleMass scale_mass(const ParticleMass &mass)
         {
@@ -200,43 +229,49 @@ namespace ghmc::pms
         }
 
     public:
-        MuonPhysics() : PhysicsModel{}
-        {
-            mass = MUON_MASS;
-            ctau = MUON_CTAU;
-        }
+        MuonPhysics(DCSKernels dcs_kernels_,
+                    ParticleMass mass_ = MUON_MASS, DecayLength ctau_ = MUON_CTAU)
+            : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(dcs_kernels_, mass_, ctau_) {}
     };
 
-    template <typename PumasPhysics>
+    template <typename DCSKernels>
+    struct TauPhysics : MuonPhysics<DCSKernels>
+    {
+        TauPhysics(DCSKernels dcs_kernels_,
+                   ParticleMass mass_ = TAU_MASS, DecayLength ctau_ = TAU_CTAU) : MuonPhysics<DCSKernels>(dcs_kernels_, mass_, ctau_) {}
+    };
+
+    template <typename PumasPhysics, typename DCSKernels>
     inline std::optional<PumasPhysics> load_pumas_physics_from(
-        const ParticleName &particle_name, const MDFFilePath &mdf,
-        const DEDXFolderPath &dedx)
+        const mdf::ParticleName &particle_name, const mdf::MDFFilePath &mdf,
+        const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels)
     {
         if (!ghmc::utils::check_path_exists(mdf))
             return std::nullopt;
         if (!ghmc::utils::check_path_exists(dedx))
             return std::nullopt;
 
-        auto mdf_settings = mdf_parse_settings("pumas", mdf);
+        auto mdf_settings = mdf::parse_settings(mdf::pumas, mdf);
         if (!mdf_settings.has_value())
             return std::nullopt;
 
-        auto dedx_data = mdf_parse_materials(
-            std::get<MDFMaterials>(mdf_settings.value()), dedx, particle_name);
+        auto dedx_data = mdf::parse_materials(
+            std::get<mdf::Materials>(mdf_settings.value()), dedx, particle_name);
         if (!dedx_data.has_value())
             return std::nullopt;
 
-        auto pumas_physics = PumasPhysics{};
+        auto pumas_physics = PumasPhysics(dcs_kernels);
         if (!pumas_physics.load_physics_from(*mdf_settings, *dedx_data))
             return std::nullopt;
 
         return pumas_physics;
     }
 
-    inline std::optional<MuonPhysics> load_muon_physics_from(
-        const MDFFilePath &mdf, const DEDXFolderPath &dedx)
+    template <typename DCSKernels>
+    inline std::optional<MuonPhysics<DCSKernels>> load_muon_physics_from(
+        const mdf::MDFFilePath &mdf, const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels)
     {
-        return load_pumas_physics_from<MuonPhysics>("Muon", mdf, dedx);
+        return load_pumas_physics_from<MuonPhysics<DCSKernels>, DCSKernels>(mdf::Muon, mdf, dedx, dcs_kernels);
     }
 
 } // namespace ghmc::pms

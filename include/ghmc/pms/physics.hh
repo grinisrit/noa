@@ -42,12 +42,17 @@ namespace ghmc::pms
         AtomicNumber Z;
     };
     using MaterialDensity = float;
-    using EnergyTransferMin = float; // Relative lower bound of energy transfer 
+    using EnergyTransferMin = float; // Relative lower bound of energy transfer
+    using ComponentFraction = float;
 
     constexpr float AVOGADRO_NUMBER = 6.02214076E+23f;
+
     constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03f; // GeV/c^2
     constexpr ParticleMass MUON_MASS = 0.10565839f;          // GeV/c^2
-    constexpr DecayLength MUON_CTAU = 658.654f;              // m
+    constexpr ParticleMass TAU_MASS = 1.77682f;              // GeV/c^2
+
+    constexpr DecayLength MUON_CTAU = 658.654f;   // m
+    constexpr DecayLength TAU_CTAU = 87.03E-06f; //m
 
     // Relative switch between Continuous Energy Loss (CEL) and DELs.
     constexpr float X_FRACTION = 5E-02f;

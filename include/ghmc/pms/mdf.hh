@@ -38,7 +38,7 @@
 
 #include <pugixml.hpp>
 
-namespace ghmc::pms
+namespace ghmc::pms::mdf
 {
 
     using namespace ghmc::utils;
@@ -47,23 +47,27 @@ namespace ghmc::pms
     using DEDXFolderPath = Path;
     using DEDXFilePath = Path;
 
-    using MDFElementName = std::string;
-    using MDFMaterialName = std::string;
-    using ComponentFraction = float;
-    using MDFMaterialComponents =
-        std::unordered_map<MDFElementName, ComponentFraction>;
-    using MDFMaterial =
-        std::tuple<DEDXFilePath, MaterialDensity, MDFMaterialComponents>;
+    using ElementName = std::string;
+    using MaterialName = std::string;
+    using MaterialComponents =
+        std::unordered_map<ElementName, ComponentFraction>;
+    using Material =
+        std::tuple<DEDXFilePath, MaterialDensity, MaterialComponents>;
 
-    using MDFCompositeName = std::string;
-    using MDFComposite = std::unordered_map<MDFMaterialName, ComponentFraction>;
+    using CompositeName = std::string;
+    using Composite = std::unordered_map<MaterialName, ComponentFraction>;
 
-    using MDFElements = std::unordered_map<MDFElementName, AtomicElement>;
-    using MDFMaterials = std::unordered_map<MDFMaterialName, MDFMaterial>;
-    using MDFComposites = std::unordered_map<MDFCompositeName, MDFComposite>;
+    using Elements = std::unordered_map<ElementName, AtomicElement>;
+    using Materials = std::unordered_map<MaterialName, Material>;
+    using Composites = std::unordered_map<CompositeName, Composite>;
 
-    using MDFSettings = std::tuple<MDFElements, MDFMaterials, MDFComposites>;
+    using Settings = std::tuple<Elements, Materials, Composites>;
     using ParticleName = std::string;
+    using GeneratorName = std::string;
+
+    inline const ParticleName Muon = "Muon";
+    inline const ParticleName Tau = "Tau";
+    inline const GeneratorName pumas = "pumas";
 
     struct DEDXMaterialCoefficients
     {
@@ -75,7 +79,7 @@ namespace ghmc::pms
             dEdX, CSDArange, delta, beta;
     };
     using DEDXData = std::tuple<ParticleMass, DEDXMaterialCoefficients, DEDXTable>;
-    using MaterialsDEDXData = std::unordered_map<MDFMaterialName, DEDXData>;
+    using MaterialsDEDXData = std::unordered_map<MaterialName, DEDXData>;
 
     inline std::regex mass_pattern(const ParticleName &particle_name)
     {
@@ -91,7 +95,7 @@ namespace ghmc::pms
     inline const auto units_pattern = std::regex{
         "\\s*\\[MeV\\].*\\[MeV/c\\].*\\[MeV\\s+cm\\^2/g\\].*\\[g/cm\\^2\\]"};
 
-    inline void print_elements(const MDFElements &elements)
+    inline void print_elements(const Elements &elements)
     {
         std::cout << "Elements:\n";
         for (const auto &[name, element] : elements)
@@ -102,7 +106,7 @@ namespace ghmc::pms
         }
     }
 
-    inline void print_materials(const MDFMaterials &materials)
+    inline void print_materials(const Materials &materials)
     {
         std::cout << "Materials:\n";
         for (const auto &[name, material] : materials)
@@ -161,8 +165,8 @@ namespace ghmc::pms
         return comps;
     }
 
-    inline std::optional<MDFSettings> mdf_parse_settings(
-        const std::string &generated_by, const MDFFilePath &mdf_path)
+    inline std::optional<Settings> parse_settings(
+        const GeneratorName &generated_by, const MDFFilePath &mdf_path)
     {
         auto mdf_doc = pugi::xml_document{};
         if (!mdf_doc.load_file(mdf_path.string().c_str()))
@@ -186,7 +190,7 @@ namespace ghmc::pms
                       << std::endl;
             return std::nullopt;
         }
-        auto elements = MDFElements{};
+        auto elements = Elements{};
         for (const auto &xnode : element_xnodes)
         {
             auto node = xnode.node();
@@ -204,12 +208,12 @@ namespace ghmc::pms
             std::cerr << "No materials found in " << mdf_path << std::endl;
             return std::nullopt;
         }
-        auto materials = MDFMaterials{};
+        auto materials = Materials{};
         for (const auto &xnode : material_xnodes)
         {
             auto node = xnode.node();
             auto name = node.attribute("name").value();
-            auto comps = get_mdf_components<MDFMaterialComponents>(
+            auto comps = get_mdf_components<MaterialComponents>(
                 node, elements, name);
             if (!comps.has_value())
             {
@@ -222,13 +226,13 @@ namespace ghmc::pms
         }
 
         auto composite_xnodes = rnode.select_nodes("composite[@name]");
-        auto composites = MDFComposites{};
+        auto composites = Composites{};
         for (const auto &xnode : composite_xnodes)
         {
             auto node = xnode.node();
             auto name = node.attribute("name").value();
             auto comps =
-                get_mdf_components<MDFComposite>(node, materials, name);
+                get_mdf_components<Composite>(node, materials, name);
             if (!comps.has_value())
             {
                 std::cerr << "Composite components not consistent in "
@@ -238,7 +242,7 @@ namespace ghmc::pms
             composites.emplace(name, *comps);
         }
 
-        return std::make_optional<MDFSettings>(elements, materials, composites);
+        return std::make_optional<Settings>(elements, materials, composites);
     }
 
     inline std::optional<ParticleMass> parse_particle_mass(
@@ -357,8 +361,8 @@ namespace ghmc::pms
         return std::make_optional<DEDXData>(*mass, *coefs, *table);
     }
 
-    inline std::optional<MaterialsDEDXData> mdf_parse_materials(
-        const MDFMaterials &materials, const DEDXFolderPath &dedx,
+    inline std::optional<MaterialsDEDXData> parse_materials(
+        const Materials &materials, const DEDXFolderPath &dedx,
         const ParticleName &particle_name)
     {
         auto materials_data = MaterialsDEDXData{};
@@ -374,16 +378,16 @@ namespace ghmc::pms
     }
 
     inline bool check_ZoA(
-        const MDFSettings &mdf_settings, const MaterialsDEDXData &dedx_data)
+        const Settings &mdf_settings, const MaterialsDEDXData &dedx_data)
     {
-        auto elements = std::get<MDFElements>(mdf_settings);
-        auto materials = std::get<MDFMaterials>(mdf_settings);
+        auto elements = std::get<Elements>(mdf_settings);
+        auto materials = std::get<Materials>(mdf_settings);
         for (const auto &[material, data] : dedx_data)
         {
             auto coefs = std::get<DEDXMaterialCoefficients>(data);
             auto ZoA = 0.f;
             for (const auto &[elmt, frac] :
-                 std::get<MDFMaterialComponents>(materials.at(material)))
+                 std::get<MaterialComponents>(materials.at(material)))
                 ZoA += frac * elements.at(elmt).Z / elements.at(elmt).A;
             if ((std::abs(ZoA - coefs.ZoA) > ghmc::utils::TOLERANCE))
                 return false;
@@ -391,4 +395,4 @@ namespace ghmc::pms
         return true;
     }
 
-} // namespace ghmc::pms
+} // namespace ghmc::pms::mdf
