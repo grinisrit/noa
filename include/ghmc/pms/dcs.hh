@@ -67,9 +67,9 @@ namespace ghmc::pms
     }
 
     template <typename DCSKernel>
-    inline auto  eval_cs(const DCSKernel &dcs_kernel)
+    inline auto eval_cs(const DCSKernel &dcs_kernel)
     {
-        return [&dcs_kernel](Result &result,
+        return [&dcs_kernel](const Result &result,
                              const AtomicElement &element,
                              const ParticleMass &mu,
                              const KineticEnergies &K,
@@ -100,9 +100,9 @@ namespace ghmc::pms
     }
 
     template <typename DCSKernel>
-    inline auto  eval_dcs(const DCSKernel &dcs_kernel)
+    inline auto eval_dcs(const DCSKernel &dcs_kernel)
     {
-        return [&dcs_kernel](Result &result,
+        return [&dcs_kernel](const Result &result,
                              const AtomicElement &element,
                              const ParticleMass &mu,
                              const KineticEnergies &K,

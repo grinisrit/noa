@@ -96,7 +96,7 @@ namespace ghmc::utils
     }
 
     template <typename Lambda>
-    inline void vmap(torch::Tensor &result, const torch::Tensor &values, const Lambda &lambda)
+    inline void vmap(const torch::Tensor &result, const torch::Tensor &values, const Lambda &lambda)
     {
         const float *pvals = values.data_ptr<float>();
         float *pres = result.data_ptr<float>();

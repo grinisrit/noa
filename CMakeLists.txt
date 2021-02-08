@@ -76,6 +76,7 @@ if(INSTALL_LIBRARY)
   	install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 				  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
 				  ${PROJECT_SOURCE_DIR}/cmake/pumas-materials.cmake
+				  ${PROJECT_SOURCE_DIR}/cmake/conda-omp.cmake
 			  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 			  
   	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ghmc

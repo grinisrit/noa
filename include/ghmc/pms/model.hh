@@ -48,11 +48,12 @@ namespace ghmc::pms
     using MaterialId = int;
     using Materials = std::vector<Material>;
     using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
-    using Table = std::vector<torch::Tensor>;
-    using TableK = torch::Tensor;        // Kinetic energy tabulations
-    using TableCSn = std::vector<Table>; // CS normalisation tabulations
+    using Shape = std::vector<int64_t>;
+    using TableK = torch::Tensor;   // Kinetic energy tabulations
+    using TableCSn = torch::Tensor; // CS normalisation tabulations
 
     inline const auto tfs_opt = torch::dtype(torch::kFloat32).layout(torch::kStrided);
+    constexpr int NPR = 4;
 
     template <typename Physics, typename DCSKernels>
     class PhysicsModel
@@ -147,6 +148,26 @@ namespace ghmc::pms
             }
         }
 
+        inline TableCSn compute_cs(ComputeCEL cel)
+        {
+            auto shape = Shape(3);
+            shape[0] = elements.size();
+            shape[1] = NPR;
+            shape[2] = table_K.numel();
+            auto table = torch::zeros(shape, tfs_opt);
+            const auto &[br, pp, ph, io] = dcs_kernels;
+
+#pragma omp parallel for
+            for (int el = 0; el < shape[0]; el++)
+            {
+                eval_cs(br)(table[el][0], elements[el], mass, table_K, X_FRACTION, 180, cel);
+                eval_cs(pp)(table[el][1], elements[el], mass, table_K, X_FRACTION, 180, cel);
+                eval_cs(ph)(table[el][2], elements[el], mass, table_K, X_FRACTION, 180, cel);
+                eval_cs(io)(table[el][3], elements[el], mass, table_K, X_FRACTION, 180, cel);
+            }
+            return table;
+        }
+
         inline Status initialise_physics(
             const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
         {
@@ -154,6 +175,10 @@ namespace ghmc::pms
             set_materials(std::get<mdf::Materials>(mdf_settings));
             if (!set_table_K(dedx_data))
                 return false;
+
+            table_CSn = compute_cs(false);
+            const auto table_cel = compute_cs(true);
+
             return true;
         }
 
