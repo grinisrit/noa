@@ -40,7 +40,8 @@ namespace ghmc::pms
     using RecoilEnergy = float;
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
-    using ComputeCEL = bool; // Compute Continuous Energy Loss (CEL) flag
+    using Result = torch::Tensor; // Receiver tensor for calculations result
+    using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
 
     template <typename DCSKernel>
     inline auto cs_kernel(const DCSKernel &dcs_kernel)
@@ -66,7 +67,24 @@ namespace ghmc::pms
     }
 
     template <typename DCSKernel>
-    inline auto compute_dcs_integral(const DCSKernel &dcs_kernel)
+    inline auto  eval_cs(const DCSKernel &dcs_kernel)
+    {
+        return [&dcs_kernel](Result &result,
+                             const AtomicElement &element,
+                             const ParticleMass &mu,
+                             const KineticEnergies &K,
+                             const EnergyTransferMin &xlow,
+                             const int min_points,
+                             const ComputeCEL cel = false) {
+            return ghmc::utils::vmap(result, K, [&](const auto &k) {
+                return cs_kernel(dcs_kernel)(
+                    element, mu, k, xlow, min_points, cel);
+            });
+        };
+    }
+
+    template <typename DCSKernel>
+    inline auto map_cs(const DCSKernel &dcs_kernel)
     {
         return [&dcs_kernel](const AtomicElement &element,
                              const ParticleMass &mu,
@@ -82,7 +100,23 @@ namespace ghmc::pms
     }
 
     template <typename DCSKernel>
-    inline auto map_dcs_kernel(const DCSKernel &dcs_kernel)
+    inline auto  eval_dcs(const DCSKernel &dcs_kernel)
+    {
+        return [&dcs_kernel](Result &result,
+                             const AtomicElement &element,
+                             const ParticleMass &mu,
+                             const KineticEnergies &K,
+                             const RecoilEnergies &q) {
+            const float *pq = q.data_ptr<float>();
+            int i = 0;
+            return ghmc::utils::vmap(result, K, [&](const auto &k) {
+                return dcs_kernel(element, mu, k, pq[i++]);
+            });
+        };
+    }
+
+    template <typename DCSKernel>
+    inline auto map_dcs(const DCSKernel &dcs_kernel)
     {
         return [&dcs_kernel](const AtomicElement &element,
                              const ParticleMass &mu,
@@ -318,8 +352,8 @@ namespace ghmc::pms
         const float aR = aR1 + aR2 * exp(aR3 * lnt);
         const float bR = bR1 + bR2 * exp(bR3 * lnt);
 
-        const float F2P = cP * exp(aP * log(xP) + bP * log(1 - x));
-        const float F2R = cR * exp(aR * log(xR) + bR * log(1 - x));
+        const float F2P = cP * exp(aP * log(xP) + bP * log(1.f - x));
+        const float F2R = cR * exp(aR * log(xR) + bR * log(1.f - x));
 
         return Q2 / (Q2 + m02) * (F2P + F2R);
     }

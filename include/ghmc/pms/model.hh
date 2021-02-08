@@ -52,10 +52,11 @@ namespace ghmc::pms
     using TableK = torch::Tensor;        // Kinetic energy tabulations
     using TableCSn = std::vector<Table>; // CS normalisation tabulations
 
+    inline const auto tfs_opt = torch::dtype(torch::kFloat32).layout(torch::kStrided);
+
     template <typename Physics, typename DCSKernels>
     class PhysicsModel
     {
-
         using DCSBremsstrahlung = typename std::tuple_element<0, DCSKernels>::type;
         using DCSPairProduction = typename std::tuple_element<1, DCSKernels>::type;
         using DCSPhotonuclear = typename std::tuple_element<2, DCSKernels>::type;
@@ -83,8 +84,7 @@ namespace ghmc::pms
             auto n = vals.size();
             auto tensor = torch::from_blob(vals.data(), n, torch::kFloat32);
             table_K = static_cast<Physics *>(this)->scale_table_K(
-                tensor.to(torch::dtype(torch::kFloat32)
-                              .layout(torch::kStrided)));
+                tensor.to(tfs_opt));
             data++;
             for (auto &it = data; it != dedx_data.end(); it++)
             {
@@ -147,21 +147,6 @@ namespace ghmc::pms
             }
         }
 
-        inline TableCSn compute_del(const TableK& K, const ComputeCEL cel = false)
-        {
-            const auto &[br, pp, ph, io] = dcs_kernels;
-            auto table = TableCSn{};
-            table.reserve(elements.size());
-            for (const auto &el : elements)
-                table.emplace_back(
-                    Table{
-                        compute_dcs_integral(br)(el, mass, K, X_FRACTION, 180, cel),
-                        compute_dcs_integral(pp)(el, mass, K, X_FRACTION, 180, cel),
-                        compute_dcs_integral(ph)(el, mass, K, X_FRACTION, 180, cel),
-                        compute_dcs_integral(io)(el, mass, K, X_FRACTION, 180, cel)});
-            return table;
-        }
-
         inline Status initialise_physics(
             const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
         {
@@ -169,8 +154,6 @@ namespace ghmc::pms
             set_materials(std::get<mdf::Materials>(mdf_settings));
             if (!set_table_K(dedx_data))
                 return false;
-            table_CSn = compute_del(table_K);
-            auto table_cel = compute_del(table_K, true);
             return true;
         }
 

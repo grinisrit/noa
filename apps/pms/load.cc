@@ -1,13 +1,18 @@
-#include <iostream>
-
 #include <ghmc/pms/model.hh>
 #include <ghmc/pms/dcs.hh>
+
+#include <iostream>
+#include <chrono>
+
+using namespace std::chrono;
 
 int main()
 {
     auto mdf = "materials/mdf/standard.xml";
     auto dedx = "materials/dedx/muon";
 
+    auto begin = steady_clock::now();
+    
     auto muon_physics = ghmc::pms::load_muon_physics_from(
         mdf, dedx, ghmc::pms::default_dcs_kernels);
     if (!muon_physics.has_value())
@@ -15,7 +20,11 @@ int main()
                   << mdf << "\n"
                   << dedx << std::endl;
     else
-        std::cout << "Ok" << std::endl;
+    {
+        auto end = steady_clock::now();
+        std::cout << "Loadind model took " << duration_cast<microseconds>(end - begin).count() / 1E+6
+                  << " seconds" << std::endl;
+    }
 
     return !muon_physics.has_value();
 }

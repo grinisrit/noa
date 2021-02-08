@@ -87,12 +87,22 @@ namespace ghmc::utils
     inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda)
     {
         const float *pvals = values.data_ptr<float>();
-        auto res = torch::zeros_like(values);
-        float *pres = res.data_ptr<float>();
-        const int n = res.numel();
+        auto result = torch::zeros_like(values);
+        float *pres = result.data_ptr<float>();
+        const int n = result.numel();
         for (int i = 0; i < n; i++)
             pres[i] = lambda(pvals[i]);
-        return res;
+        return result;
+    }
+
+    template <typename Lambda>
+    inline void vmap(torch::Tensor &result, const torch::Tensor &values, const Lambda &lambda)
+    {
+        const float *pvals = values.data_ptr<float>();
+        float *pres = result.data_ptr<float>();
+        const int n = result.numel();
+        for (int i = 0; i < n; i++)
+            pres[i] = lambda(pvals[i]);
     }
 
 } // namespace ghmc::utils

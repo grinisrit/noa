@@ -5,10 +5,10 @@
 
 using namespace ghmc::pms;
 
-inline const auto dcs_bremsstrahlung = map_dcs_kernel(dcs_bremsstrahlung_kernel);
-inline const auto dcs_pair_production = map_dcs_kernel(dcs_pair_production_kernel);
-inline const auto dcs_photonuclear = map_dcs_kernel(dcs_photonuclear_kernel);
-inline const auto dcs_ionisation = map_dcs_kernel(dcs_ionisation_kernel);
+inline const auto dcs_bremsstrahlung = map_dcs(dcs_bremsstrahlung_kernel);
+inline const auto dcs_pair_production = map_dcs(dcs_pair_production_kernel);
+inline const auto dcs_photonuclear = map_dcs(dcs_photonuclear_kernel);
+inline const auto dcs_ionisation = map_dcs(dcs_ionisation_kernel);
 
 inline const auto kinetic = torch::tensor({100.0f, 120.0f, 140.0f});
 inline const auto qi = torch::tensor({5.0168871f, 6.0202645f, 7.0236419f});
@@ -23,3 +23,6 @@ inline const auto expected_cs_ion = torch::tensor({1.3020459E-6f, 1.0920769E-6f,
 
 inline const auto kinetic_analytic_ion = torch::tensor({8.f, 9.f, 10.f});
 inline const auto expected_cs_analytic_ion = torch::tensor({1.2356270E-5f, 1.1261894E-5f, 1.0343668E-5f});
+
+inline const auto table_K = torch::arange(100.f, 1E+6f, 9999.f);
+inline const auto table_q = 0.05f * table_K;
