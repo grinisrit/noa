@@ -52,7 +52,7 @@ namespace ghmc::pms
     using TableK = torch::Tensor;   // Kinetic energy tabulations
     using TableCSn = torch::Tensor; // CS normalisation tabulations
 
-    inline const auto tfs_opt = torch::dtype(torch::kFloat32).layout(torch::kStrided);
+    inline const auto tfs_opt = torch::dtype(torch::kFloat64).layout(torch::kStrided);
     constexpr int NPR = 4;
 
     template <typename Physics, typename DCSKernels>
@@ -147,7 +147,7 @@ namespace ghmc::pms
                 id++;
             }
         }
-
+        /*
         inline TableCSn compute_cs(ComputeCEL cel)
         {
             auto shape = Shape(3);
@@ -166,7 +166,7 @@ namespace ghmc::pms
                 eval_cs(io)(table[el][3], elements[el], mass, table_K, X_FRACTION, 180, cel);
             }
             return table;
-        }
+        }*/
 
         inline Status initialise_physics(
             const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
@@ -175,9 +175,9 @@ namespace ghmc::pms
             set_materials(std::get<mdf::Materials>(mdf_settings));
             if (!set_table_K(dedx_data))
                 return false;
-
+            /*
             table_CSn = compute_cs(false);
-            const auto table_cel = compute_cs(true);
+            const auto table_cel = compute_cs(true);*/
 
             return true;
         }
@@ -218,22 +218,22 @@ namespace ghmc::pms
 
         inline ParticleMass scale_mass(const ParticleMass &mass)
         {
-            return mass * 1E-3f; // from MeV to GeV
+            return mass * 1E-3; // from MeV to GeV
         }
 
         inline TableK scale_table_K(const TableK &table_K_)
         {
-            return table_K_ * 1E-3f; // from MeV to GeV
+            return table_K_ * 1E-3; // from MeV to GeV
         }
 
         inline MeanExcitation scale_excitation(const MeanExcitation &I)
         {
-            return I * 1E-9f; // from eV to GeV
+            return I * 1E-9; // from eV to GeV
         }
 
         inline MaterialDensity scale_density(const MaterialDensity &density)
         {
-            return density * 1E+3f; // from g/cm^3 to kg/m^3
+            return density * 1E+3; // from g/cm^3 to kg/m^3
         }
 
     public:

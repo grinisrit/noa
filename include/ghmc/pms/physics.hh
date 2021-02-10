@@ -30,10 +30,10 @@
 
 namespace ghmc::pms
 {
-    using ParticleMass = float;
-    using DecayLength = float;
-    using AtomicMass = float;
-    using MeanExcitation = float;
+    using ParticleMass = double;
+    using DecayLength = double;
+    using AtomicMass = double;
+    using MeanExcitation = double;
     using AtomicNumber = int;
     struct AtomicElement
     {
@@ -41,26 +41,26 @@ namespace ghmc::pms
         MeanExcitation I;
         AtomicNumber Z;
     };
-    using MaterialDensity = float;
-    using EnergyTransferMin = float; // Relative lower bound of energy transfer
-    using ComponentFraction = float;
+    using MaterialDensity = double;
+    using EnergyTransferMin = double; // Relative lower bound of energy transfer
+    using ComponentFraction = double;
 
-    constexpr float AVOGADRO_NUMBER = 6.02214076E+23f;
+    constexpr double AVOGADRO_NUMBER = 6.02214076E+23;
 
-    constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03f; // GeV/c^2
-    constexpr ParticleMass MUON_MASS = 0.10565839f;          // GeV/c^2
-    constexpr ParticleMass TAU_MASS = 1.77682f;              // GeV/c^2
+    constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03; // GeV/c^2
+    constexpr ParticleMass MUON_MASS = 0.10565839;          // GeV/c^2
+    constexpr ParticleMass TAU_MASS = 1.77682;              // GeV/c^2
 
-    constexpr DecayLength MUON_CTAU = 658.654f;   // m
-    constexpr DecayLength TAU_CTAU = 87.03E-06f; //m
+    constexpr DecayLength MUON_CTAU = 658.654;   // m
+    constexpr DecayLength TAU_CTAU = 87.03E-06; //m
 
     // Relative switch between Continuous Energy Loss (CEL) and DELs.
-    constexpr float X_FRACTION = 5E-02f;
+    constexpr double X_FRACTION = 5E-02;
 
     // Common elements:
     constexpr AtomicElement STANDARD_ROCK = AtomicElement{
-        22.0f,      // g/mol
-        0.1364E-6f, // GeV
+        22.,      // g/mol
+        0.1364E-6, // GeV
         11};
 
 } // namespace ghmc::pms

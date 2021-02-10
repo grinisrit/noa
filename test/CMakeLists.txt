@@ -1,5 +1,5 @@
 ####################################################################################################
-####################              GHMC: unit testing  & benchmarking            ####################
+####################              GHMC: unit testing & benchmarking             ####################
 ####################################################################################################
 
 message(STATUS "Building tests & benchmarks required")
@@ -11,10 +11,10 @@ find_package(benchmark REQUIRED)
 # Source files
 set(GHMC_TEST_SRC 
     test-sampler.cc
-    test-pms.cc)
+    test-dcs.cc)
 
 set(GHMC_BENCH_SRC 
-    benchmark-pms.cc)
+    benchmark-dcs.cc)
 
 
 # Main test executables

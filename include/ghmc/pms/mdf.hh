@@ -71,11 +71,11 @@ namespace ghmc::pms::mdf
 
     struct DEDXMaterialCoefficients
     {
-        float ZoA, I, a, k, x0, x1, Cbar, delta0;
+        double ZoA, I, a, k, x0, x1, Cbar, delta0;
     };
     struct DEDXTable
     {
-        std::vector<float> T, p, Ionization, brems, pair, photonuc, Radloss,
+        std::vector<double> T, p, Ionization, brems, pair, photonuc, Radloss,
             dEdX, CSDArange, delta, beta;
     };
     using DEDXData = std::tuple<ParticleMass, DEDXMaterialCoefficients, DEDXTable>;
@@ -141,12 +141,12 @@ namespace ghmc::pms::mdf
     {
         auto comp_xnodes = node.select_nodes("component[@name][@fraction]");
         auto comps = MDFComponents{};
-        float tot = 0.0;
+        double tot = 0.0;
         for (const auto &xnode : comp_xnodes)
         {
             auto node = xnode.node();
             auto name = node.attribute("name").value();
-            auto frac = node.attribute("fraction").as_float();
+            auto frac = node.attribute("fraction").as_double();
             tot += frac;
             if (!comp_data.count(name))
             {
@@ -195,8 +195,8 @@ namespace ghmc::pms::mdf
         {
             auto node = xnode.node();
             elements.emplace(node.attribute("name").value(),
-                             AtomicElement{node.attribute("A").as_float(),
-                                           node.attribute("I").as_float(),
+                             AtomicElement{node.attribute("A").as_double(),
+                                           node.attribute("I").as_double(),
                                            node.attribute("Z").as_int()});
         }
 
@@ -222,7 +222,7 @@ namespace ghmc::pms::mdf
                 return std::nullopt;
             }
             materials.try_emplace(name, node.attribute("file").value(),
-                                  node.attribute("density").as_float(), *comps);
+                                  node.attribute("density").as_double(), *comps);
         }
 
         auto composite_xnodes = rnode.select_nodes("composite[@name]");
@@ -251,7 +251,7 @@ namespace ghmc::pms::mdf
         auto line = find_line(dedx_stream, mass_pattern(particle_name));
         if (!line.has_value())
             return std::nullopt;
-        auto mass = get_numerics<float>(*line, 1);
+        auto mass = get_numerics(*line, 1);
         return (mass.has_value()) ? mass->at(0) : std::optional<ParticleMass>{};
     }
 
@@ -265,7 +265,7 @@ namespace ghmc::pms::mdf
         auto line = find_line(dedx_stream, zoa_pattern);
         if (!line.has_value())
             return std::nullopt;
-        auto nums = get_numerics<float>(*line, 1);
+        auto nums = get_numerics(*line, 1);
         if (!nums.has_value())
             return std::nullopt;
         coefs.ZoA = nums->at(0);
@@ -275,7 +275,7 @@ namespace ghmc::pms::mdf
             return std::nullopt;
 
         std::getline(dedx_stream, *line);
-        nums = get_numerics<float>(*line, 7);
+        nums = get_numerics(*line, 7);
         if (!nums.has_value())
             return std::nullopt;
 
@@ -306,7 +306,7 @@ namespace ghmc::pms::mdf
 
         while (std::getline(dedx_stream, *line))
         {
-            auto nums = get_numerics<float>(*line, 11);
+            auto nums = get_numerics(*line, 11);
             if (!nums.has_value())
                 return std::nullopt;
 

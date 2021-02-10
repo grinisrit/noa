@@ -14,7 +14,7 @@ int main()
     auto begin = steady_clock::now();
     
     auto muon_physics = ghmc::pms::load_muon_physics_from(
-        mdf, dedx, ghmc::pms::default_dcs_kernels);
+        mdf, dedx, ghmc::pms::dcs::default_kernels);
     if (!muon_physics.has_value())
         std::cerr << "Failed to load the physics model from:\n"
                   << mdf << "\n"

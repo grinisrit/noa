@@ -1,6 +1,6 @@
 # Geometric Hamiltonian Monte Carlo (GHMC)
 
-We aim to make it easier to integrate Bayesian computation algorithms with larger simulation frameworks, as well as performance demanding systems such as in streaming analytics, games, high frequency trading and many other applications.
+We aim to make it easier to compute_integral Bayesian computation algorithms with larger simulation frameworks, as well as performance demanding systems such as in streaming analytics, games, high frequency trading and many other applications.
 
 This `C++17` library implements Hamiltonian Monte Carlo ([HMC](https://www.sciencedirect.com/science/article/abs/pii/037026938791197X)) schemes over [LibTorch](https://pytorch.org/cppdocs/). The forcus is on high-dimensional problems. 
 

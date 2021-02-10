@@ -43,7 +43,7 @@ namespace ghmc::utils
     using Status = bool;
     using Line = std::string;
 
-    inline const auto TOLERANCE = 1E-6f;
+    inline const double TOLERANCE = 1E-6;
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
@@ -67,8 +67,7 @@ namespace ghmc::utils
         return std::nullopt;
     }
 
-    template <typename Numeric>
-    inline std::optional<std::vector<Numeric>> get_numerics(
+    inline std::optional<std::vector<double>> get_numerics(
         const std::string &line, int size)
     {
         auto no_data = std::sregex_iterator();
@@ -76,33 +75,42 @@ namespace ghmc::utils
         if (std::distance(nums, no_data) != size)
             return std::nullopt;
 
-        auto vec = std::vector<Numeric>{};
+        auto vec = std::vector<double>{};
         vec.reserve(size);
         for (auto &num = nums; num != no_data; num++)
-            vec.emplace_back(std::stof(num->str()));
+            vec.emplace_back(std::stod(num->str()));
         return vec;
     }
 
-    template <typename Lambda>
+    template <typename Dtype, typename Lambda>
     inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda)
     {
-        const float *pvals = values.data_ptr<float>();
+        const Dtype *pvals = values.data_ptr<Dtype>();
         auto result = torch::zeros_like(values);
-        float *pres = result.data_ptr<float>();
+        Dtype *pres = result.data_ptr<Dtype>();
         const int n = result.numel();
         for (int i = 0; i < n; i++)
             pres[i] = lambda(pvals[i]);
         return result;
     }
 
-    template <typename Lambda>
+    template <typename Dtype, typename Lambda>
     inline void vmap(const torch::Tensor &result, const torch::Tensor &values, const Lambda &lambda)
     {
-        const float *pvals = values.data_ptr<float>();
-        float *pres = result.data_ptr<float>();
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        Dtype *pres = result.data_ptr<Dtype>();
         const int n = result.numel();
         for (int i = 0; i < n; i++)
             pres[i] = lambda(pvals[i]);
+    }
+
+    template <typename Dtype>
+    inline torch::Tensor relative_error(const torch::Tensor &computed, const torch::Tensor &expected)
+    {
+        return torch::abs(
+                   (computed - expected) / (computed + std::numeric_limits<Dtype>::min()))
+                   .sum() /
+               computed.numel();
     }
 
 } // namespace ghmc::utils

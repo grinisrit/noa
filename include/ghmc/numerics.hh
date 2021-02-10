@@ -54,19 +54,19 @@ namespace ghmc::numerics
         return res;
     }
 
-    template <typename Function>
-    inline float quadrature_f6(const float &lower_bound,
-                               const float &upper_bound,
-                               const Function &function,
-                               const int min_points = 1)
+    template <typename Dtype, typename Function>
+    inline Dtype quadrature6(const Dtype &lower_bound,
+                             const Dtype &upper_bound,
+                             const Function &function,
+                             const int min_points = 1)
     {
         constexpr int N_GQ = 6;
-        const float xGQ[N_GQ] = {0.03376524f, 0.16939531f, 0.38069041f,
-                                  0.61930959f, 0.83060469f, 0.96623476f};
-        const float wGQ[N_GQ] = {0.08566225f, 0.18038079f, 0.23395697f,
-                                  0.23395697f, 0.18038079f, 0.08566225f};
+        const Dtype xGQ[N_GQ] = {0.03376524, 0.16939531, 0.38069041,
+                                 0.61930959, 0.83060469, 0.96623476};
+        const Dtype wGQ[N_GQ] = {0.08566225, 0.18038079, 0.23395697,
+                                 0.23395697, 0.18038079, 0.08566225};
 
-        return legendre_gaussian_quadrature(
+        return legendre_gaussian_quadrature<Dtype>(
             lower_bound,
             upper_bound,
             function,
@@ -74,17 +74,17 @@ namespace ghmc::numerics
             N_GQ, xGQ, wGQ);
     }
 
-    template <typename Function>
-    inline float quadrature_f8(const float &lower_bound,
-                               const float &upper_bound,
-                               const Function &function,
-                               const int min_points = 1)
+    template <typename Dtype, typename Function>
+    inline Dtype quadrature8(const Dtype &lower_bound,
+                             const Dtype &upper_bound,
+                             const Function &function,
+                             const int min_points = 1)
     {
         constexpr int N_GQ = 8;
-        const float xGQ[N_GQ] = {0.01985507f, 0.10166676f, 0.2372338f,
-                                 0.40828268f, 0.59171732f, 0.7627662f, 0.89833324f, 0.98014493f};
-        const float wGQ[N_GQ] = {0.05061427f, 0.11119052f, 0.15685332f,
-                                 0.18134189f, 0.18134189f, 0.15685332f, 0.11119052f, 0.05061427f};
+        const Dtype xGQ[N_GQ] = {0.01985507, 0.10166676, 0.2372338,
+                                 0.40828268, 0.59171732, 0.7627662, 0.89833324, 0.98014493};
+        const Dtype wGQ[N_GQ] = {0.05061427, 0.11119052, 0.15685332,
+                                 0.18134189, 0.18134189, 0.15685332, 0.11119052, 0.05061427};
 
         return legendre_gaussian_quadrature(
             lower_bound,
@@ -94,21 +94,21 @@ namespace ghmc::numerics
             N_GQ, xGQ, wGQ);
     }
 
-    template <typename Function>
-    inline float quadrature_f9(const float &lower_bound,
-                               const float &upper_bound,
-                               const Function &function,
-                               const int min_points = 1)
+    template <typename Dtype, typename Function>
+    inline Dtype quadrature9(const Dtype &lower_bound,
+                             const Dtype &upper_bound,
+                             const Function &function,
+                             const int min_points = 1)
     {
         constexpr int N_GQ = 9;
-        const float xGQ[N_GQ] = {0.0000000000000000f, -0.8360311073266358f,
-                                 0.8360311073266358f, -0.9681602395076261f, 0.9681602395076261f,
-                                 -0.3242534234038089f, 0.3242534234038089f, -0.6133714327005904f,
-                                 0.6133714327005904f};
-        const float wGQ[N_GQ] = {0.3302393550012598f, 0.1806481606948574f,
-                                 0.1806481606948574f, 0.0812743883615744f, 0.0812743883615744f,
-                                 0.3123470770400029f, 0.3123470770400029f, 0.2606106964029354f,
-                                 0.2606106964029354f};
+        const Dtype xGQ[N_GQ] = {0.0000000000000000, -0.8360311073266358,
+                                 0.8360311073266358, -0.9681602395076261, 0.9681602395076261,
+                                 -0.3242534234038089, 0.3242534234038089, -0.6133714327005904,
+                                 0.6133714327005904};
+        const Dtype wGQ[N_GQ] = {0.3302393550012598, 0.1806481606948574,
+                                 0.1806481606948574, 0.0812743883615744, 0.0812743883615744,
+                                 0.3123470770400029, 0.3123470770400029, 0.2606106964029354,
+                                 0.2606106964029354};
 
         return legendre_gaussian_quadrature(
             lower_bound,
