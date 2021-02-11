@@ -147,26 +147,27 @@ namespace ghmc::pms
                 id++;
             }
         }
-        /*
-        inline TableCSn compute_cs(ComputeCEL cel)
+
+        inline TableCSn init_table_CSn()
         {
             auto shape = Shape(3);
             shape[0] = elements.size();
             shape[1] = NPR;
             shape[2] = table_K.numel();
-            auto table = torch::zeros(shape, tfs_opt);
+            return torch::zeros(shape, tfs_opt); 
+        } 
+       
+        inline void compute_cel_and_del(const TableCSn &del, const TableCSn &cel)
+        {
             const auto &[br, pp, ph, io] = dcs_kernels;
-
-#pragma omp parallel for
-            for (int el = 0; el < shape[0]; el++)
+            const int n = elements.size();
+//#pragma omp parallel for
+            for (int el = 0; el < n; el++)
             {
-                eval_cs(br)(table[el][0], elements[el], mass, table_K, X_FRACTION, 180, cel);
-                eval_cs(pp)(table[el][1], elements[el], mass, table_K, X_FRACTION, 180, cel);
-                eval_cs(ph)(table[el][2], elements[el], mass, table_K, X_FRACTION, 180, cel);
-                eval_cs(io)(table[el][3], elements[el], mass, table_K, X_FRACTION, 180, cel);
+               
             }
-            return table;
-        }*/
+           
+        }
 
         inline Status initialise_physics(
             const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
@@ -175,9 +176,9 @@ namespace ghmc::pms
             set_materials(std::get<mdf::Materials>(mdf_settings));
             if (!set_table_K(dedx_data))
                 return false;
-            /*
-            table_CSn = compute_cs(false);
-            const auto table_cel = compute_cs(true);*/
+       
+            table_CSn = init_table_CSn();
+            const auto table_cel = init_table_CSn();
 
             return true;
         }

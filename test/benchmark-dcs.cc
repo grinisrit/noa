@@ -281,7 +281,7 @@ static void DCS_CELIonisation(benchmark::State &state)
 }
 BENCHMARK(DCS_CELIonisation);
 
-static void DCS_CELIonisationrVectorised(benchmark::State &state)
+static void DCS_CELIonisationVectorised(benchmark::State &state)
 {
     const auto r = torch::zeros_like(kinetic_energies);
     const auto k = kinetic_energies;
@@ -292,4 +292,4 @@ static void DCS_CELIonisationrVectorised(benchmark::State &state)
         map_compute_integral(default_ionisation)(
             r, k, xlow, element, mu, 180, true);
 }
-BENCHMARK(DCS_CELIonisationrVectorised);
+BENCHMARK(DCS_CELIonisationVectorised);

@@ -43,7 +43,6 @@ namespace ghmc::pms::dcs
     using Result = torch::Tensor; // Receiver tensor for calculations result
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
 
-
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
     {
@@ -106,9 +105,9 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
      */
     inline const auto default_bremsstrahlung = [](const KineticEnergy &K,
-                                                             const RecoilEnergy &q,
-                                                             const AtomicElement &element,
-                                                             const ParticleMass &mu) {
+                                                  const RecoilEnergy &q,
+                                                  const AtomicElement &element,
+                                                  const ParticleMass &mu) {
         const int Z = element.Z;
         const auto A = element.A;
         const double me = ELECTRON_MASS;
@@ -153,9 +152,9 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9221
      */
     inline const auto default_pair_production = [](const KineticEnergy &K,
-                                                              const RecoilEnergy &q,
-                                                              const AtomicElement &element,
-                                                              const ParticleMass &mu) {
+                                                   const RecoilEnergy &q,
+                                                   const AtomicElement &element,
+                                                   const ParticleMass &mu) {
         const int Z = element.Z;
         const double A = element.A;
         /*  Check the bounds of the energy transfer. */
@@ -279,7 +278,7 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9371
      */
 
-    inline double dcs_photonuclear_f2_allm(const double &x, const double &Q2)
+    inline double dcs_photonuclear_f2_allm(const double x, const double Q2)
     {
         const double m02 = 0.31985;
         const double mP2 = 49.457;
@@ -333,7 +332,7 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9433
      */
-    inline double dcs_photonuclear_f2a_drss(const double &x, const double &F2p, const double &A)
+    inline double dcs_photonuclear_f2a_drss(const double x, const double F2p, const double A)
     {
         double a = 1.0;
         if (x < 0.0014)
@@ -350,7 +349,7 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9453
      */
-    inline double dcs_photonuclear_r_whitlow(const double &x, const double &Q2)
+    inline double dcs_photonuclear_r_whitlow(const double x, const double Q2)
     {
         double q2 = Q2;
         if (Q2 < 0.3)
@@ -369,7 +368,7 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9478
      */
 
-    inline double dcs_photonuclear_d2(const double &A, const double &mu, const double &K, const double &q, const double &Q2)
+    inline double dcs_photonuclear_d2(const double A, const double mu, const double K, const double q, const double Q2)
     {
         const double cf = 2.603096E-35;
         const double M = 0.931494;
@@ -390,7 +389,7 @@ namespace ghmc::pms::dcs
         return cf * F2A * dds / q;
     }
 
-    inline bool dcs_photonuclear_check(const double &K, const double &q)
+    inline bool dcs_photonuclear_check(const double K, const double q)
     {
         return (q < 1.) || (q < 2E-03 * K);
     }
@@ -401,23 +400,26 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9515
      */
     inline const auto default_photonuclear = [](const KineticEnergy &K,
-                                                           const RecoilEnergy &q,
-                                                           const AtomicElement &element,
-                                                           const ParticleMass &mu) {
+                                                const RecoilEnergy &q,
+                                                const AtomicElement &element,
+                                                const ParticleMass &mu) {
+        if (dcs_photonuclear_check(K, q))
+            return 0.;
+
         const double A = element.A;
+        const double mass = mu;
         const double M = 0.931494;
         const double mpi = 0.134977;
-        const double E = K + mu;
+        const double E = K + mass;
 
-        double ds = 0.;
-        if ((q >= (E - mu)) || (q <= (mpi * (1.0 + 0.5 * mpi / M))))
-            return ds;
+        if ((q >= (E - mass)) || (q <= (mpi * (1.0 + 0.5 * mpi / M))))
+            return 0.;
 
         const double y = q / E;
-        const double Q2min = mu * mu * y * y / (1 - y);
+        const double Q2min = mass * mass * y * y / (1 - y);
         const double Q2max = 2.0 * M * (q - mpi) - mpi * mpi;
         if ((Q2max < Q2min) | (Q2min < 0))
-            return ds;
+            return 0.;
 
         /* Set the binning. */
         const double pQ2min = log(Q2min);
@@ -429,15 +431,14 @@ namespace ghmc::pms::dcs
          * Integrate the doubly differential cross-section over Q2 using
          * a Gaussian quadrature. Note that 9 points are enough to get a
          * better than 0.1 % accuracy.
-         */
-        ds = ghmc::numerics::quadrature9<double>(0.f, 1.f, [&](const double &t) {
-            const double Q2 = exp(pQ2c + 0.5 * dpQ2 * t);
-            return dcs_photonuclear_d2(A, mu, K, q, Q2) * Q2;
-        });
+        */
+        const double ds =
+            ghmc::numerics::quadrature9<double>(0.f, 1.f, [&A, &pQ2c, &dpQ2, &mass, &K, &q](const double &t) {
+                const double Q2 = exp(pQ2c + 0.5 * dpQ2 * t);
+                return dcs_photonuclear_d2(A, mass, K, q, Q2) * Q2;
+            });
 
-        return ((ds < 0.) || dcs_photonuclear_check(K, q))
-                   ? 0.
-                   : 0.5 * ds * dpQ2 * 1E+03 * AVOGADRO_NUMBER * (mu + K) / A;
+        return (ds < 0.) ? 0. : 0.5 * ds * dpQ2 * 1E+03 * AVOGADRO_NUMBER * (mass + K) / A;
     };
 
     /*
@@ -446,9 +447,9 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9620
      */
     inline const auto default_ionisation = [](const KineticEnergy &K,
-                                                         const RecoilEnergy &q,
-                                                         const AtomicElement &element,
-                                                         const ParticleMass &mu) {
+                                              const RecoilEnergy &q,
+                                              const AtomicElement &element,
+                                              const ParticleMass &mu) {
         const double A = element.A;
         const int Z = element.Z;
         const double mass = mu;
@@ -484,17 +485,16 @@ namespace ghmc::pms::dcs
         return cs * (1. + Delta);
     };
 
-  
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9669
      */
     inline const auto analytic_integral_ionisation = [](const KineticEnergy &K,
-                                                                   const EnergyTransferMin &xlow,
-                                                                   const AtomicElement &element,
-                                                                   const ParticleMass &mu,
-                                                                   const ComputeCEL cel = false) {
+                                                        const EnergyTransferMin &xlow,
+                                                        const AtomicElement &element,
+                                                        const ParticleMass &mu,
+                                                        const ComputeCEL cel = false) {
         const double mass = mu;
         const double P2 = K * (K + 2. * mass);
         const double E = K + mass;
@@ -558,7 +558,6 @@ namespace ghmc::pms::dcs
         };
     }
 
-    
     inline const auto default_kernels = std::tuple{
         default_bremsstrahlung,
         default_pair_production,
