@@ -22,7 +22,7 @@ int main()
     else
     {
         auto end = steady_clock::now();
-        std::cout << "Loadind model took " << duration_cast<microseconds>(end - begin).count() / 1E+6
+        std::cout << "Loading model took " << duration_cast<microseconds>(end - begin).count() / 1E+6
                   << " seconds" << std::endl;
     }
 

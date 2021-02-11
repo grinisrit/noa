@@ -564,4 +564,21 @@ namespace ghmc::pms::dcs
         default_photonuclear,
         default_ionisation};
 
+    template <typename DCSKernels>
+    inline auto map_compute_integral(const DCSKernels &dcs_kernels,
+                                     const Result &result,
+                                     const KineticEnergies &K,
+                                     const EnergyTransferMin &xlow,
+                                     const AtomicElement &element,
+                                     const ParticleMass &mu,
+                                     const int min_points,
+                                     const ComputeCEL cel = false)
+    {
+        const auto &[br, pp, ph, io] = dcs_kernels;
+        map_compute_integral(br)(result[0], K, xlow, element, mu, min_points, cel);
+        map_compute_integral(pp)(result[1], K, xlow, element, mu, min_points, cel);
+        map_compute_integral(ph)(result[2], K, xlow, element, mu, min_points, cel);
+        map_compute_integral(io)(result[3], K, xlow, element, mu, min_points, cel);
+    }
+
 } // namespace ghmc::pms::dcs

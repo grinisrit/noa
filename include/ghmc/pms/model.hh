@@ -83,7 +83,7 @@ namespace ghmc::pms
             auto data = dedx_data.begin();
             auto vals = std::get<mdf::DEDXTable>(data->second).T;
             auto n = vals.size();
-            auto tensor = torch::from_blob(vals.data(), n, torch::kFloat32);
+            auto tensor = torch::from_blob(vals.data(), n, torch::kFloat64);
             table_K = static_cast<Physics *>(this)->scale_table_K(
                 tensor.to(tfs_opt));
             data++;
@@ -91,7 +91,7 @@ namespace ghmc::pms
             {
                 auto it_vals = std::get<mdf::DEDXTable>(it->second).T;
                 auto it_ten = torch::from_blob(
-                    it_vals.data(), n, torch::kFloat32);
+                    it_vals.data(), n, torch::kFloat64);
                 if (!torch::equal(tensor, it_ten))
                 {
                     std::cerr
@@ -121,8 +121,8 @@ namespace ghmc::pms
             {
                 element.I =
                     static_cast<Physics *>(this)->scale_excitation(element.I);
-                elements.emplace_back(element);
-                element_id.emplace(name, id);
+                elements.push_back(element);
+                element_id[name] = id;
                 id++;
             }
         }
@@ -143,7 +143,7 @@ namespace ghmc::pms
                 materials.emplace_back(
                     static_cast<Physics *>(this)->scale_density(density),
                     composition);
-                material_id.emplace(name, id);
+                material_id[name] = id;
                 id++;
             }
         }
@@ -154,19 +154,18 @@ namespace ghmc::pms
             shape[0] = elements.size();
             shape[1] = NPR;
             shape[2] = table_K.numel();
-            return torch::zeros(shape, tfs_opt); 
-        } 
-       
+            return torch::zeros(shape, tfs_opt);
+        }
+
         inline void compute_cel_and_del(const TableCSn &del, const TableCSn &cel)
         {
-            const auto &[br, pp, ph, io] = dcs_kernels;
             const int n = elements.size();
-//#pragma omp parallel for
+#pragma omp parallel for
             for (int el = 0; el < n; el++)
             {
-               
+                dcs::map_compute_integral(dcs_kernels, del[el], table_K, X_FRACTION, elements[el], mass, 180, false);
+                dcs::map_compute_integral(dcs_kernels, cel[el], table_K, X_FRACTION, elements[el], mass, 180, true);
             }
-           
         }
 
         inline Status initialise_physics(
@@ -174,12 +173,14 @@ namespace ghmc::pms
         {
             set_elements(std::get<mdf::Elements>(mdf_settings));
             set_materials(std::get<mdf::Materials>(mdf_settings));
+            
             if (!set_table_K(dedx_data))
                 return false;
-       
+
             table_CSn = init_table_CSn();
             const auto table_cel = init_table_CSn();
-
+            compute_cel_and_del(table_CSn, table_cel);
+   
             return true;
         }
 
