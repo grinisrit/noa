@@ -42,6 +42,8 @@ namespace ghmc::pms::dcs
     using RecoilEnergies = torch::Tensor;
     using Result = torch::Tensor; // Receiver tensor for calculations result
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
+    using CSTab = torch::Tensor;
+    using CSComputed = torch::Tensor;
 
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
@@ -581,6 +583,21 @@ namespace ghmc::pms::dcs
         map_compute_integral(pp)(result[1], K, xlow, element, mu, min_points, cel);
         map_compute_integral(ph)(result[2], K, xlow, element, mu, min_points, cel);
         map_compute_integral(io)(result[3], K, xlow, element, mu, min_points, cel);
+    }
+
+    inline Result compute_be_cel(
+        const CSTab &br,
+        const CSTab &pp,
+        const CSTab &ph,
+        const CSTab &io,
+        const CSComputed &cs)
+    {
+        auto be_cel = torch::zeros_like(br);
+        be_cel += torch::where(cs[0] < br, cs[0], br);
+        be_cel += torch::where(cs[1] < pp, cs[1], pp);
+        be_cel += torch::where(cs[2] < ph, cs[2], ph);
+        be_cel += torch::where(cs[3] < io, cs[3], io);
+        return be_cel;
     }
 
 } // namespace ghmc::pms::dcs

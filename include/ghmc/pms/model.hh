@@ -40,6 +40,9 @@ namespace ghmc::pms
 
     using namespace ghmc::utils;
 
+    using EnergyScale = double;
+    using DensityScale = double;
+
     using Elements = std::vector<AtomicElement>;
     using ElementId = int;
     using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
@@ -61,9 +64,18 @@ namespace ghmc::pms
     using MaterialsDensityEffect = std::vector<MaterialDensityEffect>;
 
     using Shape = std::vector<int64_t>;
-    using TableK = torch::Tensor;                // Kinetic energy tabulations
-    using TableCSn = torch::Tensor;              // CS normalisation tabulations
-    using TableCSf = std::vector<torch::Tensor>; // CS fractions by material
+    using Table = torch::Tensor;
+
+    using TableK = Table;                // Kinetic energy tabulations
+    using TableCSn = Table;              // CS normalisation tabulations
+    using TableCSf = std::vector<Table>; // CS fractions by material
+    using TableCS = Table;               // CS for inelatic DELs
+    using TableDE = Table;               // Average energy loss
+    using TableX = Table;                // CSDA range
+    using TableNIin = Table;             // Interaction lengths
+    using IonisationMax = Table;         // Maximum tabulated a(E)
+    using RadlossMax = Table;            // Maximum tabulated b(E)
+    using TableKt = Table;               // Kinetic threshold for DELs
 
     inline const auto default_ops = torch::dtype(torch::kFloat64).layout(torch::kStrided);
 
@@ -91,12 +103,18 @@ namespace ghmc::pms
         TableK table_K;
         TableCSn table_CSn;
         TableCSf table_CSf;
+        TableCS table_CS;
+        TableDE table_dE;
+        TableX table_X;
+        TableNIin table_NI_in;
+        IonisationMax table_a_max;
+        RadlossMax table_b_max;
+        TableKt table_Kt;
 
-        inline Status check_mass(const mdf::MaterialsDEDXData &dedx_data)
+        inline Status check_mass(mdf::MaterialsDEDXData &dedx_data)
         {
             for (const auto &[material, data] : dedx_data)
-                if (static_cast<Physics *>(this)->scale_mass(
-                        std::get<ParticleMass>(data)) != mass)
+                if (static_cast<Physics *>(this)->scale_energy(std::get<ParticleMass>(data)) != mass)
                 {
                     std::cerr << "Inconsistent particle mass in "
                                  "dedx data for "
@@ -106,20 +124,19 @@ namespace ghmc::pms
             return true;
         }
 
-        inline Status set_table_K(const mdf::MaterialsDEDXData &dedx_data)
+        inline Status set_table_K(mdf::MaterialsDEDXData &dedx_data)
         {
             auto data = dedx_data.begin();
-            auto vals = std::get<mdf::DEDXTable>(data->second).T;
+            auto &vals = std::get<mdf::DEDXTable>(data->second).T;
             auto n = vals.size();
-            auto tensor = torch::from_blob(vals.data(), n, torch::kFloat64);
-            table_K = static_cast<Physics *>(this)->scale_table_K(
-                tensor.to(default_ops));
+            auto tensor = torch::from_blob(vals.data(), n, default_ops);
+            table_K = static_cast<Physics *>(this)->scale_energy(tensor);
             data++;
             for (auto &it = data; it != dedx_data.end(); it++)
             {
-                auto it_vals = std::get<mdf::DEDXTable>(it->second).T;
+                auto &it_vals = std::get<mdf::DEDXTable>(it->second).T;
                 auto it_ten = torch::from_blob(
-                    it_vals.data(), n, torch::kFloat64);
+                    it_vals.data(), n, default_ops);
                 if (!torch::equal(tensor, it_ten))
                 {
                     std::cerr
@@ -132,7 +149,7 @@ namespace ghmc::pms
         }
 
         inline Status perform_initial_checks(const mdf::Settings &mdf_settings,
-                                             const mdf::MaterialsDEDXData &dedx_data)
+                                             mdf::MaterialsDEDXData &dedx_data)
         {
             if (!check_ZoA(mdf_settings, dedx_data))
                 return false;
@@ -147,8 +164,7 @@ namespace ghmc::pms
             elements.reserve(mdf_elements.size());
             for (auto [name, element] : mdf_elements)
             {
-                element.I =
-                    static_cast<Physics *>(this)->scale_excitation(element.I);
+                element.I = 1E-6 * static_cast<Physics *>(this)->scale_energy(element.I);
                 elements.push_back(element);
                 element_id[name] = id;
                 element_name.push_back(name);
@@ -157,7 +173,7 @@ namespace ghmc::pms
         }
 
         inline void set_materials(const mdf::Materials &mdf_materials,
-                                  const mdf::MaterialsDEDXData &dedx_data)
+                                  mdf::MaterialsDEDXData &dedx_data)
         {
             int id = 0;
             auto n_mats = mdf_materials.size();
@@ -175,7 +191,7 @@ namespace ghmc::pms
             {
                 auto [_, density, components] = material;
                 int n = components.size();
-                auto el_ids = torch::zeros(n, torch::kInt32);
+                auto el_ids = torch::zeros(n, torch::kInt64);
                 auto fracs = torch::zeros(n, default_ops);
                 int iel = 0;
                 for (const auto &[el, frac] : components)
@@ -200,13 +216,13 @@ namespace ghmc::pms
             }
         }
 
-        inline TableCSn init_table_CSn()
+        inline Shape cs_shape(int nelems)
         {
             auto shape = Shape(3);
-            shape[0] = elements.size();
+            shape[0] = nelems;
             shape[1] = dcs::NPR;
             shape[2] = table_K.numel();
-            return torch::zeros(shape, default_ops);
+            return shape;
         }
 
         inline void compute_cel_and_del(const TableCSn &del, const TableCSn &cel)
@@ -220,24 +236,88 @@ namespace ghmc::pms
             }
         }
 
-        inline void init_table_CSf()
+        inline void init_dedx_tables()
         {
+            int nmat = materials.size();
+            int nkin = table_K.numel();
+            table_CSf = TableCSf(nmat);
+            table_CS = torch::zeros({nmat, nkin}, default_ops);
+            table_dE = torch::zeros({nmat, nkin}, default_ops);
+            table_X = torch::zeros({nmat, nkin}, default_ops);
+            table_NI_in = torch::zeros({nmat, nkin}, default_ops);
+            table_a_max = torch::zeros(nmat, default_ops);
+            table_b_max = torch::zeros(nmat, default_ops);
+            table_Kt = torch::zeros(nmat, default_ops);
         }
 
-        inline void set_dedx_tables(const mdf::MaterialsDEDXData &)
+        inline void set_dedx_tables_for_material(
+            MaterialId imat,
+            const TableCSn &cel_table,
+            mdf::DEDXTable &dedx_table)
         {
-            table_CSn = init_table_CSn();
-            const auto table_cel = init_table_CSn();
-            compute_cel_and_del(table_CSn, table_cel);
+            auto nel = materials[imat].element_ids.numel();
+            auto n = table_K.numel();
 
-            int n = materials.size();
-            for (int i = 0; i < n; i++)
+            table_CSf[imat] = materials[imat].fractions.view({nel, 1, 1}) *
+                              table_CSn.index_select(0, materials[imat].element_ids);
+            table_CS[imat] = table_CSf[imat].sum(0).sum(0);
+
+            table_CSf[imat] *= torch::where(table_CS[imat] <= 0.0,
+                                            torch::tensor(0.0, torch::kFloat64), torch::tensor(1.0, torch::kFloat64))
+                                   .view({1, 1, n});
+            table_CSf[imat] = table_CSf[imat].view({nel * dcs::NPR, n}).cumsum(0).view({nel, dcs::NPR, n}) /
+                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, torch::kFloat64), table_CS[imat]).view({1, 1, n});
+
+            auto a = static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.Ionisation.data(), n, default_ops));
+            auto be_cel = dcs::compute_be_cel(
+                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.brems.data(), n, default_ops)),
+                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.pair.data(), n, default_ops)),
+                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.photonuc.data(), n, default_ops)),
+                a, torch::tensordot(materials[imat].fractions, cel_table.index_select(0, materials[imat].element_ids), 0, 0));
+
+            table_dE[imat] = static_cast<Physics *>(this)->scale_dEdX(
+                                 torch::from_blob(dedx_table.dEdX.data(), n, default_ops)) -
+                             be_cel;
+            table_X[imat] = 1.0 / table_dE[imat];
+            table_NI_in[imat] = table_CS[imat] * table_X[imat];
+            table_a_max[imat] = a[n - 1];
+            table_b_max[imat] =
+                (static_cast<Physics *>(this)->scale_dEdX(dedx_table.Radloss[n - 1]) - be_cel[n - 1]) /
+                (mass + table_K[n - 1]);
+
+            int ri = 0;
+            double cs0 = 0.0;
+            double *cs = table_CS[imat].data_ptr<double>();
+            for (ri = 0; ri < n; ri++)
+                if ((cs0 = cs[ri]) > 0)
+                    break;
+            table_Kt[imat] = table_K[ri];
+            double *dE = table_dE[imat].data_ptr<double>();
+            double *NI_in = table_NI_in[imat].data_ptr<double>();
+            for (int i = 0; i < ri; i++)
             {
+                cs[i] = cs0;
+                NI_in[i] = cs0 / dE[i];
             }
         }
 
+        inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data)
+        {
+            table_CSn = torch::zeros(cs_shape(elements.size()), default_ops);
+            const auto cel_table = torch::zeros(cs_shape(elements.size()), default_ops);
+            compute_cel_and_del(table_CSn, cel_table);
+
+            init_dedx_tables();
+            int n = materials.size();
+            for (int imat = 0; imat < n; imat++)
+                set_dedx_tables_for_material(
+                    imat, cel_table,
+                    std::get<mdf::DEDXTable>(dedx_data.at(material_name.at(imat))));
+
+        }
+
         inline Status initialise_physics(
-            const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
+            const mdf::Settings &mdf_settings, mdf::MaterialsDEDXData &dedx_data)
         {
             set_elements(std::get<mdf::Elements>(mdf_settings));
             set_materials(std::get<mdf::Materials>(mdf_settings), dedx_data);
@@ -255,8 +335,15 @@ namespace ghmc::pms
         const ParticleMass mass;
         const DecayLength ctau;
 
-        PhysicsModel(DCSKernels dcs_kernels_, ParticleMass mass_, DecayLength ctau_)
-            : dcs_kernels{dcs_kernels_}, mass{mass_}, ctau{ctau_} {}
+        PhysicsModel(
+            DCSKernels dcs_kernels_,
+            ParticleMass mass_,
+            DecayLength ctau_)
+            : dcs_kernels{dcs_kernels_},
+              mass{mass_},
+              ctau{ctau_}
+        {
+        }
 
         inline const AtomicElement &get_element(const ElementId id)
         {
@@ -313,9 +400,37 @@ namespace ghmc::pms
         {
             return table_CSf;
         }
+        inline const TableCS &get_table_CS()
+        {
+            return table_CS;
+        }
+        inline const TableCS &get_table_dE()
+        {
+            return table_dE;
+        }
+        inline const TableX &get_table_X()
+        {
+            return table_X;
+        }
+        inline const TableNIin &get_table_NI_in()
+        {
+            return table_NI_in;
+        }
+        inline const IonisationMax &get_table_a_max()
+        {
+            return table_a_max;
+        }
+        inline const IonisationMax &get_table_b_max()
+        {
+            return table_b_max;
+        }
+        inline const TableKt &get_table_Kt()
+        {
+            return table_Kt;
+        }
 
         inline Status load_physics_from(const mdf::Settings &mdf_settings,
-                                        const mdf::MaterialsDEDXData &dedx_data)
+                                        mdf::MaterialsDEDXData &dedx_data)
         {
             if (!perform_initial_checks(mdf_settings, dedx_data))
                 return false;
@@ -328,40 +443,46 @@ namespace ghmc::pms
     template <typename DCSKernels>
     class MuonPhysics : public PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>
     {
-
         friend class PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>;
 
-        inline ParticleMass scale_mass(const ParticleMass &mass)
+        template <typename Energy>
+        inline Energy scale_energy(const Energy &energy)
         {
-            return mass * 1E-3; // from MeV to GeV
+            return energy * 1E-3; // from MeV to GeV
         }
 
-        inline TableK scale_table_K(const TableK &table_K_)
-        {
-            return table_K_ * 1E-3; // from MeV to GeV
-        }
-
-        inline MeanExcitation scale_excitation(const MeanExcitation &I)
-        {
-            return I * 1E-9; // from eV to GeV
-        }
-
-        inline MaterialDensity scale_density(const MaterialDensity &density)
+        template <typename Density>
+        inline Density scale_density(const Density &density)
         {
             return density * 1E+3; // from g/cm^3 to kg/m^3
         }
 
+        template <typename Tables>
+        inline Tables scale_dEdX(const Tables &tables)
+        {
+            return tables * 1E-4; // from MeV cm^2/g to GeV m^2/kg
+        }
+
     public:
         MuonPhysics(DCSKernels dcs_kernels_,
-                    ParticleMass mass_ = MUON_MASS, DecayLength ctau_ = MUON_CTAU)
-            : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(dcs_kernels_, mass_, ctau_) {}
+                    ParticleMass mass_ = MUON_MASS,
+                    DecayLength ctau_ = MUON_CTAU)
+            : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
+                  dcs_kernels_, mass_, ctau_)
+        {
+        }
     };
 
     template <typename DCSKernels>
     struct TauPhysics : MuonPhysics<DCSKernels>
     {
         TauPhysics(DCSKernels dcs_kernels_,
-                   ParticleMass mass_ = TAU_MASS, DecayLength ctau_ = TAU_CTAU) : MuonPhysics<DCSKernels>(dcs_kernels_, mass_, ctau_) {}
+                   ParticleMass mass_ = TAU_MASS,
+                   DecayLength ctau_ = TAU_CTAU)
+            : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
+                  dcs_kernels_, mass_, ctau_)
+        {
+        }
     };
 
     template <typename PumasPhysics, typename DCSKernels>

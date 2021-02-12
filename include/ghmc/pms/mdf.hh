@@ -76,7 +76,7 @@ namespace ghmc::pms::mdf
     };
     struct DEDXTable
     {
-        std::vector<double> T, p, Ionization, brems, pair, photonuc, Radloss,
+        std::vector<double> T, p, Ionisation, brems, pair, photonuc, Radloss,
             dEdX, CSDArange, delta, beta;
     };
     using DEDXData = std::tuple<ParticleMass, DEDXMaterialCoefficients, DEDXTable>;
@@ -313,7 +313,7 @@ namespace ghmc::pms::mdf
 
             table.T.push_back(nums->at(0));
             table.p.push_back(nums->at(1));
-            table.Ionization.push_back(nums->at(2));
+            table.Ionisation.push_back(nums->at(2));
             table.brems.push_back(nums->at(3));
             table.pair.push_back(nums->at(4));
             table.photonuc.push_back(nums->at(5));
