@@ -71,7 +71,8 @@ namespace ghmc::pms::mdf
 
     struct DEDXMaterialCoefficients
     {
-        double ZoA, I, a, k, x0, x1, Cbar, delta0;
+        MaterialDensityEffect density_effect;
+        double ZoA, I;
     };
     struct DEDXTable
     {
@@ -127,9 +128,9 @@ namespace ghmc::pms::mdf
         std::cout << " mass=" << std::get<ParticleMass>(dedx_data) << "\n";
         auto coefs = std::get<DEDXMaterialCoefficients>(dedx_data);
         std::cout << " ZoA=" << coefs.ZoA << ", I=" << coefs.I
-                  << ", a=" << coefs.a << ", k=" << coefs.k
-                  << ", x0=" << coefs.x0 << ", x1=" << coefs.x1
-                  << ", Cbar=" << coefs.Cbar << ", delta0=" << coefs.delta0
+                  << ", a=" << coefs.density_effect.a << ", k=" << coefs.density_effect.k
+                  << ", x0=" << coefs.density_effect.x0 << ", x1=" << coefs.density_effect.x1
+                  << ", Cbar=" << coefs.density_effect.Cbar << ", delta0=" << coefs.density_effect.delta0
                   << "\n";
     }
 
@@ -279,13 +280,13 @@ namespace ghmc::pms::mdf
         if (!nums.has_value())
             return std::nullopt;
 
-        coefs.a = nums->at(0);
-        coefs.k = nums->at(1);
-        coefs.x0 = nums->at(2);
-        coefs.x1 = nums->at(3);
+        coefs.density_effect.a = nums->at(0);
+        coefs.density_effect.k = nums->at(1);
+        coefs.density_effect.x0 = nums->at(2);
+        coefs.density_effect.x1 = nums->at(3);
         coefs.I = nums->at(4);
-        coefs.Cbar = nums->at(5);
-        coefs.delta0 = nums->at(6);
+        coefs.density_effect.Cbar = nums->at(5);
+        coefs.density_effect.delta0 = nums->at(6);
 
         return coefs;
     }

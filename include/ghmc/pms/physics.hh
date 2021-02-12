@@ -45,13 +45,18 @@ namespace ghmc::pms
     using EnergyTransferMin = double; // Relative lower bound of energy transfer
     using ComponentFraction = double;
 
+    struct MaterialDensityEffect
+    {
+        double a, k, x0, x1, Cbar, delta0;
+    };
+
     constexpr double AVOGADRO_NUMBER = 6.02214076E+23;
 
     constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03; // GeV/c^2
     constexpr ParticleMass MUON_MASS = 0.10565839;          // GeV/c^2
     constexpr ParticleMass TAU_MASS = 1.77682;              // GeV/c^2
 
-    constexpr DecayLength MUON_CTAU = 658.654;   // m
+    constexpr DecayLength MUON_CTAU = 658.654;  // m
     constexpr DecayLength TAU_CTAU = 87.03E-06; //m
 
     // Relative switch between Continuous Energy Loss (CEL) and DELs.
@@ -59,7 +64,7 @@ namespace ghmc::pms
 
     // Common elements:
     constexpr AtomicElement STANDARD_ROCK = AtomicElement{
-        22.,      // g/mol
+        22.,       // g/mol
         0.1364E-6, // GeV
         11};
 

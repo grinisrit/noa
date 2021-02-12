@@ -558,6 +558,8 @@ namespace ghmc::pms::dcs
         };
     }
 
+    constexpr int NPR = 4; // Number of DEL processes considered
+
     inline const auto default_kernels = std::tuple{
         default_bremsstrahlung,
         default_pair_production,

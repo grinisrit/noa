@@ -30,6 +30,7 @@
 
 #include "ghmc/pms/mdf.hh"
 #include "ghmc/pms/dcs.hh"
+#include "ghmc/pms/physics.hh"
 #include "ghmc/utils.hh"
 
 #include <torch/torch.h>
@@ -42,18 +43,29 @@ namespace ghmc::pms
     using Elements = std::vector<AtomicElement>;
     using ElementId = int;
     using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
-    using MaterialComposition =
-        std::vector<std::tuple<ComponentFraction, ElementId>>;
-    using Material = std::tuple<MaterialDensity, MaterialComposition>;
-    using MaterialId = int;
-    using Materials = std::vector<Material>;
-    using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
-    using Shape = std::vector<int64_t>;
-    using TableK = torch::Tensor;   // Kinetic energy tabulations
-    using TableCSn = torch::Tensor; // CS normalisation tabulations
+    using ElementNames = std::vector<mdf::ElementName>;
 
-    inline const auto tfs_opt = torch::dtype(torch::kFloat64).layout(torch::kStrided);
-    constexpr int NPR = 4;
+    struct Material
+    {
+        torch::Tensor element_ids;
+        torch::Tensor fractions;
+    };
+    using Materials = std::vector<Material>;
+    using MaterialId = int;
+    using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
+    using MaterialNames = std::vector<mdf::MaterialName>;
+
+    using MaterialsDensity = torch::Tensor;
+    using MaterialsZoA = torch::Tensor;
+    using MaterialsI = torch::Tensor;
+    using MaterialsDensityEffect = std::vector<MaterialDensityEffect>;
+
+    using Shape = std::vector<int64_t>;
+    using TableK = torch::Tensor;                // Kinetic energy tabulations
+    using TableCSn = torch::Tensor;              // CS normalisation tabulations
+    using TableCSf = std::vector<torch::Tensor>; // CS fractions by material
+
+    inline const auto default_ops = torch::dtype(torch::kFloat64).layout(torch::kStrided);
 
     template <typename Physics, typename DCSKernels>
     class PhysicsModel
@@ -63,7 +75,23 @@ namespace ghmc::pms
         using DCSPhotonuclear = typename std::tuple_element<2, DCSKernels>::type;
         using DCSIonisation = typename std::tuple_element<3, DCSKernels>::type;
 
-    protected:
+        Elements elements;
+        ElementIds element_id;
+        ElementNames element_name;
+
+        Materials materials;
+        MaterialIds material_id;
+        MaterialNames material_name;
+
+        MaterialsDensity material_density;
+        MaterialsZoA material_ZoA;
+        MaterialsI material_I;
+        MaterialsDensityEffect material_density_effect;
+
+        TableK table_K;
+        TableCSn table_CSn;
+        TableCSf table_CSf;
+
         inline Status check_mass(const mdf::MaterialsDEDXData &dedx_data)
         {
             for (const auto &[material, data] : dedx_data)
@@ -85,7 +113,7 @@ namespace ghmc::pms
             auto n = vals.size();
             auto tensor = torch::from_blob(vals.data(), n, torch::kFloat64);
             table_K = static_cast<Physics *>(this)->scale_table_K(
-                tensor.to(tfs_opt));
+                tensor.to(default_ops));
             data++;
             for (auto &it = data; it != dedx_data.end(); it++)
             {
@@ -123,27 +151,51 @@ namespace ghmc::pms
                     static_cast<Physics *>(this)->scale_excitation(element.I);
                 elements.push_back(element);
                 element_id[name] = id;
+                element_name.push_back(name);
                 id++;
             }
         }
 
-        inline void set_materials(const mdf::Materials &mdf_materials)
+        inline void set_materials(const mdf::Materials &mdf_materials,
+                                  const mdf::MaterialsDEDXData &dedx_data)
         {
             int id = 0;
+            auto n_mats = mdf_materials.size();
+
+            materials.reserve(n_mats);
+            material_name.reserve(n_mats);
+
+            material_density = torch::zeros(n_mats, default_ops);
+            material_ZoA = torch::zeros(n_mats, default_ops);
+            material_I = torch::zeros(n_mats, default_ops);
+
+            material_density_effect.reserve(n_mats);
+
             for (const auto &[name, material] : mdf_materials)
             {
                 auto [_, density, components] = material;
-                auto composition = MaterialComposition{};
-                composition.reserve(components.size());
-                for (const auto &[el, fraction] : components)
+                int n = components.size();
+                auto el_ids = torch::zeros(n, torch::kInt32);
+                auto fracs = torch::zeros(n, default_ops);
+                int iel = 0;
+                for (const auto &[el, frac] : components)
                 {
-                    auto el_id = element_id.at(el);
-                    composition.emplace_back(fraction, el_id);
+                    el_ids[iel] = element_id.at(el);
+                    fracs[iel++] = frac;
                 }
-                materials.emplace_back(
-                    static_cast<Physics *>(this)->scale_density(density),
-                    composition);
+
+                materials.push_back(Material{el_ids, fracs / fracs.sum()});
                 material_id[name] = id;
+                material_name.push_back(name);
+
+                material_density[id] = static_cast<Physics *>(this)->scale_density(density);
+
+                const auto &coefs = std::get<mdf::DEDXMaterialCoefficients>(dedx_data.at(name));
+
+                material_ZoA[id] = coefs.ZoA;
+                material_I[id] = coefs.I;
+                material_density_effect.push_back(coefs.density_effect);
+
                 id++;
             }
         }
@@ -152,9 +204,9 @@ namespace ghmc::pms
         {
             auto shape = Shape(3);
             shape[0] = elements.size();
-            shape[1] = NPR;
+            shape[1] = dcs::NPR;
             shape[2] = table_K.numel();
-            return torch::zeros(shape, tfs_opt);
+            return torch::zeros(shape, default_ops);
         }
 
         inline void compute_cel_and_del(const TableCSn &del, const TableCSn &cel)
@@ -168,19 +220,33 @@ namespace ghmc::pms
             }
         }
 
+        inline void init_table_CSf()
+        {
+        }
+
+        inline void set_dedx_tables(const mdf::MaterialsDEDXData &)
+        {
+            table_CSn = init_table_CSn();
+            const auto table_cel = init_table_CSn();
+            compute_cel_and_del(table_CSn, table_cel);
+
+            int n = materials.size();
+            for (int i = 0; i < n; i++)
+            {
+            }
+        }
+
         inline Status initialise_physics(
             const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data)
         {
             set_elements(std::get<mdf::Elements>(mdf_settings));
-            set_materials(std::get<mdf::Materials>(mdf_settings));
-            
+            set_materials(std::get<mdf::Materials>(mdf_settings), dedx_data);
+
             if (!set_table_K(dedx_data))
                 return false;
 
-            table_CSn = init_table_CSn();
-            const auto table_cel = init_table_CSn();
-            compute_cel_and_del(table_CSn, table_cel);
-   
+            set_dedx_tables(dedx_data);
+
             return true;
         }
 
@@ -192,14 +258,61 @@ namespace ghmc::pms
         PhysicsModel(DCSKernels dcs_kernels_, ParticleMass mass_, DecayLength ctau_)
             : dcs_kernels{dcs_kernels_}, mass{mass_}, ctau{ctau_} {}
 
-        Elements elements;
-        ElementIds element_id;
+        inline const AtomicElement &get_element(const ElementId id)
+        {
+            return elements.at(id);
+        }
+        inline const AtomicElement &get_element(const mdf::ElementName &name)
+        {
+            return elements.at(element_id.at(name));
+        }
+        inline const mdf::ElementName &get_element_name(const ElementId id)
+        {
+            return element_name.at(id);
+        }
 
-        Materials materials;
-        MaterialIds material_id;
+        inline const Material &get_material(const MaterialId id)
+        {
+            return materials.at(id);
+        }
+        inline const Material &get_material(const mdf::MaterialName &name)
+        {
+            return materials.at(material_id.at(name));
+        }
+        inline const mdf::MaterialName &get_material_name(const MaterialId id)
+        {
+            return material_name.at(id);
+        }
 
-        TableK table_K;
-        TableCSn table_CSn;
+        inline const MaterialsDensity &get_material_density()
+        {
+            return material_density;
+        }
+        inline const MaterialsZoA &get_material_ZoA()
+        {
+            return material_ZoA;
+        }
+        inline const MaterialsI &get_material_I()
+        {
+            return material_I;
+        }
+        inline const MaterialsDensityEffect &get_material_density_effect()
+        {
+            return material_density_effect;
+        }
+
+        inline const TableK &get_table_K()
+        {
+            return table_K;
+        }
+        inline const TableCSn &get_table_CSn()
+        {
+            return table_CSn;
+        }
+        inline const TableCSf &get_table_CSf()
+        {
+            return table_CSf;
+        }
 
         inline Status load_physics_from(const mdf::Settings &mdf_settings,
                                         const mdf::MaterialsDEDXData &dedx_data)
