@@ -44,6 +44,8 @@ namespace ghmc::pms::dcs
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
     using CSTab = torch::Tensor;
     using CSComputed = torch::Tensor;
+    using ThresholdIndex = int;
+    using Thresholds = torch::Tensor;
 
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
@@ -569,14 +571,14 @@ namespace ghmc::pms::dcs
         default_ionisation};
 
     template <typename DCSKernels>
-    inline auto map_compute_integral(const DCSKernels &dcs_kernels,
-                                     const Result &result,
-                                     const KineticEnergies &K,
-                                     const EnergyTransferMin &xlow,
-                                     const AtomicElement &element,
-                                     const ParticleMass &mu,
-                                     const int min_points,
-                                     const ComputeCEL cel = false)
+    inline auto compute_dcs_integrals(const DCSKernels &dcs_kernels,
+                                      const Result &result,
+                                      const KineticEnergies &K,
+                                      const EnergyTransferMin &xlow,
+                                      const AtomicElement &element,
+                                      const ParticleMass &mu,
+                                      const int min_points,
+                                      const ComputeCEL cel = false)
     {
         const auto &[br, pp, ph, io] = dcs_kernels;
         map_compute_integral(br)(result[0], K, xlow, element, mu, min_points, cel);
@@ -598,6 +600,74 @@ namespace ghmc::pms::dcs
         be_cel += torch::where(cs[2] < ph, cs[2], ph);
         be_cel += torch::where(cs[3] < io, cs[3], io);
         return be_cel;
+    }
+
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8886
+     */
+    template <typename DSCKernel>
+    inline void compute_threshold(
+        const DSCKernel &dcs_kernel,
+        const Thresholds &Xt,
+        const KineticEnergies &K,
+        const EnergyTransferMin &xlow,
+        const AtomicElement &element,
+        const ParticleMass &mu,
+        ThresholdIndex th_i)
+    {
+        int n = K.numel();
+        double *pXt = Xt.data_ptr<double>();
+        double *pK = K.data_ptr<double>();
+        for (int i = th_i; i < n; i++)
+        {
+            double x = xlow;
+            while ((x < 1.) && (dcs_kernel(pK[i], pK[i] * x, element, mu) <= 0.))
+                x *= 2;
+            if (x >= 1.)
+                x = 1.;
+            else if (x > X_FRACTION)
+            {
+                const double eps = 1E-02 * X_FRACTION;
+                double x0 = 0.5 * x;
+                double dcs = 0.;
+                for (;;)
+                {
+                    if (dcs == 0.)
+                        x0 += 0.5 * (x - x0);
+                    else
+                    {
+                        const double dx =
+                            x - x0;
+                        x = x0;
+                        x0 -= 0.5 * dx;
+                    }
+                    if ((x - x0) <= eps)
+                        break;
+                    dcs = dcs_kernel(pK[i], pK[i] * x0, element, mu);
+                }
+            }
+            pXt[i] = x;
+        }
+    }
+
+    template <typename DCSKernels>
+    inline void compute_fractional_thresholds(
+        const DCSKernels &dcs_kernels,
+        const Thresholds &Xt,
+        const KineticEnergies &K,
+        const EnergyTransferMin &xlow,
+        const AtomicElement &element,
+        const ParticleMass &mu,
+        ThresholdIndex th_i)
+    {
+        const auto &[br, pp, ph, io] = dcs_kernels;
+        compute_threshold(br, Xt[0], K, xlow, element, mu, th_i);
+        compute_threshold(pp, Xt[1], K, xlow, element, mu, th_i);
+        compute_threshold(ph, Xt[2], K, xlow, element, mu, th_i);
+        compute_threshold(io, Xt[3], K, xlow, element, mu, th_i);
     }
 
 } // namespace ghmc::pms::dcs

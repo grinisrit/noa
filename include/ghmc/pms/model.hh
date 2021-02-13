@@ -76,6 +76,7 @@ namespace ghmc::pms
     using IonisationMax = Table;         // Maximum tabulated a(E)
     using RadlossMax = Table;            // Maximum tabulated b(E)
     using TableKt = Table;               // Kinetic threshold for DELs
+    using TableXt = Table;               // Fraction threshold for DELs
 
     inline const auto default_ops = torch::dtype(torch::kFloat64).layout(torch::kStrided);
 
@@ -110,6 +111,7 @@ namespace ghmc::pms
         IonisationMax table_a_max;
         RadlossMax table_b_max;
         TableKt table_Kt;
+        TableXt table_Xt;
 
         inline Status check_mass(mdf::MaterialsDEDXData &dedx_data)
         {
@@ -231,8 +233,10 @@ namespace ghmc::pms
 #pragma omp parallel for
             for (int el = 0; el < n; el++)
             {
-                dcs::map_compute_integral(dcs_kernels, del[el], table_K, X_FRACTION, elements[el], mass, 180, false);
-                dcs::map_compute_integral(dcs_kernels, cel[el], table_K, X_FRACTION, elements[el], mass, 180, true);
+                dcs::compute_dcs_integrals(
+                    dcs_kernels, del[el], table_K, X_FRACTION, elements[el], mass, 180, false);
+                dcs::compute_dcs_integrals(
+                    dcs_kernels, cel[el], table_K, X_FRACTION, elements[el], mass, 180, true);
             }
         }
 
@@ -250,7 +254,7 @@ namespace ghmc::pms
             table_Kt = torch::zeros(nmat, default_ops);
         }
 
-        inline void set_dedx_tables_for_material(
+        inline dcs::ThresholdIndex set_dedx_tables_for_material(
             MaterialId imat,
             const TableCSn &cel_table,
             mdf::DEDXTable &dedx_table)
@@ -299,6 +303,16 @@ namespace ghmc::pms
                 cs[i] = cs0;
                 NI_in[i] = cs0 / dE[i];
             }
+            return ri;
+        }
+
+        inline void compute_del_threshold(dcs::ThresholdIndex th_i)
+        {
+            table_Xt = torch::ones(cs_shape(elements.size()), default_ops);
+            const int n = elements.size();
+            for (int el = 0; el < n; el++)
+                dcs::compute_fractional_thresholds(
+                    dcs_kernels, table_Xt[el], table_K, X_FRACTION, elements[el], mass, th_i);
         }
 
         inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data)
@@ -309,11 +323,13 @@ namespace ghmc::pms
 
             init_dedx_tables();
             int n = materials.size();
+            dcs::ThresholdIndex th_i = 0;
             for (int imat = 0; imat < n; imat++)
-                set_dedx_tables_for_material(
-                    imat, cel_table,
-                    std::get<mdf::DEDXTable>(dedx_data.at(material_name.at(imat))));
+                th_i = std::max(th_i, set_dedx_tables_for_material(
+                                          imat, cel_table,
+                                          std::get<mdf::DEDXTable>(dedx_data.at(material_name.at(imat)))));
 
+            compute_del_threshold(th_i);
         }
 
         inline Status initialise_physics(
@@ -427,6 +443,10 @@ namespace ghmc::pms
         inline const TableKt &get_table_Kt()
         {
             return table_Kt;
+        }
+        inline const TableXt &get_table_Xt()
+        {
+            return table_Xt;
         }
 
         inline Status load_physics_from(const mdf::Settings &mdf_settings,
