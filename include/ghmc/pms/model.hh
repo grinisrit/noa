@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd.
+ * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd. (roland.grinis@grinisrit.com)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 #include "ghmc/pms/mdf.hh"
 #include "ghmc/pms/dcs.hh"
 #include "ghmc/pms/physics.hh"
-#include "ghmc/utils.hh"
+#include "ghmc/utils/common.hh"
 
 #include <torch/torch.h>
 

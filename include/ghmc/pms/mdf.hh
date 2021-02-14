@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd.
+ * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd. (roland.grinis@grinisrit.com)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,13 @@
 #pragma once
 
 #include "ghmc/pms/physics.hh"
-#include "ghmc/utils.hh"
+#include "ghmc/utils/common.hh"
+#include "ghmc/utils/xml.hh"
 
 #include <algorithm>
 #include <regex>
 #include <unordered_map>
 #include <vector>
-
-#include <pugixml.hpp>
 
 namespace ghmc::pms::mdf
 {
@@ -136,7 +135,7 @@ namespace ghmc::pms::mdf
 
     template <typename MDFComponents, typename Component>
     inline std::optional<MDFComponents> get_mdf_components(
-        const pugi::xml_node &node,
+        const xml::Node &node,
         const std::unordered_map<std::string, Component> &comp_data,
         const std::string &tag)
     {
@@ -169,7 +168,7 @@ namespace ghmc::pms::mdf
     inline std::optional<Settings> parse_settings(
         const GeneratorName &generated_by, const MDFFilePath &mdf_path)
     {
-        auto mdf_doc = pugi::xml_document{};
+        auto mdf_doc = xml::Document{};
         if (!mdf_doc.load_file(mdf_path.string().c_str()))
         {
             std::cerr << "Cannot load XML " << mdf_path << std::endl;
