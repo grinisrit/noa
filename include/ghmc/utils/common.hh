@@ -43,7 +43,8 @@ namespace ghmc::utils
     using Status = bool;
     using Line = std::string;
 
-    inline const double TOLERANCE = 1E-6;
+    constexpr double TOLERANCE = 1E-6;
+    constexpr int SEED = 987654;
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
