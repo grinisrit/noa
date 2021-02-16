@@ -40,21 +40,23 @@ namespace ghmc::pms
 
     using namespace ghmc::utils;
 
-    using EnergyScale = double;
-    using DensityScale = double;
+    using EnergyScale = Scalar;
+    using DensityScale = Scalar;
 
     using Elements = std::vector<AtomicElement>;
-    using ElementId = int;
+    using ElementId = Index;
     using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
+    using ELementIdsList = torch::Tensor;
+    using ElementsFractions = torch::Tensor;
     using ElementNames = std::vector<mdf::ElementName>;
 
     struct Material
     {
-        torch::Tensor element_ids;
-        torch::Tensor fractions;
+        ELementIdsList element_ids;
+        ElementsFractions fractions;
     };
     using Materials = std::vector<Material>;
-    using MaterialId = int;
+    using MaterialId = Index;
     using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
     using MaterialNames = std::vector<mdf::MaterialName>;
 
@@ -78,7 +80,8 @@ namespace ghmc::pms
     using TableKt = Table;               // Kinetic threshold for DELs
     using TableXt = Table;               // Fraction threshold for DELs
 
-    inline const auto default_ops = torch::dtype(torch::kFloat64).layout(torch::kStrided);
+    inline const auto default_dtp = torch::dtype(torch::kFloat64);
+    inline const auto default_ops = default_dtp.layout(torch::kStrided);
 
     template <typename Physics, typename DCSKernels>
     class PhysicsModel
@@ -130,7 +133,7 @@ namespace ghmc::pms
         {
             auto data = dedx_data.begin();
             auto &vals = std::get<mdf::DEDXTable>(data->second).T;
-            auto n = vals.size();
+            const int n = vals.size();
             auto tensor = torch::from_blob(vals.data(), n, default_ops);
             table_K = static_cast<Physics *>(this)->scale_energy(tensor);
             data++;
@@ -178,7 +181,7 @@ namespace ghmc::pms
                                   mdf::MaterialsDEDXData &dedx_data)
         {
             int id = 0;
-            auto n_mats = mdf_materials.size();
+            const int n_mats = mdf_materials.size();
 
             materials.reserve(n_mats);
             material_name.reserve(n_mats);
@@ -192,7 +195,7 @@ namespace ghmc::pms
             for (const auto &[name, material] : mdf_materials)
             {
                 auto [_, density, components] = material;
-                int n = components.size();
+                const int n = components.size();
                 auto el_ids = torch::zeros(n, torch::kInt64);
                 auto fracs = torch::zeros(n, default_ops);
                 int iel = 0;
@@ -242,8 +245,8 @@ namespace ghmc::pms
 
         inline void init_dedx_tables()
         {
-            int nmat = materials.size();
-            int nkin = table_K.numel();
+            const int nmat = materials.size();
+            const int nkin = table_K.numel();
             table_CSf = TableCSf(nmat);
             table_CS = torch::zeros({nmat, nkin}, default_ops);
             table_dE = torch::zeros({nmat, nkin}, default_ops);
@@ -259,18 +262,18 @@ namespace ghmc::pms
             const TableCSn &cel_table,
             mdf::DEDXTable &dedx_table)
         {
-            auto nel = materials[imat].element_ids.numel();
-            auto n = table_K.numel();
+            const int nel = materials[imat].element_ids.numel();
+            const int n = table_K.numel();
 
             table_CSf[imat] = materials[imat].fractions.view({nel, 1, 1}) *
                               table_CSn.index_select(0, materials[imat].element_ids);
             table_CS[imat] = table_CSf[imat].sum(0).sum(0);
 
             table_CSf[imat] *= torch::where(table_CS[imat] <= 0.0,
-                                            torch::tensor(0.0, torch::kFloat64), torch::tensor(1.0, torch::kFloat64))
+                                            torch::tensor(0.0, default_dtp), torch::tensor(1.0, default_dtp))
                                    .view({1, 1, n});
             table_CSf[imat] = table_CSf[imat].view({nel * dcs::NPR, n}).cumsum(0).view({nel, dcs::NPR, n}) /
-                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, torch::kFloat64), table_CS[imat]).view({1, 1, n});
+                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, default_dtp), table_CS[imat]).view({1, 1, n});
 
             auto a = static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.Ionisation.data(), n, default_ops));
             auto be_cel = dcs::compute_be_cel(
@@ -322,7 +325,7 @@ namespace ghmc::pms
             compute_cel_and_del(table_CSn, cel_table);
 
             init_dedx_tables();
-            int n = materials.size();
+            const int n = materials.size();
             dcs::ThresholdIndex th_i = 0;
             for (int imat = 0; imat < n; imat++)
                 th_i = std::max(th_i, set_dedx_tables_for_material(

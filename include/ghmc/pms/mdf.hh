@@ -71,11 +71,11 @@ namespace ghmc::pms::mdf
     struct DEDXMaterialCoefficients
     {
         MaterialDensityEffect density_effect;
-        double ZoA, I;
+        Scalar ZoA, I;
     };
     struct DEDXTable
     {
-        std::vector<double> T, p, Ionisation, brems, pair, photonuc, Radloss,
+        std::vector<Scalar> T, p, Ionisation, brems, pair, photonuc, Radloss,
             dEdX, CSDArange, delta, beta;
     };
     using DEDXData = std::tuple<ParticleMass, DEDXMaterialCoefficients, DEDXTable>;

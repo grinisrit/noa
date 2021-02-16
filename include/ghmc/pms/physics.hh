@@ -28,44 +28,67 @@
 
 #pragma once
 
+#include <torch/torch.h>
+
 namespace ghmc::pms
 {
-    using ParticleMass = double;
-    using DecayLength = double;
-    using AtomicMass = double;
-    using MeanExcitation = double;
-    using AtomicNumber = int;
+    using Scalar = double;
+    using Index = int;
+    using UniversalConst = Scalar;
+    using ParticleMass = Scalar;
+    using DecayLength = Scalar;
+    using AtomicMass = Scalar;
+    using MeanExcitation = Scalar;
+    using AtomicNumber = Index;
     struct AtomicElement
     {
         AtomicMass A;
         MeanExcitation I;
         AtomicNumber Z;
     };
-    using MaterialDensity = double;
-    using EnergyTransferMin = double; // Relative lower bound of energy transfer
-    using ComponentFraction = double;
+    using MaterialDensity = Scalar;
+    using EnergyTransferMin = Scalar; // Relative lower bound of energy transfer
+    using ComponentFraction = Scalar;
 
     struct MaterialDensityEffect
     {
-        double a, k, x0, x1, Cbar, delta0;
+        Scalar a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
     };
 
-    constexpr double AVOGADRO_NUMBER = 6.02214076E+23;
+    constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;
 
     constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03; // GeV/c^2
     constexpr ParticleMass MUON_MASS = 0.10565839;          // GeV/c^2
     constexpr ParticleMass TAU_MASS = 1.77682;              // GeV/c^2
 
     constexpr DecayLength MUON_CTAU = 658.654;  // m
-    constexpr DecayLength TAU_CTAU = 87.03E-06; //m
+    constexpr DecayLength TAU_CTAU = 87.03E-06; // m
 
     // Relative switch between Continuous Energy Loss (CEL) and DELs.
-    constexpr double X_FRACTION = 5E-02;
+    constexpr EnergyTransferMin X_FRACTION = 5E-02;
 
     // Common elements:
     constexpr AtomicElement STANDARD_ROCK = AtomicElement{
         22.,       // g/mol
         0.1364E-6, // GeV
         11};
+
+    using CSHard = torch::Tensor;               // CS for hard events
+    using InvLambda = torch::Tensor;            // Inverse of the mean free grammage
+    using Screening = torch::Tensor;            // Atomic and nuclear screening
+    using FirstOrderReduction = torch::Tensor;  // DCS pole reduction
+    using SecondOrderReduction = torch::Tensor; // DCS pole reduction
+    using FSpin = torch::Tensor;                // Spin correction
+    using FCM = torch::Tensor;                  // Center of Mass to Observer frame transorm
+    struct CoulombData
+    {
+        CSHard cs_hard;
+        InvLambda invlambda;
+        Screening screening;
+        FirstOrderReduction a;
+        SecondOrderReduction b;
+        FSpin fspin;
+        FCM fCM;
+    };
 
 } // namespace ghmc::pms

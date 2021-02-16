@@ -36,15 +36,15 @@
 
 namespace ghmc::pms::dcs
 {
-    using KineticEnergy = double;
-    using RecoilEnergy = double;
+    using KineticEnergy = Scalar;
+    using RecoilEnergy = Scalar;
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
     using Result = torch::Tensor; // Receiver tensor for calculations result
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
     using CSTab = torch::Tensor;
     using CSComputed = torch::Tensor;
-    using ThresholdIndex = int;
+    using ThresholdIndex = Index;
     using Thresholds = torch::Tensor;
 
     template <typename DCSKernel>
