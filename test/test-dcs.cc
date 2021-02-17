@@ -128,3 +128,16 @@ TEST(DCS, CELIonisation)
     ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
 }
 
+TEST(DCS, CoulombFrameParameters)
+{
+    const auto A = STANDARD_ROCK.A * ATOM_ENERGY * 1E-3; // GeV
+    const auto cutoff = 1E-9;
+    auto fCM = torch::zeros({kinetic_energies.numel(), 2}, torch::kFloat64);
+    int i = 0;
+    auto result = vmap<double>(kinetic_energies, [&](const auto &k) {
+        return coulomb_frame_parameters(
+            fCM[i++], k, A, MUON_MASS, cutoff);
+    });
+    ASSERT_TRUE(mean_error<double>(result, pumas_fcm_kinetic).item<double>() < 1E-6);
+    ASSERT_TRUE(mean_error<double>(fCM.view_as(pumas_fcm_lorentz), pumas_fcm_lorentz).item<double>() < 1E-6);
+}

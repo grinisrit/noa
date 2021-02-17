@@ -56,6 +56,7 @@ namespace ghmc::pms
     };
 
     constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;
+    constexpr UniversalConst ATOM_ENERGY = 931.494; // Atomic unit to MeV
 
     constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03; // GeV/c^2
     constexpr ParticleMass MUON_MASS = 0.10565839;          // GeV/c^2
@@ -79,7 +80,7 @@ namespace ghmc::pms
     using FirstOrderReduction = torch::Tensor;  // DCS pole reduction
     using SecondOrderReduction = torch::Tensor; // DCS pole reduction
     using FSpin = torch::Tensor;                // Spin correction
-    using FCM = torch::Tensor;                  // Center of Mass to Observer frame transorm
+    using CMLorentz = torch::Tensor;            // Center of Mass to Observer frame transorm
     struct CoulombData
     {
         CSHard cs_hard;
@@ -88,7 +89,7 @@ namespace ghmc::pms
         FirstOrderReduction a;
         SecondOrderReduction b;
         FSpin fspin;
-        FCM fCM;
+        CMLorentz fCM;
     };
 
 } // namespace ghmc::pms

@@ -602,7 +602,6 @@ namespace ghmc::pms::dcs
         return be_cel;
     }
 
-
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
@@ -668,6 +667,37 @@ namespace ghmc::pms::dcs
         compute_threshold(pp, Xt[1], K, xlow, element, mu, th_i);
         compute_threshold(ph, Xt[2], K, xlow, element, mu, th_i);
         compute_threshold(io, Xt[3], K, xlow, element, mu, th_i);
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
+     */
+    KineticEnergy coulomb_frame_parameters(const CMLorentz &fCM,
+                                           const KineticEnergy &kinetic,
+                                           const AtomicMass &Ma,
+                                           const ParticleMass &mu,
+                                           const KineticEnergy &cutoff)
+    {
+        double kinetic0;
+        double *parameters = fCM.data_ptr<double>();
+        double M2 = mu + Ma;
+        M2 *= M2;
+        const double sCM12i = 1. / sqrt(M2 + 2. * Ma * kinetic);
+        parameters[0] = (kinetic + mu + Ma) * sCM12i;
+        kinetic0 =
+            (kinetic * Ma + mu * (mu + Ma)) * sCM12i -
+            mu;
+        if (kinetic0 < cutoff)
+            kinetic0 = cutoff;
+        const double etot = kinetic + mu + Ma;
+        const double betaCM2 =
+            kinetic * (kinetic + 2. * mu) / (etot * etot);
+        double rM2 = mu / Ma;
+        rM2 *= rM2;
+        parameters[1] = sqrt(rM2 * (1. - betaCM2) + betaCM2);
+        return kinetic0;
     }
 
 } // namespace ghmc::pms::dcs

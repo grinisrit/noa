@@ -114,4 +114,10 @@ namespace ghmc::utils
                computed.numel();
     }
 
+    template <typename Dtype>
+    inline torch::Tensor mean_error(const torch::Tensor &computed, const torch::Tensor &expected)
+    {
+        return torch::abs(computed - expected).sum() / computed.numel();
+    }
+
 } // namespace ghmc::utils
