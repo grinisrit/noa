@@ -106,12 +106,43 @@ namespace ghmc::utils
     }
 
     template <typename Dtype, typename Lambda>
-    inline void vmap(const Lambda &lambda, const torch::Tensor &result)
+    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda)
     {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        auto result = torch::zeros_like(values);
         Dtype *pres = result.data_ptr<Dtype>();
         const int n = result.numel();
         for (int i = 0; i < n; i++)
-            pres[i] = lambda(i);
+            pres[i] = lambda(i, pvals[i]);
+        return result;
+    }
+
+    template <typename Dtype, typename Lambda>
+    inline void vmapi(const torch::Tensor &values, const Lambda &lambda,  const torch::Tensor &result)
+    {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int n = result.numel();
+        for (int i = 0; i < n; i++)
+            pres[i] = lambda(i, pvals[i]);
+    }
+
+    template <typename Dtype, typename Lambda>
+    inline void for_each(const torch::Tensor &values, const Lambda &lambda)
+    {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        const int n = values.numel();
+        for (int i = 0; i < n; i++)
+            lambda(pvals[i]);
+    }
+
+    template <typename Dtype, typename Lambda>
+    inline void for_eachi(const torch::Tensor &values, const Lambda &lambda)
+    {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        const int n = values.numel();
+        for (int i = 0; i < n; i++)
+            lambda(i, pvals[i]);
     }
 
     template <typename Dtype>

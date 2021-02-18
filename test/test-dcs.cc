@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 using namespace ghmc::utils;
+using namespace ghmc::pms;
+using namespace ghmc::pms::dcs;
 
 TEST(DCS, Bremsstrahlung)
 {
@@ -128,20 +130,29 @@ TEST(DCS, CELIonisation)
     ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
 }
 
-TEST(DCS, CalculateCoulombData)
+TEST(DCS, CoulombDataComputation)
 {
+    const int N = kinetic_energies.numel();
     const auto A = STANDARD_ROCK.A * ATOM_ENERGY * 1E-3; // GeV
     const auto cutoff = 1E-9;
-    double *pK = kinetic_energies.data_ptr<double>();
-    auto fCM = torch::zeros({kinetic_energies.numel(), 2}, torch::kFloat64);
-    auto kinetic0 = torch::zeros_like(kinetic_energies);
 
-    vmap<double>([&](int i) { return coulomb_frame_parameters(fCM[i], pK[i], A, MUON_MASS, cutoff); },
-                 kinetic0);
+    auto fCM = torch::zeros({N, 2}, torch::kFloat64);
+    auto sceening = torch::zeros({N, 3}, torch::kFloat64);
+    auto a = torch::zeros({N, 3}, torch::kFloat64);
+    auto b = torch::zeros({N, 3}, torch::kFloat64);
+
+    auto kinetic0 = vmapi<double>(
+        kinetic_energies,
+        [&](const int i, const double &k) { return coulomb_frame_parameters(fCM[i], k, A, MUON_MASS, cutoff); });
+
+    for_eachi<double>(
+        kinetic0,
+        [&](const int i, const double &k) { coulomb_screening_parameters(
+                                                sceening[i], a[i], b[i], k, STANDARD_ROCK, MUON_MASS); });
+
+    //auto fspins = vmap<double>(kinetic0, [](const auto &k) { return coulomb_spin_factor(k, MUON_MASS); });
+
     
-    auto fspins = vmap<double>(kinetic0, [](const auto &k) {return coulomb_spin_factor(k, MUON_MASS);});
-
-    ASSERT_TRUE(mean_error<double>(kinetic0, pumas_fcm_kinetic).item<double>() < 1E-6);
-    ASSERT_TRUE(mean_error<double>(fCM.view_as(pumas_fcm_lorentz), pumas_fcm_lorentz).item<double>() < 1E-6);
-    ASSERT_TRUE(mean_error<double>(fspins, pumas_fspins).item<double>() < 1E-6);
+    ASSERT_TRUE(mean_error<double>(fCM.view_as(pumas_fcm_lorentz), pumas_fcm_lorentz).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<double>(sceening.view_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
 }

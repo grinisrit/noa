@@ -2,6 +2,9 @@
 
 #include <benchmark/benchmark.h>
 
+using namespace ghmc::pms;
+using namespace ghmc::pms::dcs;
+
 static void DCS_Bremsstrahlung(benchmark::State &state)
 {
     const auto k = kinetic_energies[65].item<double>();

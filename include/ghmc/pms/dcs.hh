@@ -57,10 +57,9 @@ namespace ghmc::pms::dcs
                              const AtomicElement &element,
                              const ParticleMass &mu) {
             const double *pq = q.data_ptr<double>();
-            int i = 0;
-            ghmc::utils::vmap<double>(
+            ghmc::utils::vmapi<double>(
                 K,
-                [&](const auto &k) { return dcs_kernel(k, pq[i++], element, mu); },
+                [&](const int i, const auto &k) { return dcs_kernel(k, pq[i], element, mu); },
                 result);
         };
     }
@@ -706,12 +705,85 @@ namespace ghmc::pms::dcs
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6038
      */
     Scalar coulomb_spin_factor(const KineticEnergy &kinetic, const ParticleMass &mu)
     {
         const double e = kinetic + mu;
         return kinetic * (e + mu) / (e * e);
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5934
+     */
+    void coulomb_screening_parameters(const Screening &screening,
+                                      const FirstOrderReduction &a,
+                                      const SecondOrderReduction &b,
+                                      const KineticEnergy &kinetic,
+                                      const AtomicElement &element,
+                                      const ParticleMass &mu)
+    {
+        double *pscreen = screening.data_ptr<double>();
+        double *pa = a.data_ptr<double>();
+        double *pb = b.data_ptr<double>();
+
+        /* Nuclear screening. */
+        const double third = 1. / 3;
+        const double A13 = pow(element.A, third);
+        const double R1 = 1.02934 * A13 + 0.435;
+        const double R2 = 2.;
+        const double p2 = kinetic * (kinetic + 2. * mu);
+        const double d = 5.8406E-02 / p2;
+        pscreen[1] = d / (R1 * R1);
+        pscreen[2] = d / (R2 * R2);
+
+        /* Atomic Moliere screening with Coulomb correction from Kuraev et al.
+         * Phys. Rev. D 89, 116016 (2014). Valid for ultra-relativistic
+         * particles only.
+         */
+        const int Z = element.Z;
+        const double etot = kinetic + mu;
+        const double ZE = Z * etot;
+        const double zeta2 = 5.3251346E-05 * (ZE * ZE) / p2;
+        double cK;
+        if (zeta2 > 1.)
+        {
+            /* Let's perform the serie computation. */
+            int i, n = 10 + Z;
+            double f = 0.;
+            for (i = 1; i <= n; i++)
+                f += zeta2 / (i * (i * i + zeta2));
+            cK = exp(f);
+        }
+        else
+        {
+            /* Let's use Kuraev's approximate expression. */
+            cK = exp(1. - 1. / (1. + zeta2) +
+                     zeta2 * (0.2021 + zeta2 * (0.0083 * zeta2 - 0.0369)));
+        }
+
+        /* Original Moliere's atomic screening, considered as a reference
+         * value at low energies.
+         */
+        const double cM = 1. + 3.34 * zeta2;
+
+        /* Atomic screening interpolation. */
+        double r = kinetic / etot;
+        r *= r;
+        const double c = r * cK + (1. - r) * cM;
+        pscreen[0] = 5.179587126E-12 * pow(Z, 2. / 3.) * c / p2;
+
+        const double d01 = 1. / (pscreen[0] - pscreen[1]);
+        const double d02 = 1. / (pscreen[0] - pscreen[2]);
+        const double d12 = 1. / (pscreen[1] - pscreen[2]);
+        pb[0] = d01 * d01 * d02 * d02;
+        pb[1] = d01 * d01 * d12 * d12;
+        pb[2] = d12 * d12 * d02 * d02;
+        pa[0] = 2. * pb[0] * (d01 + d02);
+        pa[1] = 2. * pb[1] * (d12 - d01);
+        pa[2] = -2. * pb[2] * (d12 + d02);
     }
 
 } // namespace ghmc::pms::dcs

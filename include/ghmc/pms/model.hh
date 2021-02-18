@@ -38,8 +38,6 @@
 namespace ghmc::pms
 {
 
-    using namespace ghmc::utils;
-
     using EnergyScale = Scalar;
     using DensityScale = Scalar;
 
@@ -116,7 +114,7 @@ namespace ghmc::pms
         TableKt table_Kt;
         TableXt table_Xt;
 
-        inline Status check_mass(mdf::MaterialsDEDXData &dedx_data)
+        inline utils::Status check_mass(mdf::MaterialsDEDXData &dedx_data)
         {
             for (const auto &[material, data] : dedx_data)
                 if (static_cast<Physics *>(this)->scale_energy(std::get<ParticleMass>(data)) != mass)
@@ -129,7 +127,7 @@ namespace ghmc::pms
             return true;
         }
 
-        inline Status set_table_K(mdf::MaterialsDEDXData &dedx_data)
+        inline utils::Status set_table_K(mdf::MaterialsDEDXData &dedx_data)
         {
             auto data = dedx_data.begin();
             auto &vals = std::get<mdf::DEDXTable>(data->second).T;
@@ -153,7 +151,7 @@ namespace ghmc::pms
             return true;
         }
 
-        inline Status perform_initial_checks(const mdf::Settings &mdf_settings,
+        inline utils::Status perform_initial_checks(const mdf::Settings &mdf_settings,
                                              mdf::MaterialsDEDXData &dedx_data)
         {
             if (!check_ZoA(mdf_settings, dedx_data))
@@ -335,7 +333,7 @@ namespace ghmc::pms
             compute_del_threshold(th_i);
         }
 
-        inline Status initialise_physics(
+        inline utils::Status initialise_physics(
             const mdf::Settings &mdf_settings, mdf::MaterialsDEDXData &dedx_data)
         {
             set_elements(std::get<mdf::Elements>(mdf_settings));
@@ -452,7 +450,7 @@ namespace ghmc::pms
             return table_Xt;
         }
 
-        inline Status load_physics_from(const mdf::Settings &mdf_settings,
+        inline utils::Status load_physics_from(const mdf::Settings &mdf_settings,
                                         mdf::MaterialsDEDXData &dedx_data)
         {
             if (!perform_initial_checks(mdf_settings, dedx_data))
