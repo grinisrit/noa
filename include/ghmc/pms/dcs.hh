@@ -46,6 +46,7 @@ namespace ghmc::pms::dcs
     using CSComputed = torch::Tensor;
     using ThresholdIndex = Index;
     using Thresholds = torch::Tensor;
+    using AtomicMassEnergy = Scalar; // Element's atomic mass in energy units
 
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
@@ -57,9 +58,10 @@ namespace ghmc::pms::dcs
                              const ParticleMass &mu) {
             const double *pq = q.data_ptr<double>();
             int i = 0;
-            ghmc::utils::vmap<double>(result, K, [&](const auto &k) {
-                return dcs_kernel(k, pq[i++], element, mu);
-            });
+            ghmc::utils::vmap<double>(
+                K,
+                [&](const auto &k) { return dcs_kernel(k, pq[i++], element, mu); },
+                result);
         };
     }
 
@@ -96,10 +98,11 @@ namespace ghmc::pms::dcs
                              const ParticleMass &mu,
                              const int min_points,
                              const ComputeCEL cel = false) {
-            ghmc::utils::vmap<double>(result, K, [&](const double &k) {
-                return compute_integral(dcs_kernel)(
-                    k, xlow, element, mu, min_points, cel);
-            });
+            ghmc::utils::vmap<double>(
+                K,
+                [&](const double &k) { return compute_integral(dcs_kernel)(
+                                           k, xlow, element, mu, min_points, cel); },
+                result);
         };
     }
 
@@ -676,7 +679,7 @@ namespace ghmc::pms::dcs
      */
     KineticEnergy coulomb_frame_parameters(const CMLorentz &fCM,
                                            const KineticEnergy &kinetic,
-                                           const AtomicMass &Ma,
+                                           const AtomicMassEnergy &Ma,
                                            const ParticleMass &mu,
                                            const KineticEnergy &cutoff)
     {
@@ -698,6 +701,17 @@ namespace ghmc::pms::dcs
         rM2 *= rM2;
         parameters[1] = sqrt(rM2 * (1. - betaCM2) + betaCM2);
         return kinetic0;
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
+     */
+    Scalar coulomb_spin_factor(const KineticEnergy &kinetic, const ParticleMass &mu)
+    {
+        const double e = kinetic + mu;
+        return kinetic * (e + mu) / (e * e);
     }
 
 } // namespace ghmc::pms::dcs

@@ -96,13 +96,22 @@ namespace ghmc::utils
     }
 
     template <typename Dtype, typename Lambda>
-    inline void vmap(const torch::Tensor &result, const torch::Tensor &values, const Lambda &lambda)
+    inline void vmap(const torch::Tensor &values, const Lambda &lambda,  const torch::Tensor &result)
     {
         const Dtype *pvals = values.data_ptr<Dtype>();
         Dtype *pres = result.data_ptr<Dtype>();
         const int n = result.numel();
         for (int i = 0; i < n; i++)
             pres[i] = lambda(pvals[i]);
+    }
+
+    template <typename Dtype, typename Lambda>
+    inline void vmap(const Lambda &lambda, const torch::Tensor &result)
+    {
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int n = result.numel();
+        for (int i = 0; i < n; i++)
+            pres[i] = lambda(i);
     }
 
     template <typename Dtype>
