@@ -34,6 +34,7 @@ namespace ghmc::pms
 {
     using Scalar = double;
     using Index = int;
+    using Index64 = int64_t;
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
     using DecayLength = Scalar;
@@ -73,5 +74,7 @@ namespace ghmc::pms
         22.,       // g/mol
         0.1364E-6, // GeV
         11};
+
+    constexpr Scalar KIN_CUTOFF = 1E-6; // MeV, used in relativistic kinematics
 
 } // namespace ghmc::pms

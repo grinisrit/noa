@@ -130,11 +130,11 @@ TEST(DCS, CELIonisation)
     ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
 }
 
-TEST(DCS, CoulombDataComputation)
+TEST(DCS, CoulombDataCalc)
 {
     const int N = kinetic_energies.numel();
-    const auto A = STANDARD_ROCK.A * ATOM_ENERGY * 1E-3; // GeV
-    const auto cutoff = 1E-9;
+    const auto Ma = STANDARD_ROCK.A * ATOM_ENERGY * 1E-3; // GeV
+    const auto cutoff = KIN_CUTOFF * 1E-3;                // GeV
 
     auto fCM = torch::zeros({N, 2}, torch::kFloat64);
     auto sceening = torch::zeros({N, 3}, torch::kFloat64);
@@ -144,11 +144,11 @@ TEST(DCS, CoulombDataComputation)
 
     auto kinetic0 = vmapi<double>(
         kinetic_energies,
-        [&](const int i, const double &k) { return coulomb_frame_parameters(fCM[i], k, A, MUON_MASS, cutoff); });
+        [&](const int i, const double &k) { return coulomb_frame_parameters(fCM[i], k, Ma, MUON_MASS, cutoff); });
 
-    for_eachi<double>(
+    auto invlambda = vmapi<double>(
         kinetic0,
-        [&](const int i, const double &k) { coulomb_screening_parameters(
+        [&](const int i, const double &k) { return coulomb_screening_parameters(
                                                 sceening[i], a[i], b[i], k, STANDARD_ROCK, MUON_MASS); });
 
     auto fspins = vmap<double>(kinetic0, [](const auto &k) { return coulomb_spin_factor(k, MUON_MASS); });
@@ -158,7 +158,7 @@ TEST(DCS, CoulombDataComputation)
         [&](const int i, const double &fspin) { coulomb_transport_coefficients(
                                                     G[i], sceening[i], a[i], b[i], fspin, 1.); });
 
-    ASSERT_TRUE(mean_error<double>(fCM.view_as(pumas_fcm_lorentz), pumas_fcm_lorentz).item<double>() < 1E-9);
     ASSERT_TRUE(relative_error<double>(sceening.view_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
     ASSERT_TRUE(relative_error<double>(G.view_as(pumas_transport), pumas_transport).item<double>() < 1E-10);
+    ASSERT_TRUE(mean_error<double>(invlambda, pumas_invlambda).item<double>() < 1E-10);
 }

@@ -37,24 +37,26 @@
 namespace ghmc::pms::dcs
 {
 
-    using CSHard = torch::Tensor;               // CS for hard events
-    using InvLambda = torch::Tensor;            // Inverse of the mean free grammage
-    using Screening = torch::Tensor;            // Atomic and nuclear screening
+    using CSHard = torch::Tensor;           // CS for hard events
+    using InvLambda = torch::Tensor;        // Inverse of the mean free grammage
+    using ScreeningFactors = torch::Tensor; // Atomic and nuclear screening factors
+    using FirstScreeningFactor = Scalar;
     using FirstOrderReduction = torch::Tensor;  // DCS pole reduction
     using SecondOrderReduction = torch::Tensor; // DCS pole reduction
     using FSpins = torch::Tensor;               // Spin corrections
     using FSpin = Scalar;
     using CMLorentz = torch::Tensor; // Center of Mass to Observer frame transorm
+    using TransportCoefs = torch::Tensor;
 
     struct CoulombData
     {
-        CSHard cs_hard;
         InvLambda invlambda;
-        Screening screening;
+        ScreeningFactors screening;
         FirstOrderReduction a;
         SecondOrderReduction b;
         FSpins fspin;
         CMLorentz fCM;
+        TransportCoefs G;
     };
 
     using KineticEnergy = Scalar;
@@ -69,7 +71,6 @@ namespace ghmc::pms::dcs
     using Thresholds = torch::Tensor;
     using AtomicMassEnergy = Scalar; // Element's atomic mass in energy units
     using AngularCutOff = Scalar;
-    using TransportCoefs = torch::Tensor;
 
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
@@ -699,11 +700,11 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
      */
-    KineticEnergy coulomb_frame_parameters(const CMLorentz &fCM,
-                                           const KineticEnergy &kinetic,
-                                           const AtomicMassEnergy &Ma,
-                                           const ParticleMass &mu,
-                                           const KineticEnergy &cutoff)
+    inline KineticEnergy coulomb_frame_parameters(const CMLorentz &fCM,
+                                                  const KineticEnergy &kinetic,
+                                                  const AtomicMassEnergy &Ma,
+                                                  const ParticleMass &mu,
+                                                  const KineticEnergy &cutoff)
     {
         double kinetic0;
         double *parameters = fCM.data_ptr<double>();
@@ -730,7 +731,7 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6038
      */
-    Scalar coulomb_spin_factor(const KineticEnergy &kinetic, const ParticleMass &mu)
+    inline Scalar coulomb_spin_factor(const KineticEnergy &kinetic, const ParticleMass &mu)
     {
         const double e = kinetic + mu;
         return kinetic * (e + mu) / (e * e);
@@ -739,14 +740,29 @@ namespace ghmc::pms::dcs
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5992
+     */
+    inline Scalar coulomb_wentzel_path(const FirstScreeningFactor screening,
+                                       const KineticEnergy &kinetic,
+                                       const AtomicElement &element,
+                                       const ParticleMass &mu)
+    {
+        const double d = kinetic * (kinetic + 2. * mu) /
+                         (element.Z * (kinetic + mu));
+        return element.A * 2.54910918E+08 * screening * (1. + screening) * d * d;
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5934
      */
-    void coulomb_screening_parameters(const Screening &screening,
-                                      const FirstOrderReduction &a,
-                                      const SecondOrderReduction &b,
-                                      const KineticEnergy &kinetic,
-                                      const AtomicElement &element,
-                                      const ParticleMass &mu)
+    inline Scalar coulomb_screening_parameters(const ScreeningFactors &screening,
+                                               const FirstOrderReduction &a,
+                                               const SecondOrderReduction &b,
+                                               const KineticEnergy &kinetic,
+                                               const AtomicElement &element,
+                                               const ParticleMass &mu)
     {
         double *pscreen = screening.data_ptr<double>();
         double *pa = a.data_ptr<double>();
@@ -807,6 +823,8 @@ namespace ghmc::pms::dcs
         pa[0] = 2. * pb[0] * (d01 + d02);
         pa[1] = 2. * pb[1] * (d12 - d01);
         pa[2] = -2. * pb[2] * (d12 + d02);
+
+        return 1. / coulomb_wentzel_path(pscreen[0], kinetic, element, mu);
     }
 
     /*
@@ -816,7 +834,7 @@ namespace ghmc::pms::dcs
      */
     void coulomb_transport_coefficients(
         const TransportCoefs &coefficients,
-        const Screening &screening,
+        const ScreeningFactors &screening,
         const FirstOrderReduction &a,
         const SecondOrderReduction &b,
         const FSpin &fspin, const AngularCutOff &mu)

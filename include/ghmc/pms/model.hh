@@ -37,6 +37,7 @@
 
 namespace ghmc::pms
 {
+    using namespace torch::indexing;
 
     using EnergyScale = Scalar;
     using DensityScale = Scalar;
@@ -152,7 +153,7 @@ namespace ghmc::pms
         }
 
         inline utils::Status perform_initial_checks(const mdf::Settings &mdf_settings,
-                                             mdf::MaterialsDEDXData &dedx_data)
+                                                    mdf::MaterialsDEDXData &dedx_data)
         {
             if (!check_ZoA(mdf_settings, dedx_data))
                 return false;
@@ -203,7 +204,7 @@ namespace ghmc::pms
                     fracs[iel++] = frac;
                 }
 
-                materials.push_back(Material{el_ids, fracs / fracs.sum()});
+                materials.push_back(Material{el_ids, fracs});
                 material_id[name] = id;
                 material_name.push_back(name);
 
@@ -291,14 +292,14 @@ namespace ghmc::pms
                 (mass + table_K[n - 1]);
 
             int ri = 0;
-            double cs0 = 0.0;
-            double *cs = table_CS[imat].data_ptr<double>();
+            Scalar cs0 = 0.0;
+            Scalar *cs = table_CS[imat].data_ptr<Scalar>();
             for (ri = 0; ri < n; ri++)
                 if ((cs0 = cs[ri]) > 0)
                     break;
             table_Kt[imat] = table_K[ri];
-            double *dE = table_dE[imat].data_ptr<double>();
-            double *NI_in = table_NI_in[imat].data_ptr<double>();
+            Scalar *dE = table_dE[imat].data_ptr<Scalar>();
+            Scalar *NI_in = table_NI_in[imat].data_ptr<Scalar>();
             for (int i = 0; i < ri; i++)
             {
                 cs[i] = cs0;
@@ -333,6 +334,83 @@ namespace ghmc::pms
             compute_del_threshold(th_i);
         }
 
+        inline void init_transport_model()
+        {
+        }
+
+        inline void compute_coulomb_data(
+            const Index iel,
+            const AtomicElement &element,
+            const dcs::CoulombData &cdata)
+        {
+            const Scalar Ma = static_cast<Physics *>(this)->scale_energy(element.A * ATOM_ENERGY);
+            const Scalar cutoff = static_cast<Physics *>(this)->scale_energy(KIN_CUTOFF);
+
+            const auto &fCM = cdata.fCM[iel];
+            const auto &screen = cdata.screening[iel];
+            const auto &a = cdata.a[iel];
+            const auto &b = cdata.b[iel];
+            const auto &G = cdata.G[iel];
+
+            Scalar *invlambda = cdata.invlambda[iel].data_ptr<Scalar>();
+            Scalar *fspin = cdata.fspin[iel].data_ptr<Scalar>();
+
+            utils::for_eachi<Scalar>(
+                table_K,
+                [&](const int i, const auto &k) {
+                    const double kinetic0 = dcs::coulomb_frame_parameters(fCM[i], k, Ma, mass, cutoff);
+                    invlambda[i] = dcs::coulomb_screening_parameters(screen[i], a[i], b[i], kinetic0, element, mass);
+                    fspin[i] = dcs::coulomb_spin_factor(kinetic0, mass);
+                    dcs::coulomb_transport_coefficients(G[i], screen[i], a[i], b[i], fspin[i], 1.);
+                });
+        }
+
+        inline void compute_coulomb_parameters(const Material &material)
+        {
+            const int n = table_K.numel();
+            const int nel = material.element_ids.numel();
+
+            auto cdata = dcs::CoulombData{};
+            cdata.invlambda = torch::zeros({nel, n}, default_ops);
+            cdata.fspin = torch::zeros({nel, n}, default_ops);
+            cdata.fCM = torch::zeros({nel, n, 2}, default_ops);
+            cdata.G = torch::zeros({nel, n, 2}, default_ops);
+            cdata.screening = torch::zeros({nel, n, 3}, default_ops);
+            cdata.a = torch::zeros({nel, n, 3}, default_ops);
+            cdata.b = torch::zeros({nel, n, 3}, default_ops);
+
+            utils::for_eachi<Index64>(
+                material.element_ids,
+                [&](const int iel, const Index64 &el) {
+                    compute_coulomb_data(iel, elements.at(el), cdata);
+                });
+
+            cdata.invlambda *= material.fractions.view({nel, 1});
+
+            auto G0 = cdata.G.view({nel * n, 2}).index({Ellipsis, 0}).view({nel, n});
+            auto G1 = cdata.G.view({nel * n, 2}).index({Ellipsis, 1}).view({nel, n});
+            auto fCM0 = cdata.fCM.view({nel * n, 2}).index({Ellipsis, 0}).view({nel, n});
+            auto fCM1 = cdata.fCM.view({nel * n, 2}).index({Ellipsis, 1}).view({nel, n});
+            auto screen0 = cdata.screening.view({nel * n, 3}).index({Ellipsis, 0}).view({nel, n});
+
+            auto invlb_m = (cdata.invlambda * G0).sum(0);
+            auto invlb1_m = (cdata.invlambda * G1 * (1. / (fCM0 * (1. + fCM1))).pow(2)).sum(0);
+            auto s_m_h = (cdata.invlambda * screen0).sum(0);
+            auto s_m_l = (cdata.invlambda / screen0).sum(0);
+
+        }
+
+        inline void set_transport_model()
+        {
+            init_transport_model();
+            const int n = materials.size();
+            for (int imat = 0; imat < n; imat++)
+            {
+                std::cout << material_name[imat] << "\n";
+                compute_coulomb_parameters(materials.at(imat));
+            }
+        }
+
         inline utils::Status initialise_physics(
             const mdf::Settings &mdf_settings, mdf::MaterialsDEDXData &dedx_data)
         {
@@ -343,6 +421,8 @@ namespace ghmc::pms
                 return false;
 
             set_dedx_tables(dedx_data);
+
+            set_transport_model();
 
             return true;
         }
@@ -451,7 +531,7 @@ namespace ghmc::pms
         }
 
         inline utils::Status load_physics_from(const mdf::Settings &mdf_settings,
-                                        mdf::MaterialsDEDXData &dedx_data)
+                                               mdf::MaterialsDEDXData &dedx_data)
         {
             if (!perform_initial_checks(mdf_settings, dedx_data))
                 return false;
