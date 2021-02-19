@@ -74,22 +74,4 @@ namespace ghmc::pms
         0.1364E-6, // GeV
         11};
 
-    using CSHard = torch::Tensor;               // CS for hard events
-    using InvLambda = torch::Tensor;            // Inverse of the mean free grammage
-    using Screening = torch::Tensor;            // Atomic and nuclear screening
-    using FirstOrderReduction = torch::Tensor;  // DCS pole reduction
-    using SecondOrderReduction = torch::Tensor; // DCS pole reduction
-    using FSpin = torch::Tensor;                // Spin correction
-    using CMLorentz = torch::Tensor;            // Center of Mass to Observer frame transorm
-    struct CoulombData
-    {
-        CSHard cs_hard;
-        InvLambda invlambda;
-        Screening screening;
-        FirstOrderReduction a;
-        SecondOrderReduction b;
-        FSpin fspin;
-        CMLorentz fCM;
-    };
-
 } // namespace ghmc::pms

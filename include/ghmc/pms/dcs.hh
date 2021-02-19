@@ -36,6 +36,27 @@
 
 namespace ghmc::pms::dcs
 {
+
+    using CSHard = torch::Tensor;               // CS for hard events
+    using InvLambda = torch::Tensor;            // Inverse of the mean free grammage
+    using Screening = torch::Tensor;            // Atomic and nuclear screening
+    using FirstOrderReduction = torch::Tensor;  // DCS pole reduction
+    using SecondOrderReduction = torch::Tensor; // DCS pole reduction
+    using FSpins = torch::Tensor;               // Spin corrections
+    using FSpin = Scalar;
+    using CMLorentz = torch::Tensor; // Center of Mass to Observer frame transorm
+
+    struct CoulombData
+    {
+        CSHard cs_hard;
+        InvLambda invlambda;
+        Screening screening;
+        FirstOrderReduction a;
+        SecondOrderReduction b;
+        FSpins fspin;
+        CMLorentz fCM;
+    };
+
     using KineticEnergy = Scalar;
     using RecoilEnergy = Scalar;
     using KineticEnergies = torch::Tensor;
@@ -47,6 +68,8 @@ namespace ghmc::pms::dcs
     using ThresholdIndex = Index;
     using Thresholds = torch::Tensor;
     using AtomicMassEnergy = Scalar; // Element's atomic mass in energy units
+    using AngularCutOff = Scalar;
+    using TransportCoefs = torch::Tensor;
 
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
@@ -784,6 +807,74 @@ namespace ghmc::pms::dcs
         pa[0] = 2. * pb[0] * (d01 + d02);
         pa[1] = 2. * pb[1] * (d12 - d01);
         pa[2] = -2. * pb[2] * (d12 + d02);
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6160
+     */
+    void coulomb_transport_coefficients(
+        const TransportCoefs &coefficients,
+        const Screening &screening,
+        const FirstOrderReduction &a,
+        const SecondOrderReduction &b,
+        const FSpin &fspin, const AngularCutOff &mu)
+    {
+        double *pcoefs = coefficients.data_ptr<double>();
+        double *pscreen = screening.data_ptr<double>();
+        double *pa = a.data_ptr<double>();
+        double *pb = b.data_ptr<double>();
+
+        const double nuclear_screening =
+            (pscreen[1] < pscreen[2]) ? pscreen[1] : pscreen[2];
+        if (mu < 1E-08 * nuclear_screening)
+        {
+            /* We neglect the nucleus finite size. */
+            const double L = log(1. + mu / pscreen[0]);
+            const double r = mu / (mu + pscreen[0]);
+            const double k = pscreen[0] * (1. + pscreen[0]);
+            pcoefs[0] = k * (r / pscreen[0] - fspin * (L - r));
+            const double I2 = mu - pscreen[0] * (r - 2. * L);
+            pcoefs[1] = 2. * k * (L - r - fspin * I2);
+        }
+        else
+        {
+            /* We need to take all factors into account using a pole
+                 * reduction. */
+            double I0[3], I1[3], I2[3], J0[3], J1[3], J2[3];
+            int i;
+            double mu2 = 0.5 * mu * mu;
+            for (i = 0; i < 3; i++)
+            {
+                double r = mu / (mu + pscreen[i]);
+                double L = log(1. + mu / pscreen[i]);
+                double mu1 = mu;
+                I0[i] = r / pscreen[i];
+                J0[i] = L;
+                I1[i] = L - r;
+                r *= pscreen[i];
+                L *= pscreen[i];
+                J1[i] = mu1 - L;
+                I2[i] = mu1 - 2. * L + r;
+                L *= pscreen[i];
+                mu1 *= pscreen[i];
+                J2[i] = mu2 + L - mu1;
+            }
+
+            const double k = pscreen[0] * (1. + pscreen[0]) *
+                             pscreen[1] * pscreen[1] * pscreen[2] * pscreen[2];
+            pcoefs[0] = pcoefs[1] = 0.;
+            for (i = 0; i < 3; i++)
+            {
+                pcoefs[0] += pa[i] * (J0[i] - fspin * J1[i]) +
+                             pb[i] * (I0[i] - fspin * I1[i]);
+                pcoefs[1] += pa[i] * (J1[i] - fspin * J2[i]) +
+                             pb[i] * (I1[i] - fspin * I2[i]);
+            }
+            pcoefs[0] *= k;
+            pcoefs[1] *= 2. * k;
+        }
     }
 
 } // namespace ghmc::pms::dcs
