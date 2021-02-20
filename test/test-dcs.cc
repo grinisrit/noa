@@ -130,35 +130,30 @@ TEST(DCS, CELIonisation)
     ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
 }
 
-TEST(DCS, CoulombDataCalc)
+TEST(DCS, CoulombDataTransport)
 {
     const int N = kinetic_energies.numel();
-    const auto Ma = STANDARD_ROCK.A * ATOM_ENERGY * 1E-3; // GeV
-    const auto cutoff = KIN_CUTOFF * 1E-3;                // GeV
-
     auto fCM = torch::zeros({N, 2}, torch::kFloat64);
-    auto sceening = torch::zeros({N, 3}, torch::kFloat64);
-    auto a = torch::zeros({N, 3}, torch::kFloat64);
-    auto b = torch::zeros({N, 3}, torch::kFloat64);
+    auto sceening = torch::zeros({N, 9}, torch::kFloat64);
     auto G = torch::zeros({N, 2}, torch::kFloat64);
 
     auto kinetic0 = vmapi<double>(
         kinetic_energies,
-        [&](const int i, const double &k) { return coulomb_frame_parameters(fCM[i], k, Ma, MUON_MASS, cutoff); });
+        [&](const int i, const double &k) { return coulomb_frame_parameters(fCM[i], k, STANDARD_ROCK, MUON_MASS); });
 
     auto invlambda = vmapi<double>(
         kinetic0,
         [&](const int i, const double &k) { return coulomb_screening_parameters(
-                                                sceening[i], a[i], b[i], k, STANDARD_ROCK, MUON_MASS); });
+                                                sceening[i], k, STANDARD_ROCK, MUON_MASS); });
 
     auto fspins = vmap<double>(kinetic0, [](const auto &k) { return coulomb_spin_factor(k, MUON_MASS); });
 
     for_eachi<double>(
         fspins,
         [&](const int i, const double &fspin) { coulomb_transport_coefficients(
-                                                    G[i], sceening[i], a[i], b[i], fspin, 1.); });
+                                                    G[i], sceening[i], fspin, 1.); });
 
-    ASSERT_TRUE(relative_error<double>(sceening.view_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
+    ASSERT_TRUE(relative_error<double>(sceening.slice(1,0,3).reshape_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
     ASSERT_TRUE(relative_error<double>(G.view_as(pumas_transport), pumas_transport).item<double>() < 1E-10);
     ASSERT_TRUE(mean_error<double>(invlambda, pumas_invlambda).item<double>() < 1E-10);
 }

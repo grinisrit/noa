@@ -28,7 +28,7 @@
 
 #pragma once
 
-namespace ghmc::numerics
+namespace ghmc::utils::numerics
 {
 
     // https://pomax.github.io/bezierinfo/legendre-gauss.html
@@ -117,4 +117,4 @@ namespace ghmc::numerics
             min_points,
             N_GQ, xGQ, wGQ);
     }
-} // namespace ghmc::numerics
+} // namespace ghmc::utils::numerics

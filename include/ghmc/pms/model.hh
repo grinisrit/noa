@@ -82,13 +82,27 @@ namespace ghmc::pms
     inline const auto default_dtp = torch::dtype(torch::kFloat64);
     inline const auto default_ops = default_dtp.layout(torch::kStrided);
 
+    struct CoulombWorkspace
+    {
+        dcs::TransportCoefs G;
+        dcs::CMLorentz fCM;
+        dcs::ScreeningFactors screening;
+        dcs::InvLambdas invlambda;
+        dcs::FSpins fspin;
+    };
+
     template <typename Physics, typename DCSKernels>
     class PhysicsModel
     {
-        using DCSBremsstrahlung = typename std::tuple_element<0, DCSKernels>::type;
-        using DCSPairProduction = typename std::tuple_element<1, DCSKernels>::type;
-        using DCSPhotonuclear = typename std::tuple_element<2, DCSKernels>::type;
-        using DCSIonisation = typename std::tuple_element<3, DCSKernels>::type;
+        using DELKernels = typename std::tuple_element<0, DCSKernels>::type;
+        using TTKernels = typename std::tuple_element<1, DCSKernels>::type;
+
+        using DCSBremsstrahlung = typename std::tuple_element<0, DELKernels>::type;
+        using DCSPairProduction = typename std::tuple_element<1, DELKernels>::type;
+        using DCSPhotonuclear = typename std::tuple_element<2, DELKernels>::type;
+        using DCSIonisation = typename std::tuple_element<3, DELKernels>::type;
+
+        using CoulombData = typename std::tuple_element<0, TTKernels>::type;
 
         Elements elements;
         ElementIds element_id;
@@ -236,9 +250,11 @@ namespace ghmc::pms
             for (int el = 0; el < n; el++)
             {
                 dcs::compute_dcs_integrals(
-                    dcs_kernels, del[el], table_K, X_FRACTION, elements[el], mass, 180, false);
+                    std::get<DELKernels>(dcs_kernels), del[el], table_K,
+                    static_cast<Physics *>(this)->x_fraction(), elements[el], mass, 180, false);
                 dcs::compute_dcs_integrals(
-                    dcs_kernels, cel[el], table_K, X_FRACTION, elements[el], mass, 180, true);
+                    std::get<DELKernels>(dcs_kernels), cel[el], table_K,
+                    static_cast<Physics *>(this)->x_fraction(), elements[el], mass, 180, true);
             }
         }
 
@@ -256,7 +272,7 @@ namespace ghmc::pms
             table_Kt = torch::zeros(nmat, default_ops);
         }
 
-        inline dcs::ThresholdIndex set_dedx_tables_for_material(
+        inline dcs::ThresholdIndex compute_dedx_tables(
             MaterialId imat,
             const TableCSn &cel_table,
             mdf::DEDXTable &dedx_table)
@@ -314,7 +330,8 @@ namespace ghmc::pms
             const int n = elements.size();
             for (int el = 0; el < n; el++)
                 dcs::compute_fractional_thresholds(
-                    dcs_kernels, table_Xt[el], table_K, X_FRACTION, elements[el], mass, th_i);
+                    std::get<DELKernels>(dcs_kernels), table_Xt[el], table_K,
+                    static_cast<Physics *>(this)->x_fraction(), elements[el], mass, th_i);
         }
 
         inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data)
@@ -327,87 +344,63 @@ namespace ghmc::pms
             const int n = materials.size();
             dcs::ThresholdIndex th_i = 0;
             for (int imat = 0; imat < n; imat++)
-                th_i = std::max(th_i, set_dedx_tables_for_material(
+                th_i = std::max(th_i, compute_dedx_tables(
                                           imat, cel_table,
                                           std::get<mdf::DEDXTable>(dedx_data.at(material_name.at(imat)))));
 
             compute_del_threshold(th_i);
         }
 
-        inline void init_transport_model()
+        inline CoulombWorkspace init_transport_model()
         {
+            const int nel = elements.size();
+            const int n = table_K.numel();
+            return CoulombWorkspace{
+                torch::zeros({nel, n, 2}, default_ops),
+                torch::zeros({nel, n, 2}, default_ops),
+                torch::zeros({nel, n, 9}, default_ops),
+                torch::zeros({nel, n}, default_ops),
+                torch::zeros({nel, n}, default_ops)};
         }
 
-        inline void compute_coulomb_data(
-            const Index iel,
-            const AtomicElement &element,
-            const dcs::CoulombData &cdata)
+        inline void compute_coulomb_data(const ElementId iel, CoulombWorkspace &cdata)
         {
-            const Scalar Ma = static_cast<Physics *>(this)->scale_energy(element.A * ATOM_ENERGY);
-            const Scalar cutoff = static_cast<Physics *>(this)->scale_energy(KIN_CUTOFF);
-
+            const auto &el = elements.at(iel);
+            const auto &G = cdata.G[iel];
             const auto &fCM = cdata.fCM[iel];
             const auto &screen = cdata.screening[iel];
-            const auto &a = cdata.a[iel];
-            const auto &b = cdata.b[iel];
-            const auto &G = cdata.G[iel];
-
             Scalar *invlambda = cdata.invlambda[iel].data_ptr<Scalar>();
             Scalar *fspin = cdata.fspin[iel].data_ptr<Scalar>();
 
             utils::for_eachi<Scalar>(
                 table_K,
                 [&](const int i, const auto &k) {
-                    const double kinetic0 = dcs::coulomb_frame_parameters(fCM[i], k, Ma, mass, cutoff);
-                    invlambda[i] = dcs::coulomb_screening_parameters(screen[i], a[i], b[i], kinetic0, element, mass);
-                    fspin[i] = dcs::coulomb_spin_factor(kinetic0, mass);
-                    dcs::coulomb_transport_coefficients(G[i], screen[i], a[i], b[i], fspin[i], 1.);
+                    const auto &Gi = G[i];
+                    const auto &screeni = screen[i];
+                    std::get<CoulombData>(std::get<TTKernels>(dcs_kernels))(
+                        fCM[i], screeni, invlambda[i], fspin[i], k, el, mass);
+                    dcs::coulomb_transport_coefficients(Gi, screeni, fspin[i], 1.);
                 });
         }
 
-        inline void compute_coulomb_parameters(const Material &material)
+        inline void compute_scattering_data(const MaterialId, const CoulombWorkspace &)
         {
-            const int n = table_K.numel();
-            const int nel = material.element_ids.numel();
-
-            auto cdata = dcs::CoulombData{};
-            cdata.invlambda = torch::zeros({nel, n}, default_ops);
-            cdata.fspin = torch::zeros({nel, n}, default_ops);
-            cdata.fCM = torch::zeros({nel, n, 2}, default_ops);
-            cdata.G = torch::zeros({nel, n, 2}, default_ops);
-            cdata.screening = torch::zeros({nel, n, 3}, default_ops);
-            cdata.a = torch::zeros({nel, n, 3}, default_ops);
-            cdata.b = torch::zeros({nel, n, 3}, default_ops);
-
-            utils::for_eachi<Index64>(
-                material.element_ids,
-                [&](const int iel, const Index64 &el) {
-                    compute_coulomb_data(iel, elements.at(el), cdata);
-                });
-
-            cdata.invlambda *= material.fractions.view({nel, 1});
-
-            auto G0 = cdata.G.view({nel * n, 2}).index({Ellipsis, 0}).view({nel, n});
-            auto G1 = cdata.G.view({nel * n, 2}).index({Ellipsis, 1}).view({nel, n});
-            auto fCM0 = cdata.fCM.view({nel * n, 2}).index({Ellipsis, 0}).view({nel, n});
-            auto fCM1 = cdata.fCM.view({nel * n, 2}).index({Ellipsis, 1}).view({nel, n});
-            auto screen0 = cdata.screening.view({nel * n, 3}).index({Ellipsis, 0}).view({nel, n});
-
-            auto invlb_m = (cdata.invlambda * G0).sum(0);
-            auto invlb1_m = (cdata.invlambda * G1 * (1. / (fCM0 * (1. + fCM1))).pow(2)).sum(0);
-            auto s_m_h = (cdata.invlambda * screen0).sum(0);
-            auto s_m_l = (cdata.invlambda / screen0).sum(0);
-
         }
 
         inline void set_transport_model()
         {
-            init_transport_model();
-            const int n = materials.size();
-            for (int imat = 0; imat < n; imat++)
+            auto cwork = init_transport_model();
+
+            const int nel = elements.size();
+            for (int iel = 0; iel < nel; iel++)
             {
-                std::cout << material_name[imat] << "\n";
-                compute_coulomb_parameters(materials.at(imat));
+                compute_coulomb_data(iel, cwork);
+            }
+
+            const int nmat = materials.size();
+            for (int imat = 0; imat < nmat; imat++)
+            {
+                compute_scattering_data(imat, cwork);
             }
         }
 
@@ -442,90 +435,90 @@ namespace ghmc::pms
         {
         }
 
-        inline const AtomicElement &get_element(const ElementId id)
+        inline const AtomicElement &get_element(const ElementId id) const
         {
             return elements.at(id);
         }
-        inline const AtomicElement &get_element(const mdf::ElementName &name)
+        inline const AtomicElement &get_element(const mdf::ElementName &name) const
         {
             return elements.at(element_id.at(name));
         }
-        inline const mdf::ElementName &get_element_name(const ElementId id)
+        inline const mdf::ElementName &get_element_name(const ElementId id) const
         {
             return element_name.at(id);
         }
 
-        inline const Material &get_material(const MaterialId id)
+        inline const Material &get_material(const MaterialId id) const
         {
             return materials.at(id);
         }
-        inline const Material &get_material(const mdf::MaterialName &name)
+        inline const Material &get_material(const mdf::MaterialName &name) const
         {
             return materials.at(material_id.at(name));
         }
-        inline const mdf::MaterialName &get_material_name(const MaterialId id)
+        inline const mdf::MaterialName &get_material_name(const MaterialId id) const
         {
             return material_name.at(id);
         }
 
-        inline const MaterialsDensity &get_material_density()
+        inline const MaterialsDensity &get_material_density() const
         {
             return material_density;
         }
-        inline const MaterialsZoA &get_material_ZoA()
+        inline const MaterialsZoA &get_material_ZoA() const
         {
             return material_ZoA;
         }
-        inline const MaterialsI &get_material_I()
+        inline const MaterialsI &get_material_I() const
         {
             return material_I;
         }
-        inline const MaterialsDensityEffect &get_material_density_effect()
+        inline const MaterialsDensityEffect &get_material_density_effect() const
         {
             return material_density_effect;
         }
 
-        inline const TableK &get_table_K()
+        inline const TableK &get_table_K() const
         {
             return table_K;
         }
-        inline const TableCSn &get_table_CSn()
+        inline const TableCSn &get_table_CSn() const
         {
             return table_CSn;
         }
-        inline const TableCSf &get_table_CSf()
+        inline const TableCSf &get_table_CSf() const
         {
             return table_CSf;
         }
-        inline const TableCS &get_table_CS()
+        inline const TableCS &get_table_CS() const
         {
             return table_CS;
         }
-        inline const TableCS &get_table_dE()
+        inline const TableCS &get_table_dE() const
         {
             return table_dE;
         }
-        inline const TableX &get_table_X()
+        inline const TableX &get_table_X() const
         {
             return table_X;
         }
-        inline const TableNIin &get_table_NI_in()
+        inline const TableNIin &get_table_NI_in() const
         {
             return table_NI_in;
         }
-        inline const IonisationMax &get_table_a_max()
+        inline const IonisationMax &get_table_a_max() const
         {
             return table_a_max;
         }
-        inline const IonisationMax &get_table_b_max()
+        inline const IonisationMax &get_table_b_max() const
         {
             return table_b_max;
         }
-        inline const TableKt &get_table_Kt()
+        inline const TableKt &get_table_Kt() const
         {
             return table_Kt;
         }
-        inline const TableXt &get_table_Xt()
+        inline const TableXt &get_table_Xt() const
         {
             return table_Xt;
         }
@@ -547,21 +540,26 @@ namespace ghmc::pms
         friend class PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>;
 
         template <typename Energy>
-        inline Energy scale_energy(const Energy &energy)
+        inline Energy scale_energy(const Energy &energy) const
         {
             return energy * 1E-3; // from MeV to GeV
         }
 
         template <typename Density>
-        inline Density scale_density(const Density &density)
+        inline Density scale_density(const Density &density) const
         {
             return density * 1E+3; // from g/cm^3 to kg/m^3
         }
 
         template <typename Tables>
-        inline Tables scale_dEdX(const Tables &tables)
+        inline Tables scale_dEdX(const Tables &tables) const
         {
             return tables * 1E-4; // from MeV cm^2/g to GeV m^2/kg
+        }
+
+        inline EnergyTransferMin x_fraction() const
+        {
+            return X_FRACTION;
         }
 
     public:

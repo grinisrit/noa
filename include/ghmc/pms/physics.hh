@@ -57,7 +57,7 @@ namespace ghmc::pms
     };
 
     constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;
-    constexpr UniversalConst ATOM_ENERGY = 931.494; // Atomic unit to MeV
+    constexpr UniversalConst ATOMIC_MASS_ENERGY = 0.931494; // Atomic mass to MeV
 
     constexpr ParticleMass ELECTRON_MASS = 0.510998910E-03; // GeV/c^2
     constexpr ParticleMass MUON_MASS = 0.10565839;          // GeV/c^2
@@ -66,7 +66,7 @@ namespace ghmc::pms
     constexpr DecayLength MUON_CTAU = 658.654;  // m
     constexpr DecayLength TAU_CTAU = 87.03E-06; // m
 
-    // Relative switch between Continuous Energy Loss (CEL) and DELs.
+    // Default relative switch between Continuous Energy Loss (CEL) and DELs.
     constexpr EnergyTransferMin X_FRACTION = 5E-02;
 
     // Common elements:
@@ -75,6 +75,8 @@ namespace ghmc::pms
         0.1364E-6, // GeV
         11};
 
-    constexpr Scalar KIN_CUTOFF = 1E-6; // MeV, used in relativistic kinematics
+    constexpr Scalar KIN_CUTOFF = 1E-9;    // GeV, used in relativistic kinematics
+    constexpr Scalar EHS_PATH_MAX = 1E+9; // kg/m^2, max inverse path lenth for Elastic Hard Scattering (EHS) events
+    constexpr Scalar EHS_OVER_MSC = 1E-4; // EHS to 1st transport multiple scattering interaction lenght path ratio
 
 } // namespace ghmc::pms
