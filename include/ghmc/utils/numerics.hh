@@ -117,4 +117,78 @@ namespace ghmc::utils::numerics
             min_points,
             N_GQ, xGQ, wGQ);
     }
+
+    //https://en.wikipedia.org/wiki/Ridders%27_method
+    template <typename Dtype, typename Function>
+    inline std::optional<Dtype> ridders_root(
+        Dtype xa, //The lower bound of the search interval.
+        Dtype xb, //The upper bound of the search interval.
+        //The objective function to resolve.
+        const Function &function,
+        // The initial value at *a*,
+        const std::optional<Dtype> &fa_ = std::nullopt,
+        // The initial value at *b*
+        const std::optional<Dtype> &fb_ = std::nullopt,
+        //The absolute & relative tolerance on the root value.
+        const Dtype &xtol = TOLERANCE,
+        const Dtype &rtol = TOLERANCE,
+        const int max_iter = 100)
+    {
+        //  Check the initial values
+        Dtype fa = (fa_.has_value()) ? fa_.value() : function(xa);
+        Dtype fb = (fb_.has_value()) ? fb_.value() : function(xb);
+
+        if (fa * fb > 0)
+            return std::nullopt;
+        if (fa == 0)
+            return xa;
+        if (fb == 0)
+            return xb;
+
+        // Set the tolerance for the root finding
+        const Dtype tol =
+            xtol + rtol * std::min(std::abs(xa), std::abs(xb));
+
+        // Do the bracketing using Ridder's update rule.
+        Dtype xn = 0.;
+        for (int i = 0; i < max_iter; i++)
+        {
+            Dtype dm = 0.5 * (xb - xa);
+            const Dtype xm = xa + dm;
+            const Dtype fm = function(xm);
+            Dtype sgn = (fb > fa) ? 1. : -1.;
+            Dtype dn = sgn * dm * fm / sqrt(fm * fm - fa * fb);
+            sgn = (dn > 0.) ? 1. : -1.;
+            dn = std::abs(dn);
+            dm = std::abs(dm) - 0.5 * tol;
+            if (dn < dm)
+                dm = dn;
+            xn = xm - sgn * dm;
+            const Dtype fn = function(xn);
+            if (fn * fm < 0.0)
+            {
+                xa = xn;
+                fa = fn;
+                xb = xm;
+                fb = fm;
+            }
+            else if (fn * fa < 0.0)
+            {
+                xb = xn;
+                fb = fn;
+            }
+            else
+            {
+                xa = xn;
+                fa = fn;
+            }
+            if (fn == 0.0 || std::abs(xb - xa) < tol)
+                // A valid bracketing was found
+                return xn;
+        }
+
+        /* The maximum number of iterations was reached*/
+        return std::nullopt;
+    }
+
 } // namespace ghmc::utils::numerics

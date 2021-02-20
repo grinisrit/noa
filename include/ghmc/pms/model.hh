@@ -78,6 +78,7 @@ namespace ghmc::pms
     using RadlossMax = Table;            // Maximum tabulated b(E)
     using TableKt = Table;               // Kinetic threshold for DELs
     using TableXt = Table;               // Fraction threshold for DELs
+    using TableMu0 = Table;              // Angular cutoff for splitting of Coulomb Scattering
 
     inline const auto default_dtp = torch::dtype(torch::kFloat64);
     inline const auto default_ops = default_dtp.layout(torch::kStrided);
@@ -103,6 +104,7 @@ namespace ghmc::pms
         using DCSIonisation = typename std::tuple_element<3, DELKernels>::type;
 
         using CoulombData = typename std::tuple_element<0, TTKernels>::type;
+        using HardScattering = typename std::tuple_element<1, TTKernels>::type;
 
         Elements elements;
         ElementIds element_id;
@@ -128,6 +130,7 @@ namespace ghmc::pms
         RadlossMax table_b_max;
         TableKt table_Kt;
         TableXt table_Xt;
+        TableMu0 table_Mu0;
 
         inline utils::Status check_mass(mdf::MaterialsDEDXData &dedx_data)
         {
@@ -351,10 +354,10 @@ namespace ghmc::pms
             compute_del_threshold(th_i);
         }
 
-        inline CoulombWorkspace init_transport_model()
+        inline CoulombWorkspace init_coulomb_parameters(const int nel, const int nmat)
         {
-            const int nel = elements.size();
             const int n = table_K.numel();
+            table_Mu0 = torch::zeros({nmat, n}, default_ops);
             return CoulombWorkspace{
                 torch::zeros({nel, n, 2}, default_ops),
                 torch::zeros({nel, n, 2}, default_ops),
@@ -383,24 +386,51 @@ namespace ghmc::pms
                 });
         }
 
-        inline void compute_scattering_data(const MaterialId, const CoulombWorkspace &)
+        inline void compute_coulomb_scattering_tables(const MaterialId imat, const CoulombWorkspace &cdata)
         {
+            const auto &elids = materials.at(imat).element_ids;
+            const int nel = elids.numel();
+
+            const auto G = cdata.G.index_select(0, elids).transpose(0, 1);
+            const auto fCM = cdata.fCM.index_select(0, elids).transpose(0, 1);
+            const auto screen = cdata.screening.index_select(0, elids).transpose(0, 1);
+            const auto invlambda =
+                (cdata.invlambda.index_select(0, elids) * materials.at(imat).fractions.view({nel, 1})).transpose(0, 1);
+            const auto fspin = cdata.fspin.index_select(0, elids).transpose(0, 1);
+
+            std::cout << fspin.sizes() << "\n";
+
+            const auto lb_h = torch::zeros_like(table_K);
+            Scalar *plb_h = lb_h.data_ptr<Scalar>();
+            const auto &mu0 = table_Mu0[imat];
+            Scalar *pmu0 = mu0.data_ptr<Scalar>();
+
+            utils::for_eachi<Scalar>(
+                table_K,
+                [&](const int i, const auto &) {
+                    const auto &screeni = screen[i];
+                    const auto &invlambdai = invlambda[i];
+                    const auto &fspini = fspin[i];
+                    std::get<HardScattering>(std::get<TTKernels>(dcs_kernels))(
+                        plb_h[i], pmu0[i], G[i], fCM[i], screeni, invlambdai, fspini);
+                });
         }
 
-        inline void set_transport_model()
+        inline void set_coulomb_parameters()
         {
-            auto cwork = init_transport_model();
-
             const int nel = elements.size();
+            const int nmat = materials.size();
+            auto cdata = init_coulomb_parameters(nel, nmat);
+
             for (int iel = 0; iel < nel; iel++)
             {
-                compute_coulomb_data(iel, cwork);
+                compute_coulomb_data(iel, cdata);
             }
 
-            const int nmat = materials.size();
             for (int imat = 0; imat < nmat; imat++)
             {
-                compute_scattering_data(imat, cwork);
+                std::cout << material_name[imat] << "\n";
+                compute_coulomb_scattering_tables(imat, cdata);
             }
         }
 
@@ -415,7 +445,7 @@ namespace ghmc::pms
 
             set_dedx_tables(dedx_data);
 
-            set_transport_model();
+            set_coulomb_parameters();
 
             return true;
         }
@@ -522,9 +552,14 @@ namespace ghmc::pms
         {
             return table_Xt;
         }
+        inline const TableMu0 &get_table_Mu0() const
+        {
+            return table_Mu0;
+        }
 
-        inline utils::Status load_physics_from(const mdf::Settings &mdf_settings,
-                                               mdf::MaterialsDEDXData &dedx_data)
+        inline utils::Status
+        load_physics_from(const mdf::Settings &mdf_settings,
+                          mdf::MaterialsDEDXData &dedx_data)
         {
             if (!perform_initial_checks(mdf_settings, dedx_data))
                 return false;

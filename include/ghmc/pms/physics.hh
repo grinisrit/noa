@@ -75,8 +75,11 @@ namespace ghmc::pms
         0.1364E-6, // GeV
         11};
 
-    constexpr Scalar KIN_CUTOFF = 1E-9;    // GeV, used in relativistic kinematics
-    constexpr Scalar EHS_PATH_MAX = 1E+9; // kg/m^2, max inverse path lenth for Elastic Hard Scattering (EHS) events
-    constexpr Scalar EHS_OVER_MSC = 1E-4; // EHS to 1st transport multiple scattering interaction lenght path ratio
+    constexpr Scalar KIN_CUTOFF = 1E-9;      // GeV, used in relativistic kinematics
+    constexpr Scalar EHS_PATH_MAX = 1E+9;    // kg/m^2, max inverse path lenth for Elastic Hard Scattering (EHS) events
+    constexpr Scalar EHS_OVER_MSC = 1E-4;    // EHS to 1st transport multiple scattering interaction lenght path ratio
+    constexpr Scalar MAX_SOFT_ANGLE = 1E+00; // degrees, max deflection angle for a soft scattering event
+
+    inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); //Max deflection angle for hard scattering
 
 } // namespace ghmc::pms

@@ -130,12 +130,12 @@ TEST(DCS, CELIonisation)
     ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
 }
 
-TEST(DCS, CoulombDataTransport)
+TEST(DCS, CoulombScattering)
 {
     const int N = kinetic_energies.numel();
-    auto fCM = torch::zeros({N, 2}, torch::kFloat64);
-    auto sceening = torch::zeros({N, 9}, torch::kFloat64);
     auto G = torch::zeros({N, 2}, torch::kFloat64);
+    auto fCM = torch::zeros({N, 2}, torch::kFloat64);
+    auto screen = torch::zeros({N, 9}, torch::kFloat64);
 
     auto kinetic0 = vmapi<double>(
         kinetic_energies,
@@ -144,16 +144,34 @@ TEST(DCS, CoulombDataTransport)
     auto invlambda = vmapi<double>(
         kinetic0,
         [&](const int i, const double &k) { return coulomb_screening_parameters(
-                                                sceening[i], k, STANDARD_ROCK, MUON_MASS); });
+                                                screen[i], k, STANDARD_ROCK, MUON_MASS); });
 
-    auto fspins = vmap<double>(kinetic0, [](const auto &k) { return coulomb_spin_factor(k, MUON_MASS); });
+    auto fspin = vmap<double>(kinetic0, [](const auto &k) { return coulomb_spin_factor(k, MUON_MASS); });
 
     for_eachi<double>(
-        fspins,
+        fspin,
         [&](const int i, const double &fspin) { coulomb_transport_coefficients(
-                                                    G[i], sceening[i], fspin, 1.); });
+                                                    G[i], screen[i], fspin, 1.); });
 
-    ASSERT_TRUE(relative_error<double>(sceening.slice(1,0,3).reshape_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
+    ASSERT_TRUE(relative_error<double>(screen.slice(1, 0, 3).reshape_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
     ASSERT_TRUE(relative_error<double>(G.view_as(pumas_transport), pumas_transport).item<double>() < 1E-10);
     ASSERT_TRUE(mean_error<double>(invlambda, pumas_invlambda).item<double>() < 1E-10);
+
+    G = G.view({N, 1, 2});
+    fCM = fCM.view({N, 1, 2});
+    screen = screen.view({N, 1, 9});
+    invlambda = invlambda.view({N, 1});
+    fspin = fspin.view({N, 1});
+
+    const auto lb_h = torch::zeros_like(kinetic_energies);
+    Scalar *plb_h = lb_h.data_ptr<Scalar>();
+    const auto mu0 = torch::zeros_like(kinetic_energies);
+    Scalar *pmu0 = mu0.data_ptr<Scalar>();
+
+    for (int i = 0; i < N; i++)
+        default_hard_scattering(
+            plb_h[i], pmu0[i], G[i], fCM[i], screen[i], invlambda[i], fspin[i]);
+
+    ASSERT_TRUE(relative_error<double>(mu0, pumas_mu0).item<double>() < 1E-11);
+    ASSERT_TRUE(relative_error<double>(lb_h, pumas_lb_h).item<double>() < 1E-11);
 }
