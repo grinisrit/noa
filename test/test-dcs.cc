@@ -130,7 +130,7 @@ TEST(DCS, CELIonisation)
     ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
 }
 
-TEST(DCS, CoulombScattering)
+TEST(DCS, CoulombHardScattering)
 {
     const int N = kinetic_energies.numel();
     auto G = torch::zeros({N, 2}, torch::kFloat64);
@@ -173,4 +173,15 @@ TEST(DCS, CoulombScattering)
 
     ASSERT_TRUE(relative_error<double>(mu0, pumas_mu0).item<double>() < 1E-11);
     ASSERT_TRUE(relative_error<double>(lb_h, pumas_lb_h).item<double>() < 1E-11);
+}
+
+TEST(DSC, CoulombSoftScattering)
+{
+    auto result = vmap<double>(
+        kinetic_energies, 
+        [](const auto &k){
+            return default_soft_scattering(k, STANDARD_ROCK, MUON_MASS);
+        });
+     ASSERT_TRUE(relative_error<double>(result,pumas_soft_scatter).item<double>() < 1E-12);
+
 }

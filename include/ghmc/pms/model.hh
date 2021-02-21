@@ -81,6 +81,7 @@ namespace ghmc::pms
     using TableMu0 = Table;              // Angular cutoff for splitting of Coulomb Scattering
     using TableLb = Table;               // Interaction lengths for DEL Coulomb events
     using TableNIel = Table;             // EHS number of interaction lengths
+    using TableMs1 = Table;              //Multiple scattering 1st moment
 
     inline const auto default_dtp = torch::dtype(torch::kFloat64);
     inline const auto default_ops = default_dtp.layout(torch::kStrided);
@@ -92,6 +93,7 @@ namespace ghmc::pms
         dcs::ScreeningFactors screening;
         dcs::InvLambdas invlambda;
         dcs::FSpins fspin;
+        dcs::SoftScatter table_ms1;
     };
 
     template <typename Physics, typename DCSKernels>
@@ -107,6 +109,7 @@ namespace ghmc::pms
 
         using CoulombData = typename std::tuple_element<0, TTKernels>::type;
         using HardScattering = typename std::tuple_element<1, TTKernels>::type;
+        using SoftScattering = typename std::tuple_element<2, TTKernels>::type;
 
         Elements elements;
         ElementIds element_id;
@@ -135,6 +138,7 @@ namespace ghmc::pms
         TableMu0 table_Mu0;
         TableLb table_Lb;
         TableNIel table_NI_el;
+        TableMs1 table_Ms1;
 
         inline utils::Status check_mass(mdf::MaterialsDEDXData &dedx_data)
         {
@@ -364,10 +368,12 @@ namespace ghmc::pms
             table_Mu0 = torch::zeros({nmat, nkin}, default_ops);
             table_Lb = torch::zeros_like(table_Mu0);
             table_NI_el = torch::zeros_like(table_Mu0);
+            table_Ms1 = torch::zeros_like(table_Mu0);
             return CoulombWorkspace{
                 torch::zeros({nel, nkin, 2}, default_ops),
                 torch::zeros({nel, nkin, 2}, default_ops),
                 torch::zeros({nel, nkin, 9}, default_ops),
+                torch::zeros({nel, nkin}, default_ops),
                 torch::zeros({nel, nkin}, default_ops),
                 torch::zeros({nel, nkin}, default_ops)};
         }
@@ -380,6 +386,7 @@ namespace ghmc::pms
             const auto &screen = cdata.screening[iel];
             Scalar *invlambda = cdata.invlambda[iel].data_ptr<Scalar>();
             Scalar *fspin = cdata.fspin[iel].data_ptr<Scalar>();
+            Scalar *ms1 = cdata.table_ms1[iel].data_ptr<Scalar>();
 
             utils::for_eachi<Scalar>(
                 table_K,
@@ -389,6 +396,8 @@ namespace ghmc::pms
                     invlambda[i] = std::get<CoulombData>(std::get<TTKernels>(dcs_kernels))(
                         fCM[i], screeni, fspin[i], k, el, mass);
                     dcs::coulomb_transport_coefficients(Gi, screeni, fspin[i], 1.);
+                    ms1[i] = std::get<SoftScattering>(std::get<TTKernels>(dcs_kernels))(
+                        k, el, mass);
                 });
         }
 
@@ -403,23 +412,30 @@ namespace ghmc::pms
             const auto invlambda =
                 (cdata.invlambda.index_select(0, elids) * materials.at(imat).fractions.view({nel, 1})).transpose(0, 1);
             const auto fspin = cdata.fspin.index_select(0, elids).transpose(0, 1);
+            const auto ms1 = cdata.table_ms1.index_select(0, elids).transpose(0, 1);
 
             Scalar *mu0 = table_Mu0[imat].data_ptr<Scalar>();
             Scalar *Lb = table_Lb[imat].data_ptr<Scalar>();
             Scalar *NI_el = table_NI_el[imat].data_ptr<Scalar>();
             Scalar *dE = table_dE[imat].data_ptr<Scalar>();
+            Scalar *Ms1 = table_Ms1[imat].data_ptr<Scalar>();
 
             utils::for_eachi<Scalar>(
                 table_K,
                 [&](const int i, const auto &k) {
+                    const auto Gi = G[i];
+                    const auto fCMi = fCM[i];
                     const auto &screeni = screen[i];
                     const auto &invlambdai = invlambda[i];
                     const auto &fspini = fspin[i];
 
                     const auto lb_h = std::get<HardScattering>(std::get<TTKernels>(dcs_kernels))(
-                        mu0[i], G[i], fCM[i], screeni, invlambdai, fspini);
+                        mu0[i], Gi, fCMi, screeni, invlambdai, fspini);
                     Lb[i] = lb_h * k * (k + 2 * mass);
                     NI_el[i] = 1. / (dE[i] * lb_h);
+
+                    Ms1[i] = dcs::compute_soft_scattering_for_material(
+                        Gi, fCMi, screeni, invlambdai, fspini, ms1[i], mu0[i]);
                 });
         }
 
@@ -429,6 +445,7 @@ namespace ghmc::pms
             const int nmat = materials.size();
             auto cdata = init_coulomb_parameters(nel, nmat);
 
+#pragma omp parallel for
             for (int iel = 0; iel < nel; iel++)
             {
                 compute_coulomb_data(iel, cdata);
@@ -567,6 +584,10 @@ namespace ghmc::pms
         inline const TableNIel &get_table_NI_el() const
         {
             return table_NI_el;
+        }
+        inline const TableMs1 &get_table_Ms1() const
+        {
+            return table_Ms1;
         }
 
         inline utils::Status

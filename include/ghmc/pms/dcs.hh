@@ -58,7 +58,7 @@ namespace ghmc::pms::dcs
     using CMLorentz = torch::Tensor; // Center of Mass to Observer frame transorm
     using AngularCutOff = Scalar;    // Cutoff angle for coulomb scattering
     using TransportCoefs = torch::Tensor;
-    using HSLambda = Scalar; // Hard scattering mean free path
+    using SoftScatter = torch::Tensor; // Soft scattering terms per element
 
     template <typename DCSKernel>
     inline auto map_kernel(const DCSKernel &dcs_kernel)
@@ -973,14 +973,14 @@ namespace ghmc::pms::dcs
                 invlb_m += invlb * G[iel];
                 s_m_h += scr * invlb;
                 s_m_l += invlb / scr;
-                const double d = 1. / (fCM[iel] * (1. + fCM[iel + 1]));
-                invlb1_m += invlb * G[iel + 1] * d * d;
+                const double d = 1. / (fCM[iel] * (1. + fCM[1 + iel]));
+                invlb1_m += invlb * G[1 + iel] * d * d;
             }
 
             // Set the hard scattering mean free path.
             const double lb_m = 1. / invlb_m;
             double lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
-            
+
             // Compute the hard scattering cutoff angle, in the CM.
             if (lb_m < lb_h)
             {
@@ -1049,6 +1049,126 @@ namespace ghmc::pms::dcs
             return lb_h;
         };
 
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6223
+     */
+    inline double transverse_transport_ionisation(
+        const KineticEnergy &kinetic,
+        const AtomicElement &element,
+        const ParticleMass &mass)
+    {
+        // Soft close interactions, restricted to X_FRACTION.
+        const double momentum2 = kinetic * (kinetic + 2. * mass);
+        const double E = kinetic + mass;
+        const double Wmax = 2. * ELECTRON_MASS * momentum2 /
+                            (mass * mass +
+                             ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
+        const double W0 = 2. * momentum2 / ELECTRON_MASS;
+        const double mu_max = Wmax / W0;
+        double mu3 = kinetic * X_FRACTION / W0;
+        if (mu3 > mu_max)
+            mu3 = mu_max;
+        const double mu2 = 0.62 * element.I / W0;
+        if (mu2 >= mu3)
+            return 0.;
+        const double a0 = 0.5 * W0 / momentum2;
+        const double a1 = -1. / Wmax;
+        const double a2 = E * E / (W0 * momentum2);
+        const double cs0 = 1.535336E-05 / element.A; /* m^2/kg/GeV. */
+        return 2. * cs0 * element.Z *
+               (0.5 * a0 * (mu3 * mu3 - mu2 * mu2) + a1 * (mu3 - mu2) +
+                a2 * log(mu3 / mu2));
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6262
+     */
+    inline double transverse_transport_photonuclear(
+        const KineticEnergy &kinetic,
+        const AtomicElement &element,
+        const ParticleMass &mass)
+    {
+        // Integration over the kinetic transfer, q, done with a log sampling.
+        const double E = kinetic + mass;
+        return 2. * utils::numerics::quadrature6<double>(
+                        log(1E-06), 0.,
+                        [&](const double &t) {
+                            const double nu = X_FRACTION * exp(t);
+                            const double q = nu * kinetic;
+
+                            // Analytical integration over mu.
+                            const double m02 = 0.4;
+                            const double q2 = q * q;
+                            const double tmax = 1.876544 * q;
+                            const double tmin =
+                                q2 * mass * mass / (E * (E - q));
+                            const double b1 = 1. / (1. - q2 / m02);
+                            const double c1 = 1. / (1. - m02 / q2);
+                            double L1 = b1 * log((q2 + tmax) / (q2 + tmin));
+                            double L2 = c1 * log((m02 + tmax) / (m02 + tmin));
+                            const double I0 = log(tmax / tmin) - L1 - L2;
+                            L1 *= q2;
+                            L2 *= m02;
+                            const double I1 = L1 + L2;
+                            L1 *= q2;
+                            L2 *= m02;
+                            const double I2 =
+                                (tmax - tmin) * (b1 * q2 + c1 * m02) - L1 - L2;
+                            const double ratio =
+                                (I1 * tmax - I2) / ((I0 * tmax - I1) * kinetic *
+                                                    (kinetic + 2. * mass));
+
+                            return default_photonuclear(kinetic, q, element, mass) * ratio * nu;
+                        },
+                        100);
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8730
+     */
+    inline const auto default_soft_scattering =
+        [](const KineticEnergy &kinetic,
+           const AtomicElement &element,
+           const ParticleMass &mass) {
+            return transverse_transport_ionisation(kinetic, element, mass) +
+                   transverse_transport_photonuclear(kinetic, element, mass);
+        };
+
+    inline Scalar compute_soft_scattering_for_material(
+        const TransportCoefs &coefficients,
+        const CMLorentz &transform,
+        const ScreeningFactors &screening,
+        const InvLambdas &invlambdas,
+        const FSpins &fspins,
+        const SoftScatter &soft_scatter,
+        const AngularCutOff &mu0)
+    {
+        const int nel = invlambdas.numel();
+        double *G = coefficients.data_ptr<double>();
+        double *fCM = transform.data_ptr<double>();
+        double *invlambda = invlambdas.data_ptr<double>();
+        double *fspin = fspins.data_ptr<double>();
+        double *ms1 = soft_scatter.data_ptr<double>();
+
+        double invlb1 = 0.;
+
+        for (int iel = 0; iel < nel; iel++)
+        {
+            dcs::coulomb_transport_coefficients(coefficients[iel], screening[iel], fspin[iel], mu0);
+            const double d = 1. / (fCM[iel] * (1. + fCM[1 + iel]));
+            invlb1 += invlambda[iel] * G[1 + iel] * d * d;
+            invlb1 += ms1[iel];
+        }
+
+        return invlb1;
+    }
+
     constexpr int NPR = 4; // Number of DEL processes considered
 
     inline const auto default_del_kernels = std::tuple{
@@ -1059,7 +1179,8 @@ namespace ghmc::pms::dcs
 
     inline const auto default_tt_kernels = std::tuple{
         default_coulomb_data,
-        default_hard_scattering};
+        default_hard_scattering,
+        default_soft_scattering};
 
     inline const auto default_kernels = std::tuple{
         default_del_kernels,
