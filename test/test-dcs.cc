@@ -169,8 +169,7 @@ TEST(DCS, CoulombScattering)
     Scalar *pmu0 = mu0.data_ptr<Scalar>();
 
     for (int i = 0; i < N; i++)
-        default_hard_scattering(
-            plb_h[i], pmu0[i], G[i], fCM[i], screen[i], invlambda[i], fspin[i]);
+        plb_h[i] = default_hard_scattering(pmu0[i], G[i], fCM[i], screen[i], invlambda[i], fspin[i]);
 
     ASSERT_TRUE(relative_error<double>(mu0, pumas_mu0).item<double>() < 1E-11);
     ASSERT_TRUE(relative_error<double>(lb_h, pumas_lb_h).item<double>() < 1E-11);

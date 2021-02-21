@@ -79,6 +79,8 @@ namespace ghmc::pms
     using TableKt = Table;               // Kinetic threshold for DELs
     using TableXt = Table;               // Fraction threshold for DELs
     using TableMu0 = Table;              // Angular cutoff for splitting of Coulomb Scattering
+    using TableLb = Table;               // Interaction lengths for DEL Coulomb events
+    using TableNIel = Table;             // EHS number of interaction lengths
 
     inline const auto default_dtp = torch::dtype(torch::kFloat64);
     inline const auto default_ops = default_dtp.layout(torch::kStrided);
@@ -131,6 +133,8 @@ namespace ghmc::pms
         TableKt table_Kt;
         TableXt table_Xt;
         TableMu0 table_Mu0;
+        TableLb table_Lb;
+        TableNIel table_NI_el;
 
         inline utils::Status check_mass(mdf::MaterialsDEDXData &dedx_data)
         {
@@ -267,12 +271,12 @@ namespace ghmc::pms
             const int nkin = table_K.numel();
             table_CSf = TableCSf(nmat);
             table_CS = torch::zeros({nmat, nkin}, default_ops);
-            table_dE = torch::zeros({nmat, nkin}, default_ops);
-            table_X = torch::zeros({nmat, nkin}, default_ops);
-            table_NI_in = torch::zeros({nmat, nkin}, default_ops);
-            table_a_max = torch::zeros(nmat, default_ops);
-            table_b_max = torch::zeros(nmat, default_ops);
+            table_dE = torch::zeros_like(table_CS);
+            table_X = torch::zeros_like(table_CS);
+            table_NI_in = torch::zeros_like(table_CS);
             table_Kt = torch::zeros(nmat, default_ops);
+            table_a_max = torch::zeros_like(table_Kt);
+            table_b_max = torch::zeros_like(table_Kt);
         }
 
         inline dcs::ThresholdIndex compute_dedx_tables(
@@ -330,8 +334,8 @@ namespace ghmc::pms
         inline void compute_del_threshold(dcs::ThresholdIndex th_i)
         {
             table_Xt = torch::ones(cs_shape(elements.size()), default_ops);
-            const int n = elements.size();
-            for (int el = 0; el < n; el++)
+            const int nel = elements.size();
+            for (int el = 0; el < nel; el++)
                 dcs::compute_fractional_thresholds(
                     std::get<DELKernels>(dcs_kernels), table_Xt[el], table_K,
                     static_cast<Physics *>(this)->x_fraction(), elements[el], mass, th_i);
@@ -340,7 +344,7 @@ namespace ghmc::pms
         inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data)
         {
             table_CSn = torch::zeros(cs_shape(elements.size()), default_ops);
-            const auto cel_table = torch::zeros(cs_shape(elements.size()), default_ops);
+            const auto cel_table = torch::zeros_like(table_CSn);
             compute_cel_and_del(table_CSn, cel_table);
 
             init_dedx_tables();
@@ -356,14 +360,16 @@ namespace ghmc::pms
 
         inline CoulombWorkspace init_coulomb_parameters(const int nel, const int nmat)
         {
-            const int n = table_K.numel();
-            table_Mu0 = torch::zeros({nmat, n}, default_ops);
+            const int nkin = table_K.numel();
+            table_Mu0 = torch::zeros({nmat, nkin}, default_ops);
+            table_Lb = torch::zeros_like(table_Mu0);
+            table_NI_el = torch::zeros_like(table_Mu0);
             return CoulombWorkspace{
-                torch::zeros({nel, n, 2}, default_ops),
-                torch::zeros({nel, n, 2}, default_ops),
-                torch::zeros({nel, n, 9}, default_ops),
-                torch::zeros({nel, n}, default_ops),
-                torch::zeros({nel, n}, default_ops)};
+                torch::zeros({nel, nkin, 2}, default_ops),
+                torch::zeros({nel, nkin, 2}, default_ops),
+                torch::zeros({nel, nkin, 9}, default_ops),
+                torch::zeros({nel, nkin}, default_ops),
+                torch::zeros({nel, nkin}, default_ops)};
         }
 
         inline void compute_coulomb_data(const ElementId iel, CoulombWorkspace &cdata)
@@ -380,8 +386,8 @@ namespace ghmc::pms
                 [&](const int i, const auto &k) {
                     const auto &Gi = G[i];
                     const auto &screeni = screen[i];
-                    std::get<CoulombData>(std::get<TTKernels>(dcs_kernels))(
-                        fCM[i], screeni, invlambda[i], fspin[i], k, el, mass);
+                    invlambda[i] = std::get<CoulombData>(std::get<TTKernels>(dcs_kernels))(
+                        fCM[i], screeni, fspin[i], k, el, mass);
                     dcs::coulomb_transport_coefficients(Gi, screeni, fspin[i], 1.);
                 });
         }
@@ -398,21 +404,22 @@ namespace ghmc::pms
                 (cdata.invlambda.index_select(0, elids) * materials.at(imat).fractions.view({nel, 1})).transpose(0, 1);
             const auto fspin = cdata.fspin.index_select(0, elids).transpose(0, 1);
 
-            std::cout << fspin.sizes() << "\n";
-
-            const auto lb_h = torch::zeros_like(table_K);
-            Scalar *plb_h = lb_h.data_ptr<Scalar>();
-            const auto &mu0 = table_Mu0[imat];
-            Scalar *pmu0 = mu0.data_ptr<Scalar>();
+            Scalar *mu0 = table_Mu0[imat].data_ptr<Scalar>();
+            Scalar *Lb = table_Lb[imat].data_ptr<Scalar>();
+            Scalar *NI_el = table_NI_el[imat].data_ptr<Scalar>();
+            Scalar *dE = table_dE[imat].data_ptr<Scalar>();
 
             utils::for_eachi<Scalar>(
                 table_K,
-                [&](const int i, const auto &) {
+                [&](const int i, const auto &k) {
                     const auto &screeni = screen[i];
                     const auto &invlambdai = invlambda[i];
                     const auto &fspini = fspin[i];
-                    std::get<HardScattering>(std::get<TTKernels>(dcs_kernels))(
-                        plb_h[i], pmu0[i], G[i], fCM[i], screeni, invlambdai, fspini);
+
+                    const auto lb_h = std::get<HardScattering>(std::get<TTKernels>(dcs_kernels))(
+                        mu0[i], G[i], fCM[i], screeni, invlambdai, fspini);
+                    Lb[i] = lb_h * k * (k + 2 * mass);
+                    NI_el[i] = 1. / (dE[i] * lb_h);
                 });
         }
 
@@ -428,10 +435,7 @@ namespace ghmc::pms
             }
 
             for (int imat = 0; imat < nmat; imat++)
-            {
-                std::cout << material_name[imat] << "\n";
                 compute_coulomb_scattering_tables(imat, cdata);
-            }
         }
 
         inline utils::Status initialise_physics(
@@ -555,6 +559,14 @@ namespace ghmc::pms
         inline const TableMu0 &get_table_Mu0() const
         {
             return table_Mu0;
+        }
+        inline const TableLb &get_table_Lb() const
+        {
+            return table_Lb;
+        }
+        inline const TableNIel &get_table_NI_el() const
+        {
+            return table_NI_el;
         }
 
         inline utils::Status

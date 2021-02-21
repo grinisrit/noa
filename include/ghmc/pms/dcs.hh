@@ -803,14 +803,13 @@ namespace ghmc::pms::dcs
     inline const auto default_coulomb_data =
         [](const CMLorentz &fCM,
            const ScreeningFactors &screening,
-           InvLambda &invlambda,
            FSpin &fspin,
            const KineticEnergy &kinetic,
            const AtomicElement &element,
            const ParticleMass &mass) {
             const double kinetic0 = coulomb_frame_parameters(fCM, kinetic, element, mass);
-            invlambda = coulomb_screening_parameters(screening, kinetic0, element, mass);
             fspin = coulomb_spin_factor(kinetic0, mass);
+            return coulomb_screening_parameters(screening, kinetic0, element, mass);
         };
 
     /*
@@ -951,8 +950,7 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8472
      */
     inline const auto default_hard_scattering =
-        [](HSLambda &lb_h,
-           AngularCutOff &mu0,
+        [](AngularCutOff &mu0,
            const TransportCoefs &coefficients,
            const CMLorentz &transform,
            const ScreeningFactors &screening,
@@ -981,7 +979,7 @@ namespace ghmc::pms::dcs
 
             // Set the hard scattering mean free path.
             const double lb_m = 1. / invlb_m;
-            lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
+            double lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
             
             // Compute the hard scattering cutoff angle, in the CM.
             if (lb_m < lb_h)
@@ -1048,6 +1046,7 @@ namespace ghmc::pms::dcs
                 lb_h = lb_m;
                 mu0 = 0;
             }
+            return lb_h;
         };
 
     constexpr int NPR = 4; // Number of DEL processes considered
