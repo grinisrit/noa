@@ -36,27 +36,26 @@
 
 namespace ghmc::pms::dcs
 {
+    constexpr int NPR = 4; // Number of DEL processes considered
+    constexpr int NSF = 9; // Number of screening factors and pole reduction for Coulomb scattering
 
     using KineticEnergy = Scalar;
     using RecoilEnergy = Scalar;
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
+    using Table = torch::Tensor;  // Generic table
     using Result = torch::Tensor; // Receiver tensor for calculations result
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
-
-    using CSTab = torch::Tensor;
-    using CSComputed = torch::Tensor;
 
     using ThresholdIndex = Index;
     using Thresholds = torch::Tensor;
 
-    using InvLambdas = torch::Tensor; // Inverse of the mean free grammage
-    using InvLambda = Scalar;
+    using InvLambdas = torch::Tensor;       // Inverse of the mean free grammage
     using ScreeningFactors = torch::Tensor; // Atomic and nuclear screening factors & pole reduction
     using FSpins = torch::Tensor;           // Spin corrections
-    using FSpin = Scalar;
-    using CMLorentz = torch::Tensor; // Center of Mass to Observer frame transorm
-    using AngularCutOff = Scalar;    // Cutoff angle for coulomb scattering
+    using CMLorentz = torch::Tensor;        // Center of Mass to Observer frame transorm
+    using AngularCutoff = torch::Tensor;    // Cutoff angle for coulomb scattering
+    using HSMeanFreePath = torch::Tensor;   // Hard scattering mean free path
     using TransportCoefs = torch::Tensor;
     using SoftScatter = torch::Tensor; // Soft scattering terms per element
 
@@ -591,11 +590,11 @@ namespace ghmc::pms::dcs
     }
 
     inline Result compute_be_cel(
-        const CSTab &br,
-        const CSTab &pp,
-        const CSTab &ph,
-        const CSTab &io,
-        const CSComputed &cs)
+        const Table &br,
+        const Table &pp,
+        const Table &ph,
+        const Table &io,
+        const Table &cs)
     {
         auto be_cel = torch::zeros_like(br);
         be_cel += torch::where(cs[0] < br, cs[0], br);
@@ -603,6 +602,28 @@ namespace ghmc::pms::dcs
         be_cel += torch::where(cs[2] < ph, cs[2], ph);
         be_cel += torch::where(cs[3] < io, cs[3], io);
         return be_cel;
+    }
+
+    inline ThresholdIndex compute_kinetic_threshold(
+        const Table &table_CS,
+        const Table &table_dE,
+        const Table &table_NI_in)
+    {
+        int ri = 0;
+        const int nkin = table_CS.numel();
+        Scalar cs0 = 0.0;
+        Scalar *cs = table_CS.data_ptr<Scalar>();
+        for (ri = 0; ri < nkin; ri++)
+            if ((cs0 = cs[ri]) > 0)
+                break;
+        Scalar *dE = table_dE.data_ptr<Scalar>();
+        Scalar *NI_in = table_NI_in.data_ptr<Scalar>();
+        for (int i = 0; i < ri; i++)
+        {
+            cs[i] = cs0;
+            NI_in[i] = cs0 / dE[i];
+        }
+        return ri;
     }
 
     /*
@@ -677,29 +698,28 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
      */
-    inline double coulomb_frame_parameters(const CMLorentz &fCM,
-                                           const KineticEnergy &kinetic,
+    inline double coulomb_frame_parameters(double *fCM,
+                                           const KineticEnergy &K,
                                            const AtomicElement &element,
                                            const ParticleMass &mass)
     {
         double kinetic0;
-        double *parameters = fCM.data_ptr<double>();
         const double Ma = element.A * ATOMIC_MASS_ENERGY;
         double M2 = mass + Ma;
         M2 *= M2;
-        const double sCM12i = 1. / sqrt(M2 + 2. * Ma * kinetic);
-        parameters[0] = (kinetic + mass + Ma) * sCM12i;
+        const double sCM12i = 1. / sqrt(M2 + 2. * Ma * K);
+        fCM[0] = (K + mass + Ma) * sCM12i;
         kinetic0 =
-            (kinetic * Ma + mass * (mass + Ma)) * sCM12i -
+            (K * Ma + mass * (mass + Ma)) * sCM12i -
             mass;
         if (kinetic0 < KIN_CUTOFF)
             kinetic0 = KIN_CUTOFF;
-        const double etot = kinetic + mass + Ma;
+        const double etot = K + mass + Ma;
         const double betaCM2 =
-            kinetic * (kinetic + 2. * mass) / (etot * etot);
+            K * (K + 2. * mass) / (etot * etot);
         double rM2 = mass / Ma;
         rM2 *= rM2;
-        parameters[1] = sqrt(rM2 * (1. - betaCM2) + betaCM2);
+        fCM[1] = sqrt(rM2 * (1. - betaCM2) + betaCM2);
         return kinetic0;
     }
 
@@ -708,10 +728,10 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6038
      */
-    inline FSpin coulomb_spin_factor(const KineticEnergy &kinetic, const ParticleMass &mass)
+    inline double coulomb_spin_factor(const KineticEnergy &K, const ParticleMass &mass)
     {
-        const double e = kinetic + mass;
-        return kinetic * (e + mass) / (e * e);
+        const double e = K + mass;
+        return K * (e + mass) / (e * e);
     }
 
     /*
@@ -719,50 +739,47 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5992
      */
-    inline Scalar coulomb_wentzel_path(const double &screening,
-                                       const KineticEnergy &kinetic,
+    inline double coulomb_wentzel_path(const double &screening,
+                                       const KineticEnergy &K,
                                        const AtomicElement &element,
                                        const ParticleMass &mass)
     {
-        const double d = kinetic * (kinetic + 2. * mass) /
-                         (element.Z * (kinetic + mass));
+        const double d = K * (K + 2. * mass) /
+                         (element.Z * (K + mass));
         return element.A * 2.54910918E+08 * screening * (1. + screening) * d * d;
     }
-
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5934
      */
-    inline InvLambda coulomb_screening_parameters(const ScreeningFactors &screening,
-                                                  const KineticEnergy &kinetic,
-                                                  const AtomicElement &element,
-                                                  const ParticleMass &mass)
+    inline double coulomb_screening_parameters(double *pscreen,
+                                               const KineticEnergy &K,
+                                               const AtomicElement &element,
+                                               const ParticleMass &mass)
     {
-        double *pscreen = screening.data_ptr<double>();
-
-        /* Nuclear screening. */
+        // Nuclear screening
         const double third = 1. / 3;
         const double A13 = pow(element.A, third);
         const double R1 = 1.02934 * A13 + 0.435;
         const double R2 = 2.;
-        const double p2 = kinetic * (kinetic + 2. * mass);
+        const double p2 = K * (K + 2. * mass);
         const double d = 5.8406E-02 / p2;
         pscreen[1] = d / (R1 * R1);
         pscreen[2] = d / (R2 * R2);
 
-        /* Atomic Moliere screening with Coulomb correction from Kuraev et al.
-         * Phys. Rev. D 89, 116016 (2014). Valid for ultra-relativistic
-         * particles only.
-         */
+        // Atomic Moliere screening with Coulomb correction from Kuraev et al.
+        // Phys. Rev. D 89, 116016 (2014). Valid for ultra-relativistic
+        // particles only.
+
         const int Z = element.Z;
-        const double etot = kinetic + mass;
+        const double etot = K + mass;
         const double ZE = Z * etot;
         const double zeta2 = 5.3251346E-05 * (ZE * ZE) / p2;
         double cK;
         if (zeta2 > 1.)
         {
-            /* Let's perform the serie computation. */
+            // Let's perform the serie computation.
             int i, n = 10 + Z;
             double f = 0.;
             for (i = 1; i <= n; i++)
@@ -771,18 +788,18 @@ namespace ghmc::pms::dcs
         }
         else
         {
-            /* Let's use Kuraev's approximate expression. */
+            // Let's use Kuraev's approximate expression.
             cK = exp(1. - 1. / (1. + zeta2) +
                      zeta2 * (0.2021 + zeta2 * (0.0083 * zeta2 - 0.0369)));
         }
 
-        /* Original Moliere's atomic screening, considered as a reference
-         * value at low energies.
-         */
+        // Original Moliere's atomic screening, considered as a reference
+        // value at low energies.
+
         const double cM = 1. + 3.34 * zeta2;
 
-        /* Atomic screening interpolation. */
-        double r = kinetic / etot;
+        // Atomic screening interpolation.
+        double r = K / etot;
         r *= r;
         const double c = r * cK + (1. - r) * cM;
         pscreen[0] = 5.179587126E-12 * pow(Z, 2. / 3.) * c / p2;
@@ -797,19 +814,32 @@ namespace ghmc::pms::dcs
         pscreen[4] = 2. * pscreen[7] * (d12 - d01);
         pscreen[5] = -2. * pscreen[8] * (d12 + d02);
 
-        return 1. / coulomb_wentzel_path(pscreen[0], kinetic, element, mass);
+        return 1. / coulomb_wentzel_path(pscreen[0], K, element, mass);
     }
 
     inline const auto default_coulomb_data =
-        [](const CMLorentz &fCM,
-           const ScreeningFactors &screening,
-           FSpin &fspin,
-           const KineticEnergy &kinetic,
-           const AtomicElement &element,
-           const ParticleMass &mass) {
-            const double kinetic0 = coulomb_frame_parameters(fCM, kinetic, element, mass);
-            fspin = coulomb_spin_factor(kinetic0, mass);
-            return coulomb_screening_parameters(screening, kinetic0, element, mass);
+        [](
+            const CMLorentz &fCM,
+            const ScreeningFactors &screening,
+            const FSpins &fspin,
+            const InvLambdas &invlambda,
+            const KineticEnergies &K,
+            const AtomicElement &element,
+            const ParticleMass &mass) {
+            const int nkin = K.numel();
+            double *pK = K.data_ptr<double>();
+
+            double *pfCM = fCM.data_ptr<double>();
+            double *pscreen = screening.data_ptr<double>();
+            double *pfspin = fspin.data_ptr<double>();
+            double *pinvlbd = invlambda.data_ptr<double>();
+
+            for (int i = 0; i < nkin; i++)
+            {
+                const double kinetic0 = coulomb_frame_parameters(pfCM + 2 * i, pK[i], element, mass);
+                pfspin[i] = coulomb_spin_factor(kinetic0, mass);
+                pinvlbd[i] = coulomb_screening_parameters(pscreen + NSF * i, kinetic0, element, mass);
+            }
         };
 
     /*
@@ -818,13 +848,11 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6160
      */
     void coulomb_transport_coefficients(
-        const TransportCoefs &coefficients,
-        const ScreeningFactors &screening,
-        const FSpin &fspin, const AngularCutOff &mu)
+        double *pcoefs,
+        double *pscreen,
+        const double &fspin,
+        const double &mu)
     {
-        double *pcoefs = coefficients.data_ptr<double>();
-        double *pscreen = screening.data_ptr<double>();
-
         const double nuclear_screening =
             (pscreen[1] < pscreen[2]) ? pscreen[1] : pscreen[2];
         if (mu < 1E-08 * nuclear_screening)
@@ -875,20 +903,40 @@ namespace ghmc::pms::dcs
         }
     }
 
+    inline const auto default_coulomb_transport =
+        [](
+            const TransportCoefs &coefficients,
+            const ScreeningFactors &screening,
+            const FSpins &fspin,
+            const AngularCutoff &mu) {
+            double *pcoefs = coefficients.data_ptr<double>();
+            double *pscreen = screening.data_ptr<double>();
+            double *pfspin = fspin.data_ptr<double>();
+
+            const bool nmu = (mu.numel() == 1);
+            double *pmu = mu.data_ptr<double>();
+
+            const int nspin = fspin.numel();
+            for (int i = 0; i < nspin; i++)
+                coulomb_transport_coefficients(
+                    pcoefs + 2 * i,
+                    pscreen + NSF * i,
+                    pfspin[i],
+                    pmu[(nmu) ? 0 : i]);
+        };
+
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6109
      */
-    inline Scalar coulomb_restricted_cs(
-        const AngularCutOff &mu,
-        const FSpin &fspin,
-        const ScreeningFactors &screening)
+    inline double coulomb_restricted_cs(
+        const double &mu,
+        const double &fspin,
+        double *screen)
     {
         if (mu >= 1.)
             return 0.;
-
-        double *screen = screening.data_ptr<double>();
 
         const double nuclear_screening =
             (screen[1] < screen[2]) ? screen[1] : screen[2];
@@ -935,12 +983,16 @@ namespace ghmc::pms::dcs
         const double &mu,
         double *invlambda,
         double *fspin,
-        const ScreeningFactors &screen,
-        const int nel)
+        double *screen,
+        const int nel = 1,
+        const int nkin = 1)
     {
         double cs_tot = 0.;
         for (int iel = 0; iel < nel; iel++)
-            cs_tot += invlambda[iel] * coulomb_restricted_cs(mu, fspin[iel], screen[iel]);
+        {
+            const int off = iel * nkin;
+            cs_tot += invlambda[off] * coulomb_restricted_cs(mu, fspin[off], screen + NSF * off);
+        }
         return cs_tot - cs_h;
     }
 
@@ -949,109 +1001,133 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8472
      */
+    inline void coulomb_hard_scattering(double &mu0, double &lb_h,
+                                        double *G, double *fCM,
+                                        double *screen,
+                                        double *invlambda,
+                                        double *fspin,
+                                        const int nel = 1,
+                                        const int nkin = 1)
+    {
+
+        double invlb_m = 0., invlb1_m = 0.;
+        double s_m_l = 0., s_m_h = 0.;
+
+        for (int iel = 0; iel < nel; iel++)
+        {
+            const int off = iel * nkin;
+
+            const double invlb = invlambda[off];
+            const double scr = screen[NSF * off];
+
+            invlb_m += invlb * G[2 * off];
+            s_m_h += scr * invlb;
+            s_m_l += invlb / scr;
+            const double d = 1. / (fCM[2 * off] * (1. + fCM[1 + 2 * off]));
+            invlb1_m += invlb * G[1 + 2 * off] * d * d;
+        }
+
+        // Set the hard scattering mean free path.
+        const double lb_m = 1. / invlb_m;
+        lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
+
+        // Compute the hard scattering cutoff angle, in the CM.
+        if (lb_m < lb_h)
+        {
+            // Initialise the root finder with an asymptotic starting value
+            // Asymptotic value when lb_h >> lb_m versus when lb_h ~= lb_m
+            double s_m = (lb_h > 2. * lb_m) ? s_m_h * lb_m : 1. / (s_m_l * lb_m);
+
+            mu0 = s_m * (lb_h - lb_m) / (s_m * lb_h + lb_m);
+
+            // targeted cross section
+            const double cs_h = 1. / lb_h;
+
+            // Configure for the root solver.
+            // Solve for the cut-off angle. We try an initial bracketing in
+            // [0.25*mu0; 4.*mu0], with mu0 the asymptotic estimate.
+            double mu_max = std::min(4. * mu0, 1.);
+            double mu_min = 0.25 * mu0;
+
+            double fmax = 0, fmin = 0;
+
+            fmax = cutoff_objective(cs_h, mu_max, invlambda, fspin, screen, nel, nkin);
+            if (fmax > 0.)
+            {
+                // This shouldn't occur, but let's be safe and handle this case.
+                mu_min = mu_max;
+                fmin = fmax;
+                mu_max = 1.;
+                fmax = -cs_h;
+            }
+            else
+            {
+                fmin = cutoff_objective(cs_h, mu_min, invlambda, fspin, screen, nel, nkin);
+                if (fmin < 0.)
+                {
+                    // This might occur at high energies when the nuclear screening becomes significant.
+                    mu_max = mu_min;
+                    fmax = fmin;
+                    mu_min = 0.;
+                    fmin = cutoff_objective(cs_h, mu_min, invlambda, fspin, screen, nel, nkin);
+                }
+                if (mu_min < MAX_MU0)
+                {
+                    mu_max = std::min(mu_max, MAX_MU0);
+                    const auto mubest =
+                        utils::numerics::ridders_root<double>(
+                            mu_min, mu_max,
+                            [&](const double &mu_x) {
+                                return cutoff_objective(cs_h, mu_x, invlambda, fspin, screen, nel, nkin);
+                            },
+                            fmin, fmax,
+                            1E-6 * mu0, 1E-6, 100);
+
+                    if (mubest.has_value())
+                        mu0 = mubest.value();
+                }
+                mu0 = std::min(mu0, MAX_MU0);
+                lb_h = cutoff_objective(cs_h, mu0, invlambda, fspin, screen, nel, nkin) + cs_h;
+                lb_h = (lb_h <= 1. / EHS_PATH_MAX) ? EHS_PATH_MAX : 1. / lb_h;
+            }
+        }
+        else
+        {
+            lb_h = lb_m;
+            mu0 = 0;
+        }
+    }
+
     inline const auto default_hard_scattering =
-        [](AngularCutOff &mu0,
+        [](const AngularCutoff &mu0,
+           const HSMeanFreePath &lb_h,
            const TransportCoefs &coefficients,
            const CMLorentz &transform,
            const ScreeningFactors &screening,
            const InvLambdas &invlambdas,
            const FSpins &fspins) {
-            const int nel = invlambdas.numel();
+            const int nel = invlambdas.size(0);
+            const int nkin = invlambdas.size(1);
+
+            double *pmu0 = mu0.data_ptr<double>();
+            double *plb_h = lb_h.data_ptr<double>();
 
             double *invlambda = invlambdas.data_ptr<double>();
             double *fspin = fspins.data_ptr<double>();
+            double *G = coefficients.data_ptr<double>();
+            double *fCM = transform.data_ptr<double>();
+            double *screen = screening.data_ptr<double>();
 
-            double invlb_m = 0., invlb1_m = 0.;
-            double s_m_l = 0., s_m_h = 0.;
-
-            for (int iel = 0; iel < nel; iel++)
-            {
-                double *G = coefficients[iel].data_ptr<double>();
-                double *fCM = transform[iel].data_ptr<double>();
-                double *screen = screening[iel].data_ptr<double>();
-
-                const double invlb = invlambda[iel];
-                const double scr = screen[0];
-
-                invlb_m += invlb * G[0];
-                s_m_h += scr * invlb;
-                s_m_l += invlb / scr;
-                const double d = 1. / (fCM[0] * (1. + fCM[1]));
-                invlb1_m += invlb * G[1] * d * d;
-            }
-
-      
-
-            // Set the hard scattering mean free path.
-            const double lb_m = 1. / invlb_m;
-            double lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
-
-            // Compute the hard scattering cutoff angle, in the CM.
-            if (lb_m < lb_h)
-            {
-                // Initialise the root finder with an asymptotic starting value
-                // Asymptotic value when lb_h >> lb_m versus when lb_h ~= lb_m
-                double s_m = (lb_h > 2. * lb_m) ? s_m_h * lb_m : 1. / (s_m_l * lb_m);
-
-                mu0 = s_m * (lb_h - lb_m) / (s_m * lb_h + lb_m);
-
-                // targeted cross section
-                const double cs_h = 1. / lb_h;
-
-                // Configure for the root solver.
-                // Solve for the cut-off angle. We try an initial bracketing in
-                // [0.25*mu0; 4.*mu0], with mu0 the asymptotic estimate.
-                double mu_max = std::min(4. * mu0, 1.);
-                double mu_min = 0.25 * mu0;
-
-                double fmax = 0, fmin = 0;
-
-                fmax = cutoff_objective(cs_h, mu_max, invlambda, fspin, screening, nel);
-                if (fmax > 0.)
-                {
-                    // This shouldn't occur, but let's be safe and handle this case.
-                    mu_min = mu_max;
-                    fmin = fmax;
-                    mu_max = 1.;
-                    fmax = -cs_h;
-                }
-                else
-                {
-                    fmin = cutoff_objective(cs_h, mu_min, invlambda, fspin, screening, nel);
-                    if (fmin < 0.)
-                    {
-                        // This might occur at high energies when the nuclear screening becomes significant.
-                        mu_max = mu_min;
-                        fmax = fmin;
-                        mu_min = 0.;
-                        fmin = cutoff_objective(cs_h, mu_min, invlambda, fspin, screening, nel);
-                    }
-                    if (mu_min < MAX_MU0)
-                    {
-                        mu_max = std::min(mu_max, MAX_MU0);
-                        const auto mubest =
-                            utils::numerics::ridders_root<double>(
-                                mu_min, mu_max,
-                                [&](const double &mu_x) {
-                                    return cutoff_objective(cs_h, mu_x, invlambda, fspin, screening, nel);
-                                },
-                                fmin, fmax,
-                                1E-6 * mu0, 1E-6, 100);
-
-                        if (mubest.has_value())
-                            mu0 = mubest.value();
-                    }
-                    mu0 = std::min(mu0, MAX_MU0);
-                    lb_h = cutoff_objective(cs_h, mu0, invlambda, fspin, screening, nel) + cs_h;
-                    lb_h = (lb_h <= 1. / EHS_PATH_MAX) ? EHS_PATH_MAX : 1. / lb_h;
-                }
-            }
-            else
-            {
-                lb_h = lb_m;
-                mu0 = 0;
-            }
-            return lb_h;
+            for (int i = 0; i < nkin; i++)
+                coulomb_hard_scattering(
+                    pmu0[i],
+                    plb_h[i],
+                    G + 2 * i,
+                    fCM + 2 * i,
+                    screen + NSF * i,
+                    invlambda + i,
+                    fspin + i,
+                    nel, nkin);
         };
 
     /*
@@ -1060,19 +1136,19 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6223
      */
     inline double transverse_transport_ionisation(
-        const KineticEnergy &kinetic,
+        const KineticEnergy &K,
         const AtomicElement &element,
         const ParticleMass &mass)
     {
         // Soft close interactions, restricted to X_FRACTION.
-        const double momentum2 = kinetic * (kinetic + 2. * mass);
-        const double E = kinetic + mass;
+        const double momentum2 = K * (K + 2. * mass);
+        const double E = K + mass;
         const double Wmax = 2. * ELECTRON_MASS * momentum2 /
                             (mass * mass +
                              ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
         const double W0 = 2. * momentum2 / ELECTRON_MASS;
         const double mu_max = Wmax / W0;
-        double mu3 = kinetic * X_FRACTION / W0;
+        double mu3 = K * X_FRACTION / W0;
         if (mu3 > mu_max)
             mu3 = mu_max;
         const double mu2 = 0.62 * element.I / W0;
@@ -1093,17 +1169,17 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6262
      */
     inline double transverse_transport_photonuclear(
-        const KineticEnergy &kinetic,
+        const KineticEnergy &K,
         const AtomicElement &element,
         const ParticleMass &mass)
     {
-        // Integration over the kinetic transfer, q, done with a log sampling.
-        const double E = kinetic + mass;
+        // Integration over the K transfer, q, done with a log sampling.
+        const double E = K + mass;
         return 2. * utils::numerics::quadrature6<double>(
                         log(1E-06), 0.,
                         [&](const double &t) {
                             const double nu = X_FRACTION * exp(t);
-                            const double q = nu * kinetic;
+                            const double q = nu * K;
 
                             // Analytical integration over mu.
                             const double m02 = 0.4;
@@ -1124,10 +1200,10 @@ namespace ghmc::pms::dcs
                             const double I2 =
                                 (tmax - tmin) * (b1 * q2 + c1 * m02) - L1 - L2;
                             const double ratio =
-                                (I1 * tmax - I2) / ((I0 * tmax - I1) * kinetic *
-                                                    (kinetic + 2. * mass));
+                                (I1 * tmax - I2) / ((I0 * tmax - I1) * K *
+                                                    (K + 2. * mass));
 
-                            return default_photonuclear(kinetic, q, element, mass) * ratio * nu;
+                            return default_photonuclear(K, q, element, mass) * ratio * nu;
                         },
                         100);
     }
@@ -1138,48 +1214,16 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8730
      */
     inline const auto default_soft_scattering =
-        [](const KineticEnergy &kinetic,
+        [](const Result &ms1,
+           const KineticEnergies &K,
            const AtomicElement &element,
            const ParticleMass &mass) {
-            return transverse_transport_ionisation(kinetic, element, mass) +
-                   transverse_transport_photonuclear(kinetic, element, mass);
+            utils::vmap<double>(
+                K,
+                [&](const double &k) { return transverse_transport_ionisation(k, element, mass) +
+                                              transverse_transport_photonuclear(k, element, mass); },
+                ms1);
         };
-
-    inline Scalar compute_soft_scattering_for_material(
-        const TransportCoefs &coefficients,
-        const CMLorentz &transform,
-        const ScreeningFactors &screening,
-        const InvLambdas &invlambdas,
-        const FSpins &fspins,
-        const SoftScatter &soft_scatter,
-        const AngularCutOff &mu0)
-    {
-        const int nel = invlambdas.numel();
-
-        double *invlambda = invlambdas.data_ptr<double>();
-        double *fspin = fspins.data_ptr<double>();
-        double *ms1 = soft_scatter.data_ptr<double>();
-
-        double invlb1 = 0.;
-
-
-        for (int iel = 0; iel < nel; iel++)
-        {
-            const auto &Gi = coefficients[iel];
-            double *G = Gi.data_ptr<double>();
-            double *fCM = transform[iel].data_ptr<double>();
-
-            dcs::coulomb_transport_coefficients(Gi, screening[iel], fspin[iel], mu0);
-            const double d = 1. / (fCM[0] * (1. + fCM[1]));
-            invlb1 += invlambda[iel] * G[1] * d * d;
-            invlb1 += ms1[iel];
-         
-        }
-
-        return invlb1;
-    }
-
-    constexpr int NPR = 4; // Number of DEL processes considered
 
     inline const auto default_del_kernels = std::tuple{
         default_bremsstrahlung,
@@ -1189,6 +1233,7 @@ namespace ghmc::pms::dcs
 
     inline const auto default_tt_kernels = std::tuple{
         default_coulomb_data,
+        default_coulomb_transport,
         default_hard_scattering,
         default_soft_scattering};
 

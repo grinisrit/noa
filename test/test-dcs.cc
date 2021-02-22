@@ -132,44 +132,35 @@ TEST(DCS, CELIonisation)
 
 TEST(DCS, CoulombHardScattering)
 {
-    const int N = kinetic_energies.numel();
-    auto G = torch::zeros({N, 2}, torch::kFloat64);
-    auto fCM = torch::zeros({N, 2}, torch::kFloat64);
-    auto screen = torch::zeros({N, 9}, torch::kFloat64);
+    const int nkin = kinetic_energies.numel();
+    auto fCM = torch::zeros({nkin, 2}, torch::kFloat64);
+    auto screen = torch::zeros({nkin, 9}, torch::kFloat64);
+    auto fspin = torch::zeros_like(kinetic_energies);
+    auto invlambda = torch::zeros_like(kinetic_energies);
 
-    auto kinetic0 = vmapi<double>(
-        kinetic_energies,
-        [&](const int i, const double &k) { return coulomb_frame_parameters(fCM[i], k, STANDARD_ROCK, MUON_MASS); });
-
-    auto invlambda = vmapi<double>(
-        kinetic0,
-        [&](const int i, const double &k) { return coulomb_screening_parameters(
-                                                screen[i], k, STANDARD_ROCK, MUON_MASS); });
-
-    auto fspin = vmap<double>(kinetic0, [](const auto &k) { return coulomb_spin_factor(k, MUON_MASS); });
-
-    for_eachi<double>(
-        fspin,
-        [&](const int i, const double &fspin) { coulomb_transport_coefficients(
-                                                    G[i], screen[i], fspin, 1.); });
+    default_coulomb_data(
+        fCM, screen, fspin, invlambda,
+        kinetic_energies, STANDARD_ROCK, MUON_MASS);
 
     ASSERT_TRUE(relative_error<double>(screen.slice(1, 0, 3).reshape_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
-    ASSERT_TRUE(relative_error<double>(G.view_as(pumas_transport), pumas_transport).item<double>() < 1E-10);
     ASSERT_TRUE(mean_error<double>(invlambda, pumas_invlambda).item<double>() < 1E-10);
 
-    G = G.view({N, 1, 2});
-    fCM = fCM.view({N, 1, 2});
-    screen = screen.view({N, 1, 9});
-    invlambda = invlambda.view({N, 1});
-    fspin = fspin.view({N, 1});
+    auto G = torch::zeros_like(fCM);
+    default_coulomb_transport(
+        G, screen, fspin, torch::tensor(1.0, torch::kFloat64));
+    ASSERT_TRUE(relative_error<double>(G.view_as(pumas_transport), pumas_transport).item<double>() < 1E-10);
 
-    const auto lb_h = torch::zeros_like(kinetic_energies);
-    Scalar *plb_h = lb_h.data_ptr<Scalar>();
-    const auto mu0 = torch::zeros_like(kinetic_energies);
-    Scalar *pmu0 = mu0.data_ptr<Scalar>();
+    G = G.view({1, nkin, 2});
+    fCM = fCM.view({1, nkin, 2});
+    screen = screen.view({1, nkin, 9});
+    invlambda = invlambda.view({1, nkin});
+    fspin = fspin.view({1, nkin});
 
-    for (int i = 0; i < N; i++)
-        plb_h[i] = default_hard_scattering(pmu0[i], G[i], fCM[i], screen[i], invlambda[i], fspin[i]);
+    auto lb_h = torch::zeros_like(kinetic_energies);
+    auto mu0 = torch::zeros_like(kinetic_energies);
+
+    default_hard_scattering(
+        mu0, lb_h, G, fCM, screen, invlambda, fspin);
 
     ASSERT_TRUE(relative_error<double>(mu0, pumas_mu0).item<double>() < 1E-11);
     ASSERT_TRUE(relative_error<double>(lb_h, pumas_lb_h).item<double>() < 1E-11);
@@ -177,11 +168,7 @@ TEST(DCS, CoulombHardScattering)
 
 TEST(DSC, CoulombSoftScattering)
 {
-    auto result = vmap<double>(
-        kinetic_energies, 
-        [](const auto &k){
-            return default_soft_scattering(k, STANDARD_ROCK, MUON_MASS);
-        });
-     ASSERT_TRUE(relative_error<double>(result,pumas_soft_scatter).item<double>() < 1E-12);
-
+    auto result = torch::zeros_like(kinetic_energies);
+    default_soft_scattering(result, kinetic_energies, STANDARD_ROCK, MUON_MASS);
+    ASSERT_TRUE(relative_error<double>(result, pumas_soft_scatter).item<double>() < 1E-12);
 }
