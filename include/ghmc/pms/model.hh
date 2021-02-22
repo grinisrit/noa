@@ -404,6 +404,7 @@ namespace ghmc::pms
         inline void compute_coulomb_scattering_tables(const MaterialId imat, const CoulombWorkspace &cdata)
         {
             const auto &elids = materials.at(imat).element_ids;
+            const auto &fracs = materials.at(imat).fractions;
             const int nel = elids.numel();
 
             const auto G = cdata.G.index_select(0, elids).transpose(0, 1);
@@ -412,7 +413,8 @@ namespace ghmc::pms
             const auto invlambda =
                 (cdata.invlambda.index_select(0, elids) * materials.at(imat).fractions.view({nel, 1})).transpose(0, 1);
             const auto fspin = cdata.fspin.index_select(0, elids).transpose(0, 1);
-            const auto ms1 = cdata.table_ms1.index_select(0, elids).transpose(0, 1);
+            const auto ms1 =
+                (cdata.table_ms1.index_select(0, elids) * fracs.view({nel, 1})).transpose(0, 1);
 
             Scalar *mu0 = table_Mu0[imat].data_ptr<Scalar>();
             Scalar *Lb = table_Lb[imat].data_ptr<Scalar>();
@@ -423,19 +425,22 @@ namespace ghmc::pms
             utils::for_eachi<Scalar>(
                 table_K,
                 [&](const int i, const auto &k) {
+             
                     const auto Gi = G[i];
                     const auto fCMi = fCM[i];
                     const auto &screeni = screen[i];
-                    const auto &invlambdai = invlambda[i];
-                    const auto &fspini = fspin[i];
+                    const auto &invlambdai = invlambda[i].to(default_ops, false, true);
+                    const auto &fspini = fspin[i].to(default_ops, false, true);
+                    const auto &ms1i = ms1[i].to(default_ops, false, true);
 
                     const auto lb_h = std::get<HardScattering>(std::get<TTKernels>(dcs_kernels))(
                         mu0[i], Gi, fCMi, screeni, invlambdai, fspini);
+
                     Lb[i] = lb_h * k * (k + 2 * mass);
                     NI_el[i] = 1. / (dE[i] * lb_h);
 
                     Ms1[i] = dcs::compute_soft_scattering_for_material(
-                        Gi, fCMi, screeni, invlambdai, fspini, ms1[i], mu0[i]);
+                        Gi, fCMi, screeni, invlambdai, fspini, ms1i, mu0[i]);
                 });
         }
 
@@ -447,9 +452,7 @@ namespace ghmc::pms
 
 #pragma omp parallel for
             for (int iel = 0; iel < nel; iel++)
-            {
                 compute_coulomb_data(iel, cdata);
-            }
 
             for (int imat = 0; imat < nmat; imat++)
                 compute_coulomb_scattering_tables(imat, cdata);

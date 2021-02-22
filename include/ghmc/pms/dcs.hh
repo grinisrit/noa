@@ -957,9 +957,7 @@ namespace ghmc::pms::dcs
            const InvLambdas &invlambdas,
            const FSpins &fspins) {
             const int nel = invlambdas.numel();
-            double *G = coefficients.data_ptr<double>();
-            double *fCM = transform.data_ptr<double>();
-            double *screen = screening.data_ptr<double>();
+
             double *invlambda = invlambdas.data_ptr<double>();
             double *fspin = fspins.data_ptr<double>();
 
@@ -968,14 +966,21 @@ namespace ghmc::pms::dcs
 
             for (int iel = 0; iel < nel; iel++)
             {
+                double *G = coefficients[iel].data_ptr<double>();
+                double *fCM = transform[iel].data_ptr<double>();
+                double *screen = screening[iel].data_ptr<double>();
+
                 const double invlb = invlambda[iel];
-                const double scr = screen[iel];
-                invlb_m += invlb * G[iel];
+                const double scr = screen[0];
+
+                invlb_m += invlb * G[0];
                 s_m_h += scr * invlb;
                 s_m_l += invlb / scr;
-                const double d = 1. / (fCM[iel] * (1. + fCM[1 + iel]));
-                invlb1_m += invlb * G[1 + iel] * d * d;
+                const double d = 1. / (fCM[0] * (1. + fCM[1]));
+                invlb1_m += invlb * G[1] * d * d;
             }
+
+      
 
             // Set the hard scattering mean free path.
             const double lb_m = 1. / invlb_m;
@@ -1150,20 +1155,25 @@ namespace ghmc::pms::dcs
         const AngularCutOff &mu0)
     {
         const int nel = invlambdas.numel();
-        double *G = coefficients.data_ptr<double>();
-        double *fCM = transform.data_ptr<double>();
+
         double *invlambda = invlambdas.data_ptr<double>();
         double *fspin = fspins.data_ptr<double>();
         double *ms1 = soft_scatter.data_ptr<double>();
 
         double invlb1 = 0.;
 
+
         for (int iel = 0; iel < nel; iel++)
         {
-            dcs::coulomb_transport_coefficients(coefficients[iel], screening[iel], fspin[iel], mu0);
-            const double d = 1. / (fCM[iel] * (1. + fCM[1 + iel]));
-            invlb1 += invlambda[iel] * G[1 + iel] * d * d;
+            const auto &Gi = coefficients[iel];
+            double *G = Gi.data_ptr<double>();
+            double *fCM = transform[iel].data_ptr<double>();
+
+            dcs::coulomb_transport_coefficients(Gi, screening[iel], fspin[iel], mu0);
+            const double d = 1. / (fCM[0] * (1. + fCM[1]));
+            invlb1 += invlambda[iel] * G[1] * d * d;
             invlb1 += ms1[iel];
+         
         }
 
         return invlb1;
