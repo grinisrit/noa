@@ -73,6 +73,7 @@ namespace ghmc::pms
     using TableCS = Table;               // CS for inelatic DELs
     using TableDE = Table;               // Average energy loss
     using TableX = Table;                // CSDA range
+    using TableT = Table;                // Total proper time
     using TableNIin = Table;             // Interaction lengths
     using IonisationMax = Table;         // Maximum tabulated a(E)
     using RadlossMax = Table;            // Maximum tabulated b(E)
@@ -131,6 +132,7 @@ namespace ghmc::pms
         TableCS table_CS;
         TableDE table_dE;
         TableX table_X;
+        TableT table_T;
         TableNIin table_NI_in;
         IonisationMax table_a_max;
         RadlossMax table_b_max;
@@ -319,7 +321,6 @@ namespace ghmc::pms
             table_CSf = TableCSf(nmat);
             table_CS = torch::zeros({nmat, nkin}, default_ops);
             table_dE = torch::zeros_like(table_CS);
-            table_X = torch::zeros_like(table_CS);
             table_NI_in = torch::zeros_like(table_CS);
             table_Kt = torch::zeros(nmat, default_ops);
             table_a_max = torch::zeros_like(table_Kt);
@@ -352,8 +353,7 @@ namespace ghmc::pms
             table_dE[imat] = static_cast<Physics *>(this)->scale_dEdX(
                                  torch::from_blob(dedx_table.dEdX.data(), nkin, default_ops)) -
                              be_cel;
-            table_X[imat] = 1.0 / table_dE[imat];
-            table_NI_in[imat] = table_CS[imat] * table_X[imat];
+            table_NI_in[imat] = table_CS[imat] / table_dE[imat];
             table_a_max[imat] = a[nkin - 1];
             table_b_max[imat] =
                 (static_cast<Physics *>(this)->scale_dEdX(dedx_table.Radloss[nkin - 1]) - be_cel[nkin - 1]) /
@@ -446,6 +446,26 @@ namespace ghmc::pms
             coulomb_workspace = CoulombWorkspace{}; // drop CoulombWorkspace data
         }
 
+        inline void init_cel_integrals()
+        {
+            table_X = torch::zeros_like(table_dE);
+            table_T = torch::zeros_like(table_dE);
+        }
+
+        inline void set_cel_integrals()
+        {
+            init_cel_integrals();
+            const int nmat = materials.size();
+            const Scalar I0 = dcs::compute_momentum_integral(table_K[0].item<Scalar>(), mass);
+            for (int imat = 0; imat < nmat; imat++)
+            {
+                dcs::compute_cel_grammage_integral(table_X[imat], table_dE[imat], table_K);
+                dcs::compute_time_integral(table_T[imat], table_X[imat], table_K, mass, I0);
+                dcs::compute_kinetic_integral(table_NI_el[imat], table_K);
+                dcs::compute_kinetic_integral(table_NI_in[imat], table_K);
+            }
+        }
+
         inline utils::Status initialise_physics(
             const mdf::Settings &mdf_settings, mdf::MaterialsDEDXData &dedx_data)
         {
@@ -461,6 +481,8 @@ namespace ghmc::pms
             set_dedx_tables(dedx_data);
 
             set_coulomb_parameters();
+
+            set_cel_integrals();
 
             return true;
         }
@@ -546,6 +568,10 @@ namespace ghmc::pms
         inline const TableX &get_table_X() const
         {
             return table_X;
+        }
+        inline const TableT &get_table_T() const
+        {
+            return table_T;
         }
         inline const TableNIin &get_table_NI_in() const
         {

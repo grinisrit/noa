@@ -46,6 +46,7 @@ namespace ghmc::pms::dcs
     using Table = torch::Tensor;  // Generic table
     using Result = torch::Tensor; // Receiver tensor for calculations result
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
+    using MomentumIntegral = Scalar;
 
     using ThresholdIndex = Index;
     using Thresholds = torch::Tensor;
@@ -1224,6 +1225,115 @@ namespace ghmc::pms::dcs
                                               transverse_transport_photonuclear(k, element, mass); },
                 ms1);
         };
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8392
+     */
+    inline void compute_cel_grammage_integral(
+        const Result &result,
+        const Table &table_dE,
+        const KineticEnergies &K)
+    {
+        const int nkin = K.numel();
+        double *kinetic = K.data_ptr<double>();
+        double *dEdX = table_dE.data_ptr<double>();
+        double *table = result.data_ptr<double>();
+
+        // Compute the cumulative integral.
+
+        double y0 = 1. / dEdX[0];
+        table[0] = kinetic[0] * y0;
+        for (int i = 1; i < nkin; i++)
+        {
+            const double y1 = 1. / dEdX[i];
+            table[i] = table[i - 1] +
+                       0.5 * (kinetic[i] - kinetic[i - 1]) * (y0 + y1);
+            y0 = y1;
+        }
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8334
+     */
+    inline MomentumIntegral compute_momentum_integral(
+        const KineticEnergy &K,
+        const ParticleMass &mass)
+    {
+        // Compute the integral of 1/momemtum for the lowest energy bin using trapezes.
+        const int n = 101;
+        int i;
+        const double dK = K / (n - 1);
+        double Ki = dK;
+        double I0 = 0.5 / sqrt(Ki * (Ki + 2. * mass));
+        for (i = 2; i < n - 1; i++)
+        {
+            Ki += dK;
+            const double pi = sqrt(Ki * (Ki + 2. * mass));
+            I0 += 1. / pi;
+        }
+        Ki += dK;
+        I0 += 0.5 / sqrt(Ki * (Ki + 2. * mass));
+        I0 /= n - 1;
+        return I0;
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8334
+     */
+    inline void compute_time_integral(
+        const Result &result,
+        const Table &table_X,
+        const KineticEnergies &K,
+        const ParticleMass &mass,
+        const MomentumIntegral &I0)
+    {
+        // Compute the cumulative path integrals .
+        const int nkin = K.numel();
+        double *pK = K.data_ptr<double>();
+        double *T = result.data_ptr<double>();
+        double *X = table_X.data_ptr<double>();
+
+        T[0] = I0 * X[0] * mass;
+
+        for (int i = 1; i < nkin; i++)
+        {
+            const double p0 =
+                sqrt(pK[i - 1] * (pK[i - 1] + 2. * mass));
+            const double p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
+            const double psi = 1. / p0 + 1. / p1;
+            const double dy1 = 0.5 * (X[i] - X[i - 1]) * psi;
+            T[i] = T[i - 1] + dy1 * mass;
+        }
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8311
+     */
+    void compute_kinetic_integral(const Result &result,
+                                  const KineticEnergies &K)
+    {
+        const int nkin = K.numel();
+        double *pK = K.data_ptr<double>();
+        double *table = result.data_ptr<double>();
+
+        double value = 0.5 * pK[0] * table[0];
+
+        for (int i = 1; i < nkin; i++)
+        {
+            const double dv = 0.5 * (pK[i] - pK[i - 1]) * (table[i - 1] + table[i]);
+            table[i - 1] = value;
+            value += dv;
+        }
+        table[nkin - 1] = value;
+    }
 
     inline const auto default_del_kernels = std::tuple{
         default_bremsstrahlung,
