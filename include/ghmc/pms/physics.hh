@@ -50,6 +50,7 @@ namespace ghmc::pms
     using MaterialDensity = Scalar;
     using EnergyTransferMin = Scalar; // Relative lower bound of energy transfer
     using ComponentFraction = Scalar;
+    using LarmorFactor = Scalar; 
 
     struct MaterialDensityEffect
     {
@@ -65,6 +66,8 @@ namespace ghmc::pms
 
     constexpr DecayLength MUON_CTAU = 658.654;  // m
     constexpr DecayLength TAU_CTAU = 87.03E-06; // m
+
+    constexpr LarmorFactor LARMOR_FACTOR = 0.299792458;   // m^-1 GeV/c T^-1.
 
     // Default relative switch between Continuous Energy Loss (CEL) and DELs.
     constexpr EnergyTransferMin X_FRACTION = 5E-02;

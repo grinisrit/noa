@@ -36,8 +36,9 @@
 
 namespace ghmc::pms::dcs
 {
-    constexpr int NPR = 4; // Number of DEL processes considered
-    constexpr int NSF = 9; // Number of screening factors and pole reduction for Coulomb scattering
+    constexpr int NPR = 4;  // Number of DEL processes considered
+    constexpr int NSF = 9;  // Number of screening factors and pole reduction for Coulomb scattering
+    constexpr int NLAR = 8; // Order of expansion for the computation of the magnetic deflection
 
     using KineticEnergy = Scalar;
     using RecoilEnergy = Scalar;
@@ -1307,8 +1308,8 @@ namespace ghmc::pms::dcs
                 sqrt(pK[i - 1] * (pK[i - 1] + 2. * mass));
             const double p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
             const double psi = 1. / p0 + 1. / p1;
-            const double dy1 = 0.5 * (X[i] - X[i - 1]) * psi;
-            T[i] = T[i - 1] + dy1 * mass;
+            const double dy = 0.5 * (X[i] - X[i - 1]) * psi;
+            T[i] = T[i - 1] + dy * mass;
         }
     }
 
@@ -1333,6 +1334,62 @@ namespace ghmc::pms::dcs
             value += dv;
         }
         table[nkin - 1] = value;
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8420
+     */
+    inline void compute_csda_magnetic_transport(
+        const Result &table_Li,
+        const Table &table_T,
+        const Table &table_X,
+        const ParticleMass &mass,
+        const LarmorFactor &larmor)
+    {
+        const int imax = table_T.numel() - 1;
+        if (imax == 0)
+            return;
+
+        double *X0 = table_X.data_ptr<double>();
+        double *T = table_T.data_ptr<double>();
+
+        std::array<double, NLAR> x{}, dx{};
+
+        double *Li = table_Li.data_ptr<double>();
+
+        // The magnetic phase shift is proportional to the proper time integral.
+        // We refer to this table.
+        const double factor = larmor / mass;
+
+        // Compute the deflection starting from max energy down to 0
+        int i, j;
+        for (i = imax; i >= 1; i--)
+        {
+            double dX0 = 0.5 * (X0[i] - X0[i - 1]);
+            double p1 = (T[imax] - T[i - 1]) * factor;
+            double p2 = (T[imax] - T[i]) * factor;
+
+            double f1 = 1., f2 = 1.;
+            for (j = 0; j < NLAR; j++)
+            {
+
+                dx[j] = dX0 * (f1 + f2);
+                x[j] += dx[j];
+                f1 *= p1;
+                f2 *= p2;
+
+                Li[j + i * NLAR] = x[j];
+            }
+        }
+
+        // Extrapolate the end points
+        for (j = 0; j < NLAR; j++)
+        {
+            double hx = X0[0] / (X0[1] - X0[0]);
+            Li[j] = x[j] + hx * dx[j];
+        }
     }
 
     inline const auto default_del_kernels = std::tuple{

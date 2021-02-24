@@ -71,9 +71,12 @@ namespace ghmc::pms
     using TableCSn = Table;              // CS normalisation tabulations
     using TableCSf = std::vector<Table>; // CS fractions by material
     using TableCS = Table;               // CS for inelatic DELs
-    using TableDE = Table;               // Average energy loss
-    using TableX = Table;                // CSDA range
+    using TabledE = Table;               // Average energy loss
+    using TabledECSDA = Table;           // Average energy loss in CSDA approx
+    using TableX = Table;                // CSDA grammage range for energy loss
+    using TableXCSDA = Table;            // CSDA grammage range for energy loss in CSDA approx.
     using TableT = Table;                // Total proper time
+    using TableTCSDA = Table;            // Total proper time in CSDA approx.
     using TableNIin = Table;             // Interaction lengths
     using IonisationMax = Table;         // Maximum tabulated a(E)
     using RadlossMax = Table;            // Maximum tabulated b(E)
@@ -83,6 +86,7 @@ namespace ghmc::pms
     using TableLb = Table;               // Interaction lengths for DEL Coulomb events
     using TableNIel = Table;             // EHS number of interaction lengths
     using TableMs1 = Table;              // Multiple scattering 1st moment
+    using TableLi = Table;               // Magnetic deflection momenta
 
     inline const auto default_dtp = torch::dtype(torch::kFloat64);
     inline const auto default_ops = default_dtp.layout(torch::kStrided);
@@ -130,9 +134,12 @@ namespace ghmc::pms
         TableCSn table_CSn;
         TableCSf table_CSf;
         TableCS table_CS;
-        TableDE table_dE;
+        TabledE table_dE;
+        TabledECSDA table_dE_CSDA;
         TableX table_X;
+        TableXCSDA table_X_CSDA;
         TableT table_T;
+        TableTCSDA table_T_CSDA;
         TableNIin table_NI_in;
         IonisationMax table_a_max;
         RadlossMax table_b_max;
@@ -142,6 +149,7 @@ namespace ghmc::pms
         TableLb table_Lb;
         TableNIel table_NI_el;
         TableMs1 table_Ms1;
+        TableLi table_Li;
 
         TableCSn cel_table;
         CoulombWorkspace coulomb_workspace;
@@ -314,13 +322,12 @@ namespace ghmc::pms
             }
         }
 
-        inline void init_dedx_tables()
+        inline void init_dedx_tables(const int nmat)
         {
-            const int nmat = materials.size();
-            const int nkin = table_K.numel();
             table_CSf = TableCSf(nmat);
-            table_CS = torch::zeros({nmat, nkin}, default_ops);
+            table_CS = torch::zeros({nmat, table_K.numel()}, default_ops);
             table_dE = torch::zeros_like(table_CS);
+            table_dE_CSDA = torch::zeros_like(table_CS);
             table_NI_in = torch::zeros_like(table_CS);
             table_Kt = torch::zeros(nmat, default_ops);
             table_a_max = torch::zeros_like(table_Kt);
@@ -350,9 +357,9 @@ namespace ghmc::pms
                 static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.photonuc.data(), nkin, default_ops)),
                 a, torch::tensordot(materials[imat].fractions, cel_table.index_select(0, materials[imat].element_ids), 0, 0));
 
-            table_dE[imat] = static_cast<Physics *>(this)->scale_dEdX(
-                                 torch::from_blob(dedx_table.dEdX.data(), nkin, default_ops)) -
-                             be_cel;
+            table_dE_CSDA[imat] = static_cast<Physics *>(this)->scale_dEdX(
+                torch::from_blob(dedx_table.dEdX.data(), nkin, default_ops));
+            table_dE[imat] = table_dE_CSDA[imat] - be_cel;
             table_NI_in[imat] = table_CS[imat] / table_dE[imat];
             table_a_max[imat] = a[nkin - 1];
             table_b_max[imat] =
@@ -377,8 +384,8 @@ namespace ghmc::pms
 
         inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data)
         {
-            init_dedx_tables();
             const int nmat = materials.size();
+            init_dedx_tables(nmat);
             dcs::ThresholdIndex th_i = 0;
             for (int imat = 0; imat < nmat; imat++)
                 th_i = std::max(
@@ -389,10 +396,9 @@ namespace ghmc::pms
             compute_del_threshold(th_i);
         }
 
-        inline void init_coulomb_parameters(const int nmat)
+        inline void init_coulomb_parameters()
         {
-            const int nkin = table_K.numel();
-            table_Mu0 = torch::zeros({nmat, nkin}, default_ops);
+            table_Mu0 = torch::zeros_like(table_dE);
             table_Lb = torch::zeros_like(table_Mu0);
             table_NI_el = torch::zeros_like(table_Mu0);
             table_Ms1 = torch::zeros_like(table_Mu0);
@@ -438,7 +444,7 @@ namespace ghmc::pms
         inline void set_coulomb_parameters()
         {
             const int nmat = materials.size();
-            init_coulomb_parameters(nmat);
+            init_coulomb_parameters();
 
             for (int imat = 0; imat < nmat; imat++)
                 compute_coulomb_scattering_tables(imat);
@@ -446,23 +452,31 @@ namespace ghmc::pms
             coulomb_workspace = CoulombWorkspace{}; // drop CoulombWorkspace data
         }
 
-        inline void init_cel_integrals()
+        inline void init_cel_integrals(const int nmat)
         {
             table_X = torch::zeros_like(table_dE);
+            table_X_CSDA = torch::zeros_like(table_dE);
             table_T = torch::zeros_like(table_dE);
+            table_T_CSDA = torch::zeros_like(table_dE);
+            table_Li = torch::zeros({nmat, table_K.numel(), dcs::NLAR}, default_ops);
         }
 
         inline void set_cel_integrals()
         {
-            init_cel_integrals();
             const int nmat = materials.size();
+            init_cel_integrals(nmat);
+
             const Scalar I0 = dcs::compute_momentum_integral(table_K[0].item<Scalar>(), mass);
             for (int imat = 0; imat < nmat; imat++)
             {
                 dcs::compute_cel_grammage_integral(table_X[imat], table_dE[imat], table_K);
+                dcs::compute_cel_grammage_integral(table_X_CSDA[imat], table_dE_CSDA[imat], table_K);
                 dcs::compute_time_integral(table_T[imat], table_X[imat], table_K, mass, I0);
+                dcs::compute_time_integral(table_T_CSDA[imat], table_X_CSDA[imat], table_K, mass, I0);
                 dcs::compute_kinetic_integral(table_NI_el[imat], table_K);
                 dcs::compute_kinetic_integral(table_NI_in[imat], table_K);
+                dcs::compute_csda_magnetic_transport(table_Li[imat], table_T_CSDA[imat], table_X_CSDA[imat], mass,
+                    static_cast<Physics*>(this)->larmor_factor());
             }
         }
 
@@ -565,11 +579,23 @@ namespace ghmc::pms
         {
             return table_dE;
         }
+        inline const TableCS &get_table_dE_CSDA() const
+        {
+            return table_dE_CSDA;
+        }
         inline const TableX &get_table_X() const
         {
             return table_X;
         }
+        inline const TableX &get_table_X_CSDA() const
+        {
+            return table_X;
+        }
         inline const TableT &get_table_T() const
+        {
+            return table_T;
+        }
+        inline const TableT &get_table_T_CSDA() const
         {
             return table_T;
         }
@@ -608,6 +634,10 @@ namespace ghmc::pms
         inline const TableMs1 &get_table_Ms1() const
         {
             return table_Ms1;
+        }
+        inline const TableLb &get_table_Li() const
+        {
+            return table_Li;
         }
 
         inline utils::Status
@@ -648,6 +678,11 @@ namespace ghmc::pms
         inline EnergyTransferMin x_fraction() const
         {
             return X_FRACTION;
+        }
+
+        inline LarmorFactor larmor_factor() const
+        {
+            return LARMOR_FACTOR;
         }
 
     public:
