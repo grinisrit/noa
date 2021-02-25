@@ -69,8 +69,8 @@ namespace ghmc::pms::dcs
                              const RecoilEnergies &q,
                              const AtomicElement &element,
                              const ParticleMass &mass) {
-            const double *pq = q.data_ptr<double>();
-            utils::vmapi<double>(
+            const Scalar *pq = q.data_ptr<Scalar>();
+            utils::vmapi<Scalar>(
                 K,
                 [&](const int i, const auto &k) { return dcs_kernel(k, pq[i], element, mass); },
                 result);
@@ -86,11 +86,11 @@ namespace ghmc::pms::dcs
                              const ParticleMass &mass,
                              const int min_points,
                              const ComputeCEL cel = false) {
-            return utils::numerics::quadrature6<double>(
+            return utils::numerics::quadrature6<Scalar>(
                        log(K * xlow), log(K),
-                       [&](const double &t) {
-                           const double q = exp(t);
-                           double s = dcs_kernel(K, q, element, mass) * q;
+                       [&](const Scalar &t) {
+                           const Scalar q = exp(t);
+                           Scalar s = dcs_kernel(K, q, element, mass) * q;
                            if (cel)
                                s *= q;
                            return s;
@@ -110,9 +110,9 @@ namespace ghmc::pms::dcs
                              const ParticleMass &mass,
                              const int min_points,
                              const ComputeCEL cel = false) {
-            utils::vmap<double>(
+            utils::vmap<Scalar>(
                 K,
-                [&](const double &k) { return compute_integral(dcs_kernel)(
+                [&](const Scalar &k) { return compute_integral(dcs_kernel)(
                                            k, xlow, element, mass, min_points, cel); },
                 result);
         };
@@ -129,23 +129,23 @@ namespace ghmc::pms::dcs
                                                   const ParticleMass &mass) {
         const int Z = element.Z;
         const auto A = element.A;
-        const double me = ELECTRON_MASS;
-        const double sqrte = 1.648721271;
-        const double phie_factor = mass / (me * me * sqrte);
-        const double rem = 5.63588E-13 * me / mass;
+        const Scalar me = ELECTRON_MASS;
+        const Scalar sqrte = 1.648721271;
+        const Scalar phie_factor = mass / (me * me * sqrte);
+        const Scalar rem = 5.63588E-13 * me / mass;
 
-        const double BZ_n = (Z == 1) ? 202.4 : 182.7 * pow(Z, -1. / 3.);
-        const double BZ_e = (Z == 1) ? 446. : 1429. * pow(Z, -2. / 3.);
-        const double D_n = 1.54 * pow(A, 0.27);
-        const double E = K + mass;
-        const double dcs_factor = 7.297182E-07 * rem * rem * Z / E;
+        const Scalar BZ_n = (Z == 1) ? 202.4 : 182.7 * pow(Z, -1. / 3.);
+        const Scalar BZ_e = (Z == 1) ? 446. : 1429. * pow(Z, -2. / 3.);
+        const Scalar D_n = 1.54 * pow(A, 0.27);
+        const Scalar E = K + mass;
+        const Scalar dcs_factor = 7.297182E-07 * rem * rem * Z / E;
 
-        const double delta_factor = 0.5 * mass * mass / E;
-        const double qe_max = E / (1. + 0.5 * mass * mass / (me * E));
+        const Scalar delta_factor = 0.5 * mass * mass / E;
+        const Scalar qe_max = E / (1. + 0.5 * mass * mass / (me * E));
 
-        const double nu = q / E;
-        const double delta = delta_factor * nu / (1. - nu);
-        double Phi_n, Phi_e;
+        const Scalar nu = q / E;
+        const Scalar delta = delta_factor * nu / (1. - nu);
+        Scalar Phi_n, Phi_e;
         Phi_n = log(BZ_n * (mass + delta * (D_n * sqrte - 2.)) /
                     (D_n * (me + delta * sqrte * BZ_n)));
         if (Phi_n < 0.)
@@ -160,7 +160,7 @@ namespace ghmc::pms::dcs
         else
             Phi_e = 0.;
 
-        const double dcs =
+        const Scalar dcs =
             dcs_factor * (Z * Phi_n + Phi_e) * (4. / 3. * (1. / nu - 1.) + nu);
         return (dcs < 0.) ? 0. : dcs * 1E+03 * AVOGADRO_NUMBER * (mass + K) / A;
     };
@@ -175,46 +175,46 @@ namespace ghmc::pms::dcs
                                                    const AtomicElement &element,
                                                    const ParticleMass &mass) {
         const int Z = element.Z;
-        const double A = element.A;
+        const Scalar A = element.A;
         /*  Check the bounds of the energy transfer. */
         if (q <= 4. * ELECTRON_MASS)
             return 0.;
-        const double sqrte = 1.6487212707;
-        const double Z13 = pow(Z, 1. / 3.);
+        const Scalar sqrte = 1.6487212707;
+        const Scalar Z13 = pow(Z, 1. / 3.);
         if (q >= K + mass * (1. - 0.75 * sqrte * Z13))
             return 0.;
 
         /*  Precompute some constant factors for the compute_integral. */
-        const double nu = q / (K + mass);
-        const double r = mass / ELECTRON_MASS;
-        const double beta = 0.5 * nu * nu / (1. - nu);
-        const double xi_factor = 0.5 * r * r * beta;
-        const double A_ = (Z == 1) ? 202.4 : 183.;
-        const double AZ13 = A_ / Z13;
-        const double cL = 2. * sqrte * ELECTRON_MASS * AZ13;
-        const double cLe = 2.25 * Z13 * Z13 / (r * r);
+        const Scalar nu = q / (K + mass);
+        const Scalar r = mass / ELECTRON_MASS;
+        const Scalar beta = 0.5 * nu * nu / (1. - nu);
+        const Scalar xi_factor = 0.5 * r * r * beta;
+        const Scalar A_ = (Z == 1) ? 202.4 : 183.;
+        const Scalar AZ13 = A_ / Z13;
+        const Scalar cL = 2. * sqrte * ELECTRON_MASS * AZ13;
+        const Scalar cLe = 2.25 * Z13 * Z13 / (r * r);
 
         /*  Compute the bound for the integral. */
-        const double gamma = 1. + K / mass;
-        const double x0 = 4. * ELECTRON_MASS / q;
-        const double x1 = 6. / (gamma * (gamma - q / mass));
-        const double argmin =
+        const Scalar gamma = 1. + K / mass;
+        const Scalar x0 = 4. * ELECTRON_MASS / q;
+        const Scalar x1 = 6. / (gamma * (gamma - q / mass));
+        const Scalar argmin =
             (x0 + 2. * (1. - x0) * x1) / (1. + (1. - x1) * sqrt(1. - x0));
         if ((argmin >= 1.) || (argmin <= 0.))
             return 0.;
-        const double tmin = log(argmin);
+        const Scalar tmin = log(argmin);
 
         /*  Compute the integral over t = ln(1-rho). */
-        double I = utils::numerics::quadrature8<double>(0.f, 1.f, [&](const double &t) {
-            const double eps = exp(t * tmin);
-            const double rho = 1. - eps;
-            const double rho2 = rho * rho;
-            const double rho21 = eps * (2. - eps);
-            const double xi = xi_factor * rho21;
-            const double xi_i = 1. / xi;
+        Scalar I = utils::numerics::quadrature8<Scalar>(0.f, 1.f, [&](const Scalar &t) {
+            const Scalar eps = exp(t * tmin);
+            const Scalar rho = 1. - eps;
+            const Scalar rho2 = rho * rho;
+            const Scalar rho21 = eps * (2. - eps);
+            const Scalar xi = xi_factor * rho21;
+            const Scalar xi_i = 1. / xi;
 
             /* Compute the e-term. */
-            double Be;
+            Scalar Be;
             if (xi >= 1E+03)
                 Be =
                     0.5 * xi_i * ((3 - rho2) + 2. * beta * (1. + rho2));
@@ -222,19 +222,19 @@ namespace ghmc::pms::dcs
                 Be = ((2. + rho2) * (1. + beta) + xi * (3. + rho2)) *
                          log(1. + xi_i) +
                      (rho21 - beta) / (1. + xi) - 3. - rho2;
-            const double Ye = (5. - rho2 + 4. * beta * (1. + rho2)) /
+            const Scalar Ye = (5. - rho2 + 4. * beta * (1. + rho2)) /
                               (2. * (1. + 3. * beta) * log(3. + xi_i) - rho2 -
                                2. * beta * (2. - rho2));
-            const double xe = (1. + xi) * (1. + Ye);
-            const double cLi = cL / rho21;
-            const double Le = log(AZ13 * sqrt(xe) * q / (q + cLi * xe)) -
+            const Scalar xe = (1. + xi) * (1. + Ye);
+            const Scalar cLi = cL / rho21;
+            const Scalar Le = log(AZ13 * sqrt(xe) * q / (q + cLi * xe)) -
                               0.5 * log(1. + cLe * xe);
-            double Phi_e = Be * Le;
+            Scalar Phi_e = Be * Le;
             if (Phi_e < 0.)
                 Phi_e = 0.;
 
             /* Compute the mass-term. */
-            double Bmu;
+            Scalar Bmu;
             if (xi <= 1E-03)
                 Bmu = 0.5 * xi * (5. - rho2 + beta * (3. + rho2));
             else
@@ -243,25 +243,25 @@ namespace ghmc::pms::dcs
                           log(1. + xi) +
                       xi * (rho21 - beta) / (1. + xi) +
                       (1. + 2. * beta) * rho21;
-            const double Ymu = (4. + rho2 + 3. * beta * (1. + rho2)) /
+            const Scalar Ymu = (4. + rho2 + 3. * beta * (1. + rho2)) /
                                ((1. + rho2) * (1.5 + 2. * beta) * log(3. + xi) + 1. -
                                 1.5 * rho2);
-            const double xmu = (1. + xi) * (1. + Ymu);
-            const double Lmu =
+            const Scalar xmu = (1. + xi) * (1. + Ymu);
+            const Scalar Lmu =
                 log(r * AZ13 * q / (1.5 * Z13 * (q + cLi * xmu)));
-            double Phi_mu = Bmu * Lmu;
+            Scalar Phi_mu = Bmu * Lmu;
             if (Phi_mu < 0.)
                 Phi_mu = 0.;
             return -(Phi_e + Phi_mu / (r * r)) * (1. - rho) * tmin;
         });
 
         /* Atomic electrons form factor. */
-        double zeta;
+        Scalar zeta;
         if (gamma <= 35.)
             zeta = 0.;
         else
         {
-            double gamma1, gamma2;
+            Scalar gamma1, gamma2;
             if (Z == 1.)
             {
                 gamma1 = 4.4E-05;
@@ -285,8 +285,8 @@ namespace ghmc::pms::dcs
         }
 
         /* Gather the results and return the macroscopic DCS. */
-        const double E = K + mass;
-        const double dcs = 1.794664E-34 * Z * (Z + zeta) * (E - q) * I /
+        const Scalar E = K + mass;
+        const Scalar dcs = 1.794664E-34 * Z * (Z + zeta) * (E - q) * I /
                            (q * E);
         return (dcs < 0.) ? 0. : dcs * 1E+03 * AVOGADRO_NUMBER * (mass + K) / A;
     };
@@ -297,51 +297,51 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9371
      */
 
-    inline double dcs_photonuclear_f2_allm(const double x, const double Q2)
+    inline Scalar dcs_photonuclear_f2_allm(const Scalar x, const Scalar Q2)
     {
-        const double m02 = 0.31985;
-        const double mP2 = 49.457;
-        const double mR2 = 0.15052;
-        const double Q02 = 0.52544;
-        const double Lambda2 = 0.06527;
+        const Scalar m02 = 0.31985;
+        const Scalar mP2 = 49.457;
+        const Scalar mR2 = 0.15052;
+        const Scalar Q02 = 0.52544;
+        const Scalar Lambda2 = 0.06527;
 
-        const double cP1 = 0.28067;
-        const double cP2 = 0.22291;
-        const double cP3 = 2.1979;
-        const double aP1 = -0.0808;
-        const double aP2 = -0.44812;
-        const double aP3 = 1.1709;
-        const double bP1 = 0.36292;
-        const double bP2 = 1.8917;
-        const double bP3 = 1.8439;
+        const Scalar cP1 = 0.28067;
+        const Scalar cP2 = 0.22291;
+        const Scalar cP3 = 2.1979;
+        const Scalar aP1 = -0.0808;
+        const Scalar aP2 = -0.44812;
+        const Scalar aP3 = 1.1709;
+        const Scalar bP1 = 0.36292;
+        const Scalar bP2 = 1.8917;
+        const Scalar bP3 = 1.8439;
 
-        const double cR1 = 0.80107;
-        const double cR2 = 0.97307;
-        const double cR3 = 3.4942;
-        const double aR1 = 0.58400;
-        const double aR2 = 0.37888;
-        const double aR3 = 2.6063;
-        const double bR1 = 0.01147;
-        const double bR2 = 3.7582;
-        const double bR3 = 0.49338;
+        const Scalar cR1 = 0.80107;
+        const Scalar cR2 = 0.97307;
+        const Scalar cR3 = 3.4942;
+        const Scalar aR1 = 0.58400;
+        const Scalar aR2 = 0.37888;
+        const Scalar aR3 = 2.6063;
+        const Scalar bR1 = 0.01147;
+        const Scalar bR2 = 3.7582;
+        const Scalar bR3 = 0.49338;
 
-        const double M2 = 0.8803505929;
-        const double W2 = M2 + Q2 * (1.0 / x - 1.0);
-        const double t = log(log((Q2 + Q02) / Lambda2) / log(Q02 / Lambda2));
-        const double xP = (Q2 + mP2) / (Q2 + mP2 + W2 - M2);
-        const double xR = (Q2 + mR2) / (Q2 + mR2 + W2 - M2);
-        const double lnt = log(t);
-        const double cP =
+        const Scalar M2 = 0.8803505929;
+        const Scalar W2 = M2 + Q2 * (1.0 / x - 1.0);
+        const Scalar t = log(log((Q2 + Q02) / Lambda2) / log(Q02 / Lambda2));
+        const Scalar xP = (Q2 + mP2) / (Q2 + mP2 + W2 - M2);
+        const Scalar xR = (Q2 + mR2) / (Q2 + mR2 + W2 - M2);
+        const Scalar lnt = log(t);
+        const Scalar cP =
             cP1 + (cP1 - cP2) * (1.0 / (1.0 + exp(cP3 * lnt)) - 1.0);
-        const double aP =
+        const Scalar aP =
             aP1 + (aP1 - aP2) * (1.0 / (1.0 + exp(aP3 * lnt)) - 1.0);
-        const double bP = bP1 + bP2 * exp(bP3 * lnt);
-        const double cR = cR1 + cR2 * exp(cR3 * lnt);
-        const double aR = aR1 + aR2 * exp(aR3 * lnt);
-        const double bR = bR1 + bR2 * exp(bR3 * lnt);
+        const Scalar bP = bP1 + bP2 * exp(bP3 * lnt);
+        const Scalar cR = cR1 + cR2 * exp(cR3 * lnt);
+        const Scalar aR = aR1 + aR2 * exp(aR3 * lnt);
+        const Scalar bR = bR1 + bR2 * exp(bR3 * lnt);
 
-        const double F2P = cP * exp(aP * log(xP) + bP * log(1 - x));
-        const double F2R = cR * exp(aR * log(xR) + bR * log(1 - x));
+        const Scalar F2P = cP * exp(aP * log(xP) + bP * log(1 - x));
+        const Scalar F2R = cR * exp(aR * log(xR) + bR * log(1 - x));
 
         return Q2 / (Q2 + m02) * (F2P + F2R);
     }
@@ -351,9 +351,9 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9433
      */
-    inline double dcs_photonuclear_f2a_drss(const double x, const double F2p, const double A)
+    inline Scalar dcs_photonuclear_f2a_drss(const Scalar x, const Scalar F2p, const Scalar A)
     {
-        double a = 1.0;
+        Scalar a = 1.0;
         if (x < 0.0014)
             a = exp(-0.1 * log(A));
         else if (x < 0.04)
@@ -368,13 +368,13 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9453
      */
-    inline double dcs_photonuclear_r_whitlow(const double x, const double Q2)
+    inline Scalar dcs_photonuclear_r_whitlow(const Scalar x, const Scalar Q2)
     {
-        double q2 = Q2;
+        Scalar q2 = Q2;
         if (Q2 < 0.3)
             q2 = 0.3;
 
-        const double theta =
+        const Scalar theta =
             1 + 12.0 * q2 / (1.0 + q2) * 0.015625 / (0.015625 + x * x);
 
         return (0.635 / log(q2 / 0.04) * theta + 0.5747 / q2 -
@@ -387,19 +387,19 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9478
      */
 
-    inline double dcs_photonuclear_d2(const double A, const double mass, const double K, const double q, const double Q2)
+    inline Scalar dcs_photonuclear_d2(const Scalar A, const Scalar mass, const Scalar K, const Scalar q, const Scalar Q2)
     {
-        const double cf = 2.603096E-35;
-        const double M = 0.931494;
-        const double E = K + mass;
+        const Scalar cf = 2.603096E-35;
+        const Scalar M = 0.931494;
+        const Scalar E = K + mass;
 
-        const double y = q / E;
-        const double x = 0.5 * Q2 / (M * q);
-        const double F2p = dcs_photonuclear_f2_allm(x, Q2);
-        const double F2A = dcs_photonuclear_f2a_drss(x, F2p, A);
-        const double R = dcs_photonuclear_r_whitlow(x, Q2);
+        const Scalar y = q / E;
+        const Scalar x = 0.5 * Q2 / (M * q);
+        const Scalar F2p = dcs_photonuclear_f2_allm(x, Q2);
+        const Scalar F2A = dcs_photonuclear_f2a_drss(x, F2p, A);
+        const Scalar R = dcs_photonuclear_r_whitlow(x, Q2);
 
-        const double dds = (1 - y +
+        const Scalar dds = (1 - y +
                             0.5 * (1 - 2 * mass * mass / Q2) *
                                 (y * y + Q2 / (E * E)) / (1 + R)) /
                                (Q2 * Q2) -
@@ -408,7 +408,7 @@ namespace ghmc::pms::dcs
         return cf * F2A * dds / q;
     }
 
-    inline bool dcs_photonuclear_check(const double K, const double q)
+    inline bool dcs_photonuclear_check(const Scalar K, const Scalar q)
     {
         return (q < 1.) || (q < 2E-03 * K);
     }
@@ -425,34 +425,34 @@ namespace ghmc::pms::dcs
         if (dcs_photonuclear_check(K, q))
             return 0.;
 
-        const double A = element.A;
-        const double M = 0.931494;
-        const double mpi = 0.134977;
-        const double E = K + mass;
+        const Scalar A = element.A;
+        const Scalar M = 0.931494;
+        const Scalar mpi = 0.134977;
+        const Scalar E = K + mass;
 
         if ((q >= (E - mass)) || (q <= (mpi * (1.0 + 0.5 * mpi / M))))
             return 0.;
 
-        const double y = q / E;
-        const double Q2min = mass * mass * y * y / (1 - y);
-        const double Q2max = 2.0 * M * (q - mpi) - mpi * mpi;
+        const Scalar y = q / E;
+        const Scalar Q2min = mass * mass * y * y / (1 - y);
+        const Scalar Q2max = 2.0 * M * (q - mpi) - mpi * mpi;
         if ((Q2max < Q2min) | (Q2min < 0))
             return 0.;
 
         /* Set the binning. */
-        const double pQ2min = log(Q2min);
-        const double pQ2max = log(Q2max);
-        const double dpQ2 = pQ2max - pQ2min;
-        const double pQ2c = 0.5 * (pQ2max + pQ2min);
+        const Scalar pQ2min = log(Q2min);
+        const Scalar pQ2max = log(Q2max);
+        const Scalar dpQ2 = pQ2max - pQ2min;
+        const Scalar pQ2c = 0.5 * (pQ2max + pQ2min);
 
         /*
          * Integrate the doubly differential cross-section over Q2 using
          * a Gaussian quadrature. Note that 9 points are enough to get a
          * better than 0.1 % accuracy.
         */
-        const double ds =
-            utils::numerics::quadrature9<double>(0.f, 1.f, [&A, &pQ2c, &dpQ2, &mass, &K, &q](const double &t) {
-                const double Q2 = exp(pQ2c + 0.5 * dpQ2 * t);
+        const Scalar ds =
+            utils::numerics::quadrature9<Scalar>(0.f, 1.f, [&A, &pQ2c, &dpQ2, &mass, &K, &q](const Scalar &t) {
+                const Scalar Q2 = exp(pQ2c + 0.5 * dpQ2 * t);
                 return dcs_photonuclear_d2(A, mass, K, q, Q2) * Q2;
             });
 
@@ -468,33 +468,33 @@ namespace ghmc::pms::dcs
                                               const RecoilEnergy &q,
                                               const AtomicElement &element,
                                               const ParticleMass &mass) {
-        const double A = element.A;
+        const Scalar A = element.A;
         const int Z = element.Z;
 
-        const double P2 = K * (K + 2. * mass);
-        const double E = K + mass;
-        const double Wmax = 2. * ELECTRON_MASS * P2 /
+        const Scalar P2 = K * (K + 2. * mass);
+        const Scalar E = K + mass;
+        const Scalar Wmax = 2. * ELECTRON_MASS * P2 /
                             (mass * mass +
                              ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
         if ((Wmax < X_FRACTION * K) || (q > Wmax))
             return 0.;
-        const double Wmin = 0.62 * element.I;
+        const Scalar Wmin = 0.62 * element.I;
         if (q <= Wmin)
             return 0.;
 
         /* Close interactions for Q >> atomic binding energies. */
-        const double a0 = 0.5 / P2;
-        const double a1 = -1. / Wmax;
-        const double a2 = E * E / P2;
-        const double cs =
+        const Scalar a0 = 0.5 / P2;
+        const Scalar a1 = -1. / Wmax;
+        const Scalar a2 = E * E / P2;
+        const Scalar cs =
             1.535336E-05 * E * Z / A * (a0 + 1. / q * (a1 + a2 / q));
 
         /* Radiative correction. */
-        double Delta = 0.;
-        const double m1 = mass - ELECTRON_MASS;
+        Scalar Delta = 0.;
+        const Scalar m1 = mass - ELECTRON_MASS;
         if (K >= 0.5 * m1 * m1 / ELECTRON_MASS)
         {
-            const double L1 = log(1. + 2. * q / ELECTRON_MASS);
+            const Scalar L1 = log(1. + 2. * q / ELECTRON_MASS);
             Delta = 1.16141E-03 * L1 *
                     (log(4. * E * (E - q) / (mass * mass)) -
                      L1);
@@ -512,15 +512,15 @@ namespace ghmc::pms::dcs
                                                         const AtomicElement &element,
                                                         const ParticleMass &mass,
                                                         const ComputeCEL cel = false) {
-        const double P2 = K * (K + 2. * mass);
-        const double E = K + mass;
-        const double Wmax = 2. * ELECTRON_MASS * P2 /
+        const Scalar P2 = K * (K + 2. * mass);
+        const Scalar E = K + mass;
+        const Scalar Wmax = 2. * ELECTRON_MASS * P2 /
                             (mass * mass +
                              ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
         if (Wmax < X_FRACTION * K)
             return 0.;
-        double Wmin = 0.62 * element.I;
-        const double qlow = K * xlow;
+        Scalar Wmin = 0.62 * element.I;
+        const Scalar qlow = K * xlow;
         if (qlow >= Wmin)
             Wmin = qlow;
 
@@ -529,11 +529,11 @@ namespace ghmc::pms::dcs
             return 0.;
 
         /* Close interactions for Q >> atomic binding energies. */
-        const double a0 = 0.5 / P2;
-        const double a1 = -1. / Wmax;
-        const double a2 = E * E / P2;
+        const Scalar a0 = 0.5 / P2;
+        const Scalar a1 = -1. / Wmax;
+        const Scalar a2 = E * E / P2;
 
-        double S;
+        Scalar S;
         if (!cel)
         {
             S = a0 * (Wmax - Wmin) + a1 * log(Wmax / Wmin) +
@@ -557,14 +557,14 @@ namespace ghmc::pms::dcs
                              const ParticleMass &mass,
                              const int min_points,
                              const ComputeCEL cel = false) {
-            const double m1 = mass - ELECTRON_MASS;
+            const Scalar m1 = mass - ELECTRON_MASS;
             if (K <= 0.5 * m1 * m1 / ELECTRON_MASS)
                 return analytic_integral_ionisation(K, xlow, element, mass, cel);
-            return utils::numerics::quadrature6<double>(
+            return utils::numerics::quadrature6<Scalar>(
                        log(K * xlow), log(K),
-                       [&](const double &t) {
-                           const double q = exp(t);
-                           double s = dcs_kernel(K, q, element, mass) * q;
+                       [&](const Scalar &t) {
+                           const Scalar q = exp(t);
+                           Scalar s = dcs_kernel(K, q, element, mass) * q;
                            if (cel)
                                s *= q;
                            return s;
@@ -644,27 +644,27 @@ namespace ghmc::pms::dcs
         const ThresholdIndex th_i)
     {
         int n = K.numel();
-        double *pXt = Xt.data_ptr<double>();
-        double *pK = K.data_ptr<double>();
+        Scalar *pXt = Xt.data_ptr<Scalar>();
+        Scalar *pK = K.data_ptr<Scalar>();
         for (int i = th_i; i < n; i++)
         {
-            double x = xlow;
+            Scalar x = xlow;
             while ((x < 1.) && (del_kernel(pK[i], pK[i] * x, element, mass) <= 0.))
                 x *= 2;
             if (x >= 1.)
                 x = 1.;
             else if (x > xlow)
             {
-                const double eps = 1E-02 * xlow;
-                double x0 = 0.5 * x;
-                double dcs = 0.;
+                const Scalar eps = 1E-02 * xlow;
+                Scalar x0 = 0.5 * x;
+                Scalar dcs = 0.;
                 for (;;)
                 {
                     if (dcs == 0.)
                         x0 += 0.5 * (x - x0);
                     else
                     {
-                        const double dx =
+                        const Scalar dx =
                             x - x0;
                         x = x0;
                         x0 -= 0.5 * dx;
@@ -700,26 +700,26 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
      */
-    inline double coulomb_frame_parameters(double *fCM,
+    inline Scalar coulomb_frame_parameters(Scalar *fCM,
                                            const KineticEnergy &K,
                                            const AtomicElement &element,
                                            const ParticleMass &mass)
     {
-        double kinetic0;
-        const double Ma = element.A * ATOMIC_MASS_ENERGY;
-        double M2 = mass + Ma;
+        Scalar kinetic0;
+        const Scalar Ma = element.A * ATOMIC_MASS_ENERGY;
+        Scalar M2 = mass + Ma;
         M2 *= M2;
-        const double sCM12i = 1. / sqrt(M2 + 2. * Ma * K);
+        const Scalar sCM12i = 1. / sqrt(M2 + 2. * Ma * K);
         fCM[0] = (K + mass + Ma) * sCM12i;
         kinetic0 =
             (K * Ma + mass * (mass + Ma)) * sCM12i -
             mass;
         if (kinetic0 < KIN_CUTOFF)
             kinetic0 = KIN_CUTOFF;
-        const double etot = K + mass + Ma;
-        const double betaCM2 =
+        const Scalar etot = K + mass + Ma;
+        const Scalar betaCM2 =
             K * (K + 2. * mass) / (etot * etot);
-        double rM2 = mass / Ma;
+        Scalar rM2 = mass / Ma;
         rM2 *= rM2;
         fCM[1] = sqrt(rM2 * (1. - betaCM2) + betaCM2);
         return kinetic0;
@@ -730,9 +730,9 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6038
      */
-    inline double coulomb_spin_factor(const KineticEnergy &K, const ParticleMass &mass)
+    inline Scalar coulomb_spin_factor(const KineticEnergy &K, const ParticleMass &mass)
     {
-        const double e = K + mass;
+        const Scalar e = K + mass;
         return K * (e + mass) / (e * e);
     }
 
@@ -741,12 +741,12 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5992
      */
-    inline double coulomb_wentzel_path(const double &screening,
+    inline Scalar coulomb_wentzel_path(const Scalar &screening,
                                        const KineticEnergy &K,
                                        const AtomicElement &element,
                                        const ParticleMass &mass)
     {
-        const double d = K * (K + 2. * mass) /
+        const Scalar d = K * (K + 2. * mass) /
                          (element.Z * (K + mass));
         return element.A * 2.54910918E+08 * screening * (1. + screening) * d * d;
     }
@@ -755,18 +755,18 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5934
      */
-    inline double coulomb_screening_parameters(double *pscreen,
+    inline Scalar coulomb_screening_parameters(Scalar *pscreen,
                                                const KineticEnergy &K,
                                                const AtomicElement &element,
                                                const ParticleMass &mass)
     {
         // Nuclear screening
-        const double third = 1. / 3;
-        const double A13 = pow(element.A, third);
-        const double R1 = 1.02934 * A13 + 0.435;
-        const double R2 = 2.;
-        const double p2 = K * (K + 2. * mass);
-        const double d = 5.8406E-02 / p2;
+        const Scalar third = 1. / 3;
+        const Scalar A13 = pow(element.A, third);
+        const Scalar R1 = 1.02934 * A13 + 0.435;
+        const Scalar R2 = 2.;
+        const Scalar p2 = K * (K + 2. * mass);
+        const Scalar d = 5.8406E-02 / p2;
         pscreen[1] = d / (R1 * R1);
         pscreen[2] = d / (R2 * R2);
 
@@ -775,15 +775,15 @@ namespace ghmc::pms::dcs
         // particles only.
 
         const int Z = element.Z;
-        const double etot = K + mass;
-        const double ZE = Z * etot;
-        const double zeta2 = 5.3251346E-05 * (ZE * ZE) / p2;
-        double cK;
+        const Scalar etot = K + mass;
+        const Scalar ZE = Z * etot;
+        const Scalar zeta2 = 5.3251346E-05 * (ZE * ZE) / p2;
+        Scalar cK;
         if (zeta2 > 1.)
         {
             // Let's perform the serie computation.
             int i, n = 10 + Z;
-            double f = 0.;
+            Scalar f = 0.;
             for (i = 1; i <= n; i++)
                 f += zeta2 / (i * (i * i + zeta2));
             cK = exp(f);
@@ -798,17 +798,17 @@ namespace ghmc::pms::dcs
         // Original Moliere's atomic screening, considered as a reference
         // value at low energies.
 
-        const double cM = 1. + 3.34 * zeta2;
+        const Scalar cM = 1. + 3.34 * zeta2;
 
         // Atomic screening interpolation.
-        double r = K / etot;
+        Scalar r = K / etot;
         r *= r;
-        const double c = r * cK + (1. - r) * cM;
+        const Scalar c = r * cK + (1. - r) * cM;
         pscreen[0] = 5.179587126E-12 * pow(Z, 2. / 3.) * c / p2;
 
-        const double d01 = 1. / (pscreen[0] - pscreen[1]);
-        const double d02 = 1. / (pscreen[0] - pscreen[2]);
-        const double d12 = 1. / (pscreen[1] - pscreen[2]);
+        const Scalar d01 = 1. / (pscreen[0] - pscreen[1]);
+        const Scalar d02 = 1. / (pscreen[0] - pscreen[2]);
+        const Scalar d12 = 1. / (pscreen[1] - pscreen[2]);
         pscreen[6] = d01 * d01 * d02 * d02;
         pscreen[7] = d01 * d01 * d12 * d12;
         pscreen[8] = d12 * d12 * d02 * d02;
@@ -829,16 +829,16 @@ namespace ghmc::pms::dcs
             const AtomicElement &element,
             const ParticleMass &mass) {
             const int nkin = K.numel();
-            double *pK = K.data_ptr<double>();
+            Scalar *pK = K.data_ptr<Scalar>();
 
-            double *pfCM = fCM.data_ptr<double>();
-            double *pscreen = screening.data_ptr<double>();
-            double *pfspin = fspin.data_ptr<double>();
-            double *pinvlbd = invlambda.data_ptr<double>();
+            Scalar *pfCM = fCM.data_ptr<Scalar>();
+            Scalar *pscreen = screening.data_ptr<Scalar>();
+            Scalar *pfspin = fspin.data_ptr<Scalar>();
+            Scalar *pinvlbd = invlambda.data_ptr<Scalar>();
 
             for (int i = 0; i < nkin; i++)
             {
-                const double kinetic0 = coulomb_frame_parameters(pfCM + 2 * i, pK[i], element, mass);
+                const Scalar kinetic0 = coulomb_frame_parameters(pfCM + 2 * i, pK[i], element, mass);
                 pfspin[i] = coulomb_spin_factor(kinetic0, mass);
                 pinvlbd[i] = coulomb_screening_parameters(pscreen + NSF * i, kinetic0, element, mass);
             }
@@ -850,34 +850,34 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6160
      */
     void coulomb_transport_coefficients(
-        double *pcoefs,
-        double *pscreen,
-        const double &fspin,
-        const double &mu)
+        Scalar *pcoefs,
+        Scalar *pscreen,
+        const Scalar &fspin,
+        const Scalar &mu)
     {
-        const double nuclear_screening =
+        const Scalar nuclear_screening =
             (pscreen[1] < pscreen[2]) ? pscreen[1] : pscreen[2];
         if (mu < 1E-08 * nuclear_screening)
         {
             // We neglect the nucleus finite size.
-            const double L = log(1. + mu / pscreen[0]);
-            const double r = mu / (mu + pscreen[0]);
-            const double k = pscreen[0] * (1. + pscreen[0]);
+            const Scalar L = log(1. + mu / pscreen[0]);
+            const Scalar r = mu / (mu + pscreen[0]);
+            const Scalar k = pscreen[0] * (1. + pscreen[0]);
             pcoefs[0] = k * (r / pscreen[0] - fspin * (L - r));
-            const double I2 = mu - pscreen[0] * (r - 2. * L);
+            const Scalar I2 = mu - pscreen[0] * (r - 2. * L);
             pcoefs[1] = 2. * k * (L - r - fspin * I2);
         }
         else
         {
             // We need to take all factors into account using a pole reduction.
-            double I0[3], I1[3], I2[3], J0[3], J1[3], J2[3];
+            Scalar I0[3], I1[3], I2[3], J0[3], J1[3], J2[3];
             int i;
-            double mu2 = 0.5 * mu * mu;
+            Scalar mu2 = 0.5 * mu * mu;
             for (i = 0; i < 3; i++)
             {
-                double r = mu / (mu + pscreen[i]);
-                double L = log(1. + mu / pscreen[i]);
-                double mu1 = mu;
+                Scalar r = mu / (mu + pscreen[i]);
+                Scalar L = log(1. + mu / pscreen[i]);
+                Scalar mu1 = mu;
                 I0[i] = r / pscreen[i];
                 J0[i] = L;
                 I1[i] = L - r;
@@ -890,7 +890,7 @@ namespace ghmc::pms::dcs
                 J2[i] = mu2 + L - mu1;
             }
 
-            const double k = pscreen[0] * (1. + pscreen[0]) *
+            const Scalar k = pscreen[0] * (1. + pscreen[0]) *
                              pscreen[1] * pscreen[1] * pscreen[2] * pscreen[2];
             pcoefs[0] = pcoefs[1] = 0.;
             for (i = 0; i < 3; i++)
@@ -911,12 +911,12 @@ namespace ghmc::pms::dcs
             const ScreeningFactors &screening,
             const FSpins &fspin,
             const AngularCutoff &mu) {
-            double *pcoefs = coefficients.data_ptr<double>();
-            double *pscreen = screening.data_ptr<double>();
-            double *pfspin = fspin.data_ptr<double>();
+            Scalar *pcoefs = coefficients.data_ptr<Scalar>();
+            Scalar *pscreen = screening.data_ptr<Scalar>();
+            Scalar *pfspin = fspin.data_ptr<Scalar>();
 
             const bool nmu = (mu.numel() == 1);
-            double *pmu = mu.data_ptr<double>();
+            Scalar *pmu = mu.data_ptr<Scalar>();
 
             const int nspin = fspin.numel();
             for (int i = 0; i < nspin; i++)
@@ -932,35 +932,35 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6109
      */
-    inline double coulomb_restricted_cs(
-        const double &mu,
-        const double &fspin,
-        double *screen)
+    inline Scalar coulomb_restricted_cs(
+        const Scalar &mu,
+        const Scalar &fspin,
+        Scalar *screen)
     {
         if (mu >= 1.)
             return 0.;
 
-        const double nuclear_screening =
+        const Scalar nuclear_screening =
             (screen[1] < screen[2]) ? screen[1] : screen[2];
         if (mu < 1E-08 * nuclear_screening)
         {
             // We neglect the nucleus finite size.
-            const double L = log((screen[0] + 1.) / (screen[0] + mu));
-            const double r =
+            const Scalar L = log((screen[0] + 1.) / (screen[0] + mu));
+            const Scalar r =
                 (1. - mu) / ((screen[0] + mu) * (screen[0] + 1.));
-            const double k = screen[0] * (1. + screen[0]);
+            const Scalar k = screen[0] * (1. + screen[0]);
             return k * (r - fspin * (L - screen[0] * r));
         }
         else
         {
             // We need to take all factors into account using a pole reduction.
-            double I0[3], I1[3], J0[3], J1[3];
+            Scalar I0[3], I1[3], J0[3], J1[3];
             int i;
             for (i = 0; i < 3; i++)
             {
-                const double L =
+                const Scalar L =
                     log((screen[i] + 1.) / (screen[i] + mu));
-                const double r = (1. - mu) /
+                const Scalar r = (1. - mu) /
                                  ((screen[i] + mu) * (screen[i] + 1.));
                 I0[i] = r;
                 J0[i] = L;
@@ -968,9 +968,9 @@ namespace ghmc::pms::dcs
                 J1[i] = mu - screen[i] * L;
             }
 
-            const double k = screen[0] * (1. + screen[0]) *
+            const Scalar k = screen[0] * (1. + screen[0]) *
                              screen[1] * screen[1] * screen[2] * screen[2];
-            double cs = 0.;
+            Scalar cs = 0.;
             for (i = 0; i < 3; i++)
             {
                 cs += screen[3 + i] * (J0[i] - fspin * J1[i]) +
@@ -980,16 +980,16 @@ namespace ghmc::pms::dcs
         }
     }
 
-    inline double cutoff_objective(
-        const double &cs_h,
-        const double &mu,
-        double *invlambda,
-        double *fspin,
-        double *screen,
+    inline Scalar cutoff_objective(
+        const Scalar &cs_h,
+        const Scalar &mu,
+        Scalar *invlambda,
+        Scalar *fspin,
+        Scalar *screen,
         const int nel = 1,
         const int nkin = 1)
     {
-        double cs_tot = 0.;
+        Scalar cs_tot = 0.;
         for (int iel = 0; iel < nel; iel++)
         {
             const int off = iel * nkin;
@@ -1003,34 +1003,34 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8472
      */
-    inline void coulomb_hard_scattering(double &mu0, double &lb_h,
-                                        double *G, double *fCM,
-                                        double *screen,
-                                        double *invlambda,
-                                        double *fspin,
+    inline void coulomb_hard_scattering(Scalar &mu0, Scalar &lb_h,
+                                        Scalar *G, Scalar *fCM,
+                                        Scalar *screen,
+                                        Scalar *invlambda,
+                                        Scalar *fspin,
                                         const int nel = 1,
                                         const int nkin = 1)
     {
 
-        double invlb_m = 0., invlb1_m = 0.;
-        double s_m_l = 0., s_m_h = 0.;
+        Scalar invlb_m = 0., invlb1_m = 0.;
+        Scalar s_m_l = 0., s_m_h = 0.;
 
         for (int iel = 0; iel < nel; iel++)
         {
             const int off = iel * nkin;
 
-            const double invlb = invlambda[off];
-            const double scr = screen[NSF * off];
+            const Scalar invlb = invlambda[off];
+            const Scalar scr = screen[NSF * off];
 
             invlb_m += invlb * G[2 * off];
             s_m_h += scr * invlb;
             s_m_l += invlb / scr;
-            const double d = 1. / (fCM[2 * off] * (1. + fCM[1 + 2 * off]));
+            const Scalar d = 1. / (fCM[2 * off] * (1. + fCM[1 + 2 * off]));
             invlb1_m += invlb * G[1 + 2 * off] * d * d;
         }
 
         // Set the hard scattering mean free path.
-        const double lb_m = 1. / invlb_m;
+        const Scalar lb_m = 1. / invlb_m;
         lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
 
         // Compute the hard scattering cutoff angle, in the CM.
@@ -1038,20 +1038,20 @@ namespace ghmc::pms::dcs
         {
             // Initialise the root finder with an asymptotic starting value
             // Asymptotic value when lb_h >> lb_m versus when lb_h ~= lb_m
-            double s_m = (lb_h > 2. * lb_m) ? s_m_h * lb_m : 1. / (s_m_l * lb_m);
+            Scalar s_m = (lb_h > 2. * lb_m) ? s_m_h * lb_m : 1. / (s_m_l * lb_m);
 
             mu0 = s_m * (lb_h - lb_m) / (s_m * lb_h + lb_m);
 
             // targeted cross section
-            const double cs_h = 1. / lb_h;
+            const Scalar cs_h = 1. / lb_h;
 
             // Configure for the root solver.
             // Solve for the cut-off angle. We try an initial bracketing in
             // [0.25*mu0; 4.*mu0], with mu0 the asymptotic estimate.
-            double mu_max = std::min(4. * mu0, 1.);
-            double mu_min = 0.25 * mu0;
+            Scalar mu_max = std::min(4. * mu0, 1.);
+            Scalar mu_min = 0.25 * mu0;
 
-            double fmax = 0, fmin = 0;
+            Scalar fmax = 0, fmin = 0;
 
             fmax = cutoff_objective(cs_h, mu_max, invlambda, fspin, screen, nel, nkin);
             if (fmax > 0.)
@@ -1077,9 +1077,9 @@ namespace ghmc::pms::dcs
                 {
                     mu_max = std::min(mu_max, MAX_MU0);
                     const auto mubest =
-                        utils::numerics::ridders_root<double>(
+                        utils::numerics::ridders_root<Scalar>(
                             mu_min, mu_max,
-                            [&](const double &mu_x) {
+                            [&](const Scalar &mu_x) {
                                 return cutoff_objective(cs_h, mu_x, invlambda, fspin, screen, nel, nkin);
                             },
                             fmin, fmax,
@@ -1111,14 +1111,14 @@ namespace ghmc::pms::dcs
             const int nel = invlambdas.size(0);
             const int nkin = invlambdas.size(1);
 
-            double *pmu0 = mu0.data_ptr<double>();
-            double *plb_h = lb_h.data_ptr<double>();
+            Scalar *pmu0 = mu0.data_ptr<Scalar>();
+            Scalar *plb_h = lb_h.data_ptr<Scalar>();
 
-            double *invlambda = invlambdas.data_ptr<double>();
-            double *fspin = fspins.data_ptr<double>();
-            double *G = coefficients.data_ptr<double>();
-            double *fCM = transform.data_ptr<double>();
-            double *screen = screening.data_ptr<double>();
+            Scalar *invlambda = invlambdas.data_ptr<Scalar>();
+            Scalar *fspin = fspins.data_ptr<Scalar>();
+            Scalar *G = coefficients.data_ptr<Scalar>();
+            Scalar *fCM = transform.data_ptr<Scalar>();
+            Scalar *screen = screening.data_ptr<Scalar>();
 
             for (int i = 0; i < nkin; i++)
                 coulomb_hard_scattering(
@@ -1137,29 +1137,29 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6223
      */
-    inline double transverse_transport_ionisation(
+    inline Scalar transverse_transport_ionisation(
         const KineticEnergy &K,
         const AtomicElement &element,
         const ParticleMass &mass)
     {
         // Soft close interactions, restricted to X_FRACTION.
-        const double momentum2 = K * (K + 2. * mass);
-        const double E = K + mass;
-        const double Wmax = 2. * ELECTRON_MASS * momentum2 /
+        const Scalar momentum2 = K * (K + 2. * mass);
+        const Scalar E = K + mass;
+        const Scalar Wmax = 2. * ELECTRON_MASS * momentum2 /
                             (mass * mass +
                              ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
-        const double W0 = 2. * momentum2 / ELECTRON_MASS;
-        const double mu_max = Wmax / W0;
-        double mu3 = K * X_FRACTION / W0;
+        const Scalar W0 = 2. * momentum2 / ELECTRON_MASS;
+        const Scalar mu_max = Wmax / W0;
+        Scalar mu3 = K * X_FRACTION / W0;
         if (mu3 > mu_max)
             mu3 = mu_max;
-        const double mu2 = 0.62 * element.I / W0;
+        const Scalar mu2 = 0.62 * element.I / W0;
         if (mu2 >= mu3)
             return 0.;
-        const double a0 = 0.5 * W0 / momentum2;
-        const double a1 = -1. / Wmax;
-        const double a2 = E * E / (W0 * momentum2);
-        const double cs0 = 1.535336E-05 / element.A; /* m^2/kg/GeV. */
+        const Scalar a0 = 0.5 * W0 / momentum2;
+        const Scalar a1 = -1. / Wmax;
+        const Scalar a2 = E * E / (W0 * momentum2);
+        const Scalar cs0 = 1.535336E-05 / element.A; /* m^2/kg/GeV. */
         return 2. * cs0 * element.Z *
                (0.5 * a0 * (mu3 * mu3 - mu2 * mu2) + a1 * (mu3 - mu2) +
                 a2 * log(mu3 / mu2));
@@ -1170,38 +1170,38 @@ namespace ghmc::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6262
      */
-    inline double transverse_transport_photonuclear(
+    inline Scalar transverse_transport_photonuclear(
         const KineticEnergy &K,
         const AtomicElement &element,
         const ParticleMass &mass)
     {
         // Integration over the K transfer, q, done with a log sampling.
-        const double E = K + mass;
-        return 2. * utils::numerics::quadrature6<double>(
+        const Scalar E = K + mass;
+        return 2. * utils::numerics::quadrature6<Scalar>(
                         log(1E-06), 0.,
-                        [&](const double &t) {
-                            const double nu = X_FRACTION * exp(t);
-                            const double q = nu * K;
+                        [&](const Scalar &t) {
+                            const Scalar nu = X_FRACTION * exp(t);
+                            const Scalar q = nu * K;
 
                             // Analytical integration over mu.
-                            const double m02 = 0.4;
-                            const double q2 = q * q;
-                            const double tmax = 1.876544 * q;
-                            const double tmin =
+                            const Scalar m02 = 0.4;
+                            const Scalar q2 = q * q;
+                            const Scalar tmax = 1.876544 * q;
+                            const Scalar tmin =
                                 q2 * mass * mass / (E * (E - q));
-                            const double b1 = 1. / (1. - q2 / m02);
-                            const double c1 = 1. / (1. - m02 / q2);
-                            double L1 = b1 * log((q2 + tmax) / (q2 + tmin));
-                            double L2 = c1 * log((m02 + tmax) / (m02 + tmin));
-                            const double I0 = log(tmax / tmin) - L1 - L2;
+                            const Scalar b1 = 1. / (1. - q2 / m02);
+                            const Scalar c1 = 1. / (1. - m02 / q2);
+                            Scalar L1 = b1 * log((q2 + tmax) / (q2 + tmin));
+                            Scalar L2 = c1 * log((m02 + tmax) / (m02 + tmin));
+                            const Scalar I0 = log(tmax / tmin) - L1 - L2;
                             L1 *= q2;
                             L2 *= m02;
-                            const double I1 = L1 + L2;
+                            const Scalar I1 = L1 + L2;
                             L1 *= q2;
                             L2 *= m02;
-                            const double I2 =
+                            const Scalar I2 =
                                 (tmax - tmin) * (b1 * q2 + c1 * m02) - L1 - L2;
-                            const double ratio =
+                            const Scalar ratio =
                                 (I1 * tmax - I2) / ((I0 * tmax - I1) * K *
                                                     (K + 2. * mass));
 
@@ -1220,9 +1220,9 @@ namespace ghmc::pms::dcs
            const KineticEnergies &K,
            const AtomicElement &element,
            const ParticleMass &mass) {
-            utils::vmap<double>(
+            utils::vmap<Scalar>(
                 K,
-                [&](const double &k) { return transverse_transport_ionisation(k, element, mass) +
+                [&](const Scalar &k) { return transverse_transport_ionisation(k, element, mass) +
                                               transverse_transport_photonuclear(k, element, mass); },
                 ms1);
         };
@@ -1238,17 +1238,17 @@ namespace ghmc::pms::dcs
         const KineticEnergies &K)
     {
         const int nkin = K.numel();
-        double *kinetic = K.data_ptr<double>();
-        double *dEdX = table_dE.data_ptr<double>();
-        double *table = result.data_ptr<double>();
+        Scalar *kinetic = K.data_ptr<Scalar>();
+        Scalar *dEdX = table_dE.data_ptr<Scalar>();
+        Scalar *table = result.data_ptr<Scalar>();
 
         // Compute the cumulative integral.
 
-        double y0 = 1. / dEdX[0];
+        Scalar y0 = 1. / dEdX[0];
         table[0] = kinetic[0] * y0;
         for (int i = 1; i < nkin; i++)
         {
-            const double y1 = 1. / dEdX[i];
+            const Scalar y1 = 1. / dEdX[i];
             table[i] = table[i - 1] +
                        0.5 * (kinetic[i] - kinetic[i - 1]) * (y0 + y1);
             y0 = y1;
@@ -1267,13 +1267,13 @@ namespace ghmc::pms::dcs
         // Compute the integral of 1/momemtum for the lowest energy bin using trapezes.
         const int n = 101;
         int i;
-        const double dK = K / (n - 1);
-        double Ki = dK;
-        double I0 = 0.5 / sqrt(Ki * (Ki + 2. * mass));
+        const Scalar dK = K / (n - 1);
+        Scalar Ki = dK;
+        Scalar I0 = 0.5 / sqrt(Ki * (Ki + 2. * mass));
         for (i = 2; i < n - 1; i++)
         {
             Ki += dK;
-            const double pi = sqrt(Ki * (Ki + 2. * mass));
+            const Scalar pi = sqrt(Ki * (Ki + 2. * mass));
             I0 += 1. / pi;
         }
         Ki += dK;
@@ -1296,19 +1296,19 @@ namespace ghmc::pms::dcs
     {
         // Compute the cumulative path integrals .
         const int nkin = K.numel();
-        double *pK = K.data_ptr<double>();
-        double *T = result.data_ptr<double>();
-        double *X = table_X.data_ptr<double>();
+        Scalar *pK = K.data_ptr<Scalar>();
+        Scalar *T = result.data_ptr<Scalar>();
+        Scalar *X = table_X.data_ptr<Scalar>();
 
         T[0] = I0 * X[0] * mass;
 
         for (int i = 1; i < nkin; i++)
         {
-            const double p0 =
+            const Scalar p0 =
                 sqrt(pK[i - 1] * (pK[i - 1] + 2. * mass));
-            const double p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
-            const double psi = 1. / p0 + 1. / p1;
-            const double dy = 0.5 * (X[i] - X[i - 1]) * psi;
+            const Scalar p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
+            const Scalar psi = 1. / p0 + 1. / p1;
+            const Scalar dy = 0.5 * (X[i] - X[i - 1]) * psi;
             T[i] = T[i - 1] + dy * mass;
         }
     }
@@ -1322,14 +1322,14 @@ namespace ghmc::pms::dcs
                                   const KineticEnergies &K)
     {
         const int nkin = K.numel();
-        double *pK = K.data_ptr<double>();
-        double *table = result.data_ptr<double>();
+        Scalar *pK = K.data_ptr<Scalar>();
+        Scalar *table = result.data_ptr<Scalar>();
 
-        double value = 0.5 * pK[0] * table[0];
+        Scalar value = 0.5 * pK[0] * table[0];
 
         for (int i = 1; i < nkin; i++)
         {
-            const double dv = 0.5 * (pK[i] - pK[i - 1]) * (table[i - 1] + table[i]);
+            const Scalar dv = 0.5 * (pK[i] - pK[i - 1]) * (table[i - 1] + table[i]);
             table[i - 1] = value;
             value += dv;
         }
@@ -1352,26 +1352,26 @@ namespace ghmc::pms::dcs
         if (imax == 0)
             return;
 
-        double *X0 = table_X.data_ptr<double>();
-        double *T = table_T.data_ptr<double>();
+        Scalar *X0 = table_X.data_ptr<Scalar>();
+        Scalar *T = table_T.data_ptr<Scalar>();
 
-        std::array<double, NLAR> x{}, dx{};
+        std::array<Scalar, NLAR> x{}, dx{};
 
-        double *Li = table_Li.data_ptr<double>();
+        Scalar *Li = table_Li.data_ptr<Scalar>();
 
         // The magnetic phase shift is proportional to the proper time integral.
         // We refer to this table.
-        const double factor = larmor / mass;
+        const Scalar factor = larmor / mass;
 
         // Compute the deflection starting from max energy down to 0
         int i, j;
         for (i = imax; i >= 1; i--)
         {
-            double dX0 = 0.5 * (X0[i] - X0[i - 1]);
-            double p1 = (T[imax] - T[i - 1]) * factor;
-            double p2 = (T[imax] - T[i]) * factor;
+            Scalar dX0 = 0.5 * (X0[i] - X0[i - 1]);
+            Scalar p1 = (T[imax] - T[i - 1]) * factor;
+            Scalar p2 = (T[imax] - T[i]) * factor;
 
-            double f1 = 1., f2 = 1.;
+            Scalar f1 = 1., f2 = 1.;
             for (j = 0; j < NLAR; j++)
             {
 
@@ -1387,7 +1387,7 @@ namespace ghmc::pms::dcs
         // Extrapolate the end points
         for (j = 0; j < NLAR; j++)
         {
-            double hx = X0[0] / (X0[1] - X0[0]);
+            Scalar hx = X0[0] / (X0[1] - X0[0]);
             Li[j] = x[j] + hx * dx[j];
         }
     }

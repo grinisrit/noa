@@ -40,11 +40,9 @@
 namespace ghmc::pms::mdf
 {
 
-    using namespace ghmc::utils;
-
-    using MDFFilePath = Path;
-    using DEDXFolderPath = Path;
-    using DEDXFilePath = Path;
+    using MDFFilePath = utils::Path;
+    using DEDXFolderPath = utils::Path;
+    using DEDXFilePath = utils::Path;
 
     using ElementName = std::string;
     using MaterialName = std::string;
@@ -135,18 +133,18 @@ namespace ghmc::pms::mdf
 
     template <typename MDFComponents, typename Component>
     inline std::optional<MDFComponents> get_mdf_components(
-        const xml::Node &node,
+        const utils::xml::Node &node,
         const std::unordered_map<std::string, Component> &comp_data,
         const std::string &tag)
     {
         auto comp_xnodes = node.select_nodes("component[@name][@fraction]");
         auto comps = MDFComponents{};
-        double tot = 0.0;
+        Scalar tot = 0.0;
         for (const auto &xnode : comp_xnodes)
         {
             auto node = xnode.node();
             auto name = node.attribute("name").value();
-            auto frac = node.attribute("fraction").as_double();
+            Scalar frac = node.attribute("fraction").as_double();
             tot += frac;
             if (!comp_data.count(name))
             {
@@ -168,7 +166,7 @@ namespace ghmc::pms::mdf
     inline std::optional<Settings> parse_settings(
         const GeneratorName &generated_by, const MDFFilePath &mdf_path)
     {
-        auto mdf_doc = xml::Document{};
+        auto mdf_doc = utils::xml::Document{};
         if (!mdf_doc.load_file(mdf_path.string().c_str()))
         {
             std::cerr << "Cannot load XML " << mdf_path << std::endl;
@@ -248,10 +246,10 @@ namespace ghmc::pms::mdf
     inline std::optional<ParticleMass> parse_particle_mass(
         std::ifstream &dedx_stream, const ParticleName &particle_name)
     {
-        auto line = find_line(dedx_stream, mass_pattern(particle_name));
+        auto line = utils::find_line(dedx_stream, mass_pattern(particle_name));
         if (!line.has_value())
             return std::nullopt;
-        auto mass = get_numerics(*line, 1);
+        auto mass = utils::get_numerics<Scalar>(*line, 1);
         return (mass.has_value()) ? mass->at(0) : std::optional<ParticleMass>{};
     }
 
@@ -262,20 +260,20 @@ namespace ghmc::pms::mdf
 
         auto no_data = std::sregex_iterator();
 
-        auto line = find_line(dedx_stream, zoa_pattern);
+        auto line = utils::find_line(dedx_stream, zoa_pattern);
         if (!line.has_value())
             return std::nullopt;
-        auto nums = get_numerics(*line, 1);
+        auto nums = utils::get_numerics<Scalar>(*line, 1);
         if (!nums.has_value())
             return std::nullopt;
         coefs.ZoA = nums->at(0);
 
-        line = find_line(dedx_stream, coef_pattern);
+        line = utils::find_line(dedx_stream, coef_pattern);
         if (!line.has_value())
             return std::nullopt;
 
         std::getline(dedx_stream, *line);
-        nums = get_numerics(*line, 7);
+        nums = utils::get_numerics<Scalar>(*line, 7);
         if (!nums.has_value())
             return std::nullopt;
 
@@ -296,17 +294,17 @@ namespace ghmc::pms::mdf
 
         auto no_data = std::sregex_iterator();
 
-        auto line = find_line(dedx_stream, table_pattern);
+        auto line = utils::find_line(dedx_stream, table_pattern);
         if (!line.has_value())
             return std::nullopt;
 
-        line = find_line(dedx_stream, units_pattern);
+        line = utils::find_line(dedx_stream, units_pattern);
         if (!line.has_value())
             return std::nullopt;
 
         while (std::getline(dedx_stream, *line))
         {
-            auto nums = get_numerics(*line, 11);
+            auto nums = utils::get_numerics<Scalar>(*line, 11);
             if (!nums.has_value())
                 return std::nullopt;
 

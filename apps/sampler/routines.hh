@@ -1,14 +1,14 @@
 #pragma once
 
 #include <ghmc/ghmc.hh>
-#include <ghmc/utils.hh>
+#include <ghmc/utils/common.hh>
 
 #include <torch/torch.h>
 
 using namespace ghmc::utils;
 
 inline Status sample_normal_dist(Path save_result_to,
-                                 torch::DeviceType device = torch::kCPU)
+                                        torch::DeviceType device = torch::kCPU)
 {
 
     auto mean = torch::tensor({0., 10., 5.}, torch::device(device));

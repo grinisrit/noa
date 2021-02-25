@@ -14,7 +14,7 @@ TEST(DCS, Bremsstrahlung)
         kinetic_energies,
         recoil_energies,
         STANDARD_ROCK, MUON_MASS);
-    ASSERT_TRUE(relative_error<double>(result, pumas_brems).item<double>() < 1E-11);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_brems).item<Scalar>() < 1E-11);
 }
 
 TEST(DCS, DELBremsstrahlung)
@@ -24,7 +24,7 @@ TEST(DCS, DELBremsstrahlung)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, false);
-    ASSERT_TRUE(relative_error<double>(result, pumas_brems_del).item<double>() < 1E-7);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_brems_del).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, CELBremsstrahlung)
@@ -34,7 +34,7 @@ TEST(DCS, CELBremsstrahlung)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, true);
-    ASSERT_TRUE(relative_error<double>(result, pumas_brems_cel).item<double>() < 1E-7);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_brems_cel).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, PairProduction)
@@ -45,7 +45,7 @@ TEST(DCS, PairProduction)
         kinetic_energies,
         recoil_energies,
         STANDARD_ROCK, MUON_MASS);
-    ASSERT_TRUE(relative_error<double>(result, pumas_pprod).item<double>() < 1E-7);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_pprod).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, DELPairProduction)
@@ -55,7 +55,7 @@ TEST(DCS, DELPairProduction)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, false);
-    ASSERT_TRUE(relative_error<double>(result, pumas_pprod_del).item<double>() < 1E-7);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_pprod_del).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, CELPairProduction)
@@ -65,7 +65,7 @@ TEST(DCS, CELPairProduction)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, true);
-    ASSERT_TRUE(relative_error<double>(result, pumas_pprod_cel).item<double>() < 1E-7);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_pprod_cel).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, Photonuclear)
@@ -76,7 +76,7 @@ TEST(DCS, Photonuclear)
         kinetic_energies,
         recoil_energies,
         STANDARD_ROCK, MUON_MASS);
-    ASSERT_TRUE(relative_error<double>(result, pumas_photo).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_photo).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, DELPhotonuclear)
@@ -86,7 +86,7 @@ TEST(DCS, DELPhotonuclear)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, false);
-    ASSERT_TRUE(relative_error<double>(result, pumas_photo_del).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_photo_del).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, CELPhotonuclear)
@@ -96,7 +96,7 @@ TEST(DCS, CELPhotonuclear)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, true);
-    ASSERT_TRUE(relative_error<double>(result, pumas_photo_cel).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_photo_cel).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, Ionisation)
@@ -107,7 +107,7 @@ TEST(DCS, Ionisation)
         kinetic_energies,
         recoil_energies,
         STANDARD_ROCK, MUON_MASS);
-    ASSERT_TRUE(relative_error<double>(result, pumas_ion).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_ion).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, DELIonisation)
@@ -117,7 +117,7 @@ TEST(DCS, DELIonisation)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, false);
-    ASSERT_TRUE(relative_error<double>(result, pumas_ion_del).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_ion_del).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, CELIonisation)
@@ -127,14 +127,14 @@ TEST(DCS, CELIonisation)
         result,
         kinetic_energies,
         X_FRACTION, STANDARD_ROCK, MUON_MASS, 180, true);
-    ASSERT_TRUE(relative_error<double>(result, pumas_ion_cel).item<double>() < 1E-9);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_ion_cel).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, CoulombHardScattering)
 {
     const int nkin = kinetic_energies.numel();
-    auto fCM = torch::zeros({nkin, 2}, torch::kFloat64);
-    auto screen = torch::zeros({nkin, 9}, torch::kFloat64);
+    auto fCM = torch::zeros({nkin, 2}, t_ops);
+    auto screen = torch::zeros({nkin, 9}, t_ops);
     auto fspin = torch::zeros_like(kinetic_energies);
     auto invlambda = torch::zeros_like(kinetic_energies);
 
@@ -142,13 +142,13 @@ TEST(DCS, CoulombHardScattering)
         fCM, screen, fspin, invlambda,
         kinetic_energies, STANDARD_ROCK, MUON_MASS);
 
-    ASSERT_TRUE(relative_error<double>(screen.slice(1, 0, 3).reshape_as(pumas_screening), pumas_screening).item<double>() < 1E-10);
-    ASSERT_TRUE(mean_error<double>(invlambda, pumas_invlambda).item<double>() < 1E-10);
+    ASSERT_TRUE(relative_error<Scalar>(screen.slice(1, 0, 3).reshape_as(pumas_screening), pumas_screening).item<Scalar>() < 1E-10);
+    ASSERT_TRUE(mean_error<Scalar>(invlambda, pumas_invlambda).item<Scalar>() < 1E-10);
 
     auto G = torch::zeros_like(fCM);
     default_coulomb_transport(
-        G, screen, fspin, torch::tensor(1.0, torch::kFloat64));
-    ASSERT_TRUE(relative_error<double>(G.view_as(pumas_transport), pumas_transport).item<double>() < 1E-10);
+        G, screen, fspin, torch::tensor(1.0, t_ops));
+    ASSERT_TRUE(relative_error<Scalar>(G.view_as(pumas_transport), pumas_transport).item<Scalar>() < 1E-10);
 
     G = G.view({1, nkin, 2});
     fCM = fCM.view({1, nkin, 2});
@@ -162,13 +162,13 @@ TEST(DCS, CoulombHardScattering)
     default_hard_scattering(
         mu0, lb_h, G, fCM, screen, invlambda, fspin);
 
-    ASSERT_TRUE(relative_error<double>(mu0, pumas_mu0).item<double>() < 1E-11);
-    ASSERT_TRUE(relative_error<double>(lb_h, pumas_lb_h).item<double>() < 1E-11);
+    ASSERT_TRUE(relative_error<Scalar>(mu0, pumas_mu0).item<Scalar>() < 1E-11);
+    ASSERT_TRUE(relative_error<Scalar>(lb_h, pumas_lb_h).item<Scalar>() < 1E-11);
 }
 
 TEST(DSC, CoulombSoftScattering)
 {
     auto result = torch::zeros_like(kinetic_energies);
     default_soft_scattering(result, kinetic_energies, STANDARD_ROCK, MUON_MASS);
-    ASSERT_TRUE(relative_error<double>(result, pumas_soft_scatter).item<double>() < 1E-12);
+    ASSERT_TRUE(relative_error<Scalar>(result, pumas_soft_scatter).item<Scalar>() < 1E-12);
 }

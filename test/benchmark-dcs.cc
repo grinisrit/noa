@@ -7,8 +7,8 @@ using namespace ghmc::pms::dcs;
 
 static void DCS_Bremsstrahlung(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
-    const auto q = recoil_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
+    const auto q = recoil_energies[65].item<Scalar>();
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
@@ -30,7 +30,7 @@ BENCHMARK(DCS_BremsstrahlungVectorised);
 
 static void DCS_DELBremsstrahlung(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -55,7 +55,7 @@ BENCHMARK(DCS_DELBremsstrahlungVectorised);
 
 static void DCS_CELBremsstrahlung(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -80,8 +80,8 @@ BENCHMARK(DCS_CELBremsstrahlungVectorised);
 
 static void DCS_PairProduction(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
-    const auto q = recoil_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
+    const auto q = recoil_energies[65].item<Scalar>();
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
@@ -103,7 +103,7 @@ BENCHMARK(DCS_PairProductionVectorised);
 
 static void DCS_DELPairProduction(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -128,7 +128,7 @@ BENCHMARK(DCS_DELPairProductionVectorised);
 
 static void DCS_CELPairProduction(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -153,8 +153,8 @@ BENCHMARK(DCS_CELPairProductionVectorised);
 
 static void DCS_Photonuclear(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
-    const auto q = recoil_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
+    const auto q = recoil_energies[65].item<Scalar>();
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
@@ -176,7 +176,7 @@ BENCHMARK(DCS_PhotonuclearVectorised);
 
 static void DCS_DELPhotonuclear(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -201,7 +201,7 @@ BENCHMARK(DCS_DELPhotonuclearVectorised);
 
 static void DCS_CELPhotonuclear(benchmark::State &state)
 {
-    const auto k = kinetic_energies[65].item<double>();
+    const auto k = kinetic_energies[65].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -226,8 +226,8 @@ BENCHMARK(DCS_CELPhotonuclearVectorised);
 
 static void DCS_Ionisation(benchmark::State &state)
 {
-    const auto k = kinetic_energies[69].item<double>();
-    const auto q = recoil_energies[69].item<double>();
+    const auto k = kinetic_energies[69].item<Scalar>();
+    const auto q = recoil_energies[69].item<Scalar>();
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
@@ -249,7 +249,7 @@ BENCHMARK(DCS_IonisationVectorised);
 
 static void DCS_DELIonisation(benchmark::State &state)
 {
-    const auto k = kinetic_energies[69].item<double>();
+    const auto k = kinetic_energies[69].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
@@ -274,7 +274,7 @@ BENCHMARK(DCS_DELIonisationVectorised);
 
 static void DCS_CELIonisation(benchmark::State &state)
 {
-    const auto k = kinetic_energies[69].item<double>();
+    const auto k = kinetic_energies[69].item<Scalar>();
     const auto xlow = X_FRACTION;
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;

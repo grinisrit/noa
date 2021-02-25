@@ -88,8 +88,6 @@ namespace ghmc::pms
     using TableMs1 = Table;              // Multiple scattering 1st moment
     using TableLi = Table;               // Magnetic deflection momenta
 
-    inline const auto default_dtp = torch::dtype(torch::kFloat64);
-    inline const auto default_ops = default_dtp.layout(torch::kStrided);
 
     struct CoulombWorkspace
     {
@@ -172,14 +170,14 @@ namespace ghmc::pms
             auto data = dedx_data.begin();
             auto &vals = std::get<mdf::DEDXTable>(data->second).T;
             const int nkin = vals.size();
-            auto tensor = torch::from_blob(vals.data(), nkin, default_ops);
+            auto tensor = torch::from_blob(vals.data(), nkin, tensor_ops);
             table_K = static_cast<Physics *>(this)->scale_energy(tensor);
             data++;
             for (auto &it = data; it != dedx_data.end(); it++)
             {
                 auto &it_vals = std::get<mdf::DEDXTable>(it->second).T;
                 auto it_ten = torch::from_blob(
-                    it_vals.data(), nkin, default_ops);
+                    it_vals.data(), nkin, tensor_ops);
                 if (!torch::equal(tensor, it_ten))
                 {
                     std::cerr
@@ -224,9 +222,9 @@ namespace ghmc::pms
             materials.reserve(n_mats);
             material_name.reserve(n_mats);
 
-            material_density = torch::zeros(n_mats, default_ops);
-            material_ZoA = torch::zeros(n_mats, default_ops);
-            material_I = torch::zeros(n_mats, default_ops);
+            material_density = torch::zeros(n_mats, tensor_ops);
+            material_ZoA = torch::zeros(n_mats, tensor_ops);
+            material_I = torch::zeros(n_mats, tensor_ops);
 
             material_density_effect.reserve(n_mats);
 
@@ -235,7 +233,7 @@ namespace ghmc::pms
                 auto [_, density, components] = material;
                 const int n = components.size();
                 auto el_ids = torch::zeros(n, torch::kInt64);
-                auto fracs = torch::zeros(n, default_ops);
+                auto fracs = torch::zeros(n, tensor_ops);
                 int iel = 0;
                 for (const auto &[el, frac] : components)
                 {
@@ -272,15 +270,15 @@ namespace ghmc::pms
         {
             const int nel = elements.size();
             const int nkin = table_K.numel();
-            table_CSn = torch::zeros(cs_shape(nel), default_ops);
+            table_CSn = torch::zeros(cs_shape(nel), tensor_ops);
             cel_table = torch::zeros_like(table_CSn);
             coulomb_workspace = CoulombWorkspace{
-                torch::zeros({nel, nkin, 2}, default_ops),
-                torch::zeros({nel, nkin, 2}, default_ops),
-                torch::zeros({nel, nkin, dcs::NSF}, default_ops),
-                torch::zeros({nel, nkin}, default_ops),
-                torch::zeros({nel, nkin}, default_ops),
-                torch::zeros({nel, nkin}, default_ops)};
+                torch::zeros({nel, nkin, 2}, tensor_ops),
+                torch::zeros({nel, nkin, 2}, tensor_ops),
+                torch::zeros({nel, nkin, dcs::NSF}, tensor_ops),
+                torch::zeros({nel, nkin}, tensor_ops),
+                torch::zeros({nel, nkin}, tensor_ops),
+                torch::zeros({nel, nkin}, tensor_ops)};
         }
 
         inline void compute_coulomb_data(const ElementId iel)
@@ -298,7 +296,7 @@ namespace ghmc::pms
             std::get<CoulombTransport>(std::get<TTKernels>(dcs_kernels))(
                 coulomb_workspace.G[iel],
                 screen, fspin,
-                torch::tensor(1.0, default_dtp));
+                torch::tensor(1.0, tensor_dtype));
 
             std::get<SoftScattering>(std::get<TTKernels>(dcs_kernels))(
                 coulomb_workspace.table_ms1[iel],
@@ -325,11 +323,11 @@ namespace ghmc::pms
         inline void init_dedx_tables(const int nmat)
         {
             table_CSf = TableCSf(nmat);
-            table_CS = torch::zeros({nmat, table_K.numel()}, default_ops);
+            table_CS = torch::zeros({nmat, table_K.numel()}, tensor_ops);
             table_dE = torch::zeros_like(table_CS);
             table_dE_CSDA = torch::zeros_like(table_CS);
             table_NI_in = torch::zeros_like(table_CS);
-            table_Kt = torch::zeros(nmat, default_ops);
+            table_Kt = torch::zeros(nmat, tensor_ops);
             table_a_max = torch::zeros_like(table_Kt);
             table_b_max = torch::zeros_like(table_Kt);
         }
@@ -345,20 +343,20 @@ namespace ghmc::pms
             table_CS[imat] = table_CSf[imat].sum(0).sum(0);
 
             table_CSf[imat] *= torch::where(table_CS[imat] <= 0.0,
-                                            torch::tensor(0.0, default_dtp), torch::tensor(1.0, default_dtp))
+                                            torch::tensor(0.0, tensor_dtype), torch::tensor(1.0, tensor_dtype))
                                    .view({1, 1, nkin});
             table_CSf[imat] = table_CSf[imat].view({nel * dcs::NPR, nkin}).cumsum(0).view({nel, dcs::NPR, nkin}) /
-                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, default_dtp), table_CS[imat]).view({1, 1, nkin});
+                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, tensor_dtype), table_CS[imat]).view({1, 1, nkin});
 
-            auto a = static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.Ionisation.data(), nkin, default_ops));
+            auto a = static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.Ionisation.data(), nkin, tensor_ops));
             auto be_cel = dcs::compute_be_cel(
-                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.brems.data(), nkin, default_ops)),
-                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.pair.data(), nkin, default_ops)),
-                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.photonuc.data(), nkin, default_ops)),
+                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.brems.data(), nkin, tensor_ops)),
+                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.pair.data(), nkin, tensor_ops)),
+                static_cast<Physics *>(this)->scale_dEdX(torch::from_blob(dedx_table.photonuc.data(), nkin, tensor_ops)),
                 a, torch::tensordot(materials[imat].fractions, cel_table.index_select(0, materials[imat].element_ids), 0, 0));
 
             table_dE_CSDA[imat] = static_cast<Physics *>(this)->scale_dEdX(
-                torch::from_blob(dedx_table.dEdX.data(), nkin, default_ops));
+                torch::from_blob(dedx_table.dEdX.data(), nkin, tensor_ops));
             table_dE[imat] = table_dE_CSDA[imat] - be_cel;
             table_NI_in[imat] = table_CS[imat] / table_dE[imat];
             table_a_max[imat] = a[nkin - 1];
@@ -374,7 +372,7 @@ namespace ghmc::pms
 
         inline void compute_del_threshold(dcs::ThresholdIndex th_i)
         {
-            table_Xt = torch::ones(cs_shape(elements.size()), default_ops);
+            table_Xt = torch::ones(cs_shape(elements.size()), tensor_ops);
             const int nel = elements.size();
             for (int iel = 0; iel < nel; iel++)
                 dcs::compute_fractional_thresholds(
@@ -458,7 +456,7 @@ namespace ghmc::pms
             table_X_CSDA = torch::zeros_like(table_dE);
             table_T = torch::zeros_like(table_dE);
             table_T_CSDA = torch::zeros_like(table_dE);
-            table_Li = torch::zeros({nmat, table_K.numel(), dcs::NLAR}, default_ops);
+            table_Li = torch::zeros({nmat, table_K.numel(), dcs::NLAR}, tensor_ops);
         }
 
         inline void set_cel_integrals()

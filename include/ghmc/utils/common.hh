@@ -48,6 +48,30 @@ namespace ghmc::utils
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
+    template <typename Dtype>
+    inline c10::ScalarType dtype()
+    {
+        return torch::kFloat64;
+    }
+
+    template <>
+    inline c10::ScalarType dtype<float>()
+    {
+        return torch::kFloat32;
+    }
+
+    template <>
+    inline c10::ScalarType dtype<long>()
+    {
+        return torch::kInt64;
+    }
+
+    template <>
+    inline c10::ScalarType dtype<int>()
+    {
+        return torch::kInt32;
+    }
+
     inline Status check_path_exists(Path path)
     {
         if (!std::filesystem::exists(path))
@@ -68,7 +92,8 @@ namespace ghmc::utils
         return std::nullopt;
     }
 
-    inline std::optional<std::vector<double>> get_numerics(
+    template<typename Dtype>
+    inline std::optional<std::vector<Dtype>> get_numerics(
         const std::string &line, int size)
     {
         auto no_data = std::sregex_iterator();
@@ -76,7 +101,7 @@ namespace ghmc::utils
         if (std::distance(nums, no_data) != size)
             return std::nullopt;
 
-        auto vec = std::vector<double>{};
+        auto vec = std::vector<Dtype>{};
         vec.reserve(size);
         for (auto &num = nums; num != no_data; num++)
             vec.emplace_back(std::stod(num->str()));
@@ -96,7 +121,7 @@ namespace ghmc::utils
     }
 
     template <typename Dtype, typename Lambda>
-    inline void vmap(const torch::Tensor &values, const Lambda &lambda,  const torch::Tensor &result)
+    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result)
     {
         const Dtype *pvals = values.data_ptr<Dtype>();
         Dtype *pres = result.data_ptr<Dtype>();
@@ -118,7 +143,7 @@ namespace ghmc::utils
     }
 
     template <typename Dtype, typename Lambda>
-    inline void vmapi(const torch::Tensor &values, const Lambda &lambda,  const torch::Tensor &result)
+    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result)
     {
         const Dtype *pvals = values.data_ptr<Dtype>();
         Dtype *pres = result.data_ptr<Dtype>();

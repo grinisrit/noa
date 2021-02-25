@@ -56,7 +56,7 @@ TEST(Sampler, Hamiltonian)
     auto ham_ = get_hamiltonian();
     ASSERT_TRUE(ham_.has_value());
     torch::Tensor energy = std::get<0>(ham_.value());
-    auto err = (energy - expected_energy).abs().sum().item<double>();
+    auto err = (energy - expected_energy).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 }
 

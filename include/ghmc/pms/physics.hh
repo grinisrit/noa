@@ -28,13 +28,12 @@
 
 #pragma once
 
+#include "ghmc/pms/conf.hh"
+
 #include <torch/torch.h>
 
 namespace ghmc::pms
 {
-    using Scalar = double;
-    using Index = int;
-    using Index64 = int64_t;
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
     using DecayLength = Scalar;
