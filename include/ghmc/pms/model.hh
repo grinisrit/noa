@@ -64,7 +64,6 @@ namespace ghmc::pms
     using MaterialsI = torch::Tensor;
     using MaterialsDensityEffect = std::vector<MaterialDensityEffect>;
 
-    using Shape = std::vector<int64_t>;
     using Table = dcs::Table;
 
     using TableK = Table;                // Kinetic energy tabulations
@@ -87,7 +86,7 @@ namespace ghmc::pms
     using TableNIel = Table;             // EHS number of interaction lengths
     using TableMs1 = Table;              // Multiple scattering 1st moment
     using TableLi = Table;               // Magnetic deflection momenta
-
+    using DCSData = Table;               // DCS model coefficientss
 
     struct CoulombWorkspace
     {
@@ -148,6 +147,7 @@ namespace ghmc::pms
         TableNIel table_NI_el;
         TableMs1 table_Ms1;
         TableLi table_Li;
+        DCSData dcs_data;
 
         TableCSn cel_table;
         CoulombWorkspace coulomb_workspace;
@@ -257,20 +257,15 @@ namespace ghmc::pms
             }
         }
 
-        inline Shape cs_shape(int nelems)
+        inline void init_dcs_data(const int nel, const int nkin)
         {
-            auto shape = Shape(3);
-            shape[0] = nelems;
-            shape[1] = dcs::NPR;
-            shape[2] = table_K.numel();
-            return shape;
+            dcs_data = torch::zeros({nel, dcs::NPR-1, nkin, dcs::NDM}, tensor_ops);
         }
 
-        inline void init_per_element_data()
+        inline void init_per_element_data(const int nel)
         {
-            const int nel = elements.size();
             const int nkin = table_K.numel();
-            table_CSn = torch::zeros(cs_shape(nel), tensor_ops);
+            table_CSn = torch::zeros({nel, dcs::NPR, nkin}, tensor_ops);
             cel_table = torch::zeros_like(table_CSn);
             coulomb_workspace = CoulombWorkspace{
                 torch::zeros({nel, nkin, 2}, tensor_ops),
@@ -306,6 +301,12 @@ namespace ghmc::pms
         inline void compute_per_element_data()
         {
             const int nel = elements.size();
+            const auto &model_K = table_K.index(
+                table_K >= static_cast<Physics *>(this)->dcs_model_min_energy());
+
+            init_per_element_data(nel);
+            init_dcs_data(nel, model_K.numel());
+
 #pragma omp parallel for
             for (int iel = 0; iel < nel; iel++)
             {
@@ -318,6 +319,14 @@ namespace ghmc::pms
 
                 compute_coulomb_data(iel);
             }
+            dcs::compute_dcs_model(
+                std::get<DELKernels>(dcs_kernels),
+                dcs_data[5],
+                model_K,
+                static_cast<Physics *>(this)->x_fraction(),
+                static_cast<Physics *>(this)->dcs_model_max_fraction(),
+                elements[5],
+                mass);
         }
 
         inline void init_dedx_tables(const int nmat)
@@ -372,7 +381,7 @@ namespace ghmc::pms
 
         inline void compute_del_threshold(dcs::ThresholdIndex th_i)
         {
-            table_Xt = torch::ones(cs_shape(elements.size()), tensor_ops);
+            table_Xt = torch::ones_like(table_CSn);
             const int nel = elements.size();
             for (int iel = 0; iel < nel; iel++)
                 dcs::compute_fractional_thresholds(
@@ -474,7 +483,7 @@ namespace ghmc::pms
                 dcs::compute_kinetic_integral(table_NI_el[imat], table_K);
                 dcs::compute_kinetic_integral(table_NI_in[imat], table_K);
                 dcs::compute_csda_magnetic_transport(table_Li[imat], table_T_CSDA[imat], table_X_CSDA[imat], mass,
-                    static_cast<Physics*>(this)->larmor_factor());
+                                                     static_cast<Physics *>(this)->larmor_factor());
             }
         }
 
@@ -487,13 +496,10 @@ namespace ghmc::pms
             if (!set_table_K(dedx_data))
                 return false;
 
-            init_per_element_data();
             compute_per_element_data();
 
             set_dedx_tables(dedx_data);
-
             set_coulomb_parameters();
-
             set_cel_integrals();
 
             return true;
@@ -637,6 +643,10 @@ namespace ghmc::pms
         {
             return table_Li;
         }
+        inline const DCSData &get_dcs_data() const
+        {
+            return dcs_data;
+        }
 
         inline utils::Status
         load_physics_from(const mdf::Settings &mdf_settings,
@@ -655,27 +665,35 @@ namespace ghmc::pms
     {
         friend class PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>;
 
-        template <typename Energy>
-        inline Energy scale_energy(const Energy &energy) const
+        template <typename Energy_t>
+        inline Energy_t scale_energy(const Energy_t &energy) const
         {
             return energy * 1E-3; // from MeV to GeV
         }
 
-        template <typename Density>
-        inline Density scale_density(const Density &density) const
+        template <typename Density_t>
+        inline Density_t scale_density(const Density_t &density) const
         {
             return density * 1E+3; // from g/cm^3 to kg/m^3
         }
 
-        template <typename Tables>
-        inline Tables scale_dEdX(const Tables &tables) const
+        template <typename Table_t>
+        inline Table_t scale_dEdX(const Table_t &tables) const
         {
             return tables * 1E-4; // from MeV cm^2/g to GeV m^2/kg
         }
 
-        inline EnergyTransferMin x_fraction() const
+        inline EnergyTransfer x_fraction() const
         {
             return X_FRACTION;
+        }
+        inline EnergyTransfer dcs_model_max_fraction() const
+        {
+            return DCS_MODEL_MAX_FRACTION;
+        }
+        inline Energy dcs_model_min_energy() const
+        {
+            return DCS_MODEL_MIN_KINETIC;
         }
 
         inline LarmorFactor larmor_factor() const

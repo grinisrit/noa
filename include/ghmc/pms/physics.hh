@@ -47,9 +47,10 @@ namespace ghmc::pms
         AtomicNumber Z;
     };
     using MaterialDensity = Scalar;
-    using EnergyTransferMin = Scalar; // Relative lower bound of energy transfer
+    using Energy = Scalar;
+    using EnergyTransfer = Scalar; // Relative energy transfer
     using ComponentFraction = Scalar;
-    using LarmorFactor = Scalar; 
+    using LarmorFactor = Scalar;
 
     struct MaterialDensityEffect
     {
@@ -66,10 +67,12 @@ namespace ghmc::pms
     constexpr DecayLength MUON_CTAU = 658.654;  // m
     constexpr DecayLength TAU_CTAU = 87.03E-06; // m
 
-    constexpr LarmorFactor LARMOR_FACTOR = 0.299792458;   // m^-1 GeV/c T^-1.
+    constexpr LarmorFactor LARMOR_FACTOR = 0.299792458; // m^-1 GeV/c T^-1.
 
     // Default relative switch between Continuous Energy Loss (CEL) and DELs.
-    constexpr EnergyTransferMin X_FRACTION = 5E-02;
+    constexpr EnergyTransfer X_FRACTION = 5E-02;
+    // Maximum allowed energy tranfer for using the DCS model
+    constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
 
     // Common elements:
     constexpr AtomicElement STANDARD_ROCK = AtomicElement{
@@ -77,10 +80,11 @@ namespace ghmc::pms
         0.1364E-6, // GeV
         11};
 
-    constexpr Scalar KIN_CUTOFF = 1E-9;      // GeV, used in relativistic kinematics
-    constexpr Scalar EHS_PATH_MAX = 1E+9;    // kg/m^2, max inverse path lenth for Elastic Hard Scattering (EHS) events
-    constexpr Scalar EHS_OVER_MSC = 1E-4;    // EHS to 1st transport multiple scattering interaction lenght path ratio
-    constexpr Scalar MAX_SOFT_ANGLE = 1E+00; // degrees, max deflection angle for a soft scattering event
+    constexpr Energy KIN_CUTOFF = 1E-9;           // GeV, used in relativistic kinematics
+    constexpr Scalar EHS_PATH_MAX = 1E+9;         // kg/m^2, max inverse path lenth for Elastic Hard Scattering (EHS) events
+    constexpr Scalar EHS_OVER_MSC = 1E-4;         // EHS to 1st transport multiple scattering interaction lenght path ratio
+    constexpr Scalar MAX_SOFT_ANGLE = 1E+00;      // degrees, max deflection angle for a soft scattering event
+    constexpr Energy DCS_MODEL_MIN_KINETIC = 10.; // GeV, Minimum kinetic energy for using the DCS model
 
     inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); //Max deflection angle for hard scattering
 

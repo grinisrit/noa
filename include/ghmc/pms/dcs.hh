@@ -40,8 +40,14 @@ namespace ghmc::pms::dcs
     constexpr int NSF = 9;  // Number of screening factors and pole reduction for Coulomb scattering
     constexpr int NLAR = 8; // Order of expansion for the computation of the magnetic deflection
 
-    using KineticEnergy = Scalar;
-    using RecoilEnergy = Scalar;
+    // Polynomials order for the DCS model
+    constexpr int DCS_MODEL_ORDER_P = 6;
+    constexpr int DCS_MODEL_ORDER_Q = 2;
+    constexpr int DCS_SAMPLING_N = 11; // Samples for DCS model
+    constexpr int NDM = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + DCS_SAMPLING_N + 1;
+
+    using KineticEnergy = Energy;
+    using RecoilEnergy = Energy;
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
     using Table = torch::Tensor;  // Generic table
@@ -81,7 +87,7 @@ namespace ghmc::pms::dcs
     inline auto compute_integral(const DCSKernel &dcs_kernel)
     {
         return [&dcs_kernel](const KineticEnergy &K,
-                             const EnergyTransferMin &xlow,
+                             const EnergyTransfer &xlow,
                              const AtomicElement &element,
                              const ParticleMass &mass,
                              const int min_points,
@@ -105,7 +111,7 @@ namespace ghmc::pms::dcs
     {
         return [&dcs_kernel](const Result &result,
                              const KineticEnergies &K,
-                             const EnergyTransferMin &xlow,
+                             const EnergyTransfer &xlow,
                              const AtomicElement &element,
                              const ParticleMass &mass,
                              const int min_points,
@@ -508,7 +514,7 @@ namespace ghmc::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9669
      */
     inline const auto analytic_integral_ionisation = [](const KineticEnergy &K,
-                                                        const EnergyTransferMin &xlow,
+                                                        const EnergyTransfer &xlow,
                                                         const AtomicElement &element,
                                                         const ParticleMass &mass,
                                                         const ComputeCEL cel = false) {
@@ -552,7 +558,7 @@ namespace ghmc::pms::dcs
     inline auto compute_integral(const decltype(default_ionisation) &dcs_kernel)
     {
         return [&dcs_kernel](const KineticEnergy &K,
-                             const EnergyTransferMin &xlow,
+                             const EnergyTransfer &xlow,
                              const AtomicElement &element,
                              const ParticleMass &mass,
                              const int min_points,
@@ -578,7 +584,7 @@ namespace ghmc::pms::dcs
     inline auto compute_dcs_integrals(const DELKernels &del_kernels,
                                       const Result &result,
                                       const KineticEnergies &K,
-                                      const EnergyTransferMin &xlow,
+                                      const EnergyTransfer &xlow,
                                       const AtomicElement &element,
                                       const ParticleMass &mass,
                                       const int min_points,
@@ -635,10 +641,10 @@ namespace ghmc::pms::dcs
      */
     template <typename DELKernel>
     inline void compute_threshold(
-        const DELKernel &del_kernel,
+        const DELKernel &dcs_func,
         const Thresholds &Xt,
         const KineticEnergies &K,
-        const EnergyTransferMin &xlow,
+        const EnergyTransfer &xlow,
         const AtomicElement &element,
         const ParticleMass &mass,
         const ThresholdIndex th_i)
@@ -649,7 +655,7 @@ namespace ghmc::pms::dcs
         for (int i = th_i; i < n; i++)
         {
             Scalar x = xlow;
-            while ((x < 1.) && (del_kernel(pK[i], pK[i] * x, element, mass) <= 0.))
+            while ((x < 1.) && (dcs_func(pK[i], pK[i] * x, element, mass) <= 0.))
                 x *= 2;
             if (x >= 1.)
                 x = 1.;
@@ -671,7 +677,7 @@ namespace ghmc::pms::dcs
                     }
                     if ((x - x0) <= eps)
                         break;
-                    dcs = del_kernel(pK[i], pK[i] * x0, element, mass);
+                    dcs = dcs_func(pK[i], pK[i] * x0, element, mass);
                 }
             }
             pXt[i] = x;
@@ -683,7 +689,7 @@ namespace ghmc::pms::dcs
         const DELKernels &del_kernels,
         const Thresholds &Xt,
         const KineticEnergies &K,
-        const EnergyTransferMin &xlow,
+        const EnergyTransfer &xlow,
         const AtomicElement &element,
         const ParticleMass &mass,
         ThresholdIndex th_i)
@@ -1374,7 +1380,6 @@ namespace ghmc::pms::dcs
             Scalar f1 = 1., f2 = 1.;
             for (j = 0; j < NLAR; j++)
             {
-
                 dx[j] = dX0 * (f1 + f2);
                 x[j] += dx[j];
                 f1 *= p1;
@@ -1390,6 +1395,133 @@ namespace ghmc::pms::dcs
             Scalar hx = X0[0] / (X0[1] - X0[0]);
             Li[j] = x[j] + hx * dx[j];
         }
+    }
+
+    /*
+     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+     *  GNU Lesser General Public License version 3
+     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9007
+     */
+    template <typename DELKernel>
+    inline void dcs_model_fit(
+        const DELKernel &dcs_func,
+        const Result &coeff,
+        const KineticEnergies &K,
+        const EnergyTransfer &xlow,
+        const EnergyTransfer &model_max,
+        const AtomicElement &element,
+        const ParticleMass &mass)
+    {
+        const int nkin = K.numel();
+        Scalar *pK = K.data_ptr<Scalar>();
+        Scalar *c = coeff.data_ptr<Scalar>();
+
+        const int m = (int)(100. * log10(model_max / xlow)) + 1;
+        const int n = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + 1;
+        const int qj = DCS_MODEL_ORDER_P + 1;
+
+        auto A = torch::zeros({nkin, m, n}, tensor_ops);
+        Scalar *pA = A.data_ptr<Scalar>();
+        auto b = torch::zeros({nkin, m}, tensor_ops);
+        Scalar *pb = b.data_ptr<Scalar>();
+        const auto w = torch::zeros_like(b);
+        Scalar *pw = w.data_ptr<Scalar>();
+
+        const Scalar x0 = log(xlow);
+        const Scalar dx = log(model_max / xlow) / (m - 1);
+
+        for (int ikin = 0; ikin < nkin; ikin++)
+        {
+            const Scalar k = pK[ikin];
+            Scalar xi0 = 0.;
+            int i0 = 0, i1 = 0;
+            int ik = ikin * m;
+            bool first = true;
+
+            for (int i = 0; i < m; i++)
+            {
+                Scalar lxi = x0 + i * dx;
+                const Scalar nu = exp(lxi);
+
+                const Scalar y = std::max(
+                    dcs_func(k, k * nu, element, mass) *
+                        k / (k + mass),
+                    0.);
+
+                if (y > 0.)
+                {
+                    if (first)
+                    {
+                        first = false;
+                        i0 = i;
+                        xi0 = nu;
+                    }
+                    else
+                        i1 = i;
+                    pw[i + ik] = 1.;
+                }
+
+                Scalar xi = 1.;
+                const int row = n * (i + ikin * m);
+                for (int j = 0; j < DCS_MODEL_ORDER_P + 1; j++)
+                {
+                    pA[j + row] = xi;
+                    xi *= lxi;
+                }
+
+                Scalar qlxi = log(1. - nu);
+                xi = qlxi;
+                for (int j = 0; j < DCS_MODEL_ORDER_Q; j++)
+                {
+                    pA[j + qj + row] = xi;
+                    xi *= qlxi;
+                }
+
+                pb[i + ik] = (y > 0.) ? log(y) : 0.;
+            }
+
+            //Add the tabulated values in linear scale.
+            const Scalar dnu = (1. - xi0) / DCS_SAMPLING_N;
+            Scalar snu = xi0;
+            for (int i = 0; i < DCS_SAMPLING_N; i++)
+            {
+                c[i + n + ikin * NDM] =
+                    dcs_func(k, k * snu, element, mass) *
+                    k / (k + mass);
+                snu += dnu;
+            }
+
+            // Constrain the end points.
+            pw[i0 + ik] *= 1E+6;
+            pw[i1 + ik] *= 1E+6;
+        }
+
+        A *= w.view({nkin, m, 1});
+        b *= w;
+
+        const auto &[U, S, V] = torch::svd(A);
+        coeff.slice(1, 0, n) = V.matmul(
+                                    (torch::where(S != 0., 1 / S,
+                                                  torch::tensor(0., tensor_dtype))
+                                         .view({nkin, n, 1}) *
+                                     (U.transpose(1, 2).matmul(b.view({nkin, m, 1})))))
+                                   .view({nkin, n});
+    }
+
+    template <typename DELKernels>
+    inline void compute_dcs_model(
+        const DELKernels &del_kernels,
+        const Result &result,
+        const KineticEnergies &K,
+        const EnergyTransfer &xlow,
+        const EnergyTransfer &model_max,
+        const AtomicElement &element,
+        const ParticleMass &mass)
+    {
+        const auto &[br, pp, ph, _] = del_kernels;
+        dcs_model_fit(br, result[0], K, xlow, model_max, element, mass);
+        dcs_model_fit(pp, result[1], K, xlow, model_max, element, mass);
+        dcs_model_fit(ph, result[2], K, xlow, model_max, element, mass);
     }
 
     inline const auto default_del_kernels = std::tuple{
