@@ -259,7 +259,7 @@ namespace ghmc::pms
 
         inline void init_dcs_data(const int nel, const int nkin)
         {
-            dcs_data = torch::zeros({nel, dcs::NPR-1, nkin, dcs::NDM}, tensor_ops);
+            dcs_data = torch::zeros({nel, dcs::NPR - 1, nkin, dcs::NDM}, tensor_ops);
         }
 
         inline void init_per_element_data(const int nel)
@@ -317,16 +317,17 @@ namespace ghmc::pms
                     std::get<DELKernels>(dcs_kernels), cel_table[iel], table_K,
                     static_cast<Physics *>(this)->x_fraction(), elements[iel], mass, 180, true);
 
+                dcs::compute_dcs_model(
+                    std::get<DELKernels>(dcs_kernels),
+                    dcs_data[iel],
+                    model_K,
+                    static_cast<Physics *>(this)->x_fraction(),
+                    static_cast<Physics *>(this)->dcs_model_max_fraction(),
+                    elements[iel],
+                    mass);
+
                 compute_coulomb_data(iel);
             }
-            dcs::compute_dcs_model(
-                std::get<DELKernels>(dcs_kernels),
-                dcs_data[5],
-                model_K,
-                static_cast<Physics *>(this)->x_fraction(),
-                static_cast<Physics *>(this)->dcs_model_max_fraction(),
-                elements[5],
-                mass);
         }
 
         inline void init_dedx_tables(const int nmat)

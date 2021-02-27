@@ -483,10 +483,10 @@ namespace ghmc::pms::dcs
                             (mass * mass +
                              ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
         if ((Wmax < X_FRACTION * K) || (q > Wmax))
-            return 0.;
+            return (Scalar) 0.;
         const Scalar Wmin = 0.62 * element.I;
         if (q <= Wmin)
-            return 0.;
+            return (Scalar) 0.;
 
         /* Close interactions for Q >> atomic binding energies. */
         const Scalar a0 = 0.5 / P2;
@@ -505,7 +505,7 @@ namespace ghmc::pms::dcs
                     (log(4. * E * (E - q) / (mass * mass)) -
                      L1);
         }
-        return cs * (1. + Delta);
+        return (Scalar) (cs * (1. + Delta));
     };
 
     /*
@@ -524,7 +524,7 @@ namespace ghmc::pms::dcs
                             (mass * mass +
                              ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
         if (Wmax < X_FRACTION * K)
-            return 0.;
+            return (Scalar) 0.;
         Scalar Wmin = 0.62 * element.I;
         const Scalar qlow = K * xlow;
         if (qlow >= Wmin)
@@ -532,7 +532,7 @@ namespace ghmc::pms::dcs
 
         /* Check the bounds. */
         if (Wmax <= Wmin)
-            return 0.;
+            return (Scalar) 0.;
 
         /* Close interactions for Q >> atomic binding energies. */
         const Scalar a0 = 0.5 / P2;
@@ -551,7 +551,7 @@ namespace ghmc::pms::dcs
                 a1 * (Wmax - Wmin) + a2 * log(Wmax / Wmin);
         }
 
-        return 1.535336E-05 * element.Z / element.A * S;
+        return (Scalar) (1.535336E-05 * element.Z / element.A * S);
     };
 
     template <>
