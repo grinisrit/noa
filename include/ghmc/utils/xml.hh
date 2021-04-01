@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "ghmc/utils/_pugixml/pugixml.hpp"
+#include <pugixml.hpp>
 
 namespace ghmc::utils::xml
 {

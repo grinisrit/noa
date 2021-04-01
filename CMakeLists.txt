@@ -31,6 +31,7 @@ target_include_directories(
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # LibTorch
+list(APPEND CMAKE_PREFIX_PATH ${Python_SITELIB}/torch) # possible location
 find_package(Torch REQUIRED)
 target_link_libraries(${PROJECT_NAME} INTERFACE torch)
 set_target_properties(${PROJECT_NAME} PROPERTIES INTERFACE_LINK_LIBRARIES "torch")

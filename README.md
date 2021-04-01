@@ -13,18 +13,20 @@ We also plan to provide utilities for parallel execution accross heterogeneous h
 
 ## Installation 
 
-Currently, we support only `GNU` and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows). 
+Currently, we support only `Linux x86_64` and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows). 
 
-This is a header only library, so you can directly drop the `include/ghmc` folder into your project. Otherwise, you can add the repository as a `cmake` submodule.
+This is a header only library, so you can directly drop the `include/ghmc` folder into your project. Otherwise, you can add the repository as a `cmake` submodule. 
 
-We strongly encourage you to work within `conda`. Create and activate the provided environment:
+The core of the library depends on [LibTorch cxx11 ABI](https://pytorch.org/get-started/locally) (tested with version `1.7.1`). Additionally, you might want to install:
+*  [pugixml](https://github.com/zeux/pugixml) used by the component `ghmc/pms`.
+*  [googletest](https://github.com/google/googletest) to run tests.
+*  [benchmark](https://github.com/google/benchmark) to run benchmarks.
+
+
+We strongly encourage you to work within `conda`. The provided environment contains all the required libraries:
 ```
 $ conda env create -f env.yml
 $ conda activate ghmc
-```
-Install the extra dependencies such as `LibTorch`:
-```
-$ python extras.py 
 ```
 Now, test & install the library (to turn testing off add `-DBUILD_TESTING=OFF`):
 ```
