@@ -11,7 +11,7 @@ project(
 	VERSION 0.0.1
 	DESCRIPTION 
 		"Geometric Hamiltonian Monte Carlo algorithms over LibTorch"
-	HOMEPAGE_URL https://github.com/rgrit91/ghmc
+	HOMEPAGE_URL https://github.com/grinisrit/ghmc
 	LANGUAGES CXX)
 
 # Require C++17

@@ -7,8 +7,8 @@ message(STATUS "Building PMS apps required")
 include(conda-omp)
 
 # Main executables
-add_executable(load load.cc)
+add_executable(bmc bmc.cc)
 
 # Link libraries
-target_link_libraries(load PRIVATE GHMC openmp)
-target_compile_options(load PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(bmc PRIVATE GHMC openmp)
+target_compile_options(bmc PRIVATE -Wall -Wextra -Wpedantic -O3)
