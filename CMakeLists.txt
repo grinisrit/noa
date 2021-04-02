@@ -76,7 +76,7 @@ if(INSTALL_LIBRARY)
 
   	install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 				  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-				  ${PROJECT_SOURCE_DIR}/cmake/pumas-materials.cmake
+				  ${PROJECT_SOURCE_DIR}/cmake/ghmc-data.cmake
 				  ${PROJECT_SOURCE_DIR}/cmake/conda-omp.cmake
 			  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 			  
@@ -92,6 +92,6 @@ endif(BUILD_SAMPLER_APPS)
 
 option(BUILD_PMS_APPS "Build PMS apps " OFF)
 if(BUILD_PMS_APPS)
-	include(pumas-materials)
+	include(ghmc-data)
 	add_subdirectory(apps/pms)
 endif(BUILD_PMS_APPS)

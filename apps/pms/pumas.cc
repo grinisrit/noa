@@ -7,7 +7,7 @@
 
 using namespace std::chrono;
 
-DEFINE_string(materials, "materials", "Path to the materials data");
+DEFINE_string(materials, "ghmc-data/pms-materials", "Path to the PMS materials data");
 
 auto main(int argc, char **argv) -> int
 {
