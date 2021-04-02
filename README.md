@@ -18,9 +18,10 @@ Currently, we support only `Linux x86_64` and `CUDA` for GPU (check [WSL](https:
 This is a header only library, so you can directly drop the `include/ghmc` folder into your project. Otherwise, you can add the repository as a `cmake` submodule. 
 
 The core of the library depends on [LibTorch cxx11 ABI](https://pytorch.org/get-started/locally) (tested with version `1.7.1`). Additionally, you might want to install:
-*  [pugixml](https://github.com/zeux/pugixml) used by the component `ghmc/pms`.
 *  [googletest](https://github.com/google/googletest) to run tests.
 *  [benchmark](https://github.com/google/benchmark) to run benchmarks.
+*  [gflags](https://github.com/gflags/gflags) to run examples.
+*  [pugixml](https://github.com/zeux/pugixml) is used by the component `ghmc/pms`.
 
 
 We strongly encourage you to work within `conda`. The provided environment contains all the required libraries:
@@ -47,9 +48,9 @@ target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 ## Usage and Applications
 
-The library offers several advanced applications for Bayesian computations:
-* [HMC Sampler](apps/sampler) is the core component focused on the geometric HMC algorithm dedicated to sample from higher-dimensional probability distributions. The rest of the library builds on top of it.
-* [PMS](apps/pms) provides a framework for simulating the passage of particles through matter.
+The library offers several advanced applications for Bayesian computation. Documentation and usage examples for each component are provided here:
+* [ghmc](apps/sampler) the core component focused on the geometric HMC algorithm dedicated to sample from higher-dimensional probability distributions. The rest of the library builds on top of it.
+* [ghmc::pms](apps/pms) provides a framework for simulating the passage of particles through matter.
 
 ## Contributions and Support
 

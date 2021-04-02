@@ -9,9 +9,12 @@ include(conda-omp)
 # XML parser
 find_package(pugixml REQUIRED)
 
+# Command line utilities
+find_package(gflags REQUIRED)
+
 # Main executables
-add_executable(bmc bmc.cc)
+add_executable(pumas pumas.cc)
 
 # Link libraries
-target_link_libraries(bmc PRIVATE GHMC openmp pugixml)
-target_compile_options(bmc PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(pumas PRIVATE GHMC openmp pugixml gflags)
+target_compile_options(pumas PRIVATE -Wall -Wextra -Wpedantic -O3)

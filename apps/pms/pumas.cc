@@ -3,16 +3,23 @@
 
 #include <iostream>
 #include <chrono>
+#include <gflags/gflags.h>
 
 using namespace std::chrono;
 
-int main()
+DEFINE_string(materials, "materials", "Path to the materials data");
+
+auto main(int argc, char **argv) -> int
 {
-    auto mdf = "materials/mdf/standard.xml";
-    auto dedx = "materials/dedx/muon";
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    const auto materials_dir = ghmc::utils::Path{FLAGS_materials};
+
+    auto mdf = materials_dir / "mdf" / "standard.xml";
+    auto dedx = materials_dir / "dedx" / "muon";
 
     auto begin = steady_clock::now();
-    
+
     auto muon_physics = ghmc::pms::load_muon_physics_from(
         mdf, dedx, ghmc::pms::dcs::default_kernels);
     if (!muon_physics.has_value())
