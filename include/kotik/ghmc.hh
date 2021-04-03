@@ -33,7 +33,7 @@
 
 #include <torch/torch.h>
 
-namespace ghmc
+namespace kotik::ghmc
 {
     using SafeResult = std::optional<torch::Tensor>;
     using SampleResult = std::optional<std::tuple<double, torch::Tensor>>;
@@ -342,4 +342,4 @@ namespace ghmc
         return SampleResult{std::make_tuple(acceptance_rate, result)};
     }
 
-} // namespace ghmc
+} // namespace kotik::ghmc

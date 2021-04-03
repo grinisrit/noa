@@ -1,9 +1,20 @@
-# Sampling probability distributions
+# Geometric Hamiltonian Monte-Carlo (GHMC)
+
+To build theses examples add `-DBUILD_GHMC_APPS=ON` to the top level cmake command.
+
+The library implements Hamiltonian Monte Carlo ([HMC](https://www.sciencedirect.com/science/article/abs/pii/037026938791197X)) schemes over [LibTorch](https://pytorch.org/cppdocs/). The forcus is on high-dimensional problems. 
+
+Currently we have implemented the Explicit [RMHMC](https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00765.x) scheme developed by [A.D.Cobb et al.](https://arxiv.org/abs/1910.06243), and initially released in the [hamiltorch](https://github.com/AdamCobb/hamiltorch) package.
+
+In the near future, our research is focused on enhancing this scheme with the [NUTS](https://jmlr.org/papers/v15/hoffman14a.html) algorithm. 
+We also plan to provide utilities for parallel execution accross heterogeneous hardware.
+
+## Usage 
 
 The log density function, that we sample from, should be compatible with `torch::autograd`. It must be built out of instances of `torch::autograd::Function` or `torch::nn::Module` richly available from the `PyTorch C++ API`. The user can provide custom extensions if needed, see this [tutorial](https://pytorch.org/tutorials/advanced/cpp_autograd.html).
 ```cpp
 #include <torch/torch.h>
-#include <ghmc/ghmc.hh>
+#include <kotik/ghmc.hh>
 
 int main()
 { 

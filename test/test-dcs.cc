@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-using namespace ghmc::utils;
-using namespace ghmc::pms;
-using namespace ghmc::pms::dcs;
+using namespace kotik::utils;
+using namespace kotik::pms;
+using namespace kotik::pms::dcs;
 
 TEST(DCS, Bremsstrahlung)
 {

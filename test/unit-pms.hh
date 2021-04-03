@@ -1,12 +1,12 @@
 #pragma once
 
-#include <ghmc/pms/conf.hh>
-#include <ghmc/pms/dcs.hh>
-#include <ghmc/pms/physics.hh>
-#include <ghmc/utils/common.hh>
+#include <kotik/pms/conf.hh>
+#include <kotik/pms/dcs.hh>
+#include <kotik/pms/physics.hh>
+#include <kotik/utils/common.hh>
 
 
-const inline auto t_ops = ghmc::pms::tensor_ops;
+const inline auto t_ops = kotik::pms::tensor_ops;
 
 inline const auto kinetic_energies =
     torch::tensor({0.0010, 0.0012, 0.0014, 0.0017, 0.0020, 0.0025, 0.0030, 0.0035, 0.0040, 0.0045, 0.0050, 0.0055, 0.0060,
@@ -17,7 +17,7 @@ inline const auto kinetic_energies =
                    1000.0000, 1200.0000, 1400.0000, 900000.0000, 1000000.0000},
                   t_ops);
 
-inline const auto recoil_energies = kinetic_energies * (ghmc::pms::X_FRACTION * 1.01);
+inline const auto recoil_energies = kinetic_energies * (kotik::pms::X_FRACTION * 1.01);
 
 inline const auto pumas_brems =
     torch::tensor({352.9348215307E-6, 286.7718941223E-6, 240.4519862562E-6, 192.4588745545E-6, 159.6466668098E-6,

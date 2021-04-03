@@ -1,12 +1,12 @@
 ####################################################################################################
-################                     GHMC Apps: sampler examples                    ################
+################                     KOTIK Apps: GHMC examples                    ##################
 ####################################################################################################
 
-message(STATUS "Building sampler apps required")
+message(STATUS "Building GHMC apps required")
 
 # Main executables
 add_executable(normal-cpu normal-cpu.cc)
 
 # Link libraries
-target_link_libraries(normal-cpu PRIVATE GHMC)
+target_link_libraries(normal-cpu PRIVATE KOTIK)
 target_compile_options(normal-cpu  PRIVATE -Wall -Wextra -Wpedantic -O3)

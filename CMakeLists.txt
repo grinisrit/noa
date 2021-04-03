@@ -1,5 +1,5 @@
 ####################################################################################################
-#################                      GHMC: main cmake file                       #################
+#################                      KOTIK: main cmake file                       #################
 ####################################################################################################
 
 # Minimum cmake version
@@ -7,11 +7,11 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Project
 project(
-	GHMC 
+	KOTIK 
 	VERSION 0.0.1
 	DESCRIPTION 
-		"Geometric Hamiltonian Monte Carlo algorithms over LibTorch"
-	HOMEPAGE_URL https://github.com/grinisrit/ghmc
+		"Bayesian Computation for Deep Learning over LibTorch"
+	HOMEPAGE_URL https://github.com/grinisrit/kotik
 	LANGUAGES CXX)
 
 # Require C++17
@@ -31,8 +31,12 @@ target_include_directories(
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # LibTorch
-list(APPEND CMAKE_PREFIX_PATH ${Python_SITELIB}/torch) # possible location
-find_package(Torch REQUIRED)
+find_package(Python QUIET)
+# possible location if using pytorch
+list(APPEND CMAKE_PREFIX_PATH ${Python_SITELIB}/torch)
+find_package(Torch QUIET)
+
+
 target_link_libraries(${PROJECT_NAME} INTERFACE torch)
 set_target_properties(${PROJECT_NAME} PROPERTIES INTERFACE_LINK_LIBRARIES "torch")
 
@@ -43,15 +47,17 @@ else()
   	set(IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-option(INSTALL_LIBRARY "Install library to GNU locations" ${IS_TOPLEVEL_PROJECT})
+option(INSTALL_KOTIK "Install KOTIK to GNU locations" ${IS_TOPLEVEL_PROJECT})
 option(BUILD_TESTING "Build and run tests " ${IS_TOPLEVEL_PROJECT})
+
+include(FetchContent)
 
 if(BUILD_TESTING)
     enable_testing()
 	add_subdirectory(test)
 endif(BUILD_TESTING)
 
-if(INSTALL_LIBRARY)
+if(INSTALL_KOTIK)
   	# locations are provided by GNUInstallDirs
   	install(
     	TARGETS ${PROJECT_NAME}
@@ -76,22 +82,15 @@ if(INSTALL_LIBRARY)
 
   	install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 				  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-				  ${PROJECT_SOURCE_DIR}/cmake/ghmc-data.cmake
+				  ${PROJECT_SOURCE_DIR}/cmake/kotik-pms-models.cmake
 				  ${PROJECT_SOURCE_DIR}/cmake/conda-omp.cmake
 			  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 			  
-  	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ghmc
+  	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/kotik
           	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-endif(INSTALL_LIBRARY)
+endif(INSTALL_KOTIK)
 
-option(BUILD_SAMPLER_APPS "Build sampler apps " OFF)
-if(BUILD_SAMPLER_APPS)
-	add_subdirectory(apps/sampler)
-endif(BUILD_SAMPLER_APPS)
-
+option(BUILD_GHMC_APPS "Build GHMC apps " OFF)
 option(BUILD_PMS_APPS "Build PMS apps " OFF)
-if(BUILD_PMS_APPS)
-	include(ghmc-data)
-	add_subdirectory(apps/pms)
-endif(BUILD_PMS_APPS)
+add_subdirectory(apps)

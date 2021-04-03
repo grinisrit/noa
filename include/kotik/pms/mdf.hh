@@ -28,16 +28,16 @@
 
 #pragma once
 
-#include "ghmc/pms/physics.hh"
-#include "ghmc/utils/common.hh"
-#include "ghmc/utils/xml.hh"
+#include "kotik/pms/physics.hh"
+#include "kotik/utils/common.hh"
+#include "kotik/utils/xml.hh"
 
 #include <algorithm>
 #include <regex>
 #include <unordered_map>
 #include <vector>
 
-namespace ghmc::pms::mdf
+namespace kotik::pms::mdf
 {
 
     using MDFFilePath = utils::Path;
@@ -327,7 +327,7 @@ namespace ghmc::pms::mdf
     inline std::optional<DEDXData> parse_dedx_file(
         const DEDXFilePath &dedx_file_path, const ParticleName &particle_name)
     {
-        if (!ghmc::utils::check_path_exists(dedx_file_path))
+        if (!utils::check_path_exists(dedx_file_path))
             return std::nullopt;
 
         auto dedx_stream = std::ifstream{dedx_file_path};
@@ -387,10 +387,10 @@ namespace ghmc::pms::mdf
             for (const auto &[elmt, frac] :
                  std::get<MaterialComponents>(materials.at(material)))
                 ZoA += frac * elements.at(elmt).Z / elements.at(elmt).A;
-            if ((std::abs(ZoA - coefs.ZoA) > ghmc::utils::TOLERANCE))
+            if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE))
                 return false;
         }
         return true;
     }
 
-} // namespace ghmc::pms::mdf
+} // namespace kotik::pms::mdf

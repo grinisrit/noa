@@ -28,11 +28,11 @@
 
 #pragma once
 
-#include "ghmc/pms/conf.hh"
+#include "kotik/pms/conf.hh"
 
 #include <torch/torch.h>
 
-namespace ghmc::pms
+namespace kotik::pms
 {
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
@@ -88,4 +88,4 @@ namespace ghmc::pms
 
     inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); //Max deflection angle for hard scattering
 
-} // namespace ghmc::pms
+} // namespace kotik::pms

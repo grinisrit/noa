@@ -36,7 +36,7 @@
 
 #include <torch/torch.h>
 
-namespace ghmc::utils
+namespace kotik::utils
 {
 
     using Path = std::filesystem::path;
@@ -185,4 +185,4 @@ namespace ghmc::utils
         return torch::abs(computed - expected).sum() / computed.numel();
     }
 
-} // namespace ghmc::utils
+} // namespace kotik::utils

@@ -1,11 +1,12 @@
 #pragma once
 
-#include <ghmc/ghmc.hh>
-#include <ghmc/utils/common.hh>
+#include <kotik/ghmc.hh>
+#include <kotik/utils/common.hh>
 
 #include <torch/torch.h>
 
-using namespace ghmc::utils;
+using namespace kotik;
+using namespace kotik::utils;
 
 inline Status sample_normal_dist(Path save_result_to,
                                         torch::DeviceType device = torch::kCPU)

@@ -28,11 +28,11 @@
 
 #pragma once
 
-#include "ghmc/utils/common.hh"
+#include "kotik/utils/common.hh"
 
 #include <torch/torch.h>
 
-namespace ghmc::pms
+namespace kotik::pms
 {
     using Scalar = double;
     using Index = int;
@@ -40,4 +40,4 @@ namespace ghmc::pms
     inline const auto tensor_dtype = torch::dtype(utils::dtype<Scalar>());
     inline const auto tensor_ops = tensor_dtype.layout(torch::kStrided);
 
-} // namespace ghmc::pms
+} // namespace kotik::pms

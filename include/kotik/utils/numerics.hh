@@ -28,7 +28,9 @@
 
 #pragma once
 
-namespace ghmc::utils::numerics
+#include <optional>
+
+namespace kotik::utils::numerics
 {
 
     // https://pomax.github.io/bezierinfo/legendre-gauss.html
@@ -191,4 +193,4 @@ namespace ghmc::utils::numerics
         return std::nullopt;
     }
 
-} // namespace ghmc::utils::numerics
+} // namespace kotik::utils::numerics

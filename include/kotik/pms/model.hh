@@ -28,14 +28,14 @@
 
 #pragma once
 
-#include "ghmc/pms/mdf.hh"
-#include "ghmc/pms/dcs.hh"
-#include "ghmc/pms/physics.hh"
-#include "ghmc/utils/common.hh"
+#include "kotik/pms/mdf.hh"
+#include "kotik/pms/dcs.hh"
+#include "kotik/pms/physics.hh"
+#include "kotik/utils/common.hh"
 
 #include <torch/torch.h>
 
-namespace ghmc::pms
+namespace kotik::pms
 {
     using namespace torch::indexing;
 
@@ -729,9 +729,9 @@ namespace ghmc::pms
         const mdf::ParticleName &particle_name, const mdf::MDFFilePath &mdf,
         const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels)
     {
-        if (!ghmc::utils::check_path_exists(mdf))
+        if (!utils::check_path_exists(mdf))
             return std::nullopt;
-        if (!ghmc::utils::check_path_exists(dedx))
+        if (!utils::check_path_exists(dedx))
             return std::nullopt;
 
         auto mdf_settings = mdf::parse_settings(mdf::pumas, mdf);
@@ -757,4 +757,4 @@ namespace ghmc::pms
         return load_pumas_physics_from<MuonPhysics<DCSKernels>, DCSKernels>(mdf::Muon, mdf, dedx, dcs_kernels);
     }
 
-} // namespace ghmc::pms
+} // namespace kotik::pms

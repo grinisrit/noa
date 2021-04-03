@@ -30,9 +30,9 @@
 
 #include <pugixml.hpp>
 
-namespace ghmc::utils::xml
+namespace kotik::utils::xml
 {
     using Document = pugi::xml_document;
     using Node = pugi::xml_node;
 
-} // namespace ghmc::utils::xml
+} // namespace kotik::utils::xml
