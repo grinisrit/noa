@@ -17,6 +17,11 @@ project(
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
 
+# Compatibility with LibTorch cxx11 ABI
+add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
+
+include(FetchContent)
+
 # Add custom modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -50,7 +55,6 @@ endif()
 option(INSTALL_KOTIK "Install KOTIK to GNU locations" ${IS_TOPLEVEL_PROJECT})
 option(BUILD_TESTING "Build and run tests " ${IS_TOPLEVEL_PROJECT})
 
-include(FetchContent)
 
 if(BUILD_TESTING)
     enable_testing()

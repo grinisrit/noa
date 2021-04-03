@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <pugixml.hpp>
+#include "pugixml.hpp"
 
 namespace kotik::utils::xml
 {

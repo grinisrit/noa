@@ -6,5 +6,5 @@ set_target_properties(openmp
     INTERFACE_COMPILE_OPTIONS -fopenmp)
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(OpenMP DEFAULT_MSG
-OMP_LIBRARY    
+    OMP_LIBRARY    
 )
