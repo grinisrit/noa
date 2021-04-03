@@ -28,14 +28,14 @@
 
 #pragma once
 
-#include "kotik/pms/mdf.hh"
-#include "kotik/pms/dcs.hh"
-#include "kotik/pms/physics.hh"
-#include "kotik/utils/common.hh"
+#include "noa/pms/mdf.hh"
+#include "noa/pms/dcs.hh"
+#include "noa/pms/physics.hh"
+#include "noa/utils/common.hh"
 
 #include <torch/torch.h>
 
-namespace kotik::pms
+namespace noa::pms
 {
     using namespace torch::indexing;
 
@@ -757,4 +757,4 @@ namespace kotik::pms
         return load_pumas_physics_from<MuonPhysics<DCSKernels>, DCSKernels>(mdf::Muon, mdf, dedx, dcs_kernels);
     }
 
-} // namespace kotik::pms
+} // namespace noa::pms

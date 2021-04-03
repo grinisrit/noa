@@ -28,13 +28,13 @@
 
 #pragma once
 
-#include "kotik/pms/physics.hh"
-#include "kotik/utils/common.hh"
-#include "kotik/utils/numerics.hh"
+#include "noa/pms/physics.hh"
+#include "noa/utils/common.hh"
+#include "noa/utils/numerics.hh"
 
 #include <torch/torch.h>
 
-namespace kotik::pms::dcs
+namespace noa::pms::dcs
 {
     constexpr int NPR = 4;  // Number of DEL processes considered
     constexpr int NSF = 9;  // Number of screening factors and pole reduction for Coulomb scattering
@@ -1540,4 +1540,4 @@ namespace kotik::pms::dcs
         default_del_kernels,
         default_tt_kernels};
 
-} // namespace kotik::pms::dcs
+} // namespace noa::pms::dcs

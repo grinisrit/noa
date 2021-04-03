@@ -28,11 +28,11 @@
 
 #pragma once
 
-#include "kotik/pms/conf.hh"
+#include "noa/pms/conf.hh"
 
 #include <torch/torch.h>
 
-namespace kotik::pms
+namespace noa::pms
 {
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
@@ -88,4 +88,4 @@ namespace kotik::pms
 
     inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); //Max deflection angle for hard scattering
 
-} // namespace kotik::pms
+} // namespace noa::pms

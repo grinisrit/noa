@@ -28,11 +28,16 @@
 
 #pragma once
 
-#include "pugixml.hpp"
+#include "noa/utils/common.hh"
 
-namespace kotik::utils::xml
+#include <torch/torch.h>
+
+namespace noa::pms
 {
-    using Document = pugi::xml_document;
-    using Node = pugi::xml_node;
+    using Scalar = double;
+    using Index = int;
+    using Index64 = int64_t;
+    inline const auto tensor_dtype = torch::dtype(utils::dtype<Scalar>());
+    inline const auto tensor_ops = tensor_dtype.layout(torch::kStrided);
 
-} // namespace kotik::utils::xml
+} // namespace noa::pms

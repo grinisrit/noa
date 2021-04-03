@@ -1,4 +1,4 @@
-# Kotik: Bayesian Computation for Deep Learning
+# NOA: Bayesian Computation for Deep Learning
 
 We aim to make it easier to integrate Bayesian computation algorithms with Deep Learning applications, larger simulation frameworks, as well as performance demanding systems such as ones encountered in streaming analytics, games, high frequency trading and many other applications.
 
@@ -11,28 +11,30 @@ The core of the library depends on [LibTorch (cxx11 ABI)](https://pytorch.org/ge
 We encourage you to work with `conda`. The provided environment contains all the required libraries:
 ```
 $ conda env create -f env.yml
-$ conda activate kotik
+$ conda activate noa
 ```
-Now, test & install the library (to turn testing off add `-DBUILD_TESTING=OFF`):
+Build, test & install the library (to turn testing off add `-DBUILD_TESTING=OFF`):
 ```
 $ mkdir -p build && cd build
 $ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
 $ cmake --build . --config Release --target install
 $ ctest -V
 ```
-In your `CMakeLists.txt` file, make sure you add `LibTorch` and then you can link `kotik`:
+To build benchmarks specify `-DBUILD_BENCHMARKS=ON`.
+
+In your `CMakeLists.txt` file, make sure you add `LibTorch` and then you can link `noa`:
 ```cmake
 cmake_minimum_required(VERSION 3.12)
 set(CMAKE_CXX_STANDARD 17)
 find_package(Torch REQUIRED)
-find_package(KOTIK CONFIG REQUIRED)
-target_link_libraries(your_target torch KOTIK::KOTIK)
+find_package(NOA CONFIG REQUIRED)
+target_link_libraries(your_target torch NOA::NOA)
 target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 ```
 
 ## Applications
 
-The library offers several advanced applications for Bayesian computation. Please refer to the documentation and usage examples for each component to find out more:
+NOA offers several advanced applications for Bayesian computation. Please refer to the documentation and usage examples for each component to find out more:
 * [GHMC](apps/ghmc) the core component focused on the Geometric HMC algorithm dedicated to sampling from higher-dimensional probability distributions. The rest of the library builds on top of it.
 * [PMS](apps/pms) provides a framework for simulating the passage of particles through matter. 
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <kotik/ghmc.hh>
-#include <kotik/utils/common.hh>
+#include <noa/ghmc.hh>
+#include <noa/utils/common.hh>
 
-using namespace kotik;
+using namespace noa;
 
 inline const auto alog_funnel = [](const auto &theta) {
     auto dim = theta.numel() - 1;

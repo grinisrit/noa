@@ -1,9 +1,8 @@
 ####################################################################################################
-###################              KOTIK: unit testing & benchmarking             ####################
+############################              NOA unit testing             #############################
 ####################################################################################################
 
-message(STATUS "Building tests & benchmarks required")
-
+message(STATUS "Building tests required")
 
 FetchContent_Declare(
     googletest
@@ -24,44 +23,18 @@ if(NOT googletest_POPULATED)
 endif()
 
 
-FetchContent_Declare(
-    benchmark
-    GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG        v1.5.2
-  )
-
-FetchContent_GetProperties(benchmark)
-
-if(NOT benchmark_POPULATED)
-    FetchContent_Populate(benchmark)
-
-    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "")
-
-    add_subdirectory(
-        ${benchmark_SOURCE_DIR}
-        ${benchmark_BINARY_DIR})
-endif()
-
-
-
 # Source files
-set(KOTIK_TEST_SRC 
+set(NOA_TEST_SRC 
     test-ghmc.cc
     test-dcs.cc)
 
-set(KOTIK_BENCH_SRC 
-    benchmark-dcs.cc)
-
 
 # Main test executables
-add_executable(test_kotik ${KOTIK_TEST_SRC})
-add_executable(benchmark_kotik ${KOTIK_BENCH_SRC})
+add_executable(test_noa ${NOA_TEST_SRC})
 
 # Link libraries
-target_link_libraries(test_kotik PRIVATE gtest_main KOTIK)
-target_compile_options(test_kotik PRIVATE -Wall -Wextra -Wpedantic -O3)
-target_link_libraries(benchmark_kotik PRIVATE benchmark_main KOTIK)
-target_compile_options(benchmark_kotik PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(test_noa PRIVATE gtest_main NOA)
+target_compile_options(test_noa PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 # Set up test
-add_test(NAME TEST_KOTIK COMMAND test_kotik)
+add_test(NAME TEST_NOA COMMAND test_noa)

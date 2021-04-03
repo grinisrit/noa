@@ -2,8 +2,8 @@
 
 #include <benchmark/benchmark.h>
 
-using namespace kotik::pms;
-using namespace kotik::pms::dcs;
+using namespace noa::pms;
+using namespace noa::pms::dcs;
 
 static void DCS_Bremsstrahlung(benchmark::State &state)
 {

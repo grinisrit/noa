@@ -1,5 +1,5 @@
 ####################################################################################################
-#################                      KOTIK: main cmake file                       #################
+#################                      NOA: main cmake file                       #################
 ####################################################################################################
 
 # Minimum cmake version
@@ -7,12 +7,27 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Project
 project(
-	KOTIK 
+	NOA 
 	VERSION 0.0.1
 	DESCRIPTION 
 		"Bayesian Computation for Deep Learning over LibTorch"
-	HOMEPAGE_URL https://github.com/grinisrit/kotik
+	HOMEPAGE_URL https://github.com/grinisrit/noa
 	LANGUAGES CXX)
+
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+	set(IS_TOPLEVEL_PROJECT TRUE)
+else()
+	set(IS_TOPLEVEL_PROJECT FALSE)
+endif()
+
+option(INSTALL_NOA "Install NOA to GNU locations" ${IS_TOPLEVEL_PROJECT})
+option(BUILD_TESTING "Build and run tests " ${IS_TOPLEVEL_PROJECT})
+option(BUILD_BENCHMARKS "Build and run benchmarks " OFF)
+
+option(BUILD_GHMC_APPS "Build GHMC apps " OFF)
+option(BUILD_PMS_APPS "Build PMS apps " OFF)
+
 
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -20,10 +35,25 @@ set(CMAKE_CXX_STANDARD 17)
 # Compatibility with LibTorch cxx11 ABI
 add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 
-include(FetchContent)
 
 # Add custom modules
+include(FetchContent)
+include(ExternalProject)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+
+# Check for a possible PyTorch installation
+find_package(Python QUIET)
+if(Python_FOUND)
+	if(EXISTS ${Python_SITELIB}/torch)
+		list(APPEND CMAKE_PREFIX_PATH ${Python_SITELIB}/torch)
+	endif()
+endif()
+
+# Make sure LibTorch is installed 
+find_package(Torch REQUIRED)
+
+
 
 add_library(${PROJECT_NAME} INTERFACE)
 # add alias so the project can be uses with add_subdirectory
@@ -35,33 +65,25 @@ target_include_directories(
   INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# LibTorch
-find_package(Python QUIET)
-# possible location if using pytorch
-list(APPEND CMAKE_PREFIX_PATH ${Python_SITELIB}/torch)
-find_package(Torch QUIET)
+
 
 
 target_link_libraries(${PROJECT_NAME} INTERFACE torch)
 set_target_properties(${PROJECT_NAME} PROPERTIES INTERFACE_LINK_LIBRARIES "torch")
 
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  	set(IS_TOPLEVEL_PROJECT TRUE)
-else()
-  	set(IS_TOPLEVEL_PROJECT FALSE)
-endif()
-
-option(INSTALL_KOTIK "Install KOTIK to GNU locations" ${IS_TOPLEVEL_PROJECT})
-option(BUILD_TESTING "Build and run tests " ${IS_TOPLEVEL_PROJECT})
 
 
 if(BUILD_TESTING)
     enable_testing()
 	add_subdirectory(test)
-endif(BUILD_TESTING)
+endif()
 
-if(INSTALL_KOTIK)
+if(BUILD_BENCHMARKS)
+	add_subdirectory(benchmark)
+endif()
+
+if(INSTALL_NOA)
   	# locations are provided by GNUInstallDirs
   	install(
     	TARGETS ${PROJECT_NAME}
@@ -86,15 +108,13 @@ if(INSTALL_KOTIK)
 
   	install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 				  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-				  ${PROJECT_SOURCE_DIR}/cmake/kotik-pms-models.cmake
+				  ${PROJECT_SOURCE_DIR}/cmake/noa-pms-models.cmake
 				  ${PROJECT_SOURCE_DIR}/cmake/conda-omp.cmake
 			  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 			  
-  	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/kotik
+  	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noa
           	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-endif(INSTALL_KOTIK)
+endif()
 
-option(BUILD_GHMC_APPS "Build GHMC apps " OFF)
-option(BUILD_PMS_APPS "Build PMS apps " OFF)
 add_subdirectory(apps)

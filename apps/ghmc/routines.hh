@@ -1,12 +1,12 @@
 #pragma once
 
-#include <kotik/ghmc.hh>
-#include <kotik/utils/common.hh>
+#include <noa/ghmc.hh>
+#include <noa/utils/common.hh>
 
 #include <torch/torch.h>
 
-using namespace kotik;
-using namespace kotik::utils;
+using namespace noa;
+using namespace noa::utils;
 
 inline Status sample_normal_dist(Path save_result_to,
                                         torch::DeviceType device = torch::kCPU)

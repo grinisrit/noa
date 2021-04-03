@@ -36,7 +36,7 @@
 
 #include <torch/torch.h>
 
-namespace kotik::utils
+namespace noa::utils
 {
 
     using Path = std::filesystem::path;
@@ -185,4 +185,4 @@ namespace kotik::utils
         return torch::abs(computed - expected).sum() / computed.numel();
     }
 
-} // namespace kotik::utils
+} // namespace noa::utils

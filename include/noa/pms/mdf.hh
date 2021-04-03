@@ -28,16 +28,16 @@
 
 #pragma once
 
-#include "kotik/pms/physics.hh"
-#include "kotik/utils/common.hh"
-#include "kotik/utils/xml.hh"
+#include "noa/pms/physics.hh"
+#include "noa/utils/common.hh"
+#include "noa/utils/xml.hh"
 
 #include <algorithm>
 #include <regex>
 #include <unordered_map>
 #include <vector>
 
-namespace kotik::pms::mdf
+namespace noa::pms::mdf
 {
 
     using MDFFilePath = utils::Path;
@@ -393,4 +393,4 @@ namespace kotik::pms::mdf
         return true;
     }
 
-} // namespace kotik::pms::mdf
+} // namespace noa::pms::mdf

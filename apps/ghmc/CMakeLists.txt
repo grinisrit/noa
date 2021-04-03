@@ -1,5 +1,5 @@
 ####################################################################################################
-################                     KOTIK Apps: GHMC examples                    ##################
+################                     NOA Apps: GHMC examples                    ##################
 ####################################################################################################
 
 message(STATUS "Building GHMC apps required")
@@ -8,5 +8,5 @@ message(STATUS "Building GHMC apps required")
 add_executable(normal-cpu normal-cpu.cc)
 
 # Link libraries
-target_link_libraries(normal-cpu PRIVATE KOTIK)
+target_link_libraries(normal-cpu PRIVATE NOA)
 target_compile_options(normal-cpu  PRIVATE -Wall -Wextra -Wpedantic -O3)

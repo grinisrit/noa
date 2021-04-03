@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-using namespace kotik::utils;
-using namespace kotik::pms;
-using namespace kotik::pms::dcs;
+using namespace noa::utils;
+using namespace noa::pms;
+using namespace noa::pms::dcs;
 
 TEST(DCS, Bremsstrahlung)
 {

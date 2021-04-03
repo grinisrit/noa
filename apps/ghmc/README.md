@@ -14,7 +14,7 @@ We also plan to provide utilities for parallel execution accross heterogeneous h
 The log density function, that we sample from, should be compatible with `torch::autograd`. It must be built out of instances of `torch::autograd::Function` or `torch::nn::Module` richly available from the `PyTorch C++ API`. The user can provide custom extensions if needed, see this [tutorial](https://pytorch.org/tutorials/advanced/cpp_autograd.html).
 ```cpp
 #include <torch/torch.h>
-#include <kotik/ghmc.hh>
+#include <noa/ghmc.hh>
 
 int main()
 { 

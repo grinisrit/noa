@@ -30,7 +30,7 @@
 
 #include <optional>
 
-namespace kotik::utils::numerics
+namespace noa::utils::numerics
 {
 
     // https://pomax.github.io/bezierinfo/legendre-gauss.html
@@ -193,4 +193,4 @@ namespace kotik::utils::numerics
         return std::nullopt;
     }
 
-} // namespace kotik::utils::numerics
+} // namespace noa::utils::numerics

@@ -1,5 +1,5 @@
 ####################################################################################################
-#########################                    KOTIK Apps                   ##########################
+##########################                    NOA Apps                   ###########################
 ####################################################################################################
 
 
@@ -23,14 +23,12 @@ if(BUILD_GHMC_APPS OR BUILD_PMS_APPS)
 endif()
 
 
-
-
 if(BUILD_GHMC_APPS)
     add_subdirectory(ghmc)
-endif(BUILD_GHMC_APPS)
+endif()
 
 
 if(BUILD_PMS_APPS)
-    include(kotik-pms-models)
+    include(noa-pms-models)
     add_subdirectory(pms)
-endif(BUILD_PMS_APPS)
+endif()
