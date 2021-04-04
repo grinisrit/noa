@@ -28,11 +28,48 @@
 
 #pragma once
 
+#include "noa/pms/mdf.hh"
+
 #include "pugixml.hpp"
 
-namespace noa::utils::xml
+namespace noa::pms::mdf
 {
     using Document = pugi::xml_document;
     using Node = pugi::xml_node;
 
-} // namespace noa::utils::xml
+
+    template <typename MDFComponents, typename Component>
+    inline std::optional<MDFComponents> get_mdf_components(
+        const Node &node,
+        const std::unordered_map<std::string, Component> &comp_data,
+        const std::string &tag)
+    {
+        auto comp_xnodes = node.select_nodes("component[@name][@fraction]");
+        auto comps = MDFComponents{};
+        Scalar tot = 0.0;
+        for (const auto &xnode : comp_xnodes)
+        {
+            auto node = xnode.node();
+            auto name = node.attribute("name").value();
+            Scalar frac = node.attribute("fraction").as_double();
+            tot += frac;
+            if (!comp_data.count(name))
+            {
+                std::cerr << "Cannot find component " << name << " for "
+                          << tag << std::endl;
+                return std::nullopt;
+            }
+            comps[name] = frac;
+        }
+        if (tot > 1.0)
+        {
+            std::cerr << "Fractions add up to " << tot << " for " << tag
+                      << std::endl;
+            return std::nullopt;
+        }
+        return comps;
+    }
+
+
+
+} // namespace noa::pms

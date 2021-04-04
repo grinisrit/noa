@@ -7,8 +7,7 @@ message(STATUS "Building benchmarks required")
 FetchContent_Declare(
     benchmark
     GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG        v1.5.2
-  )
+    GIT_TAG        v1.5.2)
 
 FetchContent_GetProperties(benchmark)
 
