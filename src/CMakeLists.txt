@@ -23,8 +23,9 @@ target_include_directories(${PROJECT_NAME}
 
 
 target_link_libraries(${PROJECT_NAME} PUBLIC torch)
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -O3 -DPUGIXML_HEADER_ONLY -fPIC)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -O3 -DPUGIXML_HEADER_ONLY)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES INTERFACE_LINK_LIBRARIES "torch")
-
-
+set_target_properties(${PROJECT_NAME} 
+    PROPERTIES 
+        POSITION_INDEPENDENT_CODE 1
+        INTERFACE_LINK_LIBRARIES "torch")

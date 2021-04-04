@@ -13,14 +13,14 @@ We encourage you to work with `conda`. The provided environment contains all the
 $ conda env create -f env.yml
 $ conda activate noa
 ```
-Build, test & install the library (to turn testing off add `-DBUILD_TESTING=OFF`):
+Build, test & install the library (to turn testing off add `-DBUILD_NOA_TESTS=OFF`):
 ```
 $ mkdir -p build && cd build
 $ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
 $ cmake --build . --config Release --target install
 $ ctest -V
 ```
-To build benchmarks specify `-DBUILD_BENCHMARKS=ON`.
+To build benchmarks specify `-DBUILD_NOA_BENCHMARKS=ON`.
 
 In your `CMakeLists.txt` file, make sure you add `LibTorch` and then you can link `noa`:
 ```cmake

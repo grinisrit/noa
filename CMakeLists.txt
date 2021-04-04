@@ -16,8 +16,8 @@ project(
 
 # User options
 option(INSTALL_NOA "Install NOA to GNU locations" ON)
-option(BUILD_TESTING "Build and run tests " ON)
-option(BUILD_BENCHMARKS "Build and run benchmarks " OFF)
+option(BUILD_NOA_TESTS "Build and run tests " ON)
+option(BUILD_NOA_BENCHMARKS "Build and run benchmarks " OFF)
 option(BUILD_GHMC_APPS "Build GHMC apps " OFF)
 option(BUILD_PMS_APPS "Build PMS apps " OFF)
 
@@ -42,20 +42,28 @@ include(check-torch)
 # NOA library  
 add_subdirectory(src)
 
-if(BUILD_TESTING)
+if(BUILD_NOA_TESTS)
     enable_testing()
 	add_subdirectory(test)
 endif()
 
-if(BUILD_BENCHMARKS)
+if(BUILD_NOA_BENCHMARKS)
 	add_subdirectory(benchmark)
 endif()
-#[[
+
+# NOA apps
+add_subdirectory(apps)
+
 if(INSTALL_NOA)
   	# locations are provided by GNUInstallDirs
   	install(
-    	TARGETS ${PROJECT_NAME}
-    	EXPORT ${PROJECT_NAME}_Targets)
+    	TARGETS 
+            ${PROJECT_NAME}
+    	EXPORT 
+            ${PROJECT_NAME}_Targets
+        LIBRARY
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            COMPONENT lib)
 
   	include(CMakePackageConfigHelpers)
   	write_basic_package_version_file(
@@ -77,12 +85,9 @@ if(INSTALL_NOA)
   	install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 				  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
 				  ${PROJECT_SOURCE_DIR}/cmake/noa-pms-models.cmake
-				  ${PROJECT_SOURCE_DIR}/cmake/conda-omp.cmake
 			  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 			  
   	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noa
           	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 endif()
-]]
-add_subdirectory(apps)

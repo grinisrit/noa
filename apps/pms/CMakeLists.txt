@@ -7,6 +7,9 @@ message(STATUS "Building PMS apps required")
 # Find OpenMP
 include(conda-omp)
 
+# Fetch materials
+include(noa-pms-models)
+
 # Main executables
 add_executable(pumas pumas.cc)
 
