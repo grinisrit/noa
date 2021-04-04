@@ -55,8 +55,6 @@ public:
         return lazy_load_or_fail(expected_flow_moment, expected_flow_moment_pt);
     }
 
-
-    // Initialise
     virtual void SetUp()
     {
         get_theta();
