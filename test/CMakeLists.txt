@@ -25,6 +25,7 @@ endif()
 
 # Source files
 set(NOA_TEST_SRC 
+    main.cc
     test-ghmc.cc
     test-dcs.cc)
 
@@ -33,7 +34,7 @@ set(NOA_TEST_SRC
 add_executable(noa_test ${NOA_TEST_SRC})
 
 # Link libraries
-target_link_libraries(noa_test PRIVATE gtest_main noa)
+target_link_libraries(noa_test PRIVATE gtest noa)
 target_compile_options(noa_test PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 # Set up test

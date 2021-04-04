@@ -42,6 +42,7 @@ namespace noa::utils
     using Path = std::filesystem::path;
     using Status = bool;
     using Line = std::string;
+    using TensorOpt = std::optional<torch::Tensor>;
 
     constexpr double TOLERANCE = 1E-6;
     constexpr int SEED = 987654;
@@ -72,7 +73,7 @@ namespace noa::utils
         return torch::kInt32;
     }
 
-    inline Status check_path_exists(Path path)
+    inline Status check_path_exists(const Path &path)
     {
         if (!std::filesystem::exists(path))
         {
@@ -80,6 +81,29 @@ namespace noa::utils
             return false;
         }
         return true;
+    }
+
+    inline Status load_tensor(TensorOpt &result, const Path &path)
+    {
+        if (check_path_exists(path))
+        {
+            auto tensor = torch::Tensor{};
+            try
+            { 
+                torch::load(tensor, path);
+            }
+            catch (...)
+            {
+                std::cerr << "Failed to load tensor from " << path << "\n";
+                return false;
+            }
+            result = std::make_optional(tensor);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     inline std::optional<Line> find_line(
@@ -92,7 +116,7 @@ namespace noa::utils
         return std::nullopt;
     }
 
-    template<typename Dtype>
+    template <typename Dtype>
     inline std::optional<std::vector<Dtype>> get_numerics(
         const std::string &line, int size)
     {

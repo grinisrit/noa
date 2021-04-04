@@ -6,6 +6,7 @@ using namespace noa::utils;
 using namespace noa::pms;
 using namespace noa::pms::dcs;
 
+
 TEST(DCS, Bremsstrahlung)
 {
     auto result = torch::zeros_like(kinetic_energies);

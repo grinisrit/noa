@@ -4,7 +4,7 @@ We aim to make it easier to integrate Bayesian computation algorithms with Deep 
 
 ## Installation 
 
-Currently, we support only `Linux x86_64` and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows). 
+Currently, we support only `GNU` and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows). 
 
 The core of the library depends on [LibTorch (cxx11 ABI)](https://pytorch.org/get-started/locally) tested with version `1.7.1`. For additional configuration needed by some applications please refer to the documentation [below](#applications).
 
@@ -28,7 +28,7 @@ cmake_minimum_required(VERSION 3.12)
 set(CMAKE_CXX_STANDARD 17)
 find_package(Torch REQUIRED)
 find_package(NOA CONFIG REQUIRED)
-target_link_libraries(your_target torch NOA::NOA)
+target_link_libraries(your_target torch noa)
 target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 ```
 
