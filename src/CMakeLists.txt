@@ -7,14 +7,12 @@
 set(NOA_SRC 
     pms/mdf.cc)
 
-add_library(${PROJECT_NAME} SHARED ${NOA_SRC})
-# add alias so the project can be used with add_subdirectory
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(noa SHARED ${NOA_SRC})
 
 # Pugixml library
 include(fetch-pugixml)
 
-target_include_directories(${PROJECT_NAME}  
+target_include_directories(noa  
     PUBLIC
         $<BUILD_INTERFACE:${NOA_ROOT_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -22,10 +20,10 @@ target_include_directories(${PROJECT_NAME}
         ${PUGIXML_SRC})
 
 
-target_link_libraries(${PROJECT_NAME} PUBLIC torch)
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -O3 -DPUGIXML_HEADER_ONLY)
+target_link_libraries(noa PUBLIC torch)
+target_compile_options(noa PRIVATE -Wall -Wextra -Wpedantic -O3 -DPUGIXML_HEADER_ONLY)
 
-set_target_properties(${PROJECT_NAME} 
+set_target_properties(noa 
     PROPERTIES 
         POSITION_INDEPENDENT_CODE 1
         INTERFACE_LINK_LIBRARIES "torch")

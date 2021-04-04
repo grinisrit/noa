@@ -27,8 +27,8 @@ set(NOA_BENCH_SRC
     benchmark-dcs.cc)
 
 # Main test executables
-add_executable(benchmark_noa ${NOA_BENCH_SRC})
+add_executable(noa_bench ${NOA_BENCH_SRC})
 
 # Link libraries
-target_link_libraries(benchmark_noa PRIVATE benchmark_main NOA)
-target_compile_options(benchmark_noa PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(noa_bench PRIVATE benchmark_main noa)
+target_compile_options(noa_bench PRIVATE -Wall -Wextra -Wpedantic -O3)

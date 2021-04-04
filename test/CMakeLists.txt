@@ -14,6 +14,7 @@ FetchContent_GetProperties(googletest)
 if(NOT googletest_POPULATED)
     FetchContent_Populate(googletest)
 
+    set(BUILD_GMOCK OFF CACHE BOOL "")
     set(INSTALL_GTEST OFF CACHE BOOL "")
 
     add_subdirectory(
@@ -29,11 +30,11 @@ set(NOA_TEST_SRC
 
 
 # Main test executables
-add_executable(test_noa ${NOA_TEST_SRC})
+add_executable(noa_test ${NOA_TEST_SRC})
 
 # Link libraries
-target_link_libraries(test_noa PRIVATE gtest_main NOA)
-target_compile_options(test_noa PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(noa_test PRIVATE gtest_main noa)
+target_compile_options(noa_test PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 # Set up test
-add_test(NAME TEST_NOA COMMAND test_noa)
+add_test(NAME TEST_NOA COMMAND noa_test)
