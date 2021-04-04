@@ -3,7 +3,7 @@
 ####################################################################################################
 
 
-if(BUILD_GHMC_APPS OR BUILD_PMS_APPS)
+if(BUILD_PMS_APPS)
     FetchContent_Declare(
         gflags
         GIT_REPOSITORY https://github.com/gflags/gflags.git

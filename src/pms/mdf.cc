@@ -33,7 +33,7 @@
 using namespace noa::pms;
 using namespace noa::pms::mdf;
 
-std::optional<Settings> parse_settings(
+std::optional<Settings> noa::pms::mdf::parse_settings(
         const GeneratorName &generated_by, const MDFFilePath &mdf_path)
     {
         auto mdf_doc = Document{};
