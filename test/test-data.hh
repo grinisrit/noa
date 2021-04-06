@@ -18,7 +18,7 @@ inline torch::Tensor lazy_load_or_fail(TensorOpt &tensor, const Path &path)
         }
         else
         {
-            throw std::runtime_error("Corrupted test data");
+            throw std::runtime_error("CORRUPTED TEST DATA");
         }
     }
 }
