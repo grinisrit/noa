@@ -6,7 +6,7 @@ We aim to make it easier to integrate Bayesian computation algorithms with Deep 
 
 Currently, we support only `GNU` and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows). 
 
-The core of the library depends on [LibTorch (cxx11 ABI)](https://pytorch.org/get-started/locally) tested with version `1.7.1`. For additional configuration needed by some applications please refer to the documentation [below](#applications).
+The core of the library depends on [LibTorch (cxx11 ABI)](https://pytorch.org/get-started/locally) tested with version `1.7.1`. To enable parallel execution of some of the algorithms you should link against `OpenMP`. For additional configuration needed by some applications please refer to the documentation [below](#applications).
 
 We encourage you to work with `conda`. The provided environment contains all the required libraries:
 ```
