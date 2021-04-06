@@ -1,5 +1,5 @@
 #include "unit-ghmc.hh"
-#include "test-ghmc.hh"
+#include "test-data.hh"
 
 #include <noa/utils/common.hh>
 #include <gtest/gtest.h>

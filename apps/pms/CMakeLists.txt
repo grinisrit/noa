@@ -4,6 +4,9 @@
 
 message(STATUS "Building PMS apps required")
 
+# Gflags
+include(fetch-gflags)
+
 # Find OpenMP
 include(conda-omp)
 

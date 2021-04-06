@@ -31,8 +31,6 @@ add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 set(NOA_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Add custom modules
-include(FetchContent)
-include(ExternalProject)
 include(GNUInstallDirs)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 

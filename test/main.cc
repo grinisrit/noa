@@ -1,16 +1,16 @@
-#include "test-ghmc.hh"
-#include "test-dcs.hh"
+#include "tests.hh"
 
 #include <gtest/gtest.h>
+
 
 int main(int argc, char *argv[])
 {
 
     ::testing::InitGoogleTest(&argc, argv);
 
-    ::testing::AddGlobalTestEnvironment(new GHMCData);
+    ::testing::AddGlobalTestEnvironment(new TestDataEnv<GHMCData>);
 
-    ::testing::AddGlobalTestEnvironment(new DCSData);
+    ::testing::AddGlobalTestEnvironment(new TestDataEnv<DCSData>);
 
     return RUN_ALL_TESTS();
 }

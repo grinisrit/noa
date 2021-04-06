@@ -4,24 +4,11 @@
 
 message(STATUS "Building benchmarks required")
 
-FetchContent_Declare(
-    benchmark
-    GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG        v1.5.2)
+# Google Benchmark
+include(fetch-benchmark)
 
-FetchContent_GetProperties(benchmark)
-
-if(NOT benchmark_POPULATED)
-    FetchContent_Populate(benchmark)
-
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
-    set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "")
-    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "")
-
-    add_subdirectory(
-        ${benchmark_SOURCE_DIR}
-        ${benchmark_BINARY_DIR})
-endif()
+# Test data
+include(noa-test-data)
 
 set(NOA_BENCH_SRC 
     benchmark-dcs.cc)
