@@ -175,7 +175,7 @@ TEST(DCS, CoulombHardScattering)
     ASSERT_TRUE(relative_error<Scalar>(lb_h, DCSData::get_pumas_lb_h()).item<Scalar>() < 1E-11);
 }
 
-TEST(DSC, CoulombSoftScattering)
+TEST(DCS, CoulombSoftScattering)
 {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     default_soft_scattering(result, DCSData::get_kinetic_energies(), STANDARD_ROCK, MUON_MASS);

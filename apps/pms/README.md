@@ -6,5 +6,6 @@ To build theses examples add `-DBUILD_PMS_APPS=ON` to the top level cmake comman
 
 The materials configuration files for the physical models are available from [noa-pms-models](https://github.com/grinisrit/noa-pms-models).
 
+To enable parallel execution of some of the algorithms you should link against `OpenMP`.
 
 (c) 2021 Roland Grinis, GrinisRIT ltd.

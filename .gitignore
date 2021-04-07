@@ -1,5 +1,5 @@
 # cmake build
-build*
+*build*
 
 # gRPC generated files
 *_pb2_grpc.py
@@ -15,6 +15,7 @@ dist/
 
 # IDE & notebooks files
 .vscode
+.idea
 .ipynb_checkpoints/
 .mypy_cache/
 *.ipynb
