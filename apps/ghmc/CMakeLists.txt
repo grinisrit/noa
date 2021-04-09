@@ -8,5 +8,5 @@ message(STATUS "Building GHMC apps required")
 add_executable(normal-cpu normal-cpu.cc)
 
 # Link libraries
-target_link_libraries(normal-cpu PRIVATE noa)
-target_compile_options(normal-cpu  PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(normal-cpu PRIVATE ${PROJECT_NAME})
+target_compile_options(normal-cpu PRIVATE -Wall -Wextra -Wpedantic -O3)

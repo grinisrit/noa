@@ -29,15 +29,16 @@
 #pragma once
 
 #include "noa/pms/physics.hh"
+#include "noa/pms/mdf.hh"
 #include "noa/utils/common.hh"
+#include "noa/utils/xml.hh"
 
 #include <algorithm>
 #include <regex>
 #include <unordered_map>
 #include <vector>
 
-namespace noa::pms::mdf
-{
+namespace noa::pms::mdf {
 
     using MDFFilePath = utils::Path;
     using DEDXFolderPath = utils::Path;
@@ -46,9 +47,9 @@ namespace noa::pms::mdf
     using ElementName = std::string;
     using MaterialName = std::string;
     using MaterialComponents =
-        std::unordered_map<ElementName, ComponentFraction>;
+    std::unordered_map<ElementName, ComponentFraction>;
     using Material =
-        std::tuple<DEDXFilePath, MaterialDensity, MaterialComponents>;
+    std::tuple<DEDXFilePath, MaterialDensity, MaterialComponents>;
 
     using CompositeName = std::string;
     using Composite = std::unordered_map<MaterialName, ComponentFraction>;
@@ -65,50 +66,44 @@ namespace noa::pms::mdf
     inline const ParticleName Tau = "Tau";
     inline const GeneratorName pumas = "pumas";
 
-    struct DEDXMaterialCoefficients
-    {
+    struct DEDXMaterialCoefficients {
         MaterialDensityEffect density_effect;
         Scalar ZoA, I;
     };
-    struct DEDXTable
-    {
+    struct DEDXTable {
         std::vector<Scalar> T, p, Ionisation, brems, pair, photonuc, Radloss,
-            dEdX, CSDArange, delta, beta;
+                dEdX, CSDArange, delta, beta;
     };
     using DEDXData = std::tuple<ParticleMass, DEDXMaterialCoefficients, DEDXTable>;
     using MaterialsDEDXData = std::unordered_map<MaterialName, DEDXData>;
 
-    inline std::regex mass_pattern(const ParticleName &particle_name)
-    {
+    inline std::regex mass_pattern(const ParticleName &particle_name) {
         return std::regex{"\\s*Incident particle.*" + particle_name +
                           ".*M = [0-9.E\\+-]+ MeV"};
     }
+
     inline const auto zoa_pattern =
-        std::regex{"\\s*Absorber with <Z/A>\\s*=\\s*[0-9.E\\+-]+"};
+            std::regex{"\\s*Absorber with <Z/A>\\s*=\\s*[0-9.E\\+-]+"};
     inline const auto coef_pattern = std::regex{"\\s*Sternheimer coef:"};
     inline const auto table_pattern =
-        std::regex{"\\s*T\\s+p\\s+Ionization\\s+brems\\s+pair\\s+photonuc\\s+"
-                   "Radloss\\s+dE/dx\\s+CSDA Range\\s+delta\\s+beta"};
+            std::regex{"\\s*T\\s+p\\s+Ionization\\s+brems\\s+pair\\s+photonuc\\s+"
+                       "Radloss\\s+dE/dx\\s+CSDA Range\\s+delta\\s+beta"};
     inline const auto units_pattern = std::regex{
-        "\\s*\\[MeV\\].*\\[MeV/c\\].*\\[MeV\\s+cm\\^2/g\\].*\\[g/cm\\^2\\]"};
+            "\\s*\\[MeV\\].*\\[MeV/c\\].*\\[MeV\\s+cm\\^2/g\\].*\\[g/cm\\^2\\]"};
 
-    inline void print_elements(const Elements &elements)
-    {
+    inline void print_elements(const Elements &elements) {
         std::cout << "Elements:\n";
-        for (const auto &[name, element] : elements)
-        {
+        for (const auto &[name, element] : elements) {
             std::cout << " " << name << " <Z=" << element.Z
                       << ", A=" << element.A << ", I=" << element.I
                       << ">\n";
         }
     }
 
-    inline void print_materials(const Materials &materials)
-    {
+    inline void print_materials(const Materials &materials) {
         std::cout << "Materials:\n";
-        for (const auto &[name, material] : materials)
-        {
-            auto [file, density, comps] = material;
+        for (const auto &[name, material] : materials) {
+            auto[file, density, comps] = material;
             std::cout << " " << name << "\n"
                       << "  dedx file: " << file << "\n"
                       << "  density: " << density << "\n"
@@ -119,8 +114,7 @@ namespace noa::pms::mdf
         }
     }
 
-    inline void print_dedx_header(const DEDXData &dedx_data)
-    {
+    inline void print_dedx_header(const DEDXData &dedx_data) {
         std::cout << " mass=" << std::get<ParticleMass>(dedx_data) << "\n";
         auto coefs = std::get<DEDXMaterialCoefficients>(dedx_data);
         std::cout << " ZoA=" << coefs.ZoA << ", I=" << coefs.I
@@ -130,11 +124,109 @@ namespace noa::pms::mdf
                   << "\n";
     }
 
-    std::optional<Settings> parse_settings(const GeneratorName &generated_by, const MDFFilePath &mdf_path);
-   
-    inline std::optional<ParticleMass> parse_particle_mass(
-        std::ifstream &dedx_stream, const ParticleName &particle_name)
+    template <typename MDFComponents, typename Component>
+    inline std::optional<MDFComponents> get_mdf_components(
+            const utils::xml::Node &node,
+            const std::unordered_map<std::string, Component> &comp_data,
+            const std::string &tag)
     {
+        auto comp_xnodes = node.select_nodes("component[@name][@fraction]");
+        auto comps = MDFComponents{};
+        Scalar tot = 0.0;
+        for (const auto &xnode : comp_xnodes)
+        {
+            auto node = xnode.node();
+            auto name = node.attribute("name").value();
+            Scalar frac = node.attribute("fraction").as_double();
+            tot += frac;
+            if (!comp_data.count(name))
+            {
+                std::cerr << "Cannot find component " << name << " for "
+                          << tag << std::endl;
+                return std::nullopt;
+            }
+            comps[name] = frac;
+        }
+        if (tot > 1.0)
+        {
+            std::cerr << "Fractions add up to " << tot << " for " << tag
+                      << std::endl;
+            return std::nullopt;
+        }
+        return comps;
+    }
+
+    std::optional<Settings> parse_settings(const GeneratorName &generated_by, const MDFFilePath &mdf_path) {
+        auto mdf_doc = utils::xml::Document{};
+        if (!mdf_doc.load_file(mdf_path.string().c_str())) {
+            std::cerr << "Cannot load XML " << mdf_path << std::endl;
+            return std::nullopt;
+        }
+        auto rnode = mdf_doc.child(generated_by.c_str());
+        if (!rnode) {
+            std::cerr << "MDF file not generated by " << generated_by
+                      << std::endl;
+            return std::nullopt;
+        }
+
+        auto element_xnodes = rnode.select_nodes("element[@name][@Z][@A][@I]");
+        auto nelem = element_xnodes.size();
+        if (!nelem) {
+            std::cerr << "No atomic elements found in " << mdf_path
+                      << std::endl;
+            return std::nullopt;
+        }
+        auto elements = Elements{};
+        for (const auto &xnode : element_xnodes) {
+            auto node = xnode.node();
+            elements.emplace(node.attribute("name").value(),
+                             AtomicElement{node.attribute("A").as_double(),
+                                           node.attribute("I").as_double(),
+                                           node.attribute("Z").as_int()});
+        }
+
+        auto material_xnodes =
+                rnode.select_nodes("material[@name][@file][@density]");
+        auto nmtr = material_xnodes.size();
+        if (!nmtr) {
+            std::cerr << "No materials found in " << mdf_path << std::endl;
+            return std::nullopt;
+        }
+        auto materials = Materials{};
+        for (const auto &xnode : material_xnodes) {
+            auto node = xnode.node();
+            auto name = node.attribute("name").value();
+            auto comps = get_mdf_components<MaterialComponents>(
+                    node, elements, name);
+            if (!comps.has_value()) {
+                std::cerr << "Material components not consistent in "
+                          << mdf_path << std::endl;
+                return std::nullopt;
+            }
+            materials.try_emplace(name, node.attribute("file").value(),
+                                  node.attribute("density").as_double(), *comps);
+        }
+
+        auto composite_xnodes = rnode.select_nodes("composite[@name]");
+        auto composites = Composites{};
+        for (const auto &xnode : composite_xnodes) {
+            auto node = xnode.node();
+            auto name = node.attribute("name").value();
+            auto comps =
+                    get_mdf_components<Composite>(node, materials, name);
+            if (!comps.has_value()) {
+                std::cerr << "Composite components not consistent in "
+                          << mdf_path << std::endl;
+                return std::nullopt;
+            }
+            composites.emplace(name, *comps);
+        }
+
+        return std::make_optional<Settings>(elements, materials, composites);
+    }
+
+    inline std::optional<ParticleMass> parse_particle_mass(
+            std::ifstream &dedx_stream, const ParticleName &particle_name) {
         auto line = utils::find_line(dedx_stream, mass_pattern(particle_name));
         if (!line.has_value())
             return std::nullopt;
@@ -143,8 +235,7 @@ namespace noa::pms::mdf
     }
 
     inline std::optional<DEDXMaterialCoefficients> parse_material_coefs(
-        std::ifstream &dedx_stream)
-    {
+            std::ifstream &dedx_stream) {
         auto coefs = DEDXMaterialCoefficients{};
 
         auto no_data = std::sregex_iterator();
@@ -177,8 +268,7 @@ namespace noa::pms::mdf
         return coefs;
     }
 
-    inline std::optional<DEDXTable> parse_dedx_table(std::ifstream &dedx_stream)
-    {
+    inline std::optional<DEDXTable> parse_dedx_table(std::ifstream &dedx_stream) {
         auto table = DEDXTable{};
 
         auto no_data = std::sregex_iterator();
@@ -191,8 +281,7 @@ namespace noa::pms::mdf
         if (!line.has_value())
             return std::nullopt;
 
-        while (std::getline(dedx_stream, *line))
-        {
+        while (std::getline(dedx_stream, *line)) {
             auto nums = utils::get_numerics<Scalar>(*line, 11);
             if (!nums.has_value())
                 return std::nullopt;
@@ -214,32 +303,28 @@ namespace noa::pms::mdf
     }
 
     inline std::optional<DEDXData> parse_dedx_file(
-        const DEDXFilePath &dedx_file_path, const ParticleName &particle_name)
-    {
+            const DEDXFilePath &dedx_file_path, const ParticleName &particle_name) {
         if (!utils::check_path_exists(dedx_file_path))
             return std::nullopt;
 
         auto dedx_stream = std::ifstream{dedx_file_path};
 
         auto mass = parse_particle_mass(dedx_stream, particle_name);
-        if (!mass.has_value())
-        {
+        if (!mass.has_value()) {
             std::cerr << "Particle mass entry corrupted in "
                       << dedx_file_path << std::endl;
             return std::nullopt;
         }
 
         auto coefs = parse_material_coefs(dedx_stream);
-        if (!coefs.has_value())
-        {
+        if (!coefs.has_value()) {
             std::cerr << "Material coefficients data corrupted in "
                       << dedx_file_path << std::endl;
             return std::nullopt;
         }
 
         auto table = parse_dedx_table(dedx_stream);
-        if (!table.has_value())
-        {
+        if (!table.has_value()) {
             std::cerr << "DEDX Table corrupted in " << dedx_file_path
                       << std::endl;
             return std::nullopt;
@@ -249,14 +334,12 @@ namespace noa::pms::mdf
     }
 
     inline std::optional<MaterialsDEDXData> parse_materials(
-        const Materials &materials, const DEDXFolderPath &dedx,
-        const ParticleName &particle_name)
-    {
+            const Materials &materials, const DEDXFolderPath &dedx,
+            const ParticleName &particle_name) {
         auto materials_data = MaterialsDEDXData{};
-        for (const auto &[name, material] : materials)
-        {
+        for (const auto &[name, material] : materials) {
             auto dedx_data = parse_dedx_file(
-                dedx / std::get<DEDXFilePath>(material), particle_name);
+                    dedx / std::get<DEDXFilePath>(material), particle_name);
             if (!dedx_data.has_value())
                 return std::nullopt;
             materials_data.emplace(name, *dedx_data);
@@ -265,16 +348,14 @@ namespace noa::pms::mdf
     }
 
     inline bool check_ZoA(
-        const Settings &mdf_settings, const MaterialsDEDXData &dedx_data)
-    {
+            const Settings &mdf_settings, const MaterialsDEDXData &dedx_data) {
         auto elements = std::get<Elements>(mdf_settings);
         auto materials = std::get<Materials>(mdf_settings);
-        for (const auto &[material, data] : dedx_data)
-        {
+        for (const auto &[material, data] : dedx_data) {
             auto coefs = std::get<DEDXMaterialCoefficients>(data);
             auto ZoA = 0.f;
             for (const auto &[elmt, frac] :
-                 std::get<MaterialComponents>(materials.at(material)))
+                    std::get<MaterialComponents>(materials.at(material)))
                 ZoA += frac * elements.at(elmt).Z / elements.at(elmt).A;
             if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE))
                 return false;

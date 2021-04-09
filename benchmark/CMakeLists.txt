@@ -20,5 +20,5 @@ add_executable(noa_bench ${NOA_BENCH_SRC})
 target_include_directories(noa_bench PRIVATE ${NOA_ROOT_DIR}/test)
 
 # Link libraries
-target_link_libraries(noa_bench PRIVATE benchmark_main noa)
+target_link_libraries(noa_bench PRIVATE benchmark_main ${PROJECT_NAME})
 target_compile_options(noa_bench PRIVATE -Wall -Wextra -Wpedantic -O3)

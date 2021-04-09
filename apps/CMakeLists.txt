@@ -2,11 +2,11 @@
 ##########################                    NOA Apps                   ###########################
 ####################################################################################################
 
-if(BUILD_GHMC_APPS)
+if (BUILD_GHMC_APPS)
     add_subdirectory(ghmc)
-endif()
+endif ()
 
 
-if(BUILD_PMS_APPS)
+if (BUILD_PMS_APPS)
     add_subdirectory(pms)
-endif()
+endif ()

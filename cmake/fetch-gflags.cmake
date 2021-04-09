@@ -16,6 +16,7 @@ if(NOT TARGET gflags)
         set(INSTALL_HEADERS OFF CACHE BOOL "")
         set(INSTALL_SHARED_LIBS OFF CACHE BOOL "")
         set(INSTALL_STATIC_LIBS OFF CACHE BOOL "")
+        set(GFLAGS_LIBRARY_INSTALL_DIR ${CMAKE_BINARY_DIR}/lib)
 
         add_subdirectory(
             ${gflags_SOURCE_DIR}

@@ -8,4 +8,6 @@ The materials configuration files for the physical models are available from [no
 
 To enable parallel execution of some of the algorithms you should link against `OpenMP`.
 
+To load MDF configurations we rely on [pugixml](https://github.com/zeux/pugixml)  version `1.11` provided.
+
 (c) 2021 Roland Grinis, GrinisRIT ltd.
