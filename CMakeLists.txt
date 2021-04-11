@@ -23,9 +23,6 @@ option(BUILD_PMS_APPS "Build PMS apps " OFF)
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
 
-# Compatibility with LibTorch cxx11 ABI
-add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
-
 # Cache path to root directory
 set(NOA_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 

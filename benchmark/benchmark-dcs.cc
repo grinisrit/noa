@@ -10,7 +10,7 @@
 using namespace noa::pms;
 using namespace noa::pms::dcs;
 
-BENCHMARK_F(DCSBenchmark, DCS_Bremsstrahlung)
+BENCHMARK_F(DCSBenchmark, Bremsstrahlung)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -21,7 +21,7 @@ BENCHMARK_F(DCSBenchmark, DCS_Bremsstrahlung)
         default_bremsstrahlung(k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_BremsstrahlungVectorised)
+BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -33,7 +33,7 @@ BENCHMARK_F(DCSBenchmark, DCS_BremsstrahlungVectorised)
         map_kernel(default_bremsstrahlung)(r, k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELBremsstrahlung)
+BENCHMARK_F(DCSBenchmark, DELBremsstrahlung)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -45,7 +45,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELBremsstrahlung)
             k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELBremsstrahlungVectorised)
+BENCHMARK_F(DCSBenchmark, DELBremsstrahlungVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -58,7 +58,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELBremsstrahlungVectorised)
             r, k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELBremsstrahlung)
+BENCHMARK_F(DCSBenchmark, CELBremsstrahlung)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -70,7 +70,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELBremsstrahlung)
             k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELBremsstrahlungVectorised)
+BENCHMARK_F(DCSBenchmark, CELBremsstrahlungVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -83,7 +83,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELBremsstrahlungVectorised)
             r, k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_PairProduction)
+BENCHMARK_F(DCSBenchmark, PairProduction)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -94,7 +94,7 @@ BENCHMARK_F(DCSBenchmark, DCS_PairProduction)
         default_pair_production(k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_PairProductionVectorised)
+BENCHMARK_F(DCSBenchmark, PairProductionVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -106,7 +106,7 @@ BENCHMARK_F(DCSBenchmark, DCS_PairProductionVectorised)
         map_kernel(default_pair_production)(r, k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELPairProduction)
+BENCHMARK_F(DCSBenchmark, DELPairProduction)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -118,7 +118,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELPairProduction)
             k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELPairProductionVectorised)
+BENCHMARK_F(DCSBenchmark, DELPairProductionVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -131,7 +131,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELPairProductionVectorised)
             r, k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELPairProduction)
+BENCHMARK_F(DCSBenchmark, CELPairProduction)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -143,7 +143,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELPairProduction)
             k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELPairProductionVectorised)
+BENCHMARK_F(DCSBenchmark, CELPairProductionVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -156,7 +156,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELPairProductionVectorised)
             r, k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_Photonuclear)
+BENCHMARK_F(DCSBenchmark, Photonuclear)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -167,7 +167,7 @@ BENCHMARK_F(DCSBenchmark, DCS_Photonuclear)
         default_photonuclear(k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_PhotonuclearVectorised)
+BENCHMARK_F(DCSBenchmark, PhotonuclearVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -179,7 +179,7 @@ BENCHMARK_F(DCSBenchmark, DCS_PhotonuclearVectorised)
         map_kernel(default_photonuclear)(r, k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELPhotonuclear)
+BENCHMARK_F(DCSBenchmark, DELPhotonuclear)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -191,7 +191,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELPhotonuclear)
             k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELPhotonuclearVectorised)
+BENCHMARK_F(DCSBenchmark, DELPhotonuclearVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -204,7 +204,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELPhotonuclearVectorised)
             r, k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELPhotonuclear)
+BENCHMARK_F(DCSBenchmark, CELPhotonuclear)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
@@ -216,7 +216,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELPhotonuclear)
             k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELPhotonuclearVectorised)
+BENCHMARK_F(DCSBenchmark, CELPhotonuclearVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -229,7 +229,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELPhotonuclearVectorised)
             r, k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_Ionisation)
+BENCHMARK_F(DCSBenchmark, Ionisation)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[69].item<Scalar>();
@@ -240,7 +240,7 @@ BENCHMARK_F(DCSBenchmark, DCS_Ionisation)
         default_ionisation(k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_IonisationVectorised)
+BENCHMARK_F(DCSBenchmark, IonisationVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -252,7 +252,7 @@ BENCHMARK_F(DCSBenchmark, DCS_IonisationVectorised)
         map_kernel(default_ionisation)(r, k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELIonisation)
+BENCHMARK_F(DCSBenchmark, DELIonisation)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[69].item<Scalar>();
@@ -264,7 +264,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELIonisation)
             k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_DELIonisationVectorised)
+BENCHMARK_F(DCSBenchmark, DELIonisationVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
@@ -277,7 +277,7 @@ BENCHMARK_F(DCSBenchmark, DCS_DELIonisationVectorised)
             r, k, xlow, element, mu, 180, false);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELIonisation)
+BENCHMARK_F(DCSBenchmark, CELIonisation)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[69].item<Scalar>();
@@ -289,7 +289,7 @@ BENCHMARK_F(DCSBenchmark, DCS_CELIonisation)
             k, xlow, element, mu, 180, true);
 }
 
-BENCHMARK_F(DCSBenchmark, DCS_CELIonisationVectorised)
+BENCHMARK_F(DCSBenchmark, CELIonisationVectorised)
 (benchmark::State &state)
 {
     const auto r = torch::zeros_like(DCSData::get_kinetic_energies());

@@ -1,15 +1,16 @@
 # NOA: Bayesian Computation for Deep Learning
 
-We aim to make it easier to integrate Bayesian computation algorithms with Deep Learning applications, larger simulation frameworks, as well as performance demanding systems such as ones encountered in streaming analytics, games, high frequency trading and many other applications.
+We aim to make it easier to integrate Bayesian computation algorithms with deep learning and larger simulation frameworks. 
+Our solution is suitable for both research and applications in performance demanding systems such as encountered in streaming analytics, game development and high frequency trading.
 
 ## Installation 
 
-Currently, we support only `GNU` and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
+Currently, we support only `GNU`, and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
 
 `NOA` is a header-only library, so you can directly drop the `include/noa` folder into your project.
 
 
-The core of the library depends on [LibTorch (cxx11 ABI)](https://pytorch.org/get-started/locally) tested with version `1.7.1`. 
+The core of the library depends on [LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) (which is also distributed via `pip` and `conda`) tested with version `1.8.1`. 
 For additional configuration needed by some applications please refer to the documentation [below](#applications).
 
 We encourage you to work with `conda`. The provided environment contains all the required libraries:
@@ -22,7 +23,7 @@ Build tests & install the library (to turn testing off add `-DBUILD_NOA_TESTS=OF
 $ mkdir -p build && cd build
 $ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
 $ cmake --build . --target install
-$ ctest --verbose
+$ ctest -V
 ```
 To build benchmarks specify `-DBUILD_NOA_BENCHMARKS=ON`.
 
