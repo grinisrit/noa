@@ -13,7 +13,8 @@ target_compile_definitions(benchmark PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 include(noa-test-data)
 
 set(NOA_BENCH_SRC
-        benchmark-dcs.cc)
+        benchmark-dcs.cc
+        benchmark-utils.cc)
 
 # Main test executables
 add_executable(noa_bench ${NOA_BENCH_SRC})
