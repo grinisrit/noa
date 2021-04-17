@@ -8,7 +8,7 @@
 using namespace noa;
 using namespace noa::utils;
 
-inline Status sample_normal_dist(Path save_result_to,
+inline Status sample_normal_dist(const Path &save_result_to,
                                         torch::DeviceType device = torch::kCPU)
 {
 
@@ -50,7 +50,7 @@ inline Status sample_normal_dist(Path save_result_to,
     return true;
 }
 
-inline Status sample_funnel_dist(Path save_result_to,
+inline Status sample_funnel_dist(const Path &save_result_to,
                                  torch::DeviceType device = torch::kCPU)
 {
     auto alog_funnel = [](const auto &w) {

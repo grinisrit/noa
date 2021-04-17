@@ -12,9 +12,10 @@ inline torch::Tensor lazy_load_or_fail(TensorOpt &tensor, const Path &path)
     }
     else
     {
-        if (load_tensor(tensor, path))
+        auto tensor_from_file = load_tensor(path);
+        if (tensor_from_file.has_value())
         {
-            return tensor.value();
+            return tensor_from_file.value();
         }
         else
         {

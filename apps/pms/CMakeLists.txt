@@ -17,6 +17,7 @@ include(noa-pms-models)
 
 # Main executables
 add_executable(pumas pumas.cc)
+add_dependencies(pumas pms_models)
 
 # Link libraries
 target_link_libraries(pumas PRIVATE ${PROJECT_NAME} gflags openmp)

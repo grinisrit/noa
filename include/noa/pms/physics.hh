@@ -71,7 +71,7 @@ namespace noa::pms
 
     // Default relative switch between Continuous Energy Loss (CEL) and DELs.
     constexpr EnergyTransfer X_FRACTION = 5E-02;
-    // Maximum allowed energy tranfer for using the DCS model
+    // Maximum allowed energy transfer for using the DCS model
     constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
 
     // Common elements:
@@ -86,6 +86,6 @@ namespace noa::pms
     constexpr Scalar MAX_SOFT_ANGLE = 1E+00;      // degrees, max deflection angle for a soft scattering event
     constexpr Energy DCS_MODEL_MIN_KINETIC = 10.; // GeV, Minimum kinetic energy for using the DCS model
 
-    inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); //Max deflection angle for hard scattering
+    inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
 
 } // namespace noa::pms

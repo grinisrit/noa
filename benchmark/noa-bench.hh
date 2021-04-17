@@ -4,10 +4,9 @@
 
 #include <benchmark/benchmark.h>
 
-struct DCSBenchmark : benchmark::Fixture
-{
-    DCSBenchmark()
-    {
+
+struct DCSBenchmark : benchmark::Fixture {
+    DCSBenchmark() {
         DCSData::get_all();
     }
 };

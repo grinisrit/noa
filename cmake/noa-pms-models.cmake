@@ -1,7 +1,7 @@
 include(ExternalProject)
 
-if(NOT TARGET Materials)
-    ExternalProject_Add (Materials
+if(NOT TARGET pms_models)
+    ExternalProject_Add (pms_models
         GIT_REPOSITORY git@github.com:grinisrit/noa-pms-models.git
         GIT_TAG v0.0.1
         SOURCE_DIR ${CMAKE_BINARY_DIR}/noa-pms-models

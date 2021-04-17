@@ -1,12 +1,12 @@
 ####################################################################################################
-################                     NOA Apps: GHMC examples                    ##################
+#################                     NOA Apps: GHMC examples                    ###################
 ####################################################################################################
 
 message(STATUS "Building GHMC apps required")
 
 # Main executables
-add_executable(normal-cpu normal-cpu.cc)
+add_executable(normal_cpu normal-cpu.cc)
 
 # Link libraries
-target_link_libraries(normal-cpu PRIVATE ${PROJECT_NAME})
-target_compile_options(normal-cpu PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(normal_cpu PRIVATE ${PROJECT_NAME})
+target_compile_options(normal_cpu PRIVATE -Wall -Wextra -Wpedantic -O3)

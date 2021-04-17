@@ -83,7 +83,7 @@ namespace noa::utils
         return true;
     }
 
-    inline Status load_tensor(TensorOpt &result, const Path &path)
+    inline TensorOpt load_tensor(const Path &path)
     {
         if (check_path_exists(path))
         {
@@ -95,14 +95,13 @@ namespace noa::utils
             catch (...)
             {
                 std::cerr << "Failed to load tensor from " << path << "\n";
-                return false;
+                return std::nullopt;
             }
-            result = std::make_optional(tensor);
-            return true;
+            return std::make_optional(tensor);
         }
         else
         {
-            return false;
+            return std::nullopt;
         }
     }
 

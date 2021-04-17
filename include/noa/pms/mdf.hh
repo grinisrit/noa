@@ -64,7 +64,7 @@ namespace noa::pms::mdf {
 
     inline const ParticleName Muon = "Muon";
     inline const ParticleName Tau = "Tau";
-    inline const GeneratorName pumas = "pumas";
+    inline const GeneratorName pms = "pms";
 
     struct DEDXMaterialCoefficients {
         MaterialDensityEffect density_effect;

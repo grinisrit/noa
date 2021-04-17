@@ -38,9 +38,6 @@
 namespace noa::pms {
     using namespace torch::indexing;
 
-    using EnergyScale = Scalar;
-    using DensityScale = Scalar;
-
     using Elements = std::vector<AtomicElement>;
     using ElementId = Index;
     using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
@@ -99,11 +96,6 @@ namespace noa::pms {
     class PhysicsModel {
         using DELKernels = typename std::tuple_element<0, DCSKernels>::type;
         using TTKernels = typename std::tuple_element<1, DCSKernels>::type;
-
-        using DCSBremsstrahlung = typename std::tuple_element<0, DELKernels>::type;
-        using DCSPairProduction = typename std::tuple_element<1, DELKernels>::type;
-        using DCSPhotonuclear = typename std::tuple_element<2, DELKernels>::type;
-        using DCSIonisation = typename std::tuple_element<3, DELKernels>::type;
 
         using CoulombData = typename std::tuple_element<0, TTKernels>::type;
         using CoulombTransport = typename std::tuple_element<1, TTKernels>::type;
@@ -666,7 +658,7 @@ namespace noa::pms {
         }
 
     public:
-        MuonPhysics(DCSKernels dcs_kernels_,
+        explicit MuonPhysics(DCSKernels dcs_kernels_,
                     ParticleMass mass_ = MUON_MASS,
                     DecayLength ctau_ = MUON_CTAU)
                 : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
@@ -693,7 +685,7 @@ namespace noa::pms {
         if (!utils::check_path_exists(dedx))
             return std::nullopt;
 
-        auto mdf_settings = mdf::parse_settings(mdf::pumas, mdf);
+        auto mdf_settings = mdf::parse_settings(mdf::pms, mdf);
         if (!mdf_settings.has_value())
             return std::nullopt;
 

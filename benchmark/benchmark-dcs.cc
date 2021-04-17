@@ -4,7 +4,6 @@
 #include <noa/pms/dcs.hh>
 #include <noa/pms/physics.hh>
 
-
 #include <benchmark/benchmark.h>
 
 using namespace noa::pms;

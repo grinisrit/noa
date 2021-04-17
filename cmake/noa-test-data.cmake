@@ -1,7 +1,7 @@
 include(ExternalProject)
 
-if(NOT TARGET TestData)
-    ExternalProject_Add (TestData
+if(NOT TARGET test_data)
+    ExternalProject_Add (test_data
         GIT_REPOSITORY git@github.com:grinisrit/noa-test-data.git
         GIT_TAG v0.0.1
         SOURCE_DIR ${CMAKE_BINARY_DIR}/noa-test-data
