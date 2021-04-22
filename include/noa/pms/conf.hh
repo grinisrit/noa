@@ -28,16 +28,11 @@
 
 #pragma once
 
-#include "noa/utils/common.hh"
+#include <torch/types.h>
 
-#include <torch/torch.h>
-
-namespace noa::pms
-{
+namespace noa::pms {
     using Scalar = double;
     using Index = int;
-    using Index64 = int64_t;
-    inline const auto tensor_dtype = torch::dtype(utils::dtype<Scalar>());
-    inline const auto tensor_ops = tensor_dtype.layout(torch::kStrided);
+    inline const auto tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
 
 } // namespace noa::pms

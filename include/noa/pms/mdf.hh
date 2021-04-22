@@ -347,20 +347,5 @@ namespace noa::pms::mdf {
         return materials_data;
     }
 
-    inline bool check_ZoA(
-            const Settings &mdf_settings, const MaterialsDEDXData &dedx_data) {
-        auto elements = std::get<Elements>(mdf_settings);
-        auto materials = std::get<Materials>(mdf_settings);
-        for (const auto &[material, data] : dedx_data) {
-            auto coefs = std::get<DEDXMaterialCoefficients>(data);
-            auto ZoA = 0.f;
-            for (const auto &[elmt, frac] :
-                    std::get<MaterialComponents>(materials.at(material)))
-                ZoA += frac * elements.at(elmt).Z / elements.at(elmt).A;
-            if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE))
-                return false;
-        }
-        return true;
-    }
 
 } // namespace noa::pms::mdf

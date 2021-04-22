@@ -21,6 +21,7 @@ set(NOA_TEST_SRC
 
 # Main test executables
 add_executable(noa_test ${NOA_TEST_SRC})
+add_dependencies(noa_test test_data)
 
 # Link libraries
 target_link_libraries(noa_test PRIVATE gtest ${PROJECT_NAME})

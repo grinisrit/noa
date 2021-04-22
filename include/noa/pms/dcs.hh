@@ -1502,7 +1502,7 @@ namespace noa::pms::dcs
         const auto &[U, S, V] = torch::svd(A);
         coeff.slice(1, 0, n) = V.matmul(
                                     (torch::where(S != 0., 1 / S,
-                                                  torch::tensor(0., tensor_dtype))
+                                                  torch::tensor(0., tensor_ops))
                                          .view({nkin, n, 1}) *
                                      (U.transpose(1, 2).matmul(b.view({nkin, m, 1})))))
                                    .view({nkin, n});

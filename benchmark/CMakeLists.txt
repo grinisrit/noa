@@ -17,6 +17,7 @@ set(NOA_BENCH_SRC
 
 # Main test executables
 add_executable(noa_bench ${NOA_BENCH_SRC})
+add_dependencies(noa_bench test_data)
 
 # Extra include directories
 target_include_directories(noa_bench PRIVATE ${NOA_ROOT_DIR}/test)

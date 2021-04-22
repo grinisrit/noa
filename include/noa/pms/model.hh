@@ -64,7 +64,7 @@ namespace noa::pms {
     using TableK = Table;                // Kinetic energy tabulations
     using TableCSn = Table;              // CS normalisation tabulations
     using TableCSf = std::vector<Table>; // CS fractions by material
-    using TableCS = Table;               // CS for inelatic DELs
+    using TableCS = Table;               // CS for inelastic DELs
     using TabledE = Table;               // Average energy loss
     using TabledECSDA = Table;           // Average energy loss in CSDA approx
     using TableX = Table;                // CSDA grammage range for energy loss
@@ -81,7 +81,7 @@ namespace noa::pms {
     using TableNIel = Table;             // EHS number of interaction lengths
     using TableMs1 = Table;              // Multiple scattering 1st moment
     using TableLi = Table;               // Magnetic deflection momenta
-    using DCSData = Table;               // DCS model coefficientss
+    using DCSData = Table;               // DCS model coefficients
 
     struct CoulombWorkspace {
         dcs::TransportCoefs G;
@@ -151,11 +151,27 @@ namespace noa::pms {
             return true;
         }
 
+        inline utils::Status check_ZoA(
+                const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data) {
+            auto mdf_elements = std::get<mdf::Elements>(mdf_settings);
+            auto mdf_materials = std::get<mdf::Materials>(mdf_settings);
+            for (const auto &[material, data] : dedx_data) {
+                auto coefs = std::get<mdf::DEDXMaterialCoefficients>(data);
+                Scalar ZoA = 0.0;
+                for (const auto &[elmt, frac] :
+                        std::get<mdf::MaterialComponents>(mdf_materials.at(material)))
+                    ZoA += frac * mdf_elements.at(elmt).Z / mdf_elements.at(elmt).A;
+                if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE))
+                    return false;
+            }
+            return true;
+        }
+
         inline utils::Status set_table_K(mdf::MaterialsDEDXData &dedx_data) {
             auto data = dedx_data.begin();
-            auto &vals = std::get<mdf::DEDXTable>(data->second).T;
-            const int nkin = vals.size();
-            auto tensor = torch::from_blob(vals.data(), nkin, tensor_ops);
+            auto &values = std::get<mdf::DEDXTable>(data->second).T;
+            const int nkin = values.size();
+            auto tensor = torch::from_blob(values.data(), nkin, tensor_ops);
             table_K = static_cast<Physics *>(this)->scale_energy(tensor);
             data++;
             for (auto &it = data; it != dedx_data.end(); it++) {
@@ -196,16 +212,16 @@ namespace noa::pms {
         inline void set_materials(const mdf::Materials &mdf_materials,
                                   mdf::MaterialsDEDXData &dedx_data) {
             int id = 0;
-            const int n_mats = mdf_materials.size();
+            const int nmat = mdf_materials.size();
 
-            materials.reserve(n_mats);
-            material_name.reserve(n_mats);
+            materials.reserve(nmat);
+            material_name.reserve(nmat);
 
-            material_density = torch::zeros(n_mats, tensor_ops);
-            material_ZoA = torch::zeros(n_mats, tensor_ops);
-            material_I = torch::zeros(n_mats, tensor_ops);
+            material_density = torch::zeros(nmat, tensor_ops);
+            material_ZoA = torch::zeros(nmat, tensor_ops);
+            material_I = torch::zeros(nmat, tensor_ops);
 
-            material_density_effect.reserve(n_mats);
+            material_density_effect.reserve(nmat);
 
             for (const auto &[name, material] : mdf_materials) {
                 auto[_, density, components] = material;
@@ -265,7 +281,7 @@ namespace noa::pms {
             std::get<CoulombTransport>(std::get<TTKernels>(dcs_kernels))(
                     coulomb_workspace.G[iel],
                     screen, fspin,
-                    torch::tensor(1.0, tensor_dtype));
+                    torch::tensor(1.0, tensor_ops));
 
             std::get<SoftScattering>(std::get<TTKernels>(dcs_kernels))(
                     coulomb_workspace.table_ms1[iel],
@@ -273,7 +289,7 @@ namespace noa::pms {
         }
 
         inline void compute_per_element_data() {
-            const int nel = elements.size();
+            const int nel = num_elements();
             const auto &model_K = table_K.index(
                     {table_K >= static_cast<Physics *>(this)->dcs_model_min_energy()});
 
@@ -323,13 +339,13 @@ namespace noa::pms {
             table_CS[imat] = table_CSf[imat].sum(0).sum(0);
 
             table_CSf[imat] *= torch::where(table_CS[imat] <= 0.0,
-                                            torch::tensor(0.0, tensor_dtype), torch::tensor(1.0, tensor_dtype))
+                                            torch::tensor(0.0, tensor_ops), torch::tensor(1.0, tensor_ops))
                     .view({1, 1, nkin});
             table_CSf[imat] = table_CSf[imat].view({nel * dcs::NPR, nkin}).cumsum(0).view({nel, dcs::NPR, nkin}) /
-                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, tensor_dtype),
+                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, tensor_ops),
                                            table_CS[imat]).view({1, 1, nkin});
 
-            auto a = static_cast<Physics *>(this)->scale_dEdX(
+            auto ionisation = static_cast<Physics *>(this)->scale_dEdX(
                     torch::from_blob(dedx_table.Ionisation.data(), nkin, tensor_ops));
             auto be_cel = dcs::compute_be_cel(
                     static_cast<Physics *>(this)->scale_dEdX(
@@ -338,7 +354,7 @@ namespace noa::pms {
                             torch::from_blob(dedx_table.pair.data(), nkin, tensor_ops)),
                     static_cast<Physics *>(this)->scale_dEdX(
                             torch::from_blob(dedx_table.photonuc.data(), nkin, tensor_ops)),
-                    a,
+                    ionisation,
                     torch::tensordot(materials[imat].fractions, cel_table.index_select(0, materials[imat].element_ids),
                                      0, 0));
 
@@ -346,7 +362,7 @@ namespace noa::pms {
                     torch::from_blob(dedx_table.dEdX.data(), nkin, tensor_ops));
             table_dE[imat] = table_dE_CSDA[imat] - be_cel;
             table_NI_in[imat] = table_CS[imat] / table_dE[imat];
-            table_a_max[imat] = a[nkin - 1];
+            table_a_max[imat] = ionisation[nkin - 1];
             table_b_max[imat] =
                     (static_cast<Physics *>(this)->scale_dEdX(dedx_table.Radloss[nkin - 1]) - be_cel[nkin - 1]) /
                     (mass + table_K[nkin - 1]);
@@ -359,7 +375,7 @@ namespace noa::pms {
 
         inline void compute_del_threshold(dcs::ThresholdIndex th_i) {
             table_Xt = torch::ones_like(table_CSn);
-            const int nel = elements.size();
+            const int nel = num_elements();
             for (int iel = 0; iel < nel; iel++)
                 dcs::compute_fractional_thresholds(
                         std::get<DELKernels>(dcs_kernels), table_Xt[iel], table_K,
@@ -367,7 +383,7 @@ namespace noa::pms {
         }
 
         inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data) {
-            const int nmat = materials.size();
+            const int nmat = num_materials();
             init_dedx_tables(nmat);
             dcs::ThresholdIndex th_i = 0;
             for (int imat = 0; imat < nmat; imat++)
@@ -422,7 +438,7 @@ namespace noa::pms {
         }
 
         inline void set_coulomb_parameters() {
-            const int nmat = materials.size();
+            const int nmat = num_materials();
             init_coulomb_parameters();
 
             for (int imat = 0; imat < nmat; imat++)
@@ -440,7 +456,7 @@ namespace noa::pms {
         }
 
         inline void set_cel_integrals() {
-            const int nmat = materials.size();
+            const int nmat = num_materials();
             init_cel_integrals(nmat);
 
             const Scalar I0 = dcs::compute_momentum_integral(table_K[0].item<Scalar>(), mass);
@@ -498,6 +514,10 @@ namespace noa::pms {
         inline const mdf::ElementName &get_element_name(const ElementId id) const {
             return element_name.at(id);
         }
+        
+        inline int num_elements() const {
+            return elements.size();
+        }
 
         inline const Material &get_material(const MaterialId id) const {
             return materials.at(id);
@@ -509,6 +529,10 @@ namespace noa::pms {
 
         inline const mdf::MaterialName &get_material_name(const MaterialId id) const {
             return material_name.at(id);
+        }
+
+        inline int num_materials() const {
+            return materials.size();
         }
 
         inline const MaterialsDensity &get_material_density() const {
@@ -641,26 +665,26 @@ namespace noa::pms {
             return tables * 1E-4; // from MeV cm^2/g to GeV m^2/kg
         }
 
-        inline EnergyTransfer x_fraction() const {
+        [[nodiscard]] inline EnergyTransfer x_fraction() const {
             return X_FRACTION;
         }
 
-        inline EnergyTransfer dcs_model_max_fraction() const {
+        [[nodiscard]] inline EnergyTransfer dcs_model_max_fraction() const {
             return DCS_MODEL_MAX_FRACTION;
         }
 
-        inline Energy dcs_model_min_energy() const {
+        [[nodiscard]] inline Energy dcs_model_min_energy() const {
             return DCS_MODEL_MIN_KINETIC;
         }
 
-        inline LarmorFactor larmor_factor() const {
+        [[nodiscard]] inline LarmorFactor larmor_factor() const {
             return LARMOR_FACTOR;
         }
 
     public:
         explicit MuonPhysics(DCSKernels dcs_kernels_,
-                    ParticleMass mass_ = MUON_MASS,
-                    DecayLength ctau_ = MUON_CTAU)
+                             ParticleMass mass_ = MUON_MASS,
+                             DecayLength ctau_ = MUON_CTAU)
                 : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
                 dcs_kernels_, mass_, ctau_) {
         }
@@ -668,7 +692,7 @@ namespace noa::pms {
 
     template<typename DCSKernels>
     struct TauPhysics : MuonPhysics<DCSKernels> {
-        TauPhysics(DCSKernels dcs_kernels_,
+        explicit TauPhysics(DCSKernels dcs_kernels_,
                    ParticleMass mass_ = TAU_MASS,
                    DecayLength ctau_ = TAU_CTAU)
                 : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
@@ -677,7 +701,7 @@ namespace noa::pms {
     };
 
     template<typename PumasPhysics, typename DCSKernels>
-    inline std::optional <PumasPhysics> load_pumas_physics_from(
+    inline std::optional<PumasPhysics> load_pumas_physics_from(
             const mdf::ParticleName &particle_name, const mdf::MDFFilePath &mdf,
             const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels) {
         if (!utils::check_path_exists(mdf))
@@ -702,9 +726,9 @@ namespace noa::pms {
     }
 
     template<typename DCSKernels>
-    inline std::optional <MuonPhysics<DCSKernels>> load_muon_physics_from(
+    inline std::optional<MuonPhysics<DCSKernels>> load_muon_physics_from(
             const mdf::MDFFilePath &mdf, const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels) {
-        return load_pumas_physics_from < MuonPhysics < DCSKernels > , DCSKernels > (mdf::Muon, mdf, dedx, dcs_kernels);
+        return load_pumas_physics_from<MuonPhysics<DCSKernels>, DCSKernels>(mdf::Muon, mdf, dedx, dcs_kernels);
     }
 
 } // namespace noa::pms

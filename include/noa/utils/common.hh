@@ -49,30 +49,6 @@ namespace noa::utils
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
-    template <typename Dtype>
-    inline c10::ScalarType dtype()
-    {
-        return torch::kFloat64;
-    }
-
-    template <>
-    inline c10::ScalarType dtype<float>()
-    {
-        return torch::kFloat32;
-    }
-
-    template <>
-    inline c10::ScalarType dtype<long>()
-    {
-        return torch::kInt64;
-    }
-
-    template <>
-    inline c10::ScalarType dtype<int>()
-    {
-        return torch::kInt32;
-    }
-
     inline Status check_path_exists(const Path &path)
     {
         if (!std::filesystem::exists(path))
