@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "noa/pms/physics.hh"
+#include "noa/pms/constants.hh"
 #include "noa/utils/common.hh"
 #include "noa/utils/numerics.hh"
 
@@ -855,7 +855,7 @@ namespace noa::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6160
      */
-    void coulomb_transport_coefficients(
+    inline void coulomb_transport_coefficients(
         Scalar *pcoefs,
         Scalar *pscreen,
         const Scalar &fspin,
@@ -1324,7 +1324,7 @@ namespace noa::pms::dcs
      *  GNU Lesser General Public License version 3
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8311
      */
-    void compute_kinetic_integral(const Result &result,
+    inline void compute_kinetic_integral(const Result &result,
                                   const KineticEnergies &K)
     {
         const int nkin = K.numel();
@@ -1420,9 +1420,9 @@ namespace noa::pms::dcs
         const int n = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + 1;
         const int qj = DCS_MODEL_ORDER_P + 1;
 
-        auto A = torch::zeros({nkin, m, n}, tensor_ops);
+        auto A = torch::zeros({nkin, m, n}, torch::dtype(torch::kDouble).layout(torch::kStrided));
         Scalar *pA = A.data_ptr<Scalar>();
-        auto b = torch::zeros({nkin, m}, tensor_ops);
+        auto b = torch::zeros({nkin, m}, torch::dtype(torch::kDouble).layout(torch::kStrided));
         Scalar *pb = b.data_ptr<Scalar>();
         const auto w = torch::zeros_like(b);
         Scalar *pw = w.data_ptr<Scalar>();
@@ -1502,7 +1502,7 @@ namespace noa::pms::dcs
         const auto &[U, S, V] = torch::svd(A);
         coeff.slice(1, 0, n) = V.matmul(
                                     (torch::where(S != 0., 1 / S,
-                                                  torch::tensor(0., tensor_ops))
+                                                  torch::tensor(0., torch::dtype(torch::kDouble)))
                                          .view({nkin, n, 1}) *
                                      (U.transpose(1, 2).matmul(b.view({nkin, m, 1})))))
                                    .view({nkin, n});

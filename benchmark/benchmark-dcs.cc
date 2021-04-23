@@ -1,8 +1,7 @@
 #include "noa-bench.hh"
 
-#include <noa/pms/conf.hh>
 #include <noa/pms/dcs.hh>
-#include <noa/pms/physics.hh>
+#include <noa/pms/constants.hh>
 
 #include <benchmark/benchmark.h>
 

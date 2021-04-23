@@ -3,7 +3,7 @@
 ####################################################################################################
 
 # Minimum cmake version
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 # Project
 project(NOA
@@ -32,6 +32,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Make sure LibTorch is installed 
 include(check-torch)
+
+# Set up CUDA if available
+include(check-cuda)
 
 # NOA library  
 add_library(${PROJECT_NAME} INTERFACE)

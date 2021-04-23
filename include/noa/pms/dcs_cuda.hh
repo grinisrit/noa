@@ -28,11 +28,15 @@
 
 #pragma once
 
+#include "noa/pms/constants.hh"
 #include <torch/types.h>
 
 namespace noa::pms {
-    using Scalar = double;
-    using Index = int;
-    inline const auto tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
+
+    torch::Tensor bremsstrahlung_cuda(
+            const torch::Tensor &kinetic_energies,
+            const torch::Tensor &recoil_energies,
+            const AtomicElement &element,
+            const ParticleMass &mass);
 
 } // namespace noa::pms

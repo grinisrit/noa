@@ -18,9 +18,13 @@ set(NOA_TEST_SRC
         test-ghmc.cc
         test-dcs.cc)
 
-
 # Main test executables
-add_executable(noa_test ${NOA_TEST_SRC})
+if (CMAKE_CUDA_COMPILER)
+    add_executable(noa_test ${NOA_TEST_SRC} test-dcs-cuda.cc dcs_kernels.cu)
+    set_target_properties(noa_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+else ()
+    add_executable(noa_test ${NOA_TEST_SRC})
+endif ()
 add_dependencies(noa_test test_data)
 
 # Link libraries

@@ -28,10 +28,12 @@
 
 #pragma once
 
-#include "noa/pms/conf.hh"
+#include <cmath>
 
 namespace noa::pms
 {
+    using Scalar = double;
+    using Index = int;
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
     using DecayLength = Scalar;

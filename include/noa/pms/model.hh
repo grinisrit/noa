@@ -30,7 +30,7 @@
 
 #include "noa/pms/mdf.hh"
 #include "noa/pms/dcs.hh"
-#include "noa/pms/physics.hh"
+#include "noa/pms/constants.hh"
 #include "noa/utils/common.hh"
 
 #include <torch/torch.h>
@@ -101,6 +101,8 @@ namespace noa::pms {
         using CoulombTransport = typename std::tuple_element<1, TTKernels>::type;
         using HardScattering = typename std::tuple_element<2, TTKernels>::type;
         using SoftScattering = typename std::tuple_element<3, TTKernels>::type;
+
+        c10::TensorOptions tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
 
         Elements elements;
         ElementIds element_id;
