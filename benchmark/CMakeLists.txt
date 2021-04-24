@@ -13,10 +13,15 @@ target_compile_definitions(benchmark PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 include(noa-test-data)
 
 set(NOA_BENCH_SRC
-        benchmark-dcs.cc)
+        benchmark-dcs.cc dcs_kernels.cu)
 
 # Main test executables
-add_executable(noa_bench ${NOA_BENCH_SRC})
+if (CMAKE_CUDA_COMPILER)
+    add_executable(noa_bench ${NOA_BENCH_SRC} benchmark-dcs-cuda.cc dcs_kernels.cu)
+    set_target_properties(noa_bench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+else ()
+    add_executable(noa_bench ${NOA_BENCH_SRC})
+endif ()
 add_dependencies(noa_bench test_data)
 
 # Extra include directories

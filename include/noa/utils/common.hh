@@ -154,12 +154,12 @@ namespace noa::utils {
 
     inline torch::Tensor relative_error(const torch::Tensor &computed, const torch::Tensor &expected) {
         auto res = torch::Tensor{};
-        AT_DISPATCH_FLOATING_TYPES(computed.scalar_type(), "relative_error_", ([&] {
+        AT_DISPATCH_FLOATING_TYPES(computed.scalar_type(), "relative_error", [&] {
             res = torch::abs(
                     (computed - expected) / (computed + std::numeric_limits<scalar_t>::min()))
                           .sum() /
                   computed.numel();
-        }));
+        });
         return res;
     }
 

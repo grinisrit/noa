@@ -33,7 +33,7 @@
 namespace {
 
     template<typename Dtype>
-    __device__ __forceinline__ Dtype default_bremsstrahlung(
+    __device__ __forceinline__ Dtype __bremsstrahlung_cuda_kernel__(
             const Dtype K,
             const Dtype q,
             const int Z,
@@ -83,7 +83,7 @@ namespace {
         int n = res.size(0);
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index < n)
-            res[index] = default_bremsstrahlung (
+            res[index] = __bremsstrahlung_cuda_kernel__ (
                     kinetic_energies[index],  recoil_energies[index], Z, A, mass);
     }
 
@@ -91,7 +91,8 @@ namespace {
 }
 
 
-torch::Tensor noa::pms::bremsstrahlung_cuda(
+void noa::pms::bremsstrahlung_cuda(
+        torch::Tensor &result,
         const torch::Tensor &kinetic_energies,
         const torch::Tensor &recoil_energies,
         const AtomicElement &element,
@@ -103,17 +104,13 @@ torch::Tensor noa::pms::bremsstrahlung_cuda(
     int num_threads = std::min(min_block * thread_blocks, max_block);
     int num_blocks = (nkin + num_threads - 1) / num_threads;
 
-    auto res = torch::zeros_like(kinetic_energies);
-
-    AT_DISPATCH_FLOATING_TYPES(res.scalar_type(), "bremsstrahlung_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(result.scalar_type(), "bremsstrahlung_cuda", [&] {
         bremsstrahlung_cuda_kernel<scalar_t><<<num_blocks, num_threads>>>(
-                res.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
+                result.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
                 kinetic_energies.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
                 recoil_energies.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
                 element.Z, element.A, mass);
-    }));
+    });
 
-
-    return res;
 }
 
