@@ -41,9 +41,16 @@ namespace noa::pms {
             const AtomicElement &element,
             const ParticleMass &mass);
 
+    template<typename Dtype>
+    void bremsstrahlung_cuda_ptr(
+            const torch::Tensor &result,
+            const torch::Tensor &kinetic_energies,
+            const torch::Tensor &recoil_energies,
+            const AtomicElement &element,
+            const ParticleMass &mass);
 
     template<typename Dtype>
-    inline Dtype __bremsstrahlung_cpu_kernel__(const Dtype &K,
+    inline Dtype bremsstrahlung_cpu_kernel__(const Dtype &K,
                                                const Dtype &q,
                                                const int Z, const Dtype A, Dtype mass) {
         const Dtype me = ELECTRON_MASS;
@@ -91,7 +98,21 @@ namespace noa::pms {
         auto k = kinetic_energies.accessor<Dtype, 1>();
         auto q = recoil_energies.accessor<Dtype, 1>();
         for (int i = 0; i < n; i++)
-            r[i] = __bremsstrahlung_cpu_kernel__(k[i], q[i], Z, A, mass);
+            r[i] = bremsstrahlung_cpu_kernel__(k[i], q[i], Z, A, mass);
+    }
+
+    template<typename Dtype>
+    inline void bremsstrahlung_cpu_kernel_ptr(
+            torch::Tensor &result,
+            const torch::Tensor &kinetic_energies,
+            const torch::Tensor &recoil_energies,
+            const int Z, const Dtype A, Dtype mass) {
+        int n = result.size(0);
+        auto r = result.data_ptr<Dtype>();
+        auto k = kinetic_energies.data_ptr<Dtype>();
+        auto q = recoil_energies.data_ptr<Dtype>();
+        for (int i = 0; i < n; i++)
+            r[i] = bremsstrahlung_cpu_kernel__(k[i], q[i], Z, A, mass);
     }
 
 
