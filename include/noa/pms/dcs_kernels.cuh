@@ -33,7 +33,7 @@
 namespace {
 
     template<typename Dtype>
-    __device__ __forceinline__ Dtype __bremsstrahlung_cuda_kernel__(
+    __device__ __forceinline__ Dtype bremsstrahlung_cuda_kernel_(
             const Dtype K,
             const Dtype q,
             const int Z,
@@ -76,31 +76,18 @@ namespace {
 
     template<typename Dtype>
     __global__ void bremsstrahlung_cuda_kernel(
-            torch::PackedTensorAccessor<Dtype, 1, torch::RestrictPtrTraits, size_t> res,
-            const torch::PackedTensorAccessor<Dtype, 1, torch::RestrictPtrTraits, size_t> kinetic_energies,
-            const torch::PackedTensorAccessor<Dtype, 1, torch::RestrictPtrTraits, size_t> recoil_energies,
-            const int Z, const Dtype A, Dtype mass) {
-        int n = res.size(0);
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index < n)
-            res[index] = __bremsstrahlung_cuda_kernel__(
-                    kinetic_energies[index], recoil_energies[index], Z, A, mass);
-    }
-
-    template<typename Dtype>
-    __global__ void bremsstrahlung_cuda_kernel_ptr(
             Dtype *res,
             Dtype *kinetic_energies,
             Dtype *recoil_energies,
             const int n, const int Z, const Dtype A, Dtype mass) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index < n)
-            res[index] = __bremsstrahlung_cuda_kernel__(
+            res[index] = bremsstrahlung_cuda_kernel_(
                     kinetic_energies[index], recoil_energies[index], Z, A, mass);
     }
 
     template<typename Dtype>
-    void bremsstrahlung_cuda_ptr_t(
+    inline void bremsstrahlung_cuda_(
             const torch::Tensor &result,
             const torch::Tensor &kinetic_energies,
             const torch::Tensor &recoil_energies,
@@ -112,8 +99,7 @@ namespace {
         int thread_blocks = (nkin + min_block - 1) / min_block;
         int num_threads = std::min(min_block * thread_blocks, max_block);
         int num_blocks = (nkin + num_threads - 1) / num_threads;
-
-        bremsstrahlung_cuda_kernel_ptr<Dtype><<<num_blocks, num_threads>>>(
+        bremsstrahlung_cuda_kernel<Dtype><<<num_blocks, num_threads>>>(
                 result.data_ptr<Dtype>(),
                 kinetic_energies.data_ptr<Dtype>(),
                 recoil_energies.data_ptr<Dtype>(), nkin,
@@ -123,48 +109,26 @@ namespace {
 }
 
 
-void noa::pms::bremsstrahlung_cuda(
-        torch::Tensor &result,
-        const torch::Tensor &kinetic_energies,
-        const torch::Tensor &recoil_energies,
-        const AtomicElement &element,
-        const ParticleMass &mass) {
-    int nkin = kinetic_energies.size(0);
-    int min_block = 32;
-    int max_block = 1024;
-    int thread_blocks = (nkin + min_block - 1) / min_block;
-    int num_threads = std::min(min_block * thread_blocks, max_block);
-    int num_blocks = (nkin + num_threads - 1) / num_threads;
-
-    AT_DISPATCH_FLOATING_TYPES(result.scalar_type(), "bremsstrahlung_cuda", [&] {
-        bremsstrahlung_cuda_kernel<scalar_t><<<num_blocks, num_threads>>>(
-                result.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
-                kinetic_energies.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
-                recoil_energies.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
-                element.Z, element.A, mass);
-    });
-}
-
 template<>
-void noa::pms::bremsstrahlung_cuda_ptr<double>(
+void noa::pms::bremsstrahlung_cuda<double>(
         const torch::Tensor &result,
         const torch::Tensor &kinetic_energies,
         const torch::Tensor &recoil_energies,
         const AtomicElement &element,
         const ParticleMass &mass) {
-    bremsstrahlung_cuda_ptr_t<double>(
+    bremsstrahlung_cuda_<double>(
             result, kinetic_energies, recoil_energies, element, mass
     );
 }
 
 template<>
-void noa::pms::bremsstrahlung_cuda_ptr<float>(
+void noa::pms::bremsstrahlung_cuda<float>(
         const torch::Tensor &result,
         const torch::Tensor &kinetic_energies,
         const torch::Tensor &recoil_energies,
         const AtomicElement &element,
         const ParticleMass &mass) {
-    bremsstrahlung_cuda_ptr_t<float>(
+    bremsstrahlung_cuda_<float>(
             result, kinetic_energies, recoil_energies, element, mass
     );
 }

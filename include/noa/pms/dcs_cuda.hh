@@ -34,25 +34,19 @@
 namespace noa::pms {
 
 
-    void bremsstrahlung_cuda(
-            torch::Tensor &result,
-            const torch::Tensor &kinetic_energies,
-            const torch::Tensor &recoil_energies,
-            const AtomicElement &element,
-            const ParticleMass &mass);
-
     template<typename Dtype>
-    void bremsstrahlung_cuda_ptr(
+    void bremsstrahlung_cuda(
             const torch::Tensor &result,
             const torch::Tensor &kinetic_energies,
             const torch::Tensor &recoil_energies,
             const AtomicElement &element,
             const ParticleMass &mass);
 
+
     template<typename Dtype>
-    inline Dtype bremsstrahlung_cpu_kernel__(const Dtype &K,
-                                               const Dtype &q,
-                                               const int Z, const Dtype A, Dtype mass) {
+    inline Dtype bremsstrahlung_cpu_kernel(const Dtype &K,
+                                           const Dtype &q,
+                                           const int Z, const Dtype A, Dtype mass) {
         const Dtype me = ELECTRON_MASS;
         const Dtype sqrte = 1.648721271;
         const Dtype phie_factor = mass / (me * me * sqrte);
@@ -88,48 +82,39 @@ namespace noa::pms {
     }
 
     template<typename Dtype>
-    inline void bremsstrahlung_cpu_kernel(
-            torch::Tensor &result,
-            const torch::Tensor &kinetic_energies,
-            const torch::Tensor &recoil_energies,
-            const int Z, const Dtype A, Dtype mass) {
-        int n = result.size(0);
-        auto r = result.accessor<Dtype, 1>();
-        auto k = kinetic_energies.accessor<Dtype, 1>();
-        auto q = recoil_energies.accessor<Dtype, 1>();
-        for (int i = 0; i < n; i++)
-            r[i] = bremsstrahlung_cpu_kernel__(k[i], q[i], Z, A, mass);
-    }
-
-    template<typename Dtype>
-    inline void bremsstrahlung_cpu_kernel_ptr(
-            torch::Tensor &result,
-            const torch::Tensor &kinetic_energies,
-            const torch::Tensor &recoil_energies,
-            const int Z, const Dtype A, Dtype mass) {
-        int n = result.size(0);
-        auto r = result.data_ptr<Dtype>();
-        auto k = kinetic_energies.data_ptr<Dtype>();
-        auto q = recoil_energies.data_ptr<Dtype>();
-        for (int i = 0; i < n; i++)
-            r[i] = bremsstrahlung_cpu_kernel__(k[i], q[i], Z, A, mass);
-    }
-
-
     inline void bremsstrahlung_cpu(
-            torch::Tensor &result,
+            const torch::Tensor &result,
             const torch::Tensor &kinetic_energies,
             const torch::Tensor &recoil_energies,
             const AtomicElement &element,
             const ParticleMass &mass) {
-
-        AT_DISPATCH_FLOATING_TYPES(result.scalar_type(), "bremsstrahlung_cpu", [&] {
-            bremsstrahlung_cpu_kernel<scalar_t>(
-                    result,
-                    kinetic_energies,
-                    recoil_energies,
-                    element.Z, element.A, mass);
-        });
+        int n = result.size(0);
+        auto r = result.data_ptr<Dtype>();
+        auto k = kinetic_energies.data_ptr<Dtype>();
+        auto q = recoil_energies.data_ptr<Dtype>();
+        const int Z = element.Z;
+        const Dtype A = element.A;
+        for (int i = 0; i < n; i++)
+            r[i] = bremsstrahlung_cpu_kernel<Dtype>(k[i], q[i], Z, A, mass);
     }
+
+    template<typename Dtype>
+    inline void bremsstrahlung_cpu_p(
+            const torch::Tensor &result,
+            const torch::Tensor &kinetic_energies,
+            const torch::Tensor &recoil_energies,
+            const AtomicElement &element,
+            const ParticleMass &mass) {
+        int n = result.size(0);
+        auto r = result.data_ptr<Dtype>();
+        auto k = kinetic_energies.data_ptr<Dtype>();
+        auto q = recoil_energies.data_ptr<Dtype>();
+        const int Z = element.Z;
+        const Dtype A = element.A;
+#pragma omp parallel for
+        for (int i = 0; i < n; i++)
+            r[i] = bremsstrahlung_cpu_kernel<Dtype>(k[i], q[i], Z, A, mass);
+    }
+
 
 } // namespace noa::pms
