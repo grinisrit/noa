@@ -36,8 +36,7 @@
 
 #include <torch/torch.h>
 
-namespace noa::utils
-{
+namespace noa::utils {
 
     using Path = std::filesystem::path;
     using Status = bool;
@@ -49,41 +48,32 @@ namespace noa::utils
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
-    inline Status check_path_exists(const Path &path)
-    {
-        if (!std::filesystem::exists(path))
-        {
+    inline Status check_path_exists(const Path &path) {
+        if (!std::filesystem::exists(path)) {
             std::cerr << "Cannot find " << path << std::endl;
             return false;
         }
         return true;
     }
 
-    inline TensorOpt load_tensor(const Path &path)
-    {
-        if (check_path_exists(path))
-        {
+    inline TensorOpt load_tensor(const Path &path) {
+        if (check_path_exists(path)) {
             auto tensor = torch::Tensor{};
-            try
-            { 
+            try {
                 torch::load(tensor, path);
             }
-            catch (...)
-            {
+            catch (...) {
                 std::cerr << "Failed to load tensor from " << path << "\n";
                 return std::nullopt;
             }
             return std::make_optional(tensor);
-        }
-        else
-        {
+        } else {
             return std::nullopt;
         }
     }
 
     inline std::optional<Line> find_line(
-        std::ifstream &stream, const std::regex &line_pattern)
-    {
+            std::ifstream &stream, const std::regex &line_pattern) {
         auto line = Line{};
         while (std::getline(stream, line))
             if (std::regex_search(line, line_pattern))
@@ -91,10 +81,9 @@ namespace noa::utils
         return std::nullopt;
     }
 
-    template <typename Dtype>
+    template<typename Dtype>
     inline std::optional<std::vector<Dtype>> get_numerics(
-        const std::string &line, int size)
-    {
+            const std::string &line, int size) {
         auto no_data = std::sregex_iterator();
         auto nums = std::sregex_iterator(line.begin(), line.end(), num_pattern);
         if (std::distance(nums, no_data) != size)
@@ -107,9 +96,8 @@ namespace noa::utils
         return vec;
     }
 
-    template <typename Dtype, typename Lambda>
-    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda)
-    {
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         auto result = torch::zeros_like(values);
         Dtype *pres = result.data_ptr<Dtype>();
@@ -119,9 +107,8 @@ namespace noa::utils
         return result;
     }
 
-    template <typename Dtype, typename Lambda>
-    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result)
-    {
+    template<typename Dtype, typename Lambda>
+    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         Dtype *pres = result.data_ptr<Dtype>();
         const int n = result.numel();
@@ -129,9 +116,8 @@ namespace noa::utils
             pres[i] = lambda(pvals[i]);
     }
 
-    template <typename Dtype, typename Lambda>
-    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda)
-    {
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         auto result = torch::zeros_like(values);
         Dtype *pres = result.data_ptr<Dtype>();
@@ -141,9 +127,8 @@ namespace noa::utils
         return result;
     }
 
-    template <typename Dtype, typename Lambda>
-    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result)
-    {
+    template<typename Dtype, typename Lambda>
+    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         Dtype *pres = result.data_ptr<Dtype>();
         const int n = result.numel();
@@ -151,36 +136,34 @@ namespace noa::utils
             pres[i] = lambda(i, pvals[i]);
     }
 
-    template <typename Dtype, typename Lambda>
-    inline void for_each(const torch::Tensor &values, const Lambda &lambda)
-    {
+    template<typename Dtype, typename Lambda>
+    inline void for_each(const torch::Tensor &values, const Lambda &lambda) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         const int n = values.numel();
         for (int i = 0; i < n; i++)
             lambda(pvals[i]);
     }
 
-    template <typename Dtype, typename Lambda>
-    inline void for_eachi(const torch::Tensor &values, const Lambda &lambda)
-    {
+    template<typename Dtype, typename Lambda>
+    inline void for_eachi(const torch::Tensor &values, const Lambda &lambda) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         const int n = values.numel();
         for (int i = 0; i < n; i++)
             lambda(i, pvals[i]);
     }
 
-    template <typename Dtype>
-    inline torch::Tensor relative_error(const torch::Tensor &computed, const torch::Tensor &expected)
-    {
-        return torch::abs(
-                   (computed - expected) / (computed + std::numeric_limits<Dtype>::min()))
-                   .sum() /
-               computed.numel();
+    inline torch::Tensor relative_error(const torch::Tensor &computed, const torch::Tensor &expected) {
+        auto res = torch::Tensor{};
+        AT_DISPATCH_FLOATING_TYPES(computed.scalar_type(), "relative_error_", ([&] {
+            res = torch::abs(
+                    (computed - expected) / (computed + std::numeric_limits<scalar_t>::min()))
+                          .sum() /
+                  computed.numel();
+        }));
+        return res;
     }
 
-    template <typename Dtype>
-    inline torch::Tensor mean_error(const torch::Tensor &computed, const torch::Tensor &expected)
-    {
+    inline torch::Tensor mean_error(const torch::Tensor &computed, const torch::Tensor &expected) {
         return torch::abs(computed - expected).sum() / computed.numel();
     }
 

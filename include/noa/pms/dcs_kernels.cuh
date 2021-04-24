@@ -105,11 +105,11 @@ torch::Tensor noa::pms::bremsstrahlung_cuda(
 
     auto res = torch::zeros_like(kinetic_energies);
 
-    AT_DISPATCH_FLOATING_TYPES(res.type(), "bremsstrahlung_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(res.scalar_type(), "bremsstrahlung_cuda", ([&] {
         bremsstrahlung_cuda_kernel<scalar_t><<<num_blocks, num_threads>>>(
+                res.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
                 kinetic_energies.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
                 recoil_energies.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
-                res.packed_accessor<scalar_t, 1, torch::RestrictPtrTraits, size_t>(),
                 element.Z, element.A, mass);
     }));
 
