@@ -16,11 +16,12 @@ include(noa-test-data)
 set(NOA_TEST_SRC
         main.cc
         test-ghmc.cc
-        test-dcs.cc)
+        test-dcs.cc
+        test-dcs-model.cc)
 
 # Main test executables
 if (CMAKE_CUDA_COMPILER)
-    add_executable(noa_test ${NOA_TEST_SRC} test-dcs-cuda.cc dcs_kernels.cu)
+    add_executable(noa_test ${NOA_TEST_SRC} test-dcs-cuda.cc dcs-kernels.cu)
     set_target_properties(noa_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()
     add_executable(noa_test ${NOA_TEST_SRC})

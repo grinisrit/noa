@@ -29,7 +29,7 @@
 #pragma once
 
 #include "noa/pms/mdf.hh"
-#include "noa/pms/dcs.hh"
+#include "noa/pms/dcs_model.hh"
 #include "noa/pms/constants.hh"
 #include "noa/utils/common.hh"
 
