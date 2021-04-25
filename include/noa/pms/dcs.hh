@@ -77,10 +77,10 @@ namespace noa::pms::dcs {
         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
         */
         inline const auto bremsstrahlung = [](
-                const Energy kinetic_energy,
-                const Energy recoil_energy,
-                const AtomicElement <Scalar> element,
-                const ParticleMass mass) {
+                const Energy &kinetic_energy,
+                const Energy &recoil_energy,
+                const AtomicElement <Scalar> &element,
+                const ParticleMass &mass) {
             const int Z = element.Z;
             const Scalar A = element.A;
             const Scalar me = ELECTRON_MASS;

@@ -15,11 +15,11 @@ include(noa-test-data)
 include(conda-omp)
 
 set(NOA_BENCH_SRC
-        benchmark-dcs-model.cc
-        benchmark-dcs.cc)
+        benchmark-dcs.cc
+        benchmark-dcs-model.cc)
 
 # Main test executables
-if (CMAKE_CUDA_COMPILER)
+if (BUILD_CUDA)
     add_executable(noa_bench ${NOA_BENCH_SRC} benchmark-dcs-cuda.cc ${NOA_ROOT_DIR}/test/dcs-kernels.cu)
     set_target_properties(noa_bench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()

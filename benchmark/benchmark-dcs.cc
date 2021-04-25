@@ -15,7 +15,7 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCPU)
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
-        dcs::pvmap<Scalar>(dcs::pumas::bremsstrahlung)(
+        dcs::vmap<Scalar>(dcs::pumas::bremsstrahlung)(
                 result, kinetic_energies, recoil_energies, element, mu);
 }
 

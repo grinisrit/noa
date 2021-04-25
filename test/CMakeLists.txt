@@ -20,7 +20,7 @@ set(NOA_TEST_SRC
         test-dcs-model.cc)
 
 # Main test executables
-if (CMAKE_CUDA_COMPILER)
+if (BUILD_CUDA)
     add_executable(noa_test ${NOA_TEST_SRC} test-dcs-cuda.cc dcs-kernels.cu)
     set_target_properties(noa_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()

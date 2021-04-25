@@ -31,18 +31,6 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCPUModel)
         map_kernel(default_bremsstrahlung)(r, k, q, element, mu);
 }
 
-BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCPUModel)
-(benchmark::State &state)
-{
-    const auto k = DCSData::get_kinetic_energies().repeat_interleave(1000);
-    const auto q = DCSData::get_recoil_energies().repeat_interleave(1000);
-    auto r = torch::zeros_like(k);
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        map_kernel(default_bremsstrahlung)(r, k, q, element, mu);
-}
-
 BENCHMARK_F(DCSBenchmark, DELBremsstrahlung)
 (benchmark::State &state)
 {

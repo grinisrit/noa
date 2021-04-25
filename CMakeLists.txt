@@ -3,7 +3,7 @@
 ####################################################################################################
 
 # Minimum cmake version
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
 # Project
 project(NOA
@@ -19,6 +19,7 @@ option(BUILD_NOA_TESTS "Build and run tests " ON)
 option(BUILD_NOA_BENCHMARKS "Build and run benchmarks " OFF)
 option(BUILD_GHMC_APPS "Build GHMC apps " OFF)
 option(BUILD_PMS_APPS "Build PMS apps " OFF)
+option(BUILD_CUDA "Build CUDA support" OFF)
 
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -34,7 +35,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(check-torch)
 
 # Set up CUDA if available
-include(check-cuda)
+if(BUILD_CUDA)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+endif()
 
 # NOA library  
 add_library(${PROJECT_NAME} INTERFACE)
