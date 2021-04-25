@@ -30,8 +30,7 @@
 
 #include <cmath>
 
-namespace noa::pms
-{
+namespace noa::pms {
     using Scalar = double;
     using Index = int;
     using UniversalConst = Scalar;
@@ -40,20 +39,21 @@ namespace noa::pms
     using AtomicMass = Scalar;
     using MeanExcitation = Scalar;
     using AtomicNumber = Index;
-    struct AtomicElement
-    {
-        AtomicMass A;
-        MeanExcitation I;
+
+    template<typename Dtype>
+    struct AtomicElement {
+        Dtype A;
+        Dtype I;
         AtomicNumber Z;
     };
+
     using MaterialDensity = Scalar;
     using Energy = Scalar;
     using EnergyTransfer = Scalar; // Relative energy transfer
     using ComponentFraction = Scalar;
     using LarmorFactor = Scalar;
 
-    struct MaterialDensityEffect
-    {
+    struct MaterialDensityEffect {
         Scalar a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
     };
 
@@ -75,10 +75,11 @@ namespace noa::pms
     constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
 
     // Common elements:
-    constexpr AtomicElement STANDARD_ROCK = AtomicElement{
-        22.,       // g/mol
-        0.1364E-6, // GeV
-        11};
+    constexpr AtomicElement<Scalar> STANDARD_ROCK =
+            AtomicElement<Scalar>{
+                    22.,       // g/mol
+                    0.1364E-6, // GeV
+                    11};
 
     constexpr Energy KIN_CUTOFF = 1E-9;           // GeV, energy cutoff used in relativistic kinematics
     constexpr Scalar EHS_PATH_MAX = 1E+9;         // kg/m^2, max inverse path length for Elastic Hard Scattering (EHS) events
@@ -86,6 +87,7 @@ namespace noa::pms
     constexpr Scalar MAX_SOFT_ANGLE = 1E+00;      // degrees, max deflection angle for a soft scattering event
     constexpr Energy DCS_MODEL_MIN_KINETIC = 10.; // GeV, Minimum kinetic energy for using the DCS model
 
-    inline const Scalar MAX_MU0 = 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
+    inline const Scalar MAX_MU0 =
+            0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
 
 } // namespace noa::pms

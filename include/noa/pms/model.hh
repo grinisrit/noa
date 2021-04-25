@@ -38,7 +38,7 @@
 namespace noa::pms {
     using namespace torch::indexing;
 
-    using Elements = std::vector<AtomicElement>;
+    using Elements = std::vector<AtomicElement<Scalar>>;
     using ElementId = Index;
     using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
     using ELementIdsList = torch::Tensor;
@@ -505,11 +505,11 @@ namespace noa::pms {
                   ctau{ctau_} {
         }
 
-        inline const AtomicElement &get_element(const ElementId id) const {
+        inline const AtomicElement<Scalar> &get_element(const ElementId id) const {
             return elements.at(id);
         }
 
-        inline const AtomicElement &get_element(const mdf::ElementName &name) const {
+        inline const AtomicElement<Scalar> &get_element(const mdf::ElementName &name) const {
             return elements.at(element_id.at(name));
         }
 

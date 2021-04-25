@@ -61,7 +61,7 @@ namespace noa::pms::dcs
     using InvLambdas = torch::Tensor;       // Inverse of the mean free grammage
     using ScreeningFactors = torch::Tensor; // Atomic and nuclear screening factors & pole reduction
     using FSpins = torch::Tensor;           // Spin corrections
-    using CMLorentz = torch::Tensor;        // Center of Mass to Observer frame transorm
+    using CMLorentz = torch::Tensor;        // Center of Mass to Observer frame transform
     using AngularCutoff = torch::Tensor;    // Cutoff angle for coulomb scattering
     using HSMeanFreePath = torch::Tensor;   // Hard scattering mean free path
     using TransportCoefs = torch::Tensor;
@@ -73,7 +73,7 @@ namespace noa::pms::dcs
         return [&dcs_kernel](const Result &result,
                              const KineticEnergies &K,
                              const RecoilEnergies &q,
-                             const AtomicElement &element,
+                             const AtomicElement<Scalar> &element,
                              const ParticleMass &mass) {
             const Scalar *pq = q.data_ptr<Scalar>();
             utils::vmapi<Scalar>(
@@ -88,7 +88,7 @@ namespace noa::pms::dcs
     {
         return [&dcs_kernel](const KineticEnergy &K,
                              const EnergyTransfer &xlow,
-                             const AtomicElement &element,
+                             const AtomicElement<Scalar> &element,
                              const ParticleMass &mass,
                              const int min_points,
                              const ComputeCEL cel = false) {
@@ -112,7 +112,7 @@ namespace noa::pms::dcs
         return [&dcs_kernel](const Result &result,
                              const KineticEnergies &K,
                              const EnergyTransfer &xlow,
-                             const AtomicElement &element,
+                             const AtomicElement<Scalar> &element,
                              const ParticleMass &mass,
                              const int min_points,
                              const ComputeCEL cel = false) {
@@ -131,10 +131,10 @@ namespace noa::pms::dcs
      */
     inline const auto default_bremsstrahlung = [](const KineticEnergy &K,
                                                   const RecoilEnergy &q,
-                                                  const AtomicElement &element,
+                                                  const AtomicElement<Scalar> &element,
                                                   const ParticleMass &mass) {
         const int Z = element.Z;
-        const auto A = element.A;
+        const Scalar A = element.A;
         const Scalar me = ELECTRON_MASS;
         const Scalar sqrte = 1.648721271;
         const Scalar phie_factor = mass / (me * me * sqrte);
@@ -178,7 +178,7 @@ namespace noa::pms::dcs
      */
     inline const auto default_pair_production = [](const KineticEnergy &K,
                                                    const RecoilEnergy &q,
-                                                   const AtomicElement &element,
+                                                   const AtomicElement<Scalar> &element,
                                                    const ParticleMass &mass) {
         const int Z = element.Z;
         const Scalar A = element.A;
@@ -426,7 +426,7 @@ namespace noa::pms::dcs
      */
     inline const auto default_photonuclear = [](const KineticEnergy &K,
                                                 const RecoilEnergy &q,
-                                                const AtomicElement &element,
+                                                const AtomicElement<Scalar> &element,
                                                 const ParticleMass &mass) {
         if (dcs_photonuclear_check(K, q))
             return 0.;
@@ -472,7 +472,7 @@ namespace noa::pms::dcs
      */
     inline const auto default_ionisation = [](const KineticEnergy &K,
                                               const RecoilEnergy &q,
-                                              const AtomicElement &element,
+                                              const AtomicElement<Scalar> &element,
                                               const ParticleMass &mass) {
         const Scalar A = element.A;
         const int Z = element.Z;
@@ -515,7 +515,7 @@ namespace noa::pms::dcs
      */
     inline const auto analytic_integral_ionisation = [](const KineticEnergy &K,
                                                         const EnergyTransfer &xlow,
-                                                        const AtomicElement &element,
+                                                        const AtomicElement<Scalar> &element,
                                                         const ParticleMass &mass,
                                                         const ComputeCEL cel = false) {
         const Scalar P2 = K * (K + 2. * mass);
@@ -559,7 +559,7 @@ namespace noa::pms::dcs
     {
         return [&dcs_kernel](const KineticEnergy &K,
                              const EnergyTransfer &xlow,
-                             const AtomicElement &element,
+                             const AtomicElement<Scalar> &element,
                              const ParticleMass &mass,
                              const int min_points,
                              const ComputeCEL cel = false) {
@@ -585,7 +585,7 @@ namespace noa::pms::dcs
                                       const Result &result,
                                       const KineticEnergies &K,
                                       const EnergyTransfer &xlow,
-                                      const AtomicElement &element,
+                                      const AtomicElement<Scalar> &element,
                                       const ParticleMass &mass,
                                       const int min_points,
                                       const ComputeCEL cel = false)
@@ -645,7 +645,7 @@ namespace noa::pms::dcs
         const Thresholds &Xt,
         const KineticEnergies &K,
         const EnergyTransfer &xlow,
-        const AtomicElement &element,
+        const AtomicElement<Scalar> &element,
         const ParticleMass &mass,
         const ThresholdIndex th_i)
     {
@@ -690,7 +690,7 @@ namespace noa::pms::dcs
         const Thresholds &Xt,
         const KineticEnergies &K,
         const EnergyTransfer &xlow,
-        const AtomicElement &element,
+        const AtomicElement<Scalar> &element,
         const ParticleMass &mass,
         ThresholdIndex th_i)
     {
@@ -708,7 +708,7 @@ namespace noa::pms::dcs
      */
     inline Scalar coulomb_frame_parameters(Scalar *fCM,
                                            const KineticEnergy &K,
-                                           const AtomicElement &element,
+                                           const AtomicElement<Scalar> &element,
                                            const ParticleMass &mass)
     {
         Scalar kinetic0;
@@ -749,7 +749,7 @@ namespace noa::pms::dcs
      */
     inline Scalar coulomb_wentzel_path(const Scalar &screening,
                                        const KineticEnergy &K,
-                                       const AtomicElement &element,
+                                       const AtomicElement<Scalar> &element,
                                        const ParticleMass &mass)
     {
         const Scalar d = K * (K + 2. * mass) /
@@ -763,7 +763,7 @@ namespace noa::pms::dcs
      */
     inline Scalar coulomb_screening_parameters(Scalar *pscreen,
                                                const KineticEnergy &K,
-                                               const AtomicElement &element,
+                                               const AtomicElement<Scalar> &element,
                                                const ParticleMass &mass)
     {
         // Nuclear screening
@@ -832,7 +832,7 @@ namespace noa::pms::dcs
             const FSpins &fspin,
             const InvLambdas &invlambda,
             const KineticEnergies &K,
-            const AtomicElement &element,
+            const AtomicElement<Scalar> &element,
             const ParticleMass &mass) {
             const int nkin = K.numel();
             Scalar *pK = K.data_ptr<Scalar>();
@@ -1145,7 +1145,7 @@ namespace noa::pms::dcs
      */
     inline Scalar transverse_transport_ionisation(
         const KineticEnergy &K,
-        const AtomicElement &element,
+        const AtomicElement<Scalar> &element,
         const ParticleMass &mass)
     {
         // Soft close interactions, restricted to X_FRACTION.
@@ -1178,7 +1178,7 @@ namespace noa::pms::dcs
      */
     inline Scalar transverse_transport_photonuclear(
         const KineticEnergy &K,
-        const AtomicElement &element,
+        const AtomicElement<Scalar> &element,
         const ParticleMass &mass)
     {
         // Integration over the K transfer, q, done with a log sampling.
@@ -1224,7 +1224,7 @@ namespace noa::pms::dcs
     inline const auto default_soft_scattering =
         [](const Result &ms1,
            const KineticEnergies &K,
-           const AtomicElement &element,
+           const AtomicElement<Scalar> &element,
            const ParticleMass &mass) {
             utils::vmap<Scalar>(
                 K,
@@ -1409,7 +1409,7 @@ namespace noa::pms::dcs
         const KineticEnergies &K,
         const EnergyTransfer &xlow,
         const EnergyTransfer &model_max,
-        const AtomicElement &element,
+        const AtomicElement<Scalar> &element,
         const ParticleMass &mass)
     {
         const int nkin = K.numel();
@@ -1515,7 +1515,7 @@ namespace noa::pms::dcs
         const KineticEnergies &K,
         const EnergyTransfer &xlow,
         const EnergyTransfer &model_max,
-        const AtomicElement &element,
+        const AtomicElement<Scalar> &element,
         const ParticleMass &mass)
     {
         const auto &[br, pp, ph, _] = del_kernels;

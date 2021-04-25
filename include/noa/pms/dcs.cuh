@@ -37,9 +37,11 @@ namespace noa::pms::dcs::pumas::cuda {
     __device__ __forceinline__ Dtype bremsstrahlung(
             const Dtype K,
             const Dtype q,
-            const int Z,
-            const Dtype A,
+            const AtomicElement<Dtype> element,
             const Dtype mass) {
+
+        const int Z = element.Z;
+        const Dtype A = element.A;
 
         const Dtype me = ELECTRON_MASS;
         const Dtype sqrte = 1.648721271;

@@ -9,22 +9,21 @@ namespace {
             Dtype *res,
             Dtype *kinetic_energies,
             Dtype *recoil_energies,
-            const int n, const int Z, const Dtype A, Dtype mass) {
+            const int n, const AtomicElement<Dtype> element,  Dtype mass) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index < n)
             res[index] = dcs::pumas::cuda::bremsstrahlung(
-                    kinetic_energies[index], recoil_energies[index], Z, A, mass);
+                    kinetic_energies[index], recoil_energies[index], element, mass);
     }
 }
-
 
 template<>
 void bremsstrahlung_cuda<double>(
         const torch::Tensor &result,
         const torch::Tensor &kinetic_energies,
         const torch::Tensor &recoil_energies,
-        const AtomicElement &element,
-        const ParticleMass &mass) {
+        const AtomicElement<double> &element,
+        const double &mass) {
     int nkin = kinetic_energies.size(0);
     int min_block = 32;
     int max_block = 1024;
@@ -35,6 +34,6 @@ void bremsstrahlung_cuda<double>(
             result.data_ptr<double>(),
             kinetic_energies.data_ptr<double>(),
             recoil_energies.data_ptr<double>(), nkin,
-            element.Z, element.A, mass);
+            element, mass);
 }
 
