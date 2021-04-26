@@ -12,4 +12,3 @@ void bremsstrahlung_cuda(
         const torch::Tensor &recoil_energies,
         const AtomicElement<pms::Scalar> &element,
         const pms::ParticleMass &mass);
-

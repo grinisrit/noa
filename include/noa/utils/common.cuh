@@ -33,10 +33,32 @@ namespace noa::utils::cuda {
     constexpr int MIN_BLOCK = 32;
     constexpr int MAX_BLOCK = 1024;
 
-    inline int num_treads(int64_t n){
-        int thread_blocks = (n + MIN_BLOCK - 1) / MIN_BLOCK;
+    inline std::tuple<int, int> get_grid(int num_tasks) {
+        int thread_blocks = (num_tasks + MIN_BLOCK - 1) / MIN_BLOCK;
         int num_threads = std::min(MIN_BLOCK * thread_blocks, MAX_BLOCK);
-        return num_threads;
+        return std::make_tuple((num_tasks + num_threads - 1) / num_threads, num_threads);
     }
+
+    template<typename Kernel>
+    __global__ void launch_kernel(const Kernel kernel, const int num_tasks) {
+        int i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i < num_tasks) kernel(i);
+    }
+
+    template<typename Dtype, typename Lambda>
+    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        Dtype *pres = result.data_ptr<Dtype>();
+
+        auto n = result.numel();
+        auto [blocks, threads] = get_grid(n);
+
+        auto lambda_kernel = [pres, lambda, pvals] __device__(const int i){
+            pres[i] = lambda(i, pvals[i]);
+        };
+        launch_kernel<<<blocks, threads>>>(lambda_kernel, n);
+    }
+
+
 
 }
