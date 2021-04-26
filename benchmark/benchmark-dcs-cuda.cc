@@ -14,9 +14,8 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCUDA)
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
-        bremsstrahlung_cuda<Scalar>(result, kinetic_energies, recoil_energies, element, mu);
+        bremsstrahlung_cuda(result, kinetic_energies, recoil_energies, element, mu);
 }
-
 
 BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCUDA)
 (benchmark::State &state) {
@@ -26,5 +25,5 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCUDA)
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
-        bremsstrahlung_cuda<Scalar>(result, kinetic_energies, recoil_energies, element, mu);
+        bremsstrahlung_cuda(result, kinetic_energies, recoil_energies, element, mu);
 }

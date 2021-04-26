@@ -30,7 +30,9 @@ add_dependencies(noa_test test_data)
 
 # Link libraries
 target_link_libraries(noa_test PRIVATE gtest ${PROJECT_NAME})
-target_compile_options(noa_test PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_compile_options(noa_test
+        PRIVATE -Wall -Wextra -Wpedantic -O3
+        $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
 
 
 # Set up test

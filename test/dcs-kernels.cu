@@ -1,39 +1,39 @@
 #include "dcs-kernels.hh"
 
 #include <noa/pms/dcs.cuh>
-
+#include <noa/utils/common.cuh>
 
 namespace {
-    template<typename Dtype>
+
     __global__ void bremsstrahlung_cuda_kernel(
-            Dtype *res,
-            Dtype *kinetic_energies,
-            Dtype *recoil_energies,
-            const int n, const AtomicElement<Dtype> element,  Dtype mass) {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index < n)
-            res[index] = dcs::pumas::cuda::bremsstrahlung(
-                    kinetic_energies[index], recoil_energies[index], element, mass);
+            Scalar *pres,
+            const Scalar *pkin,
+            const Scalar *pq,
+            const AtomicElement <Scalar> element,
+            Scalar mass,
+            const int64_t n) {
+        int i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i < n)
+            pres[i] = dcs::cuda::pumas::bremsstrahlung(pkin[i], pq[i], element, mass);
     }
 }
 
-template<>
-void bremsstrahlung_cuda<double>(
+
+void bremsstrahlung_cuda(
         const torch::Tensor &result,
         const torch::Tensor &kinetic_energies,
         const torch::Tensor &recoil_energies,
-        const AtomicElement<double> &element,
-        const double &mass) {
-    int nkin = kinetic_energies.size(0);
-    int min_block = 32;
-    int max_block = 1024;
-    int thread_blocks = (nkin + min_block - 1) / min_block;
-    int num_threads = std::min(min_block * thread_blocks, max_block);
-    int num_blocks = (nkin + num_threads - 1) / num_threads;
-    bremsstrahlung_cuda_kernel<double><<<num_blocks, num_threads>>>(
-            result.data_ptr<double>(),
-            kinetic_energies.data_ptr<double>(),
-            recoil_energies.data_ptr<double>(), nkin,
-            element, mass);
+        const AtomicElement <Scalar> &element,
+        const ParticleMass &mass) {
+    int64_t n = kinetic_energies.numel();
+
+    int num_threads = utils::cuda::num_treads(n);
+    int num_blocks = (n + num_threads - 1) / num_threads;
+
+    const Scalar *pkin = kinetic_energies.data_ptr<Scalar>();
+    const Scalar *pq = recoil_energies.data_ptr<Scalar>();
+    Scalar *pres = result.data_ptr<Scalar>();
+
+    bremsstrahlung_cuda_kernel<<<num_blocks, num_threads>>>(pres, pkin, pq, element, mass, n);
 }
 

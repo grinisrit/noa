@@ -8,28 +8,7 @@
 using namespace noa::pms;
 using namespace noa::pms::dcs;
 
-BENCHMARK_F(DCSBenchmark, Bremsstrahlung)
-(benchmark::State &state)
-{
-    const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
-    const auto q = DCSData::get_recoil_energies()[65].item<Scalar>();
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        default_bremsstrahlung(k, q, element, mu);
-}
 
-BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCPUModel)
-(benchmark::State &state)
-{
-    const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
-    const auto k = DCSData::get_kinetic_energies();
-    const auto q = DCSData::get_recoil_energies();
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        map_kernel(default_bremsstrahlung)(r, k, q, element, mu);
-}
 
 BENCHMARK_F(DCSBenchmark, DELBremsstrahlung)
 (benchmark::State &state)
