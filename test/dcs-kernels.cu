@@ -12,9 +12,8 @@ void bremsstrahlung_cuda(
         const ParticleMass &mass) {
 
     const Scalar *pq = recoil_energies.data_ptr<Scalar>();
-    auto brems = [pq, element, mass] __device__(const int i, const Scalar &k){
+    auto brems = [pq, element, mass] __device__(const int i, const Scalar &k) {
         return dcs::cuda::pumas::bremsstrahlung(k, pq[i], element, mass);
     };
     utils::cuda::vmapi<Scalar>(kinetic_energies, brems, result);
 }
-

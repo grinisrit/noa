@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <torch/types.h>
+
 namespace noa::utils::cuda {
 
     constexpr int MIN_BLOCK = 32;
@@ -44,31 +46,50 @@ namespace noa::utils::cuda {
         int i = blockIdx.x * blockDim.x + threadIdx.x;
         if (i < num_tasks) kernel(i);
     }
-/*
-    template<typename Dtype, typename Lambda>
-    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        auto result = torch::zeros_like(values);
-        Dtype *pres = result.data_ptr<Dtype>();
-        const int64_t n = result.numel();
-        for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(pvals[i]);
-        return result;
-    }*/
 
     template<typename Dtype, typename Lambda>
-    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
+    inline void for_eachi(const Lambda &lambda, const torch::Tensor &result) {
         Dtype *pres = result.data_ptr<Dtype>();
 
         auto n = result.numel();
         auto [blocks, threads] = get_grid(n);
 
-        auto lambda_kernel = [pres, lambda, pvals] __device__(const int i){
-            pres[i] = lambda(i, pvals[i]);
+        auto lambda_kernel = [pres, lambda] __device__(const int i){
+            lambda(i, pres[i]);
         };
         launch_kernel<<<blocks, threads>>>(lambda_kernel, n);
     }
 
+    template<typename Dtype, typename Lambda>
+    inline void for_each(const Lambda &lambda, const torch::Tensor &result) {
+        for_eachi<Dtype>([lambda] __device__(const int, Dtype &k){lambda(k);}, result);
+    }
+
+    template<typename Dtype, typename Lambda>
+    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        for_eachi<Dtype>([lambda, pvals] __device__(const int i, Dtype &k){k = lambda(i, pvals[i]);}, result);
+    }
+
+    template<typename Dtype, typename Lambda>
+    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+        vmapi<Dtype>(values,
+                     [lambda] __device__(const int, const Dtype &k){ return lambda(k);},
+                     result);
+    }
+
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda) {
+        auto result = torch::zeros_like(values);
+        vmapi<Dtype>(values, lambda, result);
+        return result;
+    }
+
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
+        auto result = torch::zeros_like(values);
+        vmap<Dtype>(values, lambda, result);
+        return result;
+    }
 
 }
