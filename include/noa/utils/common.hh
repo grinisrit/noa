@@ -97,68 +97,30 @@ namespace noa::utils {
     }
 
     template<typename Dtype, typename Lambda>
-    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        auto result = torch::zeros_like(values);
+    inline void for_eachi(const Lambda &lambda, const torch::Tensor &result) {
         Dtype *pres = result.data_ptr<Dtype>();
         const int64_t n = result.numel();
         for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(pvals[i]);
-        return result;
+            lambda(i, pres[i]);
     }
 
     template<typename Dtype, typename Lambda>
-    inline torch::Tensor pvmap(const torch::Tensor &values, const Lambda &lambda) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        auto result = torch::zeros_like(values);
+    inline void pfor_eachi(const Lambda &lambda, const torch::Tensor &result) {
         Dtype *pres = result.data_ptr<Dtype>();
         const int64_t n = result.numel();
-#pragma omp parallel for default(none) shared(n, pres, lambda, pvals)
+#pragma omp parallel for default(none) shared(n, lambda, pres)
         for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(pvals[i]);
-        return result;
+            lambda(i, pres[i]);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        Dtype *pres = result.data_ptr<Dtype>();
-        const int64_t n = result.numel();
-        for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(pvals[i]);
+    inline void for_each(const Lambda &lambda, const torch::Tensor &result) {
+        for_eachi([&lambda](const int64_t, Dtype &k){lambda(k);}, result);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pvmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        Dtype *pres = result.data_ptr<Dtype>();
-        const int64_t n = result.numel();
-#pragma omp parallel for default(none) shared(n, pres, lambda, pvals)
-        for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(pvals[i]);
-    }
-
-    template<typename Dtype, typename Lambda>
-    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        auto result = torch::zeros_like(values);
-        Dtype *pres = result.data_ptr<Dtype>();
-        const int64_t n = result.numel();
-        for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(i, pvals[i]);
-        return result;
-    }
-
-    template<typename Dtype, typename Lambda>
-    inline torch::Tensor pvmapi(const torch::Tensor &values, const Lambda &lambda) {
-        const Dtype *pvals = values.data_ptr<Dtype>();
-        auto result = torch::zeros_like(values);
-        Dtype *pres = result.data_ptr<Dtype>();
-        const int64_t n = result.numel();
-#pragma omp parallel for default(none) shared(n, pres, lambda, pvals)
-        for (int64_t i = 0; i < n; i++)
-            pres[i] = lambda(i, pvals[i]);
-        return result;
+    inline void pfor_each(const Lambda &lambda, const torch::Tensor &result) {
+        pfor_eachi([&lambda](const int64_t, Dtype &k){lambda(k);}, result);
     }
 
     template<typename Dtype, typename Lambda>
@@ -180,39 +142,65 @@ namespace noa::utils {
             pres[i] = lambda(i, pvals[i]);
     }
 
+
     template<typename Dtype, typename Lambda>
-    inline void for_each(const torch::Tensor &values, const Lambda &lambda) {
+    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
-        const int64_t n = values.numel();
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int64_t n = result.numel();
         for (int64_t i = 0; i < n; i++)
-            lambda(pvals[i]);
+            pres[i] = lambda(pvals[i]);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pfor_each(const torch::Tensor &values, const Lambda &lambda) {
+    inline void pvmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
-        const int64_t n = values.numel();
-#pragma omp parallel for default(none) shared(n, lambda, pvals)
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int64_t n = result.numel();
+#pragma omp parallel for default(none) shared(n, pres, lambda, pvals)
         for (int64_t i = 0; i < n; i++)
-            lambda(pvals[i]);
+            pres[i] = lambda(pvals[i]);
+    }
+
+
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
+        auto result = torch::zeros_like(values);
+        vmap<Dtype>(values, lambda, result);
+        return result;
     }
 
     template<typename Dtype, typename Lambda>
-    inline void for_eachi(const torch::Tensor &values, const Lambda &lambda) {
+    inline torch::Tensor pvmap(const torch::Tensor &values, const Lambda &lambda) {
+        auto result = torch::zeros_like(values);
+        pvmap<Dtype>(values, lambda, result);
+        return result;
+    }
+
+
+
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda) {
         const Dtype *pvals = values.data_ptr<Dtype>();
-        const int64_t n = values.numel();
+        auto result = torch::zeros_like(values);
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int64_t n = result.numel();
         for (int64_t i = 0; i < n; i++)
-            lambda(i, pvals[i]);
+            pres[i] = lambda(i, pvals[i]);
+        return result;
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pfor_eachi(const torch::Tensor &values, const Lambda &lambda) {
+    inline torch::Tensor pvmapi(const torch::Tensor &values, const Lambda &lambda) {
         const Dtype *pvals = values.data_ptr<Dtype>();
-        const int64_t n = values.numel();
-#pragma omp parallel for default(none) shared(n, lambda, pvals)
-        for (int64_t i = 0; i < n; i++)
-            lambda(i, pvals[i]);
+        auto result = torch::zeros_like(values);
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int64_t n = result.numel();
+#pragma omp parallel for default(none) shared(n, pres, lambda, pvals)
+        for (int64_t i = 0; i < n; i++) pres[i] = lambda(i, pvals[i]);
+        return result;
     }
+
 
     inline torch::Tensor relative_error(const torch::Tensor &computed, const torch::Tensor &expected) {
         auto res = torch::Tensor{};

@@ -7,7 +7,7 @@
 
 using namespace noa::pms;
 
-BENCHMARK_F(DCSBenchmark, BremsstrahlungNEW)
+BENCHMARK_F(DCSBenchmark, Bremsstrahlung)
 (benchmark::State &state)
 {
     const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();

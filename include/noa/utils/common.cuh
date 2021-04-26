@@ -44,6 +44,17 @@ namespace noa::utils::cuda {
         int i = blockIdx.x * blockDim.x + threadIdx.x;
         if (i < num_tasks) kernel(i);
     }
+/*
+    template<typename Dtype, typename Lambda>
+    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
+        const Dtype *pvals = values.data_ptr<Dtype>();
+        auto result = torch::zeros_like(values);
+        Dtype *pres = result.data_ptr<Dtype>();
+        const int64_t n = result.numel();
+        for (int64_t i = 0; i < n; i++)
+            pres[i] = lambda(pvals[i]);
+        return result;
+    }*/
 
     template<typename Dtype, typename Lambda>
     inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
@@ -58,7 +69,6 @@ namespace noa::utils::cuda {
         };
         launch_kernel<<<blocks, threads>>>(lambda_kernel, n);
     }
-
 
 
 }
