@@ -16,7 +16,7 @@ include(conda-omp)
 
 set(NOA_BENCH_SRC
         benchmark-dcs.cc
-        benchmark-dcs-model.cc)
+        benchmark-pumas-model.cc)
 
 # Main test executables
 if (BUILD_CUDA)

@@ -1,6 +1,6 @@
 #include "noa-bench.hh"
 
-#include <noa/pms/dcs_model.hh>
+#include <noa/pms/pumas-model.hh>
 #include <noa/pms/constants.hh>
 
 #include <benchmark/benchmark.h>

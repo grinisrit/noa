@@ -190,7 +190,7 @@ namespace noa::utils {
     }
 
     inline torch::Tensor mean_error(const torch::Tensor &computed, const torch::Tensor &expected) {
-        return torch::abs(computed - expected).sum() / computed.numel();
+        return torch::abs(computed - expected).mean();
     }
 
 } // namespace noa::utils

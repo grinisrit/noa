@@ -1,5 +1,5 @@
 #include <noa/pms/model.hh>
-#include <noa/pms/dcs_model.hh>
+#include <noa/pms/pumas-model.hh>
 
 #include <iostream>
 #include <chrono>

@@ -17,7 +17,7 @@ set(NOA_TEST_SRC
         main.cc
         test-ghmc.cc
         test-dcs.cc
-        test-dcs-model.cc)
+        test-pumas-model.cc)
 
 # Main test executables
 if (BUILD_CUDA)
