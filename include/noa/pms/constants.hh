@@ -36,14 +36,12 @@ namespace noa::pms {
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
     using DecayLength = Scalar;
-    using AtomicMass = Scalar;
-    using MeanExcitation = Scalar;
     using AtomicNumber = Index;
 
     template<typename Dtype>
     struct AtomicElement {
-        Dtype A;
-        Dtype I;
+        Dtype A; // Atomic mass
+        Dtype I; // Mean Excitation
         AtomicNumber Z;
     };
 

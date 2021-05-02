@@ -93,7 +93,7 @@ namespace noa::pms {
     };
 
     template<typename Physics, typename DCSKernels>
-    class PhysicsModel {
+    class PhysicsModelRef {
         using DELKernels = typename std::tuple_element<0, DCSKernels>::type;
         using TTKernels = typename std::tuple_element<1, DCSKernels>::type;
 
@@ -496,7 +496,7 @@ namespace noa::pms {
         const ParticleMass mass;
         const DecayLength ctau;
 
-        PhysicsModel(
+        PhysicsModelRef(
                 DCSKernels dcs_kernels_,
                 ParticleMass mass_,
                 DecayLength ctau_)
@@ -516,7 +516,7 @@ namespace noa::pms {
         inline const mdf::ElementName &get_element_name(const ElementId id) const {
             return element_name.at(id);
         }
-        
+
         inline int num_elements() const {
             return elements.size();
         }
@@ -649,8 +649,8 @@ namespace noa::pms {
     };
 
     template<typename DCSKernels>
-    class MuonPhysics : public PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels> {
-        friend class PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>;
+    class MuonPhysicsRef : public PhysicsModelRef<MuonPhysicsRef<DCSKernels>, DCSKernels> {
+        friend class PhysicsModelRef<MuonPhysicsRef<DCSKernels>, DCSKernels>;
 
         template<typename Energy_t>
         inline Energy_t scale_energy(const Energy_t &energy) const {
@@ -684,39 +684,40 @@ namespace noa::pms {
         }
 
     public:
-        explicit MuonPhysics(DCSKernels dcs_kernels_,
-                             ParticleMass mass_ = MUON_MASS,
-                             DecayLength ctau_ = MUON_CTAU)
-                : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
+        explicit MuonPhysicsRef(DCSKernels dcs_kernels_,
+                                ParticleMass mass_ = MUON_MASS,
+                                DecayLength ctau_ = MUON_CTAU)
+                : PhysicsModelRef<MuonPhysicsRef<DCSKernels>, DCSKernels>(
                 dcs_kernels_, mass_, ctau_) {
         }
     };
 
     template<typename DCSKernels>
-    struct TauPhysics : MuonPhysics<DCSKernels> {
-        explicit TauPhysics(DCSKernels dcs_kernels_,
-                   ParticleMass mass_ = TAU_MASS,
-                   DecayLength ctau_ = TAU_CTAU)
-                : PhysicsModel<MuonPhysics<DCSKernels>, DCSKernels>(
+    struct TauPhysicsRef : MuonPhysicsRef<DCSKernels> {
+        explicit TauPhysicsRef(DCSKernels dcs_kernels_,
+                               ParticleMass mass_ = TAU_MASS,
+                               DecayLength ctau_ = TAU_CTAU)
+                : PhysicsModelRef<MuonPhysicsRef<DCSKernels>, DCSKernels>(
                 dcs_kernels_, mass_, ctau_) {
         }
     };
 
     template<typename PumasPhysics, typename DCSKernels>
     inline std::optional<PumasPhysics> load_pumas_physics_from(
-            const mdf::ParticleName &particle_name, const mdf::MDFFilePath &mdf,
-            const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels) {
+            const mdf::MDFFilePath &mdf,
+            const mdf::DEDXFolderPath &dedx,
+            const DCSKernels &dcs_kernels) {
         if (!utils::check_path_exists(mdf))
             return std::nullopt;
         if (!utils::check_path_exists(dedx))
             return std::nullopt;
 
-        auto mdf_settings = mdf::parse_settings(mdf::pms, mdf);
+        auto mdf_settings = mdf::parse_settings(mdf);
         if (!mdf_settings.has_value())
             return std::nullopt;
 
-        auto dedx_data = mdf::parse_materials(
-                std::get<mdf::Materials>(mdf_settings.value()), dedx, particle_name);
+        auto dedx_data = mdf::parse_materials_data(
+                std::get<mdf::Materials>(mdf_settings.value()), dedx);
         if (!dedx_data.has_value())
             return std::nullopt;
 
@@ -728,9 +729,9 @@ namespace noa::pms {
     }
 
     template<typename DCSKernels>
-    inline std::optional<MuonPhysics<DCSKernels>> load_muon_physics_from(
+    inline std::optional<MuonPhysicsRef<DCSKernels>> load_muon_physics_from(
             const mdf::MDFFilePath &mdf, const mdf::DEDXFolderPath &dedx, const DCSKernels &dcs_kernels) {
-        return load_pumas_physics_from<MuonPhysics<DCSKernels>, DCSKernels>(mdf::Muon, mdf, dedx, dcs_kernels);
+        return load_pumas_physics_from<MuonPhysicsRef<DCSKernels>, DCSKernels>(mdf, dedx, dcs_kernels);
     }
 
 } // namespace noa::pms
