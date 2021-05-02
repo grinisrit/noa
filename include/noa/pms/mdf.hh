@@ -61,7 +61,7 @@ namespace noa::pms::mdf {
     using ParticleName = std::string;
 
     struct DEDXMaterialCoefficients {
-        MaterialDensityEffect density_effect;
+        MaterialDensityEffect<Scalar> density_effect;
         Scalar ZoA, I;
     };
     struct DEDXTable {
@@ -318,7 +318,7 @@ namespace noa::pms::mdf {
 
         auto table = parse_dedx_table(dedx_stream);
         if (!table.has_value()) {
-            std::cerr << "DEDX Table corrupted in " << dedx_file_path
+            std::cerr << "DEDX TableRef corrupted in " << dedx_file_path
                       << std::endl;
             return std::nullopt;
         }

@@ -32,7 +32,34 @@
 
 namespace noa::pms {
 
+    using KineticEnergies = torch::Tensor;
+    using RecoilEnergies = torch::Tensor;
+    using Table = torch::Tensor;  // Generic table
+    using Result = torch::Tensor; // Receiver tensor for calculations result
 
+    using ElementId = Index;
+    using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
+    using ELementIdsList = torch::Tensor;
+    using ElementsFractions = torch::Tensor;
+    using ElementNames = std::vector<mdf::ElementName>;
 
+    struct Material {
+        ELementIdsList element_ids;
+        ElementsFractions fractions;
+    };
+    using Materials = std::vector<Material>;
+    using MaterialId = Index;
+    using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
+    using MaterialNames = std::vector<mdf::MaterialName>;
+
+    using MaterialDensities = torch::Tensor;
+    using MaterialRelativeElectronicDensities = torch::Tensor;
+    using MaterialMeanExcitationEnergies = torch::Tensor;
+
+    template<typename Dtype, typename Physics>
+    class Model {
+        using Elements = std::vector<AtomicElement<Dtype>>;
+
+    };
 
 } //namespace noa::pms

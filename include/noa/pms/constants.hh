@@ -51,8 +51,9 @@ namespace noa::pms {
     using ComponentFraction = Scalar;
     using LarmorFactor = Scalar;
 
+    template<typename Dtype>
     struct MaterialDensityEffect {
-        Scalar a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
+        Dtype a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
     };
 
     constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;

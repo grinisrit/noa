@@ -28,60 +28,46 @@
 
 #pragma once
 
-#include "noa/pms/mdf.hh"
+#include "noa/pms/pms.hh"
 #include "noa/pms/pumas-model.hh"
 #include "noa/pms/constants.hh"
 #include "noa/utils/common.hh"
 
 #include <torch/torch.h>
 
+
 namespace noa::pms {
     using namespace torch::indexing;
 
-    using Elements = std::vector<AtomicElement<Scalar>>;
-    using ElementId = Index;
-    using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
-    using ELementIdsList = torch::Tensor;
-    using ElementsFractions = torch::Tensor;
-    using ElementNames = std::vector<mdf::ElementName>;
-
-    struct Material {
-        ELementIdsList element_ids;
-        ElementsFractions fractions;
-    };
-    using Materials = std::vector<Material>;
-    using MaterialId = Index;
-    using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
-    using MaterialNames = std::vector<mdf::MaterialName>;
-
+    using ElementsRef = std::vector<AtomicElement<Scalar>>;
     using MaterialsDensity = torch::Tensor;
     using MaterialsZoA = torch::Tensor;
     using MaterialsI = torch::Tensor;
-    using MaterialsDensityEffect = std::vector<MaterialDensityEffect>;
+    using MaterialsDensityEffectRef = std::vector<MaterialDensityEffect<Scalar>>;
 
-    using Table = dcs::Table;
+    using TableRef = dcs::Table;
 
-    using TableK = Table;                // Kinetic energy tabulations
-    using TableCSn = Table;              // CS normalisation tabulations
-    using TableCSf = std::vector<Table>; // CS fractions by material
-    using TableCS = Table;               // CS for inelastic DELs
-    using TabledE = Table;               // Average energy loss
-    using TabledECSDA = Table;           // Average energy loss in CSDA approx
-    using TableX = Table;                // CSDA grammage range for energy loss
-    using TableXCSDA = Table;            // CSDA grammage range for energy loss in CSDA approx.
-    using TableT = Table;                // Total proper time
-    using TableTCSDA = Table;            // Total proper time in CSDA approx.
-    using TableNIin = Table;             // Interaction lengths
-    using IonisationMax = Table;         // Maximum tabulated a(E)
-    using RadlossMax = Table;            // Maximum tabulated b(E)
-    using TableKt = Table;               // Kinetic threshold for DELs
-    using TableXt = Table;               // Fraction threshold for DELs
-    using TableMu0 = Table;              // Angular cutoff for splitting of Coulomb Scattering
-    using TableLb = Table;               // Interaction lengths for DEL Coulomb events
-    using TableNIel = Table;             // EHS number of interaction lengths
-    using TableMs1 = Table;              // Multiple scattering 1st moment
-    using TableLi = Table;               // Magnetic deflection momenta
-    using DCSData = Table;               // DCS model coefficients
+    using TableK = TableRef;                // Kinetic energy tabulations
+    using TableCSn = TableRef;              // CS normalisation tabulations
+    using TableCSf = std::vector<TableRef>; // CS fractions by material
+    using TableCS = TableRef;               // CS for inelastic DELs
+    using TabledE = TableRef;               // Average energy loss
+    using TabledECSDA = TableRef;           // Average energy loss in CSDA approx
+    using TableX = TableRef;                // CSDA grammage range for energy loss
+    using TableXCSDA = TableRef;            // CSDA grammage range for energy loss in CSDA approx.
+    using TableT = TableRef;                // Total proper time
+    using TableTCSDA = TableRef;            // Total proper time in CSDA approx.
+    using TableNIin = TableRef;             // Interaction lengths
+    using IonisationMax = TableRef;         // Maximum tabulated a(E)
+    using RadlossMax = TableRef;            // Maximum tabulated b(E)
+    using TableKt = TableRef;               // Kinetic threshold for DELs
+    using TableXt = TableRef;               // Fraction threshold for DELs
+    using TableMu0 = TableRef;              // Angular cutoff for splitting of Coulomb Scattering
+    using TableLb = TableRef;               // Interaction lengths for DEL Coulomb events
+    using TableNIel = TableRef;             // EHS number of interaction lengths
+    using TableMs1 = TableRef;              // Multiple scattering 1st moment
+    using TableLi = TableRef;               // Magnetic deflection momenta
+    using DCSData = TableRef;               // DCS model coefficients
 
     struct CoulombWorkspace {
         dcs::TransportCoefs G;
@@ -104,7 +90,7 @@ namespace noa::pms {
 
         c10::TensorOptions tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
 
-        Elements elements;
+        ElementsRef elements;
         ElementIds element_id;
         ElementNames element_name;
 
@@ -115,7 +101,7 @@ namespace noa::pms {
         MaterialsDensity material_density;
         MaterialsZoA material_ZoA;
         MaterialsI material_I;
-        MaterialsDensityEffect material_density_effect;
+        MaterialsDensityEffectRef material_density_effect;
 
         TableK table_K;
         TableCSn table_CSn;
@@ -549,7 +535,7 @@ namespace noa::pms {
             return material_I;
         }
 
-        inline const MaterialsDensityEffect &get_material_density_effect() const {
+        inline const MaterialsDensityEffectRef &get_material_density_effect() const {
             return material_density_effect;
         }
 

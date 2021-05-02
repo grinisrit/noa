@@ -29,17 +29,13 @@
 #pragma once
 
 #include "noa/pms/constants.hh"
+#include "noa/pms/pms.hh"
 #include "noa/utils/common.hh"
 #include "noa/utils/numerics.hh"
 
 #include <torch/types.h>
 
 namespace noa::pms::dcs {
-
-    using KineticEnergies = torch::Tensor;
-    using RecoilEnergies = torch::Tensor;
-    using Table = torch::Tensor;  // Generic table
-    using Result = torch::Tensor; // Receiver tensor for calculations result
 
     template<typename Dtype, typename DCSFunc>
     inline auto vmap(const DCSFunc &dcs_func) {
@@ -49,7 +45,7 @@ namespace noa::pms::dcs {
                            const AtomicElement<Dtype> &element,
                            const Dtype &mass) {
             const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
-            utils::vmapi<Scalar>(
+            utils::vmapi<Dtype>(
                     kinetic_energies,
                     [&](const int64_t i, const auto &k) { return dcs_func(k, recoil_energy[i], element, mass); },
                     result);
@@ -64,7 +60,7 @@ namespace noa::pms::dcs {
                            const AtomicElement<Dtype> &element,
                            const Dtype &mass) {
             const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
-            utils::pvmapi<Scalar>(
+            utils::pvmapi<Dtype>(
                     kinetic_energies,
                     [&](const int64_t i, const auto &k) { return dcs_func(k, recoil_energy[i], element, mass); },
                     result);
