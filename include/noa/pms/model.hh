@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "noa/pms/pms.hh"
+#include "noa/pms/mdf.hh"
 #include "noa/pms/pumas-model.hh"
 #include "noa/pms/constants.hh"
 #include "noa/utils/common.hh"
@@ -38,6 +38,21 @@
 
 namespace noa::pms {
     using namespace torch::indexing;
+
+    using ElementIdRef = Index;
+    using ElementIdsRef = std::unordered_map<mdf::ElementName, ElementIdRef>;
+    using ELementIdsListRef = torch::Tensor;
+    using ElementsFractionsRef = torch::Tensor;
+    using ElementNamesRef = std::vector<mdf::ElementName>;
+
+    struct MaterialRef {
+        ELementIdsListRef element_ids;
+        ElementsFractionsRef fractions;
+    };
+    using MaterialsRef = std::vector<MaterialRef>;
+    using MaterialIdRef = Index;
+    using MaterialIdsRef = std::unordered_map<mdf::MaterialName, MaterialIdRef>;
+    using MaterialNamesRef = std::vector<mdf::MaterialName>;
 
     using ElementsRef = std::vector<AtomicElement<Scalar>>;
     using MaterialsDensity = torch::Tensor;
@@ -91,12 +106,12 @@ namespace noa::pms {
         c10::TensorOptions tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
 
         ElementsRef elements;
-        ElementIds element_id;
-        ElementNames element_name;
+        ElementIdsRef element_id;
+        ElementNamesRef element_name;
 
-        Materials materials;
-        MaterialIds material_id;
-        MaterialNames material_name;
+        MaterialsRef materials;
+        MaterialIdsRef material_id;
+        MaterialNamesRef material_name;
 
         MaterialsDensity material_density;
         MaterialsZoA material_ZoA;
@@ -222,7 +237,7 @@ namespace noa::pms {
                     fracs[iel++] = frac;
                 }
 
-                materials.push_back(Material{el_ids, fracs});
+                materials.push_back(MaterialRef{el_ids, fracs});
                 material_id[name] = id;
                 material_name.push_back(name);
 
@@ -255,7 +270,7 @@ namespace noa::pms {
                     torch::zeros({nel, nkin}, tensor_ops)};
         }
 
-        inline void compute_coulomb_data(const ElementId iel) {
+        inline void compute_coulomb_data(const ElementIdRef iel) {
             const auto &element = elements.at(iel);
             const auto &screen = coulomb_workspace.screening[iel];
             const auto &fspin = coulomb_workspace.fspin[iel];
@@ -318,7 +333,7 @@ namespace noa::pms {
         }
 
         inline dcs::ThresholdIndex compute_dedx_tables(
-                MaterialId imat, mdf::DEDXTable &dedx_table) {
+                MaterialIdRef imat, mdf::DEDXTable &dedx_table) {
             const int nel = materials[imat].element_ids.numel();
             const int nkin = table_K.numel();
 
@@ -390,7 +405,7 @@ namespace noa::pms {
             table_Ms1 = torch::zeros_like(table_Mu0);
         }
 
-        inline void compute_coulomb_scattering_tables(const MaterialId imat) {
+        inline void compute_coulomb_scattering_tables(const MaterialIdRef imat) {
             const auto &elids = materials.at(imat).element_ids;
             const auto &fracs = materials.at(imat).fractions;
             const int nel = elids.numel();
@@ -491,7 +506,7 @@ namespace noa::pms {
                   ctau{ctau_} {
         }
 
-        inline const AtomicElement<Scalar> &get_element(const ElementId id) const {
+        inline const AtomicElement<Scalar> &get_element(const ElementIdRef id) const {
             return elements.at(id);
         }
 
@@ -499,7 +514,7 @@ namespace noa::pms {
             return elements.at(element_id.at(name));
         }
 
-        inline const mdf::ElementName &get_element_name(const ElementId id) const {
+        inline const mdf::ElementName &get_element_name(const ElementIdRef id) const {
             return element_name.at(id);
         }
 
@@ -507,15 +522,15 @@ namespace noa::pms {
             return elements.size();
         }
 
-        inline const Material &get_material(const MaterialId id) const {
+        inline const MaterialRef &get_material(const MaterialIdRef id) const {
             return materials.at(id);
         }
 
-        inline const Material &get_material(const mdf::MaterialName &name) const {
+        inline const MaterialRef &get_material(const mdf::MaterialName &name) const {
             return materials.at(material_id.at(name));
         }
 
-        inline const mdf::MaterialName &get_material_name(const MaterialId id) const {
+        inline const mdf::MaterialName &get_material_name(const MaterialIdRef id) const {
             return material_name.at(id);
         }
 

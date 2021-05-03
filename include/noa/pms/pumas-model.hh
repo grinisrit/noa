@@ -48,8 +48,8 @@ namespace noa::pms::dcs
 
     using KineticEnergy = Energy;
     using RecoilEnergy = Energy;
-    using KineticEnergies = torch::Tensor;
-    using RecoilEnergies = torch::Tensor;
+    using KineticEnergiesRef = torch::Tensor;
+    using RecoilEnergiesRef = torch::Tensor;
     using Table = torch::Tensor;  // Generic table
     using Result = torch::Tensor; // Receiver tensor for calculations result
     using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
@@ -71,8 +71,8 @@ namespace noa::pms::dcs
     inline auto map_kernel(const DCSKernel &dcs_kernel)
     {
         return [&dcs_kernel](const Result &result,
-                             const KineticEnergies &K,
-                             const RecoilEnergies &q,
+                             const KineticEnergiesRef &K,
+                             const RecoilEnergiesRef &q,
                              const AtomicElement<Scalar> &element,
                              const ParticleMass &mass) {
             const Scalar *pq = q.data_ptr<Scalar>();
@@ -110,7 +110,7 @@ namespace noa::pms::dcs
     inline auto map_compute_integral(const DCSKernel &dcs_kernel)
     {
         return [&dcs_kernel](const Result &result,
-                             const KineticEnergies &K,
+                             const KineticEnergiesRef &K,
                              const EnergyTransfer &xlow,
                              const AtomicElement<Scalar> &element,
                              const ParticleMass &mass,
@@ -583,7 +583,7 @@ namespace noa::pms::dcs
     template <typename DELKernels>
     inline auto compute_dcs_integrals(const DELKernels &del_kernels,
                                       const Result &result,
-                                      const KineticEnergies &K,
+                                      const KineticEnergiesRef &K,
                                       const EnergyTransfer &xlow,
                                       const AtomicElement<Scalar> &element,
                                       const ParticleMass &mass,
@@ -643,7 +643,7 @@ namespace noa::pms::dcs
     inline void compute_threshold(
         const DELKernel &dcs_func,
         const Thresholds &Xt,
-        const KineticEnergies &K,
+        const KineticEnergiesRef &K,
         const EnergyTransfer &xlow,
         const AtomicElement<Scalar> &element,
         const ParticleMass &mass,
@@ -688,7 +688,7 @@ namespace noa::pms::dcs
     inline void compute_fractional_thresholds(
         const DELKernels &del_kernels,
         const Thresholds &Xt,
-        const KineticEnergies &K,
+        const KineticEnergiesRef &K,
         const EnergyTransfer &xlow,
         const AtomicElement<Scalar> &element,
         const ParticleMass &mass,
@@ -831,7 +831,7 @@ namespace noa::pms::dcs
             const ScreeningFactors &screening,
             const FSpins &fspin,
             const InvLambdas &invlambda,
-            const KineticEnergies &K,
+            const KineticEnergiesRef &K,
             const AtomicElement<Scalar> &element,
             const ParticleMass &mass) {
             const int nkin = K.numel();
@@ -1223,7 +1223,7 @@ namespace noa::pms::dcs
      */
     inline const auto default_soft_scattering =
         [](const Result &ms1,
-           const KineticEnergies &K,
+           const KineticEnergiesRef &K,
            const AtomicElement<Scalar> &element,
            const ParticleMass &mass) {
             utils::vmap<Scalar>(
@@ -1241,7 +1241,7 @@ namespace noa::pms::dcs
     inline void compute_cel_grammage_integral(
         const Result &result,
         const Table &table_dE,
-        const KineticEnergies &K)
+        const KineticEnergiesRef &K)
     {
         const int nkin = K.numel();
         Scalar *kinetic = K.data_ptr<Scalar>();
@@ -1296,7 +1296,7 @@ namespace noa::pms::dcs
     inline void compute_time_integral(
         const Result &result,
         const Table &table_X,
-        const KineticEnergies &K,
+        const KineticEnergiesRef &K,
         const ParticleMass &mass,
         const MomentumIntegral &I0)
     {
@@ -1325,7 +1325,7 @@ namespace noa::pms::dcs
      *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8311
      */
     inline void compute_kinetic_integral(const Result &result,
-                                  const KineticEnergies &K)
+                                  const KineticEnergiesRef &K)
     {
         const int nkin = K.numel();
         Scalar *pK = K.data_ptr<Scalar>();
@@ -1406,7 +1406,7 @@ namespace noa::pms::dcs
     inline void dcs_model_fit(
         const DELKernel &dcs_func,
         const Result &coeff,
-        const KineticEnergies &K,
+        const KineticEnergiesRef &K,
         const EnergyTransfer &xlow,
         const EnergyTransfer &model_max,
         const AtomicElement<Scalar> &element,
@@ -1512,7 +1512,7 @@ namespace noa::pms::dcs
     inline void compute_dcs_model(
         const DELKernels &del_kernels,
         const Result &result,
-        const KineticEnergies &K,
+        const KineticEnergiesRef &K,
         const EnergyTransfer &xlow,
         const EnergyTransfer &model_max,
         const AtomicElement<Scalar> &element,

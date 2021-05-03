@@ -28,37 +28,99 @@
 
 #pragma once
 
+#include "noa/pms/constants.hh"
 #include "noa/pms/mdf.hh"
 
 namespace noa::pms {
 
-    using KineticEnergies = torch::Tensor;
-    using RecoilEnergies = torch::Tensor;
-    using Table = torch::Tensor;  // Generic table
-    using Result = torch::Tensor; // Receiver tensor for calculations result
-
     using ElementId = Index;
     using ElementIds = std::unordered_map<mdf::ElementName, ElementId>;
-    using ELementIdsList = torch::Tensor;
-    using ElementsFractions = torch::Tensor;
     using ElementNames = std::vector<mdf::ElementName>;
 
+    using ElementIdsList = torch::Tensor;
+    using ElementsFractions = torch::Tensor;
+
+    template<typename Dtype>
     struct Material {
-        ELementIdsList element_ids;
+        ElementIdsList element_ids;
         ElementsFractions fractions;
+        Dtype density;
     };
-    using Materials = std::vector<Material>;
+
     using MaterialId = Index;
     using MaterialIds = std::unordered_map<mdf::MaterialName, MaterialId>;
     using MaterialNames = std::vector<mdf::MaterialName>;
 
-    using MaterialDensities = torch::Tensor;
-    using MaterialRelativeElectronicDensities = torch::Tensor;
-    using MaterialMeanExcitationEnergies = torch::Tensor;
+
 
     template<typename Dtype, typename Physics>
     class Model {
         using Elements = std::vector<AtomicElement<Dtype>>;
+        using Materials = std::vector<Material<Dtype>>;
+
+        Elements elements;
+        ElementIds element_id;
+        ElementNames element_name;
+
+        Materials materials;
+        MaterialIds material_id;
+        MaterialNames material_name;
+
+        // TODO: Composite materials
+
+        inline Dtype energy_scale_MeV() const {
+            return static_cast<Physics *>(this)->energy_scale_MeV_();
+        }
+
+        inline void set_elements(const mdf::Elements &mdf_elements) {
+            int id = 0;
+            elements.reserve(mdf_elements.size());
+            for (auto[name, element] : mdf_elements) {
+                element.I = 1E-6 * energy_scale_MeV() * element.I;
+                elements.push_back(element);
+                element_id[name] = id;
+                element_name.push_back(name);
+                id++;
+            }
+        }
+
+    public:
+        inline const AtomicElement<Dtype> &get_element(const ElementId id) const {
+            return elements.at(id);
+        }
+
+        inline const AtomicElement<Dtype> &get_element(const mdf::ElementName &name) const {
+            return elements.at(element_id.at(name));
+        }
+
+        inline const mdf::ElementName &get_element_name(const ElementId id) const {
+            return element_name.at(id);
+        }
+
+        inline int num_elements() const {
+            return elements.size();
+        }
+
+        inline const Material<Dtype> &get_material(const MaterialId id) const {
+            return materials.at(id);
+        }
+
+        inline const Material<Dtype> &get_material(const mdf::MaterialName &name) const {
+            return materials.at(material_id.at(name));
+        }
+
+        inline const mdf::MaterialName &get_material_name(const MaterialId id) const {
+            return material_name.at(id);
+        }
+
+        inline int num_materials() const {
+            return materials.size();
+        }
+
+        inline Model &set_mdf_settings(const mdf::Settings &mdf_settings){
+            set_elements(std::get<mdf::Elements>(mdf_settings));
+            return *this;
+        }
 
     };
 

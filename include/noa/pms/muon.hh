@@ -31,7 +31,14 @@
 #include "noa/pms/pms.hh"
 
 namespace noa::pms {
+    using MaterialRelativeElectronicDensities = torch::Tensor;
+    using MaterialMeanExcitationEnergies = torch::Tensor;
 
+    class MuonPhysics: Model<Scalar, MuonPhysics> {
+        inline Scalar energy_scale_MeV_() const {
+            return 1E-3; // from MeV to GeV;
+        }
+    };
 
 
 

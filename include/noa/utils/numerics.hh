@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include "noa/utils/common.hh"
+
 #include <optional>
 
 namespace noa::utils::numerics
