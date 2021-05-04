@@ -583,7 +583,7 @@ namespace noa::pms {
         }
 
         inline const TableX &get_table_X_CSDA() const {
-            return table_X;
+            return table_X_CSDA;
         }
 
         inline const TableT &get_table_T() const {
@@ -591,7 +591,7 @@ namespace noa::pms {
         }
 
         inline const TableT &get_table_T_CSDA() const {
-            return table_T;
+            return table_T_CSDA;
         }
 
         inline const TableNIin &get_table_NI_in() const {

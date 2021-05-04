@@ -31,15 +31,33 @@
 #include "noa/pms/pms.hh"
 
 namespace noa::pms {
+
     using MaterialRelativeElectronicDensities = torch::Tensor;
     using MaterialMeanExcitationEnergies = torch::Tensor;
 
-    class MuonPhysics: Model<Scalar, MuonPhysics> {
-        inline Scalar energy_scale_MeV_() const {
-            return 1E-3; // from MeV to GeV;
-        }
-    };
+    constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
+    constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
 
+    inline const auto tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
+
+    class MuonPhysics : public Model<Scalar, MuonPhysics> {
+
+        friend class Model<Scalar, MuonPhysics>;
+
+        inline AtomicElement <Scalar> process_element(const AtomicElement <Scalar> &element) const {
+            return AtomicElement<Scalar>{element.A, 1E-6 * ENERGY_SCALE * element.I, element.Z};
+        }
+
+        inline const Material <Scalar> process_material(
+                const Material <Scalar> &material) const {
+            return Material<Scalar>{
+                material.element_ids,
+                material.fractions.to(tensor_ops),
+                DENSITY_SCALE * material.density};
+        }
+
+
+    };
 
 
 } //namespace noa::pms

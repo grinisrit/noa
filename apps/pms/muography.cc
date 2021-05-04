@@ -34,13 +34,13 @@ auto main(int argc, char **argv) -> int {
         print_dedx_headers(*dedx_data);
     else return 1;
 
-
+    auto muon_physics = MuonPhysics{}.set_mdf_settings(*mdf_settings);
 
     auto begin = steady_clock::now();
 
-    auto muon_physics = load_muon_physics_from(
+    auto muon_physics_ref = load_muon_physics_from(
             mdf_path, dedx_path, dcs::default_kernels);
-    if (!muon_physics.has_value())
+    if (!muon_physics_ref.has_value())
         std::cerr << "Failed to load the physics model from:\n"
                   << mdf_path << "\n"
                   << dedx_path << std::endl;
@@ -50,5 +50,5 @@ auto main(int argc, char **argv) -> int {
                   << " seconds" << std::endl;
     }
 
-    return !muon_physics.has_value();
+    return !muon_physics_ref.has_value();
 }
