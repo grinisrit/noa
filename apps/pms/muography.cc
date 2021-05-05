@@ -28,8 +28,7 @@ auto main(int argc, char **argv) -> int {
         mdf::print_materials(std::get<mdf::Materials>(*mdf_settings));
     } else return 1;
 
-    auto dedx_data = mdf::load_materials_data(
-            std::get<mdf::Materials>(*mdf_settings), dedx_path);
+    auto dedx_data = mdf::load_materials_data(*mdf_settings, dedx_path);
     if (dedx_data.has_value())
         print_dedx_headers(*dedx_data);
     else return 1;

@@ -717,8 +717,7 @@ namespace noa::pms {
         if (!mdf_settings.has_value())
             return std::nullopt;
 
-        auto dedx_data = mdf::parse_materials_data(
-                std::get<mdf::Materials>(mdf_settings.value()), dedx);
+        auto dedx_data = mdf::parse_materials_data(*mdf_settings, dedx);
         if (!dedx_data.has_value())
             return std::nullopt;
 

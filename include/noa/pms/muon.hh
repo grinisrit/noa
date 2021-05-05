@@ -30,6 +30,8 @@
 
 #include "noa/pms/pms.hh"
 
+#include <torch/torch.h>
+
 namespace noa::pms {
 
     using MaterialRelativeElectronicDensities = torch::Tensor;
@@ -38,7 +40,7 @@ namespace noa::pms {
     constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
     constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
 
-    inline const auto tensor_ops = torch::dtype(torch::kDouble).layout(torch::kStrided);
+    inline const auto tensor_ops = torch::dtype(c10::CppTypeToScalarType<Scalar>{}).layout(torch::kStrided);
 
     class MuonPhysics : public Model<Scalar, MuonPhysics> {
 
@@ -48,7 +50,7 @@ namespace noa::pms {
             return AtomicElement<Scalar>{element.A, 1E-6 * ENERGY_SCALE * element.I, element.Z};
         }
 
-        inline const Material <Scalar> process_material(
+        inline Material <Scalar> process_material(
                 const Material <Scalar> &material) const {
             return Material<Scalar>{
                 material.element_ids,

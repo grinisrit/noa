@@ -326,14 +326,39 @@ namespace noa::pms::mdf {
         return std::make_optional<DEDXData>(particle_name, *mass, *coefs, *table);
     }
 
+    inline utils::Status check_ZoA(
+            const Material &material,
+            const DEDXData &dedx_data,
+            const Elements &elements) {
+
+        auto coefs = std::get<DEDXMaterialCoefficients>(dedx_data);
+        Scalar ZoA = 0.0;
+        for (const auto &[elmt, frac] : std::get<MaterialComponents>(material))
+            ZoA += frac * elements.at(elmt).Z / elements.at(elmt).A;
+        if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE)) {
+            std::cerr << "<Z/A> inconsistent in " << std::get<ParticleName>(dedx_data) << " / "
+                      << std::get<DEDXFilePath>(material).string()
+                      << ": expected " << ZoA << ", found " << coefs.ZoA << std::endl;
+            return false;
+        }
+        return true;
+    }
+
     inline std::optional<MaterialsDEDXData> parse_materials_data(
-            const Materials &materials, const DEDXFolderPath &dedx_path) {
+            const mdf::Settings &mdf_settings, const DEDXFolderPath &dedx_path) {
+        auto elements = std::get<mdf::Elements>(mdf_settings);
+        auto materials = std::get<mdf::Materials>(mdf_settings);
         auto materials_data = MaterialsDEDXData{};
         for (const auto &[name, material] : materials) {
+
             auto dedx_data = parse_dedx_file(
                     dedx_path / std::get<DEDXFilePath>(material), dedx_path.filename());
             if (!dedx_data.has_value())
                 return std::nullopt;
+
+            if (!check_ZoA(material, *dedx_data, elements))
+                return std::nullopt;
+
             materials_data.emplace(name, *dedx_data);
         }
         return materials_data;
@@ -346,10 +371,10 @@ namespace noa::pms::mdf {
     }
 
     inline std::optional<MaterialsDEDXData> load_materials_data(
-            const Materials &materials, const DEDXFolderPath &dedx_path) {
+            const mdf::Settings &mdf_settings, const DEDXFolderPath &dedx_path) {
         if (!utils::check_path_exists(dedx_path))
             return std::nullopt;
-        return mdf::parse_materials_data(materials, dedx_path);
+        return mdf::parse_materials_data(mdf_settings, dedx_path);
     }
 
 } // namespace noa::pms::mdf
