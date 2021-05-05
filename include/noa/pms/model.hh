@@ -154,22 +154,6 @@ namespace noa::pms {
             return true;
         }
 
-        inline utils::Status check_ZoA(
-                const mdf::Settings &mdf_settings, const mdf::MaterialsDEDXData &dedx_data) {
-            auto mdf_elements = std::get<mdf::Elements>(mdf_settings);
-            auto mdf_materials = std::get<mdf::Materials>(mdf_settings);
-            for (const auto &[material, data] : dedx_data) {
-                auto coefs = std::get<mdf::DEDXMaterialCoefficients>(data);
-                Scalar ZoA = 0.0;
-                for (const auto &[elmt, frac] :
-                        std::get<mdf::MaterialComponents>(mdf_materials.at(material)))
-                    ZoA += frac * mdf_elements.at(elmt).Z / mdf_elements.at(elmt).A;
-                if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE))
-                    return false;
-            }
-            return true;
-        }
-
         inline utils::Status set_table_K(mdf::MaterialsDEDXData &dedx_data) {
             auto data = dedx_data.begin();
             auto &values = std::get<mdf::DEDXTable>(data->second).T;
@@ -188,15 +172,6 @@ namespace noa::pms {
                     return false;
                 }
             }
-            return true;
-        }
-
-        inline utils::Status perform_initial_checks(const mdf::Settings &mdf_settings,
-                                                    mdf::MaterialsDEDXData &dedx_data) {
-            if (!check_ZoA(mdf_settings, dedx_data))
-                return false;
-            if (!check_mass(dedx_data))
-                return false;
             return true;
         }
 
@@ -641,7 +616,7 @@ namespace noa::pms {
         inline utils::Status
         load_physics_from(const mdf::Settings &mdf_settings,
                           mdf::MaterialsDEDXData &dedx_data) {
-            if (!perform_initial_checks(mdf_settings, dedx_data))
+            if (!check_mass(dedx_data))
                 return false;
             if (!initialise_physics(mdf_settings, dedx_data))
                 return false;

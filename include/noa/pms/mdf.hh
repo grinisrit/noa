@@ -330,7 +330,6 @@ namespace noa::pms::mdf {
             const Material &material,
             const DEDXData &dedx_data,
             const Elements &elements) {
-
         auto coefs = std::get<DEDXMaterialCoefficients>(dedx_data);
         Scalar ZoA = 0.0;
         for (const auto &[elmt, frac] : std::get<MaterialComponents>(material))
@@ -375,6 +374,17 @@ namespace noa::pms::mdf {
         if (!utils::check_path_exists(dedx_path))
             return std::nullopt;
         return mdf::parse_materials_data(mdf_settings, dedx_path);
+    }
+
+    inline utils::Status check_particle_mass(const ParticleMass &particle_mass, const MaterialsDEDXData &dedx_data) {
+        for (const auto &[material, data] : dedx_data)
+            if (std::abs(std::get<ParticleMass>(data) - particle_mass) > utils::TOLERANCE) {
+                std::cerr << "Inconsistent particle mass in dedx data for "
+                          << material << ": expected " << particle_mass << ", found " << std::get<ParticleMass>(data)
+                          << std::endl;
+                return false;
+            }
+        return true;
     }
 
 } // namespace noa::pms::mdf

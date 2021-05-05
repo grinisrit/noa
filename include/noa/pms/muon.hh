@@ -29,22 +29,29 @@
 #pragma once
 
 #include "noa/pms/pms.hh"
+#include "noa/pms/mdf.hh"
 
 #include <torch/torch.h>
 
 namespace noa::pms {
 
-    using MaterialRelativeElectronicDensities = torch::Tensor;
-    using MaterialMeanExcitationEnergies = torch::Tensor;
+    using MaterialsRelativeElectronicDensity = torch::Tensor;
+    using MaterialsMeanExcitationEnergy = torch::Tensor;
+    using MaterialsDensityEffect = std::vector<MaterialDensityEffect<Scalar>>;
 
     constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
     constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
 
+    // TODO: parametrise MuonPhysics by device when CUDA support available
     inline const auto tensor_ops = torch::dtype(c10::CppTypeToScalarType<Scalar>{}).layout(torch::kStrided);
 
     class MuonPhysics : public Model<Scalar, MuonPhysics> {
 
         friend class Model<Scalar, MuonPhysics>;
+
+        MaterialsRelativeElectronicDensity material_ZoA;
+        MaterialsMeanExcitationEnergy material_I;
+        MaterialsDensityEffect material_density_effect;
 
         inline AtomicElement <Scalar> process_element(const AtomicElement <Scalar> &element) const {
             return AtomicElement<Scalar>{element.A, 1E-6 * ENERGY_SCALE * element.I, element.Z};
@@ -56,6 +63,39 @@ namespace noa::pms {
                 material.element_ids,
                 material.fractions.to(tensor_ops),
                 DENSITY_SCALE * material.density};
+        }
+
+        inline utils::Status process_dedx_data_header(mdf::MaterialsDEDXData &dedx_data)
+        {
+            if(!mdf::check_particle_mass(MUON_MASS / ENERGY_SCALE, dedx_data))
+                return false;
+
+            const int nmat = num_materials();
+            material_ZoA = torch::zeros(nmat, tensor_ops);
+            material_I = torch::zeros(nmat, tensor_ops);
+
+            for(int i = 0; i< nmat; i++){
+                const auto &coefs = std::get<mdf::DEDXMaterialCoefficients>(
+                        dedx_data.at(get_material_name(i)));
+                material_ZoA[i] = coefs.ZoA;
+                material_I[i] = coefs.I;
+                material_density_effect.push_back(coefs.density_effect);
+            }
+            return true;
+        }
+
+    public:
+
+        inline MuonPhysics &set_mdf_settings(const mdf::Settings &mdf_settings){
+            set_elements(std::get<mdf::Elements>(mdf_settings));
+            set_materials(std::get<mdf::Materials>(mdf_settings));
+            return *this;
+        }
+
+        inline utils::Status load_dedx_data(mdf::MaterialsDEDXData &dedx_data) {
+            if(!process_dedx_data_header(dedx_data))
+                return false;
+            return true;
         }
 
 

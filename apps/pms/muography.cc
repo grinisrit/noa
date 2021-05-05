@@ -34,6 +34,7 @@ auto main(int argc, char **argv) -> int {
     else return 1;
 
     auto muon_physics = MuonPhysics{}.set_mdf_settings(*mdf_settings);
+    muon_physics.load_dedx_data(*dedx_data);
 
     auto begin = steady_clock::now();
 

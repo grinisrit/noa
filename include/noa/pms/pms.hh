@@ -46,7 +46,7 @@ namespace noa::pms {
     struct Material {
         ElementIdsList element_ids;
         ElementsFractions fractions;
-        Dtype density;
+        Dtype density; // Reference density
     };
 
     using MaterialId = Index;
@@ -54,10 +54,9 @@ namespace noa::pms {
     using MaterialNames = std::vector<mdf::MaterialName>;
 
 
-
     template<typename Dtype, typename Physics>
     class Model {
-        using Elements = std::vector<AtomicElement<Dtype>>;
+        using Elements = std::vector<AtomicElement < Dtype>>;
         using Materials = std::vector<Material<Dtype>>;
 
         Elements elements;
@@ -70,7 +69,7 @@ namespace noa::pms {
 
         // TODO: Composite materials
 
-        inline const AtomicElement<Dtype> process_element_(const AtomicElement<Dtype> &element) {
+        inline const AtomicElement <Dtype> process_element_(const AtomicElement <Dtype> &element) {
             return static_cast<Physics *>(this)->process_element(element);
         }
 
@@ -89,39 +88,12 @@ namespace noa::pms {
                     Material<Dtype>{element_ids, fractions, density});
         }
 
-        inline void set_elements(const mdf::Elements &mdf_elements) {
-            int id = 0;
-            elements.reserve(mdf_elements.size());
-            for (auto[name, element] : mdf_elements) {
-                elements.push_back(process_element_(element));
-                element_id[name] = id;
-                element_name.push_back(name);
-                id++;
-            }
-        }
-
-        inline void set_materials(const mdf::Materials &mdf_materials) {
-            int id = 0;
-            const int nmat = mdf_materials.size();
-
-            materials.reserve(nmat);
-            material_name.reserve(nmat);
-
-            for (const auto &[name, material] : mdf_materials) {
-                auto[_, density, components] = material;
-                materials.push_back(process_material_(density, components));
-                material_id[name] = id;
-                material_name.push_back(name);
-                id++;
-            }
-        }
-
     public:
-        inline const AtomicElement<Dtype> &get_element(const ElementId id) const {
+        inline const AtomicElement <Dtype> &get_element(const ElementId id) const {
             return elements.at(id);
         }
 
-        inline const AtomicElement<Dtype> &get_element(const mdf::ElementName &name) const {
+        inline const AtomicElement <Dtype> &get_element(const mdf::ElementName &name) const {
             return elements.at(element_id.at(name));
         }
 
@@ -149,14 +121,39 @@ namespace noa::pms {
             return material_name.at(id);
         }
 
+        inline const MaterialId &get_material_id(const mdf::MaterialName &name) const {
+            return material_id.at(name);
+        }
+
         inline int num_materials() const {
             return materials.size();
         }
 
-        inline Model &set_mdf_settings(const mdf::Settings &mdf_settings){
-            set_elements(std::get<mdf::Elements>(mdf_settings));
-            set_materials(std::get<mdf::Materials>(mdf_settings));
-            return *this;
+        inline void set_elements(const mdf::Elements &mdf_elements) {
+            int id = 0;
+            elements.reserve(mdf_elements.size());
+            for (auto[name, element] : mdf_elements) {
+                elements.push_back(process_element_(element));
+                element_id[name] = id;
+                element_name.push_back(name);
+                id++;
+            }
+        }
+
+        inline void set_materials(const mdf::Materials &mdf_materials) {
+            int id = 0;
+            const int nmat = mdf_materials.size();
+
+            materials.reserve(nmat);
+            material_name.reserve(nmat);
+
+            for (const auto &[name, material] : mdf_materials) {
+                auto[_, density, components] = material;
+                materials.push_back(process_material_(density, components));
+                material_id[name] = id;
+                material_name.push_back(name);
+                id++;
+            }
         }
 
     };
