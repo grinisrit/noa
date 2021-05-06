@@ -31,7 +31,7 @@
 #include "noa/pms/constants.hh"
 
 
-namespace noa::pms::dcs::cuda {
+namespace noa::pms::cuda::dcs {
 
 
     namespace pumas {
@@ -78,5 +78,5 @@ namespace noa::pms::dcs::cuda {
         };
 
 
-    } // namespace noa::pms::dcs::cuda::pumas
-} // namespace noa::pms::dcs::cuda
+    } // namespace noa::pms::cuda::dcs::pumas
+} // namespace noa::pms::cuda::dcs

@@ -36,10 +36,6 @@
 
 namespace noa::pms::dcs {
 
-    using KineticEnergies = torch::Tensor;
-    using RecoilEnergies = torch::Tensor;
-    using DCSCalculation = torch::Tensor; // Receiver tensor for DCS calculations
-
     template<typename Dtype, typename DCSFunc>
     inline auto vmap(const DCSFunc &dcs_func) {
         return [&dcs_func](const DCSCalculation &result,

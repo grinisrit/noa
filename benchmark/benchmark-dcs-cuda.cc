@@ -1,10 +1,11 @@
 #include "noa-bench.hh"
-#include "dcs-kernels.hh"
 
+#include <noa/pms/kernels.hh>
 #include <noa/pms/constants.hh>
 #include <benchmark/benchmark.h>
 
 using namespace noa::pms;
+using namespace noa::pms::cuda;
 
 BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCUDA)
 (benchmark::State &state) {
@@ -14,7 +15,7 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCUDA)
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
-        bremsstrahlung_cuda(result, kinetic_energies, recoil_energies, element, mu);
+        dcs::pumas::vmap_bremsstrahlung(result, kinetic_energies, recoil_energies, element, mu);
 }
 
 BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCUDA)
@@ -25,5 +26,5 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCUDA)
     const auto element = STANDARD_ROCK;
     const auto mu = MUON_MASS;
     for (auto _ : state)
-        bremsstrahlung_cuda(result, kinetic_energies, recoil_energies, element, mu);
+        dcs::pumas::vmap_bremsstrahlung(result, kinetic_energies, recoil_energies, element, mu);
 }

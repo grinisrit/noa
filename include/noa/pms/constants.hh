@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <cmath>
+#include <torch/types.h>
 
 namespace noa::pms {
     using Scalar = double;
@@ -55,6 +55,10 @@ namespace noa::pms {
     struct MaterialDensityEffect {
         Dtype a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
     };
+
+    using KineticEnergies = torch::Tensor;
+    using RecoilEnergies = torch::Tensor;
+    using DCSCalculation = torch::Tensor; // Receiver tensor for DCS calculations
 
     constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;
     constexpr UniversalConst ATOMIC_MASS_ENERGY = 0.931494; // Atomic mass to MeV

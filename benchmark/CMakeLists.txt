@@ -20,7 +20,7 @@ set(NOA_BENCH_SRC
 
 # Main test executables
 if (BUILD_CUDA)
-    add_executable(noa_bench ${NOA_BENCH_SRC} benchmark-dcs-cuda.cc ${NOA_ROOT_DIR}/test/dcs-kernels.cu)
+    add_executable(noa_bench ${NOA_BENCH_SRC} benchmark-dcs-cuda.cc ${NOA_ROOT_DIR}/test/kernels.cu)
     set_target_properties(noa_bench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()
     add_executable(noa_bench ${NOA_BENCH_SRC})
