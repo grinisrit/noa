@@ -37,13 +37,12 @@ namespace noa::pms {
 
     using MaterialsRelativeElectronicDensity = torch::Tensor;
     using MaterialsMeanExcitationEnergy = torch::Tensor;
-    using MaterialsDensityEffect = std::vector<MaterialDensityEffect<Scalar>>;
+    using MaterialsDensityEffect = std::vector<MaterialDensityEffect < Scalar>>;
+    using KineticEnergyTabulations = torch::Tensor;
 
     constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
     constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
 
-    // TODO: parametrise MuonPhysics by device when CUDA support available
-    inline const auto tensor_ops = torch::dtype(c10::CppTypeToScalarType<Scalar>{}).layout(torch::kStrided);
 
     class MuonPhysics : public Model<Scalar, MuonPhysics> {
 
@@ -52,6 +51,12 @@ namespace noa::pms {
         MaterialsRelativeElectronicDensity material_ZoA;
         MaterialsMeanExcitationEnergy material_I;
         MaterialsDensityEffect material_density_effect;
+        KineticEnergyTabulations table_K;
+
+        // TODO: parametrise MuonPhysics by device when CUDA support available
+        inline c10::TensorOptions tensor_ops() const {
+            return torch::dtype(c10::CppTypeToScalarType<Scalar>{}).layout(torch::kStrided);
+        }
 
         inline AtomicElement <Scalar> process_element(const AtomicElement <Scalar> &element) const {
             return AtomicElement<Scalar>{element.A, 1E-6 * ENERGY_SCALE * element.I, element.Z};
@@ -60,21 +65,20 @@ namespace noa::pms {
         inline Material <Scalar> process_material(
                 const Material <Scalar> &material) const {
             return Material<Scalar>{
-                material.element_ids,
-                material.fractions.to(tensor_ops),
-                DENSITY_SCALE * material.density};
+                    material.element_ids,
+                    material.fractions.to(tensor_ops()),
+                    DENSITY_SCALE * material.density};
         }
 
-        inline utils::Status process_dedx_data_header(mdf::MaterialsDEDXData &dedx_data)
-        {
-            if(!mdf::check_particle_mass(MUON_MASS / ENERGY_SCALE, dedx_data))
+        inline utils::Status process_dedx_data_header(mdf::MaterialsDEDXData &dedx_data) {
+            if (!mdf::check_particle_mass(MUON_MASS / ENERGY_SCALE, dedx_data))
                 return false;
 
             const int nmat = num_materials();
-            material_ZoA = torch::zeros(nmat, tensor_ops);
-            material_I = torch::zeros(nmat, tensor_ops);
+            material_ZoA = torch::zeros(nmat, tensor_ops());
+            material_I = torch::zeros(nmat, tensor_ops());
 
-            for(int i = 0; i< nmat; i++){
+            for (int i = 0; i < nmat; i++) {
                 const auto &coefs = std::get<mdf::DEDXMaterialCoefficients>(
                         dedx_data.at(get_material_name(i)));
                 material_ZoA[i] = coefs.ZoA;
@@ -84,20 +88,42 @@ namespace noa::pms {
             return true;
         }
 
+        inline utils::Status set_table_K(mdf::MaterialsDEDXData &dedx_data) {
+            auto data = dedx_data.begin();
+            auto &values = std::get<mdf::DEDXTable>(data->second).T;
+            const int nkin = values.size();
+            auto tensor = torch::from_blob(values.data(), nkin, tensor_ops());
+            table_K = tensor * ENERGY_SCALE;
+            data++;
+            for (auto &it = data; it != dedx_data.end(); it++) {
+                auto &it_vals = std::get<mdf::DEDXTable>(it->second).T;
+                auto it_ten = torch::from_blob(
+                        it_vals.data(), nkin, tensor_ops());
+                if (!torch::equal(tensor, it_ten)) {
+                    std::cerr
+                            << "Inconsistent kinetic energy values for "
+                            << it->first << std::endl;
+                    return false;
+                }
+            }
+            return true;
+        }
+
     public:
 
-        inline MuonPhysics &set_mdf_settings(const mdf::Settings &mdf_settings){
+        inline MuonPhysics &set_mdf_settings(const mdf::Settings &mdf_settings) {
             set_elements(std::get<mdf::Elements>(mdf_settings));
             set_materials(std::get<mdf::Materials>(mdf_settings));
             return *this;
         }
 
         inline utils::Status load_dedx_data(mdf::MaterialsDEDXData &dedx_data) {
-            if(!process_dedx_data_header(dedx_data))
+            if (!process_dedx_data_header(dedx_data))
+                return false;
+            if (!set_table_K(dedx_data))
                 return false;
             return true;
         }
-
 
     };
 
