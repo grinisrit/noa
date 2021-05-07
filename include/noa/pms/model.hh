@@ -84,7 +84,7 @@ namespace noa::pms {
     using TableLi = TableRef;               // Magnetic deflection momenta
     using DCSData = TableRef;               // DCS model coefficients
 
-    struct CoulombWorkspace {
+    struct CoulombWorkspaceRef {
         dcs::TransportCoefs G;
         dcs::CMLorentz fCM;
         dcs::ScreeningFactors screening;
@@ -141,7 +141,7 @@ namespace noa::pms {
         DCSData dcs_data;
 
         TableCSn cel_table;
-        CoulombWorkspace coulomb_workspace;
+        CoulombWorkspaceRef coulomb_workspace;
 
         inline utils::Status check_mass(mdf::MaterialsDEDXData &dedx_data) {
             for (const auto &[material, data] : dedx_data)
@@ -236,7 +236,7 @@ namespace noa::pms {
             const int nkin = table_K.numel();
             table_CSn = torch::zeros({nel, dcs::NPR, nkin}, tensor_ops);
             cel_table = torch::zeros_like(table_CSn);
-            coulomb_workspace = CoulombWorkspace{
+            coulomb_workspace = CoulombWorkspaceRef{
                     torch::zeros({nel, nkin, 2}, tensor_ops),
                     torch::zeros({nel, nkin, 2}, tensor_ops),
                     torch::zeros({nel, nkin, dcs::NSF}, tensor_ops),
@@ -422,7 +422,7 @@ namespace noa::pms {
             for (int imat = 0; imat < nmat; imat++)
                 compute_coulomb_scattering_tables(imat);
 
-            coulomb_workspace = CoulombWorkspace{}; // drop CoulombWorkspace data
+            coulomb_workspace = CoulombWorkspaceRef{}; // drop CoulombWorkspaceRef data
         }
 
         inline void init_cel_integrals(const int nmat) {

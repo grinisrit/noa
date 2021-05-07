@@ -59,6 +59,7 @@ namespace noa::pms {
     using KineticEnergies = torch::Tensor;
     using RecoilEnergies = torch::Tensor;
     using DCSCalculation = torch::Tensor; // Receiver tensor for DCS calculations
+    using Tabulation = torch::Tensor;     // Tabulations holder
 
     constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;
     constexpr UniversalConst ATOMIC_MASS_ENERGY = 0.931494; // Atomic mass to MeV
@@ -72,17 +73,17 @@ namespace noa::pms {
 
     constexpr LarmorFactor LARMOR_FACTOR = 0.299792458; // m^-1 GeV/c T^-1.
 
-    // Default relative switch between continuous and discrete energy loss
-    constexpr EnergyTransfer X_FRACTION = 5E-02;
-    // Maximum allowed energy transfer for using DCS models
-    constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
-
     // Common elements:
     constexpr AtomicElement<Scalar> STANDARD_ROCK =
             AtomicElement<Scalar>{
                     22.,       // g/mol
                     0.1364E-6, // GeV
                     11};
+
+    // Default relative switch between continuous and discrete energy loss
+    constexpr EnergyTransfer X_FRACTION = 5E-02;
+    // Maximum allowed energy transfer for using DCS models
+    constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
 
     constexpr Energy KIN_CUTOFF = 1E-9;           // GeV, energy cutoff used in relativistic kinematics
     constexpr Scalar EHS_PATH_MAX = 1E+9;         // kg/m^2, max inverse path length for Elastic Hard Scattering (EHS) events
@@ -92,5 +93,50 @@ namespace noa::pms {
 
     inline const Scalar MAX_MU0 =
             0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
+
+    namespace pumas {
+
+        constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
+        constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
+
+        // Default relative switch between continuous and discrete energy loss
+        constexpr EnergyTransfer X_FRACTION = 5E-02;
+        // Maximum allowed energy transfer for using DCS models
+        constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
+
+        constexpr Energy KIN_CUTOFF = 1E-9;           // GeV, energy cutoff used in relativistic kinematics
+        constexpr Scalar EHS_PATH_MAX = 1E+9;         // kg/m^2, max inverse path length for Elastic Hard Scattering (EHS) events
+        constexpr Scalar EHS_OVER_MSC = 1E-4;         // EHS to 1st transport multiple scattering interaction length path ratio
+        constexpr Scalar MAX_SOFT_ANGLE = 1E+00;      // degrees, max deflection angle for a soft scattering event
+        constexpr Energy DCS_MODEL_MIN_KINETIC = 10.; // GeV, Minimum kinetic energy for using the DCS model
+
+        inline const Scalar MAX_MU0 =
+                0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
+
+        constexpr int NPR = 4;  // Number of DEL processes considered
+        constexpr int NSF = 9;  // Number of screening factors and pole reduction for Coulomb scattering
+        constexpr int NLAR = 8; // Order of expansion for the computation of the magnetic deflection
+
+        // Polynomials order for the DCS model
+        constexpr int DCS_MODEL_ORDER_P = 6;
+        constexpr int DCS_MODEL_ORDER_Q = 2;
+        constexpr int DCS_SAMPLING_N = 11; // Samples for DCS model
+        constexpr int NDM = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + DCS_SAMPLING_N + 1;
+
+        using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
+        using MomentumIntegral = Scalar;
+
+        using ThresholdIndex = Index;
+        using Thresholds = torch::Tensor;
+
+        using InvLambdas = torch::Tensor;       // Inverse of the mean free grammage
+        using ScreeningFactors = torch::Tensor; // Atomic and nuclear screening factors & pole reduction
+        using FSpins = torch::Tensor;           // Spin corrections
+        using CMLorentz = torch::Tensor;        // Center of Mass to Observer frame transform
+        using AngularCutoff = torch::Tensor;    // Cutoff angle for coulomb scattering
+        using HSMeanFreePath = torch::Tensor;   // Hard scattering mean free path
+        using TransportCoefs = torch::Tensor;
+        using SoftScatter = torch::Tensor; // Soft scattering terms per element
+    }
 
 } // namespace noa::pms

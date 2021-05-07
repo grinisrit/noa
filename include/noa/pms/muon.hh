@@ -30,6 +30,7 @@
 
 #include "noa/pms/pms.hh"
 #include "noa/pms/mdf.hh"
+#include "noa/pms/constants.hh"
 
 #include <torch/torch.h>
 
@@ -38,12 +39,39 @@ namespace noa::pms {
     using MaterialsRelativeElectronicDensity = torch::Tensor;
     using MaterialsMeanExcitationEnergy = torch::Tensor;
     using MaterialsDensityEffect = std::vector<MaterialDensityEffect < Scalar>>;
-    using KineticEnergyTabulations = torch::Tensor;
+    
+    using TableK = Tabulation;                // Kinetic energy tabulations
+    using TableCSn = Tabulation;              // CS normalisation tabulations
+    using TableCSf = std::vector<Tabulation>; // CS fractions by material
+    using TableCS = Tabulation;               // CS for inelastic DELs
+    using TabledE = Tabulation;               // Average energy loss
+    using TabledECSDA = Tabulation;           // Average energy loss in CSDA approx
+    using TableX = Tabulation;                // CSDA grammage range for energy loss
+    using TableXCSDA = Tabulation;            // CSDA grammage range for energy loss in CSDA approx.
+    using TableT = Tabulation;                // Total proper time
+    using TableTCSDA = Tabulation;            // Total proper time in CSDA approx.
+    using TableNIin = Tabulation;             // Interaction lengths
+    using IonisationMax = Tabulation;         // Maximum tabulated a(E)
+    using RadlossMax = Tabulation;            // Maximum tabulated b(E)
+    using TableKt = Tabulation;               // Kinetic threshold for DELs
+    using TableXt = Tabulation;               // Fraction threshold for DELs
+    using TableMu0 = Tabulation;              // Angular cutoff for splitting of Coulomb Scattering
+    using TableLb = Tabulation;               // Interaction lengths for DEL Coulomb events
+    using TableNIel = Tabulation;             // EHS number of interaction lengths
+    using TableMs1 = Tabulation;              // Multiple scattering 1st moment
+    using TableLi = Tabulation;               // Magnetic deflection momenta
+    using DCSData = Tabulation;               // DCS model coefficients
 
-    constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
-    constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
+    struct CoulombWorkspace {
+        pumas::TransportCoefs G;
+        pumas::CMLorentz fCM;
+        pumas::ScreeningFactors screening;
+        pumas::InvLambdas invlambda;
+        pumas::FSpins fspin;
+        pumas::SoftScatter table_ms1;
+    };
 
-
+    
     class MuonPhysics : public Model<Scalar, MuonPhysics> {
 
         friend class Model<Scalar, MuonPhysics>;
@@ -51,7 +79,31 @@ namespace noa::pms {
         MaterialsRelativeElectronicDensity material_ZoA;
         MaterialsMeanExcitationEnergy material_I;
         MaterialsDensityEffect material_density_effect;
-        KineticEnergyTabulations table_K;
+
+        TableK table_K;
+        TableCSn table_CSn;
+        TableCSf table_CSf;
+        TableCS table_CS;
+        TabledE table_dE;
+        TabledECSDA table_dE_CSDA;
+        TableX table_X;
+        TableXCSDA table_X_CSDA;
+        TableT table_T;
+        TableTCSDA table_T_CSDA;
+        TableNIin table_NI_in;
+        IonisationMax table_a_max;
+        RadlossMax table_b_max;
+        TableKt table_Kt;
+        TableXt table_Xt;
+        TableMu0 table_Mu0;
+        TableLb table_Lb;
+        TableNIel table_NI_el;
+        TableMs1 table_Ms1;
+        TableLi table_Li;
+        DCSData dcs_data;
+
+        TableCSn cel_table;
+        CoulombWorkspaceRef coulomb_workspace;
 
         // TODO: parametrise MuonPhysics by device when CUDA support available
         inline c10::TensorOptions tensor_ops() const {
@@ -59,7 +111,7 @@ namespace noa::pms {
         }
 
         inline AtomicElement <Scalar> process_element(const AtomicElement <Scalar> &element) const {
-            return AtomicElement<Scalar>{element.A, 1E-6 * ENERGY_SCALE * element.I, element.Z};
+            return AtomicElement<Scalar>{element.A, 1E-6 * pumas::ENERGY_SCALE * element.I, element.Z};
         }
 
         inline Material <Scalar> process_material(
@@ -67,11 +119,11 @@ namespace noa::pms {
             return Material<Scalar>{
                     material.element_ids,
                     material.fractions.to(tensor_ops()),
-                    DENSITY_SCALE * material.density};
+                    pumas::DENSITY_SCALE * material.density};
         }
 
         inline utils::Status process_dedx_data_header(mdf::MaterialsDEDXData &dedx_data) {
-            if (!mdf::check_particle_mass(MUON_MASS / ENERGY_SCALE, dedx_data))
+            if (!mdf::check_particle_mass(MUON_MASS / pumas::ENERGY_SCALE, dedx_data))
                 return false;
 
             const int nmat = num_materials();
@@ -92,13 +144,13 @@ namespace noa::pms {
             auto data = dedx_data.begin();
             auto &values = std::get<mdf::DEDXTable>(data->second).T;
             const int nkin = values.size();
-            auto tensor = torch::from_blob(values.data(), nkin, tensor_ops());
-            table_K = tensor * ENERGY_SCALE;
+            auto tensor = torch::from_blob(values.data(), nkin, torch::kDouble);
+            table_K = tensor.to(tensor_ops()) * pumas::ENERGY_SCALE;
             data++;
             for (auto &it = data; it != dedx_data.end(); it++) {
                 auto &it_vals = std::get<mdf::DEDXTable>(it->second).T;
                 auto it_ten = torch::from_blob(
-                        it_vals.data(), nkin, tensor_ops());
+                        it_vals.data(), nkin, torch::kDouble);
                 if (!torch::equal(tensor, it_ten)) {
                     std::cerr
                             << "Inconsistent kinetic energy values for "
@@ -107,6 +159,32 @@ namespace noa::pms {
                 }
             }
             return true;
+        }
+
+        inline void init_dcs_data(const int nel, const int nkin) {
+            dcs_data = torch::zeros({nel, pumas::NPR - 1, nkin, pumas::NDM}, tensor_ops());
+        }
+
+        inline void init_per_element_data(const int nel) {
+            const int nkin = table_K.numel();
+            table_CSn = torch::zeros({nel, pumas::NPR, nkin}, tensor_ops());
+            cel_table = torch::zeros_like(table_CSn);
+            coulomb_workspace = CoulombWorkspaceRef{
+                    torch::zeros({nel, nkin, 2}, tensor_ops()),
+                    torch::zeros({nel, nkin, 2}, tensor_ops()),
+                    torch::zeros({nel, nkin, dcs::NSF}, tensor_ops()),
+                    torch::zeros({nel, nkin}, tensor_ops()),
+                    torch::zeros({nel, nkin}, tensor_ops()),
+                    torch::zeros({nel, nkin}, tensor_ops())};
+        }
+
+        inline void compute_per_element_data() {
+            const int nel = num_elements();
+            const auto &model_K = table_K.index(
+                    {table_K >= pumas::DCS_MODEL_MIN_KINETIC});
+
+            init_per_element_data(nel);
+            init_dcs_data(nel, model_K.numel());
         }
 
     public:
