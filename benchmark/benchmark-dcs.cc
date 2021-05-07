@@ -53,3 +53,29 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCPUOpenMP)
         dcs::pvmap<Scalar>(dcs::pumas::bremsstrahlung)(
                 result, kinetic_energies, recoil_energies, element, mu);
 }
+
+BENCHMARK_F(DCSBenchmark, DELBremsstrahlungCPU)
+(benchmark::State &state)
+{
+    const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
+    const auto xlow = X_FRACTION;
+    const auto element = STANDARD_ROCK;
+    const auto mu = MUON_MASS;
+    for (auto _ : state)
+        dcs::del_integral<Scalar>(dcs::pumas::bremsstrahlung)(
+                k, xlow, element, mu, 180);
+}
+
+BENCHMARK_F(DCSBenchmark, DELBremsstrahlungVectorisedCPU)
+(benchmark::State &state)
+{
+    const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto k = DCSData::get_kinetic_energies();
+    const auto xlow = X_FRACTION;
+    const auto element = STANDARD_ROCK;
+    const auto mu = MUON_MASS;
+    for (auto _ : state)
+        dcs::vmap_integral<Scalar>(
+                dcs::del_integral<Scalar>(dcs::pumas::bremsstrahlung))(
+                r, k, xlow, element, mu, 180);
+}

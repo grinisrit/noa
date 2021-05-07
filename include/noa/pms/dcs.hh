@@ -38,10 +38,10 @@ namespace noa::pms::dcs {
 
     template<typename Dtype, typename DCSFunc>
     inline auto vmap(const DCSFunc &dcs_func) {
-        return [&dcs_func](const DCSCalculation &result,
-                           const KineticEnergies &kinetic_energies,
-                           const RecoilEnergies &recoil_energies,
-                           const AtomicElement<Dtype> &element,
+        return [&dcs_func](const Calculation &result,
+                           const Energies &kinetic_energies,
+                           const Energies &recoil_energies,
+                           const AtomicElement <Dtype> &element,
                            const Dtype &mass) {
             const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
             utils::vmapi<Dtype>(
@@ -53,10 +53,10 @@ namespace noa::pms::dcs {
 
     template<typename Dtype, typename DCSFunc>
     inline auto pvmap(const DCSFunc &dcs_func) {
-        return [&dcs_func](const DCSCalculation &result,
-                           const KineticEnergies &kinetic_energies,
-                           const RecoilEnergies &recoil_energies,
-                           const AtomicElement<Dtype> &element,
+        return [&dcs_func](const Calculation &result,
+                           const Energies &kinetic_energies,
+                           const Energies &recoil_energies,
+                           const AtomicElement <Dtype> &element,
                            const Dtype &mass) {
             const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
             utils::pvmapi<Dtype>(
@@ -65,6 +65,64 @@ namespace noa::pms::dcs {
                     result);
         };
     }
+
+    template<typename Dtype, typename DCSIntegrand>
+    inline auto recoil_energy_integral(const DCSIntegrand &dcs_integrand) {
+        return [&dcs_integrand](const Dtype &kinetic_energy,
+                                const Dtype &xlow,
+                                const AtomicElement <Dtype> &element,
+                                const Dtype &mass,
+                                const int min_points) {
+            return utils::numerics::quadrature6<Dtype>(
+                    log(kinetic_energy * xlow), log(kinetic_energy),
+                    [&](const Dtype &t) {
+                        return dcs_integrand(kinetic_energy, exp(t), element, mass);
+                    },
+                    min_points) /
+                   (kinetic_energy + mass);
+        };
+    }
+
+    template<typename Dtype, typename DCSFunc>
+    inline auto cel_integral(const DCSFunc &dcs_func) {
+        return recoil_energy_integral<Dtype>(
+                [&dcs_func](const Dtype &k,
+                            const Dtype &q,
+                            const AtomicElement <Dtype> &el,
+                            const Dtype &mu) {
+                    return dcs_func(k, q, el, mu) * q * q;
+                });
+    }
+
+    template<typename Dtype, typename DCSFunc>
+    inline auto del_integral(const DCSFunc &dcs_func) {
+        return recoil_energy_integral<Dtype>(
+                [&dcs_func](const Dtype &k,
+                            const Dtype &q,
+                            const AtomicElement <Dtype> &el,
+                            const Dtype &mu) {
+                    return dcs_func(k, q, el, mu) * q ;
+                });
+    }
+    
+
+    template<typename Dtype, typename CSIntegral>
+    inline auto vmap_integral(const CSIntegral &cs_integral) {
+        return [&cs_integral](const Calculation &result,
+                              const Energies &kinetic_energies,
+                              const EnergyTransfer &xlow,
+                              const AtomicElement <Dtype> &element,
+                              const ParticleMass &mass,
+                              const int min_points) {
+            utils::vmap<Dtype>(
+                    kinetic_energies,
+                    [&](const Dtype &k) {
+                        return cs_integral(k, xlow, element, mass, min_points);
+                    },
+                    result);
+        };
+    }
+
 
     namespace pumas {
         /*
@@ -75,7 +133,7 @@ namespace noa::pms::dcs {
         inline const auto bremsstrahlung = [](
                 const Energy &kinetic_energy,
                 const Energy &recoil_energy,
-                const AtomicElement<Scalar> &element,
+                const AtomicElement <Scalar> &element,
                 const ParticleMass &mass) {
             const int Z = element.Z;
             const Scalar A = element.A;
@@ -120,7 +178,7 @@ namespace noa::pms::dcs {
          */
         inline const auto pair_production = [](const Energy &kinetic_energy,
                                                const Energy &recoil_energy,
-                                               const AtomicElement<Scalar> &element,
+                                               const AtomicElement <Scalar> &element,
                                                const ParticleMass &mass) {
             const int Z = element.Z;
             const Scalar A = element.A;
@@ -359,7 +417,7 @@ namespace noa::pms::dcs {
          */
         inline const auto photonuclear = [](const Energy &kinetic_energy,
                                             const Energy &recoil_energy,
-                                            const AtomicElement<Scalar> &element,
+                                            const AtomicElement <Scalar> &element,
                                             const ParticleMass &mass) {
             if (dcs_photonuclear_check(kinetic_energy, recoil_energy))
                 return 0.;
@@ -410,7 +468,7 @@ namespace noa::pms::dcs {
          */
         inline const auto ionisation = [](const Energy &kinetic_energy,
                                           const Energy &recoil_energy,
-                                          const AtomicElement<Scalar> &element,
+                                          const AtomicElement <Scalar> &element,
                                           const ParticleMass &mass) {
             const Scalar A = element.A;
             const int Z = element.Z;
@@ -442,7 +500,7 @@ namespace noa::pms::dcs {
                         (log(4. * E * (E - recoil_energy) / (mass * mass)) -
                          L1);
             }
-            return (Scalar) (cs * (1. + Delta));
+            return (Scalar)(cs * (1. + Delta));
         };
 
     } // namespace noa::pms::dcs::pumas

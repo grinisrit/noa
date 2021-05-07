@@ -56,10 +56,9 @@ namespace noa::pms {
         Dtype a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
     };
 
-    using KineticEnergies = torch::Tensor;
-    using RecoilEnergies = torch::Tensor;
-    using DCSCalculation = torch::Tensor; // Receiver tensor for DCS calculations
-    using Tabulation = torch::Tensor;     // Tabulations holder
+    using Energies = torch::Tensor;
+    using Calculation = torch::Tensor; // Receiver tensor for calculations
+    using Tabulation = torch::Tensor;  // Tabulations holder
 
     constexpr UniversalConst AVOGADRO_NUMBER = 6.02214076E+23;
     constexpr UniversalConst ATOMIC_MASS_ENERGY = 0.931494; // Atomic mass to MeV
@@ -123,9 +122,7 @@ namespace noa::pms {
         constexpr int DCS_SAMPLING_N = 11; // Samples for DCS model
         constexpr int NDM = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + DCS_SAMPLING_N + 1;
 
-        using ComputeCEL = bool;      // Compute Continuous Energy Loss (CEL) flag
         using MomentumIntegral = Scalar;
-
         using ThresholdIndex = Index;
         using Thresholds = torch::Tensor;
 

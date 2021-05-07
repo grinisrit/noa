@@ -178,6 +178,7 @@ namespace noa::pms {
                     torch::zeros({nel, nkin}, tensor_ops())};
         }
 
+        // TODO: implement CUDA version
         inline void compute_per_element_data() {
             const int nel = num_elements();
             const auto &model_K = table_K.index(
