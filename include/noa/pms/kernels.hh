@@ -32,15 +32,15 @@
 
 #include <torch/types.h>
 
-namespace noa::pms::cuda::dcs {
-    namespace pumas {
+namespace noa::pms::dcs {
+    namespace pumas::cuda {
 
         void vmap_bremsstrahlung(
-                const DCSCalculation &result,
-                const KineticEnergies &kinetic_energies,
-                const RecoilEnergies &recoil_energies,
+                const Calculation &result,
+                const Energies &kinetic_energies,
+                const Energies &recoil_energies,
                 const AtomicElement<Scalar> &element,
                 const ParticleMass &mass);
 
-    } // namespace noa::pms::cuda::dcs::pumas
-} // namespace noa::pms::cuda::dcs
+    } // namespace noa::pms::dcs::pumas::cuda
+} // namespace noa::pms::dcs

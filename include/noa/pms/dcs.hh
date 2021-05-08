@@ -101,10 +101,10 @@ namespace noa::pms::dcs {
                             const Dtype &q,
                             const AtomicElement <Dtype> &el,
                             const Dtype &mu) {
-                    return dcs_func(k, q, el, mu) * q ;
+                    return dcs_func(k, q, el, mu) * q;
                 });
     }
-    
+
 
     template<typename Dtype, typename CSIntegral>
     inline auto vmap_integral(const CSIntegral &cs_integral) {
@@ -211,7 +211,7 @@ namespace noa::pms::dcs {
             const Scalar tmin = log(argmin);
 
             // Compute the integral over t = ln(1-rho)
-            Scalar I = utils::numerics::quadrature8<Scalar>(0.f, 1.f, [&](const Scalar &t) {
+            const auto I = utils::numerics::quadrature8<Scalar>(0.f, 1.f, [&](const Scalar &t) {
                 const Scalar eps = exp(t * tmin);
                 const Scalar rho = 1. - eps;
                 const Scalar rho2 = rho * rho;
@@ -447,7 +447,7 @@ namespace noa::pms::dcs {
              * a Gaussian quadrature. Note that 9 points are enough to get a
              * better than 0.1 % accuracy.
             */
-            const Scalar ds =
+            const auto ds =
                     utils::numerics::quadrature9<Scalar>(
                             0.f, 1.f,
                             [&A, &pQ2c, &dpQ2, &mass, &kinetic_energy, &recoil_energy](
@@ -503,5 +503,104 @@ namespace noa::pms::dcs {
             return (Scalar)(cs * (1. + Delta));
         };
 
+        inline const auto analytic_del_ionisation_interactions = [](
+                const Scalar &a0,
+                const Scalar &a1,
+                const Scalar &a2,
+                const Scalar &Wmax,
+                const Scalar &Wmin
+        ) {
+            return a0 * (Wmax - Wmin) + a1 * log(Wmax / Wmin) +
+                   a2 * (1. / Wmin - 1. / Wmax);
+        };
+
+        inline const auto analytic_cel_ionisation_interactions = [](
+                const Scalar &a0,
+                const Scalar &a1,
+                const Scalar &a2,
+                const Scalar &Wmax,
+                const Scalar &Wmin
+        ) {
+            return 0.5 * a0 * (Wmax * Wmax - Wmin * Wmin) +
+                   a1 * (Wmax - Wmin) + a2 * log(Wmax / Wmin);
+        };
+
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9669
+         */
+        template<typename CloseInteractionsTerm>
+        inline const auto analytic_recoil_energy_integral_ionisation =
+                [](const Energy &kinetic_energy,
+                   const EnergyTransfer &xlow,
+                   const AtomicElement <Scalar> &element,
+                   const ParticleMass &mass,
+                   const CloseInteractionsTerm &interact // Close interactions for Q >> atomic binding energies.
+                ) {
+                    const Scalar P2 = kinetic_energy * (kinetic_energy + 2. * mass);
+                    const Scalar E = kinetic_energy + mass;
+                    const Scalar Wmax = 2. * ELECTRON_MASS * P2 /
+                                        (mass * mass +
+                                         ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
+                    if (Wmax < X_FRACTION * kinetic_energy)
+                        return (Scalar) 0.;
+                    Scalar Wmin = 0.62 * element.I;
+                    const Scalar qlow = kinetic_energy * xlow;
+                    if (qlow >= Wmin)
+                        Wmin = qlow;
+
+                    // Check the bounds.
+                    if (Wmax <= Wmin)
+                        return (Scalar) 0.;
+
+                    return (Scalar)(
+                            1.535336E-05 * element.Z / element.A *
+                            interact(0.5 / P2, -1. / Wmax, E * E / P2, Wmax, Wmin));
+                };
     } // namespace noa::pms::dcs::pumas
+
+    template<>
+    inline auto cel_integral<Scalar>(const decltype(pumas::ionisation) &dcs_func) {
+        return [&dcs_func](const Scalar &kinetic_energy,
+                           const Scalar &xlow,
+                           const AtomicElement <Scalar> &element,
+                           const Scalar &mass,
+                           const int min_points) {
+            const Scalar m1 = mass - ELECTRON_MASS;
+            return (kinetic_energy <= 0.5 * m1 * m1 / ELECTRON_MASS) ?
+                   pumas::analytic_recoil_energy_integral_ionisation<decltype(pumas::analytic_cel_ionisation_interactions)>
+                           (kinetic_energy, xlow, element, mass, pumas::analytic_cel_ionisation_interactions) :
+                   recoil_energy_integral<Scalar>(
+                           [&dcs_func](const Scalar &k,
+                                       const Scalar &q,
+                                       const AtomicElement <Scalar> &el,
+                                       const ParticleMass &mu) {
+                               return dcs_func(k, q, el, mu) * q * q;
+                           })(kinetic_energy, xlow, element, mass, min_points);
+        };
+    }
+
+    template<>
+    inline auto del_integral<Scalar>(const decltype(pumas::ionisation) &dcs_func) {
+        return [&dcs_func](const Scalar &kinetic_energy,
+                           const Scalar &xlow,
+                           const AtomicElement <Scalar> &element,
+                           const Scalar &mass,
+                           const int min_points) {
+            const Scalar m1 = mass - ELECTRON_MASS;
+            return (kinetic_energy <= 0.5 * m1 * m1 / ELECTRON_MASS) ?
+                   pumas::analytic_recoil_energy_integral_ionisation<decltype(pumas::analytic_del_ionisation_interactions)>
+                           (kinetic_energy, xlow, element, mass, pumas::analytic_del_ionisation_interactions) :
+                   recoil_energy_integral<Scalar>(
+                           [&dcs_func](const Scalar &k,
+                                       const Scalar &q,
+                                       const AtomicElement <Scalar> &el,
+                                       const ParticleMass &mu) {
+                               return dcs_func(k, q, el, mu) * q;
+                           })(kinetic_energy, xlow, element, mass, min_points);
+        };
+    }
+
 } // namespace noa::pms::dcs

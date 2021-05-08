@@ -31,10 +31,10 @@
 #include "noa/pms/constants.hh"
 
 
-namespace noa::pms::cuda::dcs {
+namespace noa::pms::dcs {
 
 
-    namespace pumas {
+    namespace pumas::cuda {
 
         __device__ __forceinline__ Scalar bremsstrahlung(
                 const Energy &kinetic_energy,
@@ -78,5 +78,5 @@ namespace noa::pms::cuda::dcs {
         };
 
 
-    } // namespace noa::pms::cuda::dcs::pumas
-} // namespace noa::pms::cuda::dcs
+    } // namespace noa::pms::dcs::pumas::cuda
+} // namespace noa::pms::dcs

@@ -1,81 +1,139 @@
 #include "noa-bench.hh"
 
-#include <noa/pms/constants.hh>
 #include <noa/pms/dcs.hh>
 
 #include <benchmark/benchmark.h>
 
 using namespace noa::pms;
 
+
 BENCHMARK_F(DCSBenchmark, Bremsstrahlung)
-(benchmark::State &state)
-{
-    const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
-    const auto q = DCSData::get_recoil_energies()[65].item<Scalar>();
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        dcs::pumas::bremsstrahlung(k, q, element, mu);
-}
-
-BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCPU)
 (benchmark::State &state) {
-    const auto kinetic_energies = DCSData::get_kinetic_energies();
-    const auto recoil_energies = DCSData::get_recoil_energies();
-    auto result = torch::zeros_like(kinetic_energies);
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        dcs::vmap<Scalar>(dcs::pumas::bremsstrahlung)(
-                result, kinetic_energies, recoil_energies, element, mu);
+    single_calculation(state, dcs::pumas::bremsstrahlung);
 }
 
-BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCPU)
+BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorised)
 (benchmark::State &state) {
-    const auto kinetic_energies = DCSData::get_kinetic_energies().repeat_interleave(1000);
-    const auto recoil_energies = DCSData::get_recoil_energies().repeat_interleave(1000);
-    auto result = torch::zeros_like(kinetic_energies);
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        dcs::vmap<Scalar>(dcs::pumas::bremsstrahlung)(
-                result, kinetic_energies, recoil_energies, element, mu);
+    vectorised_calculation(state, dcs::pumas::bremsstrahlung);
 }
 
-BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeCPUOpenMP)
+BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLarge)
 (benchmark::State &state) {
-    const auto kinetic_energies = DCSData::get_kinetic_energies().repeat_interleave(1000);
-    const auto recoil_energies = DCSData::get_recoil_energies().repeat_interleave(1000);
-    auto result = torch::zeros_like(kinetic_energies);
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        dcs::pvmap<Scalar>(dcs::pumas::bremsstrahlung)(
-                result, kinetic_energies, recoil_energies, element, mu);
+    large_vectorised_calculation(state, dcs::pumas::bremsstrahlung);
 }
 
-BENCHMARK_F(DCSBenchmark, DELBremsstrahlungCPU)
-(benchmark::State &state)
-{
-    const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
-    const auto xlow = X_FRACTION;
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        dcs::del_integral<Scalar>(dcs::pumas::bremsstrahlung)(
-                k, xlow, element, mu, 180);
+BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeOpenMP)
+(benchmark::State &state) {
+    large_vectorised_openmp_calculation(state, dcs::pumas::bremsstrahlung);
 }
 
-BENCHMARK_F(DCSBenchmark, DELBremsstrahlungVectorisedCPU)
-(benchmark::State &state)
-{
-    const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
-    const auto k = DCSData::get_kinetic_energies();
-    const auto xlow = X_FRACTION;
-    const auto element = STANDARD_ROCK;
-    const auto mu = MUON_MASS;
-    for (auto _ : state)
-        dcs::vmap_integral<Scalar>(
-                dcs::del_integral<Scalar>(dcs::pumas::bremsstrahlung))(
-                r, k, xlow, element, mu, 180);
+BENCHMARK_F(DCSBenchmark, DELBremsstrahlung)
+(benchmark::State &state) {
+    single_del_calculation(state, dcs::pumas::bremsstrahlung);
+}
+
+BENCHMARK_F(DCSBenchmark, DELBremsstrahlungVectorised)
+(benchmark::State &state) {
+    vectorised_del_calculation(state, dcs::pumas::bremsstrahlung);
+}
+
+BENCHMARK_F(DCSBenchmark, CELBremsstrahlung)
+(benchmark::State &state) {
+    single_cel_calculation(state, dcs::pumas::bremsstrahlung);
+}
+
+BENCHMARK_F(DCSBenchmark, CELBremsstrahlungVectorised)
+(benchmark::State &state) {
+    vectorised_cel_calculation(state, dcs::pumas::bremsstrahlung);
+}
+
+BENCHMARK_F(DCSBenchmark, PairProduction)
+(benchmark::State &state) {
+    single_calculation(state, dcs::pumas::pair_production);
+}
+
+BENCHMARK_F(DCSBenchmark, PairProductionVectorised)
+(benchmark::State &state) {
+    vectorised_calculation(state, dcs::pumas::pair_production);
+}
+
+BENCHMARK_F(DCSBenchmark, DELPairProduction)
+(benchmark::State &state) {
+    single_del_calculation(state, dcs::pumas::pair_production);
+}
+
+BENCHMARK_F(DCSBenchmark, DELPairProductionVectorised)
+(benchmark::State &state) {
+    vectorised_del_calculation(state, dcs::pumas::pair_production);
+}
+
+BENCHMARK_F(DCSBenchmark, CELPairProduction)
+(benchmark::State &state) {
+    single_cel_calculation(state, dcs::pumas::pair_production);
+}
+
+BENCHMARK_F(DCSBenchmark, CELPairProductionVectorised)
+(benchmark::State &state) {
+    vectorised_cel_calculation(state, dcs::pumas::pair_production);
+}
+
+BENCHMARK_F(DCSBenchmark, Photonuclear)
+(benchmark::State &state) {
+    single_calculation(state, dcs::pumas::photonuclear);
+}
+
+BENCHMARK_F(DCSBenchmark, PhotonuclearVectorised)
+(benchmark::State &state) {
+    vectorised_calculation(state, dcs::pumas::photonuclear);
+}
+
+BENCHMARK_F(DCSBenchmark, DELPhotonuclear)
+(benchmark::State &state) {
+    single_del_calculation(state, dcs::pumas::photonuclear);
+}
+
+BENCHMARK_F(DCSBenchmark, DELPhotonuclearVectorised)
+(benchmark::State &state) {
+    vectorised_del_calculation(state, dcs::pumas::photonuclear);
+}
+
+BENCHMARK_F(DCSBenchmark, CELPhotonuclear)
+(benchmark::State &state) {
+    single_cel_calculation(state, dcs::pumas::photonuclear);
+}
+
+BENCHMARK_F(DCSBenchmark, CELPhotonuclearVectorised)
+(benchmark::State &state) {
+    vectorised_cel_calculation(state, dcs::pumas::photonuclear);
+}
+
+
+BENCHMARK_F(DCSBenchmark, Ionisation)
+(benchmark::State &state) {
+    single_calculation(state, dcs::pumas::ionisation);
+}
+
+BENCHMARK_F(DCSBenchmark, IonisationVectorised)
+(benchmark::State &state) {
+    vectorised_calculation(state, dcs::pumas::ionisation);
+}
+
+BENCHMARK_F(DCSBenchmark, DELIonisation)
+(benchmark::State &state) {
+    single_del_calculation(state, dcs::pumas::ionisation);
+}
+
+BENCHMARK_F(DCSBenchmark, DELIonisationVectorised)
+(benchmark::State &state) {
+    vectorised_del_calculation(state, dcs::pumas::ionisation);
+}
+
+BENCHMARK_F(DCSBenchmark, CELIonisation)
+(benchmark::State &state) {
+    single_cel_calculation(state, dcs::pumas::ionisation);
+}
+
+BENCHMARK_F(DCSBenchmark, CELIonisationVectorised)
+(benchmark::State &state) {
+    vectorised_cel_calculation(state, dcs::pumas::ionisation);
 }

@@ -8,7 +8,7 @@
 
 using namespace noa::pms;
 
-TEST(DCS, BremsstrahlungCPU) {
+TEST(DCS, Bremsstrahlung) {
     auto kinetic_energies = DCSData::get_kinetic_energies();
     auto recoil_energies = DCSData::get_recoil_energies();
     auto pumas_brems = DCSData::get_pumas_brems();
@@ -18,7 +18,7 @@ TEST(DCS, BremsstrahlungCPU) {
     ASSERT_TRUE(relative_error(result, pumas_brems).item<Scalar>() < 1E-11);
 }
 
-TEST(DCS, DELBremsstrahlungCPU) {
+TEST(DCS, DELBremsstrahlung) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::del_integral<Scalar>(dcs::pumas::bremsstrahlung))(
@@ -28,7 +28,7 @@ TEST(DCS, DELBremsstrahlungCPU) {
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_brems_del()).item<Scalar>() < 1E-7);
 }
 
-TEST(DCS, CELBremsstrahlungCPU) {
+TEST(DCS, CELBremsstrahlung) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::cel_integral<Scalar>(dcs::pumas::bremsstrahlung))(
@@ -38,7 +38,7 @@ TEST(DCS, CELBremsstrahlungCPU) {
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_brems_cel()).item<Scalar>() < 1E-7);
 }
 
-TEST(DCS, PairProductionCPU) {
+TEST(DCS, PairProduction) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap<Scalar>(dcs::pumas::pair_production)(
             result,
@@ -49,7 +49,7 @@ TEST(DCS, PairProductionCPU) {
 }
 
 
-TEST(DCS, DELPairProductionCPU) {
+TEST(DCS, DELPairProduction) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::del_integral<Scalar>(dcs::pumas::pair_production))(
@@ -59,7 +59,7 @@ TEST(DCS, DELPairProductionCPU) {
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_pprod_del()).item<Scalar>() < 1E-7);
 }
 
-TEST(DCS, CELPairProductionCPU) {
+TEST(DCS, CELPairProduction) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::cel_integral<Scalar>(dcs::pumas::pair_production))(
@@ -69,7 +69,7 @@ TEST(DCS, CELPairProductionCPU) {
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_pprod_cel()).item<Scalar>() < 1E-7);
 }
 
-TEST(DCS, PhotonuclearCPU) {
+TEST(DCS, Photonuclear) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap<Scalar>(dcs::pumas::photonuclear)(
             result,
@@ -79,7 +79,7 @@ TEST(DCS, PhotonuclearCPU) {
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_photo()).item<Scalar>() < 1E-9);
 }
 
-TEST(DCS, DELPhotonuclearCPU) {
+TEST(DCS, DELPhotonuclear) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::del_integral<Scalar>(dcs::pumas::photonuclear))(
@@ -89,7 +89,7 @@ TEST(DCS, DELPhotonuclearCPU) {
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_photo_del()).item<Scalar>() < 1E-9);
 }
 
-TEST(DCS, CELPhotonuclearCPU) {
+TEST(DCS, CELPhotonuclear) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::cel_integral<Scalar>(dcs::pumas::photonuclear))(
@@ -100,7 +100,7 @@ TEST(DCS, CELPhotonuclearCPU) {
 }
 
 
-TEST(DCS, IonisationCPU) {
+TEST(DCS, Ionisation) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap<Scalar>(dcs::pumas::ionisation)(
             result,
@@ -108,4 +108,24 @@ TEST(DCS, IonisationCPU) {
             DCSData::get_recoil_energies(),
             STANDARD_ROCK, MUON_MASS);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion()).item<Scalar>() < 1E-9);
+}
+
+TEST(DCS, DELIonisation) {
+    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    dcs::vmap_integral<Scalar>(
+            dcs::del_integral<Scalar>(dcs::pumas::ionisation))(
+            result,
+            DCSData::get_kinetic_energies(),
+            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+    ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion_del()).item<Scalar>() < 1E-9);
+}
+
+TEST(DCS, CELIonisation) {
+    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    dcs::vmap_integral<Scalar>(
+            dcs::cel_integral<Scalar>(dcs::pumas::ionisation))(
+            result,
+            DCSData::get_kinetic_energies(),
+            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+    ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion_cel()).item<Scalar>() < 1E-9);
 }
