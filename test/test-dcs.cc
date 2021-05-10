@@ -24,7 +24,7 @@ TEST(DCS, DELBremsstrahlung) {
             dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_brems_del()).item<Scalar>() < 1E-7);
 }
 
@@ -34,7 +34,7 @@ TEST(DCS, CELBremsstrahlung) {
             dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_brems_cel()).item<Scalar>() < 1E-7);
 }
 
@@ -55,7 +55,7 @@ TEST(DCS, DELPairProduction) {
             dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_pprod_del()).item<Scalar>() < 1E-7);
 }
 
@@ -65,7 +65,7 @@ TEST(DCS, CELPairProduction) {
             dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_pprod_cel()).item<Scalar>() < 1E-7);
 }
 
@@ -85,7 +85,7 @@ TEST(DCS, DELPhotonuclear) {
             dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_photo_del()).item<Scalar>() < 1E-9);
 }
 
@@ -95,7 +95,7 @@ TEST(DCS, CELPhotonuclear) {
             dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_photo_cel()).item<Scalar>() < 1E-9);
 }
 
@@ -116,7 +116,7 @@ TEST(DCS, DELIonisation) {
             dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion_del()).item<Scalar>() < 1E-9);
 }
 
@@ -126,7 +126,7 @@ TEST(DCS, CELIonisation) {
             dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
-            X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion_cel()).item<Scalar>() < 1E-9);
 }
 

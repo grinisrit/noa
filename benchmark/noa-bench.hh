@@ -65,7 +65,7 @@ struct DCSBenchmark : benchmark::Fixture {
                                                    const DCSFunc &dcs_func,
                                                    const EnergyIntegrand &integrand) {
         const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
-        const auto xlow = X_FRACTION;
+        const auto xlow = dcs::pumas::X_FRACTION;
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
@@ -80,7 +80,7 @@ struct DCSBenchmark : benchmark::Fixture {
                                                        const EnergyIntegrand &integrand) {
         const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
         const auto k = DCSData::get_kinetic_energies();
-        const auto xlow = X_FRACTION;
+        const auto xlow = dcs::pumas::X_FRACTION;
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)

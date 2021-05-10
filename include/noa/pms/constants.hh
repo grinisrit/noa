@@ -79,20 +79,6 @@ namespace noa::pms {
                     0.1364E-6, // GeV
                     11};
 
-    // Default relative switch between continuous and discrete energy loss
-    constexpr EnergyTransfer X_FRACTION = 5E-02;
-    // Maximum allowed energy transfer for using DCS models
-    constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
-
-    constexpr Energy KIN_CUTOFF = 1E-9;           // GeV, energy cutoff used in relativistic kinematics
-    constexpr Scalar EHS_PATH_MAX = 1E+9;         // kg/m^2, max inverse path length for Elastic Hard Scattering (EHS) events
-    constexpr Scalar EHS_OVER_MSC = 1E-4;         // EHS to 1st transport multiple scattering interaction length path ratio
-    constexpr Scalar MAX_SOFT_ANGLE = 1E+00;      // degrees, max deflection angle for a soft scattering event
-    constexpr Energy DCS_MODEL_MIN_KINETIC = 10.; // GeV, Minimum kinetic energy for using the DCS model
-
-    inline const Scalar MAX_MU0 =
-            0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
-
     namespace dcs::pumas {
 
         constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV

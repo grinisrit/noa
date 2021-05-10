@@ -37,6 +37,8 @@
 
 namespace noa::pms {
 
+    using namespace torch::indexing;
+
     using MaterialsRelativeElectronicDensity = torch::Tensor;
     using MaterialsMeanExcitationEnergy = torch::Tensor;
     using MaterialsDensityEffect = std::vector<MaterialDensityEffect<Scalar>>;
@@ -273,6 +275,7 @@ namespace noa::pms {
             init_per_element_data(nel);
             init_dcs_data(nel, model_K.numel());
 
+#pragma omp parallel for
             for (Index iel = 0; iel < nel; iel++) {
                 const auto &element = get_element(iel);
                 compute_recoil_energy_integrals(table_CSn[iel], dcs::del_integrand<Scalar>, element);
@@ -310,7 +313,7 @@ namespace noa::pms {
             table_CSf[imat] *= torch::where(table_CS[imat] <= 0.0,
                                             torch::tensor(0.0, tensor_ops()), torch::tensor(1.0, tensor_ops()))
                     .view({1, 1, nkin});
-            table_CSf[imat] = table_CSf[imat].view({nel * dcs::NPR, nkin}).cumsum(0).view({nel, dcs::NPR, nkin}) /
+            table_CSf[imat] = table_CSf[imat].view({nel * dcs::pumas::NPR, nkin}).cumsum(0).view({nel, dcs::pumas::NPR, nkin}) /
                               torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, tensor_ops()),
                                            table_CS[imat]).view({1, 1, nkin});
 
@@ -398,7 +401,7 @@ namespace noa::pms {
         }
 
         // TODO: implement CUDA version
-        inline void compute_coulomb_scattering_tables(const MaterialIdRef imat) {
+        inline void compute_coulomb_scattering_tables(const MaterialId imat) {
             const auto &elids = get_material(imat).element_ids;
             const auto &fracs = get_material(imat).fractions;
             const Index nel = elids.numel();
@@ -443,6 +446,7 @@ namespace noa::pms {
             coulomb_workspace = CoulombWorkspace{}; // drop CoulombWorkspace data
         }
 
+        // TODO: implement CUDA version
         inline void set_cel_integrals() {
             const int nmat = num_materials();
             init_cel_integrals(nmat);
