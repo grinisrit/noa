@@ -31,6 +31,7 @@
 #include "noa/pms/pms.hh"
 #include "noa/pms/mdf.hh"
 #include "noa/pms/constants.hh"
+#include "noa/pms/dcs.hh"
 
 #include <torch/torch.h>
 
@@ -38,8 +39,8 @@ namespace noa::pms {
 
     using MaterialsRelativeElectronicDensity = torch::Tensor;
     using MaterialsMeanExcitationEnergy = torch::Tensor;
-    using MaterialsDensityEffect = std::vector<MaterialDensityEffect < Scalar>>;
-    
+    using MaterialsDensityEffect = std::vector<MaterialDensityEffect<Scalar>>;
+
     using TableK = Tabulation;                // Kinetic energy tabulations
     using TableCSn = Tabulation;              // CS normalisation tabulations
     using TableCSf = std::vector<Tabulation>; // CS fractions by material
@@ -71,7 +72,7 @@ namespace noa::pms {
         dcs::pumas::SoftScatter table_ms1;
     };
 
-    
+
     class MuonPhysics : public Model<Scalar, MuonPhysics> {
 
         friend class Model<Scalar, MuonPhysics>;
@@ -110,12 +111,12 @@ namespace noa::pms {
             return torch::dtype(c10::CppTypeToScalarType<Scalar>{}).layout(torch::kStrided);
         }
 
-        inline AtomicElement <Scalar> process_element(const AtomicElement <Scalar> &element) const {
+        inline AtomicElement<Scalar> process_element(const AtomicElement<Scalar> &element) const {
             return AtomicElement<Scalar>{element.A, 1E-6 * dcs::pumas::ENERGY_SCALE * element.I, element.Z};
         }
 
-        inline Material <Scalar> process_material(
-                const Material <Scalar> &material) const {
+        inline Material<Scalar> process_material(
+                const Material<Scalar> &material) const {
             return Material<Scalar>{
                     material.element_ids,
                     material.fractions.to(tensor_ops()),
@@ -178,6 +179,64 @@ namespace noa::pms {
                     torch::zeros({nel, nkin}, tensor_ops())};
         }
 
+        template<typename EnergyIntegrand>
+        inline void compute_recoil_energy_integrals(
+                const Tabulation &result,
+                const EnergyIntegrand &integrand,
+                const AtomicElement<Scalar> &element) {
+
+            dcs::vmap_integral<Scalar>(
+                    dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, integrand))
+                    (result[0], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
+            dcs::vmap_integral<Scalar>(
+                    dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, integrand))
+                    (result[1], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
+            dcs::vmap_integral<Scalar>(
+                    dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, integrand))
+                    (result[2], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
+            dcs::vmap_integral<Scalar>(
+                    dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, integrand))
+                    (result[3], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
+        }
+
+
+        inline void compute_dcs_model(
+                const Tabulation &result,
+                const TableK &high_kinetic_energies,
+                const AtomicElement<Scalar> &element) {
+            dcs_model_fit(dcs::pumas::bremsstrahlung,
+                          result[0], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
+                          element, MUON_MASS);
+            dcs_model_fit(dcs::pumas::pair_production,
+                          result[1], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
+                          element, MUON_MASS);
+            dcs_model_fit(dcs::pumas::photonuclear,
+                          result[2], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
+                          element, MUON_MASS);
+        }
+
+        inline void compute_coulomb_data(const AtomicElement<Scalar> &element, const ElementId iel) {
+            ;
+
+            const auto &screen = coulomb_workspace.screening[iel];
+            const auto &fspin = coulomb_workspace.fspin[iel];
+
+            dcs::pumas::coulomb_data(
+                    coulomb_workspace.fCM[iel],
+                    screen, fspin,
+                    coulomb_workspace.invlambda[iel],
+                    table_K, element, MUON_MASS);
+
+            dcs::pumas::coulomb_transport(
+                    coulomb_workspace.G[iel],
+                    screen, fspin,
+                    torch::tensor(1.0, tensor_ops()));
+
+            dcs::pumas::soft_scattering(
+                    coulomb_workspace.table_ms1[iel],
+                    table_K, element, MUON_MASS);
+        }
+
         // TODO: implement CUDA version
         inline void compute_per_element_data() {
             const Index nel = num_elements();
@@ -186,6 +245,14 @@ namespace noa::pms {
 
             init_per_element_data(nel);
             init_dcs_data(nel, model_K.numel());
+
+            for (int iel = 0; iel < nel; iel++) {
+                const auto &element = get_element(iel);
+                compute_recoil_energy_integrals(table_CSn[iel], dcs::del_integrand<Scalar>, element);
+                compute_recoil_energy_integrals(cel_table[iel], dcs::cel_integrand<Scalar>, element);
+                compute_dcs_model(dcs_data[iel], model_K, element);
+                compute_coulomb_data(element, iel);
+            }
         }
 
     public:
@@ -201,6 +268,9 @@ namespace noa::pms {
                 return false;
             if (!set_table_K(dedx_data))
                 return false;
+
+            compute_per_element_data();
+
             return true;
         }
 

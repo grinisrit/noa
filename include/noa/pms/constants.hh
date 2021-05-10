@@ -112,15 +112,15 @@ namespace noa::pms {
         inline const Scalar MAX_MU0 =
                 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
 
-        constexpr int NPR = 4;  // Number of DEL processes considered
-        constexpr int NSF = 9;  // Number of screening factors and pole reduction for Coulomb scattering
-        constexpr int NLAR = 8; // Order of expansion for the computation of the magnetic deflection
+        constexpr Index NPR = 4;  // Number of DEL processes considered
+        constexpr Index NSF = 9;  // Number of screening factors and pole reduction for Coulomb scattering
+        constexpr Index NLAR = 8; // Order of expansion for the computation of the magnetic deflection
 
         // Polynomials order for the DCS model
-        constexpr int DCS_MODEL_ORDER_P = 6;
-        constexpr int DCS_MODEL_ORDER_Q = 2;
-        constexpr int DCS_SAMPLING_N = 11; // Samples for DCS model
-        constexpr int NDM = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + DCS_SAMPLING_N + 1;
+        constexpr Index DCS_MODEL_ORDER_P = 6;
+        constexpr Index DCS_MODEL_ORDER_Q = 2;
+        constexpr Index DCS_SAMPLING_N = 11; // Samples for DCS model
+        constexpr Index NDM = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + DCS_SAMPLING_N + 1;
 
         using MomentumIntegral = Scalar;
         using ThresholdIndex = Index;

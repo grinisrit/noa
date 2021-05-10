@@ -21,7 +21,7 @@ TEST(DCS, Bremsstrahlung) {
 TEST(DCS, DELBremsstrahlung) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::del_integral<Scalar>(dcs::pumas::bremsstrahlung))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -31,7 +31,7 @@ TEST(DCS, DELBremsstrahlung) {
 TEST(DCS, CELBremsstrahlung) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::cel_integral<Scalar>(dcs::pumas::bremsstrahlung))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -52,7 +52,7 @@ TEST(DCS, PairProduction) {
 TEST(DCS, DELPairProduction) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::del_integral<Scalar>(dcs::pumas::pair_production))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -62,7 +62,7 @@ TEST(DCS, DELPairProduction) {
 TEST(DCS, CELPairProduction) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::cel_integral<Scalar>(dcs::pumas::pair_production))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -82,7 +82,7 @@ TEST(DCS, Photonuclear) {
 TEST(DCS, DELPhotonuclear) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::del_integral<Scalar>(dcs::pumas::photonuclear))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -92,7 +92,7 @@ TEST(DCS, DELPhotonuclear) {
 TEST(DCS, CELPhotonuclear) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::cel_integral<Scalar>(dcs::pumas::photonuclear))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -113,7 +113,7 @@ TEST(DCS, Ionisation) {
 TEST(DCS, DELIonisation) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::del_integral<Scalar>(dcs::pumas::ionisation))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, dcs::del_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
@@ -123,7 +123,7 @@ TEST(DCS, DELIonisation) {
 TEST(DCS, CELIonisation) {
     auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
-            dcs::cel_integral<Scalar>(dcs::pumas::ionisation))(
+            dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, dcs::cel_integrand<Scalar>))(
             result,
             DCSData::get_kinetic_energies(),
             X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);

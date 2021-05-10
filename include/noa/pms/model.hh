@@ -266,6 +266,8 @@ namespace noa::pms {
                     table_K, element, mass);
         }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "openmp-use-default-none"
         inline void compute_per_element_data() {
             const int nel = num_elements();
             const auto &model_K = table_K.index(
@@ -295,6 +297,7 @@ namespace noa::pms {
                 compute_coulomb_data(iel);
             }
         }
+#pragma clang diagnostic pop
 
         inline void init_dedx_tables(const int nmat) {
             table_CSf = TableCSf(nmat);

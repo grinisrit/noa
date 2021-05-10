@@ -29,22 +29,22 @@ BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedLargeOpenMP)
 
 BENCHMARK_F(DCSBenchmark, DELBremsstrahlung)
 (benchmark::State &state) {
-    single_del_calculation(state, dcs::pumas::bremsstrahlung);
+    single_recoil_integral_calculation(state, dcs::pumas::bremsstrahlung, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, DELBremsstrahlungVectorised)
 (benchmark::State &state) {
-    vectorised_del_calculation(state, dcs::pumas::bremsstrahlung);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::bremsstrahlung, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELBremsstrahlung)
 (benchmark::State &state) {
-    single_cel_calculation(state, dcs::pumas::bremsstrahlung);
+    single_recoil_integral_calculation(state, dcs::pumas::bremsstrahlung, dcs::cel_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELBremsstrahlungVectorised)
 (benchmark::State &state) {
-    vectorised_cel_calculation(state, dcs::pumas::bremsstrahlung);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::bremsstrahlung, dcs::cel_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, PairProduction)
@@ -59,22 +59,22 @@ BENCHMARK_F(DCSBenchmark, PairProductionVectorised)
 
 BENCHMARK_F(DCSBenchmark, DELPairProduction)
 (benchmark::State &state) {
-    single_del_calculation(state, dcs::pumas::pair_production);
+    single_recoil_integral_calculation(state, dcs::pumas::pair_production, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, DELPairProductionVectorised)
 (benchmark::State &state) {
-    vectorised_del_calculation(state, dcs::pumas::pair_production);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::pair_production, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELPairProduction)
 (benchmark::State &state) {
-    single_cel_calculation(state, dcs::pumas::pair_production);
+    single_recoil_integral_calculation(state, dcs::pumas::pair_production, dcs::cel_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELPairProductionVectorised)
 (benchmark::State &state) {
-    vectorised_cel_calculation(state, dcs::pumas::pair_production);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::pair_production, dcs::cel_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, Photonuclear)
@@ -89,22 +89,22 @@ BENCHMARK_F(DCSBenchmark, PhotonuclearVectorised)
 
 BENCHMARK_F(DCSBenchmark, DELPhotonuclear)
 (benchmark::State &state) {
-    single_del_calculation(state, dcs::pumas::photonuclear);
+    single_recoil_integral_calculation(state, dcs::pumas::photonuclear, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, DELPhotonuclearVectorised)
 (benchmark::State &state) {
-    vectorised_del_calculation(state, dcs::pumas::photonuclear);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::photonuclear, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELPhotonuclear)
 (benchmark::State &state) {
-    single_cel_calculation(state, dcs::pumas::photonuclear);
+    single_recoil_integral_calculation(state, dcs::pumas::photonuclear, dcs::cel_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELPhotonuclearVectorised)
 (benchmark::State &state) {
-    vectorised_cel_calculation(state, dcs::pumas::photonuclear);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::photonuclear, dcs::cel_integrand<Scalar>);
 }
 
 
@@ -120,20 +120,20 @@ BENCHMARK_F(DCSBenchmark, IonisationVectorised)
 
 BENCHMARK_F(DCSBenchmark, DELIonisation)
 (benchmark::State &state) {
-    single_del_calculation(state, dcs::pumas::ionisation);
+    single_recoil_integral_calculation(state, dcs::pumas::ionisation, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, DELIonisationVectorised)
 (benchmark::State &state) {
-    vectorised_del_calculation(state, dcs::pumas::ionisation);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::ionisation, dcs::del_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELIonisation)
 (benchmark::State &state) {
-    single_cel_calculation(state, dcs::pumas::ionisation);
+    single_recoil_integral_calculation(state, dcs::pumas::ionisation, dcs::cel_integrand<Scalar>);
 }
 
 BENCHMARK_F(DCSBenchmark, CELIonisationVectorised)
 (benchmark::State &state) {
-    vectorised_cel_calculation(state, dcs::pumas::ionisation);
+    vectorised_recoil_integral_calculation(state, dcs::pumas::ionisation, dcs::cel_integrand<Scalar>);
 }
