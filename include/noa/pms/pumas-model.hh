@@ -756,6 +756,7 @@ namespace noa::pms::dcs
                          (element.Z * (K + mass));
         return element.A * 2.54910918E+08 * screening * (1. + screening) * d * d;
     }
+
     /*
      *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
      *  GNU Lesser General Public License version 3

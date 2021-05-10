@@ -93,7 +93,7 @@ namespace noa::pms {
     inline const Scalar MAX_MU0 =
             0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
 
-    namespace pumas {
+    namespace dcs::pumas {
 
         constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
         constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
@@ -134,6 +134,6 @@ namespace noa::pms {
         using HSMeanFreePath = torch::Tensor;   // Hard scattering mean free path
         using TransportCoefs = torch::Tensor;
         using SoftScatter = torch::Tensor; // Soft scattering terms per element
-    }
+    } // namespace noa::pms::dcs::pumas
 
 } // namespace noa::pms

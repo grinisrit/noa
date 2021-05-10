@@ -41,7 +41,7 @@ namespace noa::pms::dcs {
         return [&dcs_func](const Calculation &result,
                            const Energies &kinetic_energies,
                            const Energies &recoil_energies,
-                           const AtomicElement <Dtype> &element,
+                           const AtomicElement<Dtype> &element,
                            const Dtype &mass) {
             const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
             utils::vmapi<Dtype>(
@@ -56,7 +56,7 @@ namespace noa::pms::dcs {
         return [&dcs_func](const Calculation &result,
                            const Energies &kinetic_energies,
                            const Energies &recoil_energies,
-                           const AtomicElement <Dtype> &element,
+                           const AtomicElement<Dtype> &element,
                            const Dtype &mass) {
             const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
             utils::pvmapi<Dtype>(
@@ -70,7 +70,7 @@ namespace noa::pms::dcs {
     inline auto recoil_energy_integral(const DCSIntegrand &dcs_integrand) {
         return [&dcs_integrand](const Dtype &kinetic_energy,
                                 const Dtype &xlow,
-                                const AtomicElement <Dtype> &element,
+                                const AtomicElement<Dtype> &element,
                                 const Dtype &mass,
                                 const int min_points) {
             return utils::numerics::quadrature6<Dtype>(
@@ -88,9 +88,9 @@ namespace noa::pms::dcs {
         return recoil_energy_integral<Dtype>(
                 [&dcs_func](const Dtype &k,
                             const Dtype &q,
-                            const AtomicElement <Dtype> &el,
-                            const Dtype &mu) {
-                    return dcs_func(k, q, el, mu) * q * q;
+                            const AtomicElement<Dtype> &el,
+                            const Dtype &mass) {
+                    return dcs_func(k, q, el, mass) * q * q;
                 });
     }
 
@@ -99,9 +99,9 @@ namespace noa::pms::dcs {
         return recoil_energy_integral<Dtype>(
                 [&dcs_func](const Dtype &k,
                             const Dtype &q,
-                            const AtomicElement <Dtype> &el,
-                            const Dtype &mu) {
-                    return dcs_func(k, q, el, mu) * q;
+                            const AtomicElement<Dtype> &el,
+                            const Dtype &mass) {
+                    return dcs_func(k, q, el, mass) * q;
                 });
     }
 
@@ -111,7 +111,7 @@ namespace noa::pms::dcs {
         return [&cs_integral](const Calculation &result,
                               const Energies &kinetic_energies,
                               const EnergyTransfer &xlow,
-                              const AtomicElement <Dtype> &element,
+                              const AtomicElement<Dtype> &element,
                               const ParticleMass &mass,
                               const int min_points) {
             utils::vmap<Dtype>(
@@ -133,7 +133,7 @@ namespace noa::pms::dcs {
         inline const auto bremsstrahlung = [](
                 const Energy &kinetic_energy,
                 const Energy &recoil_energy,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement<Scalar> &element,
                 const ParticleMass &mass) {
             const int Z = element.Z;
             const Scalar A = element.A;
@@ -178,7 +178,7 @@ namespace noa::pms::dcs {
          */
         inline const auto pair_production = [](const Energy &kinetic_energy,
                                                const Energy &recoil_energy,
-                                               const AtomicElement <Scalar> &element,
+                                               const AtomicElement<Scalar> &element,
                                                const ParticleMass &mass) {
             const int Z = element.Z;
             const Scalar A = element.A;
@@ -417,7 +417,7 @@ namespace noa::pms::dcs {
          */
         inline const auto photonuclear = [](const Energy &kinetic_energy,
                                             const Energy &recoil_energy,
-                                            const AtomicElement <Scalar> &element,
+                                            const AtomicElement<Scalar> &element,
                                             const ParticleMass &mass) {
             if (dcs_photonuclear_check(kinetic_energy, recoil_energy))
                 return 0.;
@@ -468,7 +468,7 @@ namespace noa::pms::dcs {
          */
         inline const auto ionisation = [](const Energy &kinetic_energy,
                                           const Energy &recoil_energy,
-                                          const AtomicElement <Scalar> &element,
+                                          const AtomicElement<Scalar> &element,
                                           const ParticleMass &mass) {
             const Scalar A = element.A;
             const int Z = element.Z;
@@ -500,9 +500,10 @@ namespace noa::pms::dcs {
                         (log(4. * E * (E - recoil_energy) / (mass * mass)) -
                          L1);
             }
-            return (Scalar)(cs * (1. + Delta));
+            return (Scalar) (cs * (1. + Delta));
         };
 
+        // Close interactions for Q >> atomic binding energies.
         inline const auto analytic_del_ionisation_interactions = [](
                 const Scalar &a0,
                 const Scalar &a1,
@@ -535,9 +536,9 @@ namespace noa::pms::dcs {
         inline const auto analytic_recoil_energy_integral_ionisation =
                 [](const Energy &kinetic_energy,
                    const EnergyTransfer &xlow,
-                   const AtomicElement <Scalar> &element,
+                   const AtomicElement<Scalar> &element,
                    const ParticleMass &mass,
-                   const CloseInteractionsTerm &interact // Close interactions for Q >> atomic binding energies.
+                   const CloseInteractionsTerm &interaction_term
                 ) {
                     const Scalar P2 = kinetic_energy * (kinetic_energy + 2. * mass);
                     const Scalar E = kinetic_energy + mass;
@@ -555,17 +556,518 @@ namespace noa::pms::dcs {
                     if (Wmax <= Wmin)
                         return (Scalar) 0.;
 
-                    return (Scalar)(
+                    return (Scalar) (
                             1.535336E-05 * element.Z / element.A *
-                            interact(0.5 / P2, -1. / Wmax, E * E / P2, Wmax, Wmin));
+                            interaction_term(0.5 / P2, -1. / Wmax, E * E / P2, Wmax, Wmin));
                 };
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
+         */
+        inline Scalar coulomb_frame_parameters(Scalar *fCM,
+                                               const Energy &kinetic_energy,
+                                               const AtomicElement<Scalar> &element,
+                                               const ParticleMass &mass) {
+            Scalar kinetic0;
+            const Scalar Ma = element.A * ATOMIC_MASS_ENERGY;
+            Scalar M2 = mass + Ma;
+            M2 *= M2;
+            const Scalar sCM12i = 1. / sqrt(M2 + 2. * Ma * kinetic_energy);
+            fCM[0] = (kinetic_energy + mass + Ma) * sCM12i;
+            kinetic0 =
+                    (kinetic_energy * Ma + mass * (mass + Ma)) * sCM12i -
+                    mass;
+            if (kinetic0 < KIN_CUTOFF)
+                kinetic0 = KIN_CUTOFF;
+            const Scalar etot = kinetic_energy + mass + Ma;
+            const Scalar betaCM2 =
+                    kinetic_energy * (kinetic_energy + 2. * mass) / (etot * etot);
+            Scalar rM2 = mass / Ma;
+            rM2 *= rM2;
+            fCM[1] = sqrt(rM2 * (1. - betaCM2) + betaCM2);
+            return kinetic0;
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6038
+         */
+        inline Scalar coulomb_spin_factor(const Energy &kinetic_energy, const ParticleMass &mass) {
+            const Scalar e = kinetic_energy + mass;
+            return kinetic_energy * (e + mass) / (e * e);
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5992
+         */
+        inline Scalar coulomb_wentzel_path(const Scalar &screening,
+                                           const Energy &kinetic_energy,
+                                           const AtomicElement<Scalar> &element,
+                                           const ParticleMass &mass) {
+            const Scalar d = kinetic_energy * (kinetic_energy + 2. * mass) /
+                             (element.Z * (kinetic_energy + mass));
+            return element.A * 2.54910918E+08 * screening * (1. + screening) * d * d;
+        }
+
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5934
+         */
+        inline Scalar coulomb_screening_parameters(Scalar *pscreen,
+                                                   const Energy &kinetic_energy,
+                                                   const AtomicElement<Scalar> &element,
+                                                   const ParticleMass &mass) {
+            // Nuclear screening
+            const Scalar third = 1. / 3;
+            const Scalar A13 = pow(element.A, third);
+            const Scalar R1 = 1.02934 * A13 + 0.435;
+            const Scalar R2 = 2.;
+            const Scalar p2 = kinetic_energy * (kinetic_energy + 2. * mass);
+            const Scalar d = 5.8406E-02 / p2;
+            pscreen[1] = d / (R1 * R1);
+            pscreen[2] = d / (R2 * R2);
+
+            // Atomic Moliere screening with Coulomb correction from Kuraev et al.
+            // Phys. Rev. D 89, 116016 (2014). Valid for ultra-relativistic
+            // particles only.
+
+            const int Z = element.Z;
+            const Scalar etot = kinetic_energy + mass;
+            const Scalar ZE = Z * etot;
+            const Scalar zeta2 = 5.3251346E-05 * (ZE * ZE) / p2;
+            Scalar cK;
+            if (zeta2 > 1.) {
+                // Let's perform the serie computation.
+                int i, n = 10 + Z;
+                Scalar f = 0.;
+                for (i = 1; i <= n; i++)
+                    f += zeta2 / (i * (i * i + zeta2));
+                cK = exp(f);
+            } else {
+                // Let's use Kuraev's approximate expression.
+                cK = exp(1. - 1. / (1. + zeta2) +
+                         zeta2 * (0.2021 + zeta2 * (0.0083 * zeta2 - 0.0369)));
+            }
+
+            // Original Moliere's atomic screening, considered as a reference
+            // value at low energies.
+
+            const Scalar cM = 1. + 3.34 * zeta2;
+
+            // Atomic screening interpolation.
+            Scalar r = kinetic_energy / etot;
+            r *= r;
+            const Scalar c = r * cK + (1. - r) * cM;
+            pscreen[0] = 5.179587126E-12 * pow(Z, 2. / 3.) * c / p2;
+
+            const Scalar d01 = 1. / (pscreen[0] - pscreen[1]);
+            const Scalar d02 = 1. / (pscreen[0] - pscreen[2]);
+            const Scalar d12 = 1. / (pscreen[1] - pscreen[2]);
+            pscreen[6] = d01 * d01 * d02 * d02;
+            pscreen[7] = d01 * d01 * d12 * d12;
+            pscreen[8] = d12 * d12 * d02 * d02;
+            pscreen[3] = 2. * pscreen[6] * (d01 + d02);
+            pscreen[4] = 2. * pscreen[7] * (d12 - d01);
+            pscreen[5] = -2. * pscreen[8] * (d12 + d02);
+
+            return 1. / coulomb_wentzel_path(pscreen[0], kinetic_energy, element, mass);
+        }
+
+        inline const auto coulomb_data =
+                [](
+                        const CMLorentz &fCM,
+                        const ScreeningFactors &screening,
+                        const FSpins &fspin,
+                        const InvLambdas &invlambda,
+                        const Energies &kinetic_energies,
+                        const AtomicElement<Scalar> &element,
+                        const ParticleMass &mass) {
+                    const int nkin = kinetic_energies.numel();
+                    Scalar *pK = kinetic_energies.data_ptr<Scalar>();
+
+                    Scalar *pfCM = fCM.data_ptr<Scalar>();
+                    Scalar *pscreen = screening.data_ptr<Scalar>();
+                    Scalar *pfspin = fspin.data_ptr<Scalar>();
+                    Scalar *pinvlbd = invlambda.data_ptr<Scalar>();
+
+                    for (int i = 0; i < nkin; i++) {
+                        const Scalar kinetic0 = coulomb_frame_parameters(pfCM + 2 * i, pK[i], element, mass);
+                        pfspin[i] = coulomb_spin_factor(kinetic0, mass);
+                        pinvlbd[i] = coulomb_screening_parameters(pscreen + NSF * i, kinetic0, element, mass);
+                    }
+                };
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6160
+         */
+        inline void coulomb_transport_coefficients(
+                Scalar *pcoefs,
+                Scalar *pscreen,
+                const Scalar &fspin,
+                const Scalar &mu) {
+            const Scalar nuclear_screening =
+                    (pscreen[1] < pscreen[2]) ? pscreen[1] : pscreen[2];
+            if (mu < 1E-08 * nuclear_screening) {
+                // We neglect the nucleus finite size.
+                const Scalar L = log(1. + mu / pscreen[0]);
+                const Scalar r = mu / (mu + pscreen[0]);
+                const Scalar k = pscreen[0] * (1. + pscreen[0]);
+                pcoefs[0] = k * (r / pscreen[0] - fspin * (L - r));
+                const Scalar I2 = mu - pscreen[0] * (r - 2. * L);
+                pcoefs[1] = 2. * k * (L - r - fspin * I2);
+            } else {
+                // We need to take all factors into account using a pole reduction.
+                Scalar I0[3], I1[3], I2[3], J0[3], J1[3], J2[3];
+                int i;
+                Scalar mu2 = 0.5 * mu * mu;
+                for (i = 0; i < 3; i++) {
+                    Scalar r = mu / (mu + pscreen[i]);
+                    Scalar L = log(1. + mu / pscreen[i]);
+                    Scalar mu1 = mu;
+                    I0[i] = r / pscreen[i];
+                    J0[i] = L;
+                    I1[i] = L - r;
+                    r *= pscreen[i];
+                    L *= pscreen[i];
+                    J1[i] = mu1 - L;
+                    I2[i] = mu1 - 2. * L + r;
+                    L *= pscreen[i];
+                    mu1 *= pscreen[i];
+                    J2[i] = mu2 + L - mu1;
+                }
+
+                const Scalar k = pscreen[0] * (1. + pscreen[0]) *
+                                 pscreen[1] * pscreen[1] * pscreen[2] * pscreen[2];
+                pcoefs[0] = pcoefs[1] = 0.;
+                for (i = 0; i < 3; i++) {
+                    pcoefs[0] += pscreen[3 + i] * (J0[i] - fspin * J1[i]) +
+                                 pscreen[6 + i] * (I0[i] - fspin * I1[i]);
+                    pcoefs[1] += pscreen[3 + i] * (J1[i] - fspin * J2[i]) +
+                                 pscreen[6 + i] * (I1[i] - fspin * I2[i]);
+                }
+                pcoefs[0] *= k;
+                pcoefs[1] *= 2. * k;
+            }
+        }
+
+        inline const auto coulomb_transport =
+                [](const TransportCoefs &coefficients,
+                   const ScreeningFactors &screening,
+                   const FSpins &fspin,
+                   const AngularCutoff &mu) {
+                    Scalar *pcoefs = coefficients.data_ptr<Scalar>();
+                    Scalar *pscreen = screening.data_ptr<Scalar>();
+                    Scalar *pfspin = fspin.data_ptr<Scalar>();
+
+                    const bool nmu = (mu.numel() == 1);
+                    Scalar *pmu = mu.data_ptr<Scalar>();
+
+                    const int nspin = fspin.numel();
+                    for (int i = 0; i < nspin; i++)
+                        coulomb_transport_coefficients(
+                                pcoefs + 2 * i,
+                                pscreen + NSF * i,
+                                pfspin[i],
+                                pmu[(nmu) ? 0 : i]);
+                };
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6109
+         */
+        inline Scalar coulomb_restricted_cs(
+                const Scalar &mu,
+                const Scalar &fspin,
+                Scalar *screen) {
+            if (mu >= 1.)
+                return 0.;
+
+            const Scalar nuclear_screening =
+                    (screen[1] < screen[2]) ? screen[1] : screen[2];
+            if (mu < 1E-08 * nuclear_screening) {
+                // We neglect the nucleus finite size.
+                const Scalar L = log((screen[0] + 1.) / (screen[0] + mu));
+                const Scalar r =
+                        (1. - mu) / ((screen[0] + mu) * (screen[0] + 1.));
+                const Scalar k = screen[0] * (1. + screen[0]);
+                return k * (r - fspin * (L - screen[0] * r));
+            } else {
+                // We need to take all factors into account using a pole reduction.
+                Scalar I0[3], I1[3], J0[3], J1[3];
+                int i;
+                for (i = 0; i < 3; i++) {
+                    const Scalar L =
+                            log((screen[i] + 1.) / (screen[i] + mu));
+                    const Scalar r = (1. - mu) /
+                                     ((screen[i] + mu) * (screen[i] + 1.));
+                    I0[i] = r;
+                    J0[i] = L;
+                    I1[i] = L - screen[i] * r;
+                    J1[i] = mu - screen[i] * L;
+                }
+
+                const Scalar k = screen[0] * (1. + screen[0]) *
+                                 screen[1] * screen[1] * screen[2] * screen[2];
+                Scalar cs = 0.;
+                for (i = 0; i < 3; i++) {
+                    cs += screen[3 + i] * (J0[i] - fspin * J1[i]) +
+                          screen[6 + i] * (I0[i] - fspin * I1[i]);
+                }
+                return k * cs;
+            }
+        }
+
+        inline Scalar cutoff_objective(
+                const Scalar &cs_h,
+                const Scalar &mu,
+                Scalar *invlambda,
+                Scalar *fspin,
+                Scalar *screen,
+                const int nel = 1,
+                const int nkin = 1) {
+            Scalar cs_tot = 0.;
+            for (int iel = 0; iel < nel; iel++) {
+                const int off = iel * nkin;
+                cs_tot += invlambda[off] * coulomb_restricted_cs(mu, fspin[off], screen + NSF * off);
+            }
+            return cs_tot - cs_h;
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8472
+         */
+        inline void coulomb_hard_scattering(Scalar &mu0, Scalar &lb_h,
+                                            Scalar *G, Scalar *fCM,
+                                            Scalar *screen,
+                                            Scalar *invlambda,
+                                            Scalar *fspin,
+                                            const int nel = 1,
+                                            const int nkin = 1) {
+
+            Scalar invlb_m = 0., invlb1_m = 0.;
+            Scalar s_m_l = 0., s_m_h = 0.;
+
+            for (int iel = 0; iel < nel; iel++) {
+                const int off = iel * nkin;
+
+                const Scalar invlb = invlambda[off];
+                const Scalar scr = screen[NSF * off];
+
+                invlb_m += invlb * G[2 * off];
+                s_m_h += scr * invlb;
+                s_m_l += invlb / scr;
+                const Scalar d = 1. / (fCM[2 * off] * (1. + fCM[1 + 2 * off]));
+                invlb1_m += invlb * G[1 + 2 * off] * d * d;
+            }
+
+            // Set the hard scattering mean free path.
+            const Scalar lb_m = 1. / invlb_m;
+            lb_h = std::min(EHS_OVER_MSC / invlb1_m, EHS_PATH_MAX);
+
+            // Compute the hard scattering cutoff angle, in the CM.
+            if (lb_m < lb_h) {
+                // Initialise the root finder with an asymptotic starting value
+                // Asymptotic value when lb_h >> lb_m versus when lb_h ~= lb_m
+                Scalar s_m = (lb_h > 2. * lb_m) ? s_m_h * lb_m : 1. / (s_m_l * lb_m);
+
+                mu0 = s_m * (lb_h - lb_m) / (s_m * lb_h + lb_m);
+
+                // targeted cross section
+                const Scalar cs_h = 1. / lb_h;
+
+                // Configure for the root solver.
+                // Solve for the cut-off angle. We try an initial bracketing in
+                // [0.25*mu0; 4.*mu0], with mu0 the asymptotic estimate.
+                Scalar mu_max = std::min(4. * mu0, 1.);
+                Scalar mu_min = 0.25 * mu0;
+
+                Scalar fmax = 0, fmin = 0;
+
+                fmax = cutoff_objective(cs_h, mu_max, invlambda, fspin, screen, nel, nkin);
+                if (fmax > 0.) {
+                    // This shouldn't occur, but let's be safe and handle this case.
+                    mu_min = mu_max;
+                    fmin = fmax;
+                    mu_max = 1.;
+                    fmax = -cs_h;
+                } else {
+                    fmin = cutoff_objective(cs_h, mu_min, invlambda, fspin, screen, nel, nkin);
+                    if (fmin < 0.) {
+                        // This might occur at high energies when the nuclear screening becomes significant.
+                        mu_max = mu_min;
+                        fmax = fmin;
+                        mu_min = 0.;
+                        fmin = cutoff_objective(cs_h, mu_min, invlambda, fspin, screen, nel, nkin);
+                    }
+                    if (mu_min < MAX_MU0) {
+                        mu_max = std::min(mu_max, MAX_MU0);
+                        const auto mubest =
+                                utils::numerics::ridders_root<Scalar>(
+                                        mu_min, mu_max,
+                                        [&](const Scalar &mu_x) {
+                                            return cutoff_objective(cs_h, mu_x, invlambda, fspin, screen, nel, nkin);
+                                        },
+                                        fmin, fmax,
+                                        1E-6 * mu0, 1E-6, 100);
+
+                        if (mubest.has_value())
+                            mu0 = mubest.value();
+                    }
+                    mu0 = std::min(mu0, MAX_MU0);
+                    lb_h = cutoff_objective(cs_h, mu0, invlambda, fspin, screen, nel, nkin) + cs_h;
+                    lb_h = (lb_h <= 1. / EHS_PATH_MAX) ? EHS_PATH_MAX : 1. / lb_h;
+                }
+            } else {
+                lb_h = lb_m;
+                mu0 = 0;
+            }
+        }
+
+
+        inline const auto hard_scattering =
+                [](const AngularCutoff &mu0,
+                   const HSMeanFreePath &lb_h,
+                   const TransportCoefs &coefficients,
+                   const CMLorentz &transform,
+                   const ScreeningFactors &screening,
+                   const InvLambdas &invlambdas,
+                   const FSpins &fspins) {
+                    const int nel = invlambdas.size(0);
+                    const int nkin = invlambdas.size(1);
+
+                    Scalar *pmu0 = mu0.data_ptr<Scalar>();
+                    Scalar *plb_h = lb_h.data_ptr<Scalar>();
+
+                    Scalar *invlambda = invlambdas.data_ptr<Scalar>();
+                    Scalar *fspin = fspins.data_ptr<Scalar>();
+                    Scalar *G = coefficients.data_ptr<Scalar>();
+                    Scalar *fCM = transform.data_ptr<Scalar>();
+                    Scalar *screen = screening.data_ptr<Scalar>();
+
+                    for (int i = 0; i < nkin; i++)
+                        coulomb_hard_scattering(
+                                pmu0[i],
+                                plb_h[i],
+                                G + 2 * i,
+                                fCM + 2 * i,
+                                screen + NSF * i,
+                                invlambda + i,
+                                fspin + i,
+                                nel, nkin);
+                };
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6223
+         */
+        inline Scalar transverse_transport_ionisation(
+                const Energy &kinetic_energy,
+                const AtomicElement<Scalar> &element,
+                const ParticleMass &mass) {
+            // Soft close interactions, restricted to X_FRACTION.
+            const Scalar momentum2 = kinetic_energy * (kinetic_energy + 2. * mass);
+            const Scalar E = kinetic_energy + mass;
+            const Scalar Wmax = 2. * ELECTRON_MASS * momentum2 /
+                                (mass * mass +
+                                 ELECTRON_MASS * (ELECTRON_MASS + 2. * E));
+            const Scalar W0 = 2. * momentum2 / ELECTRON_MASS;
+            const Scalar mu_max = Wmax / W0;
+            Scalar mu3 = kinetic_energy * X_FRACTION / W0;
+            if (mu3 > mu_max)
+                mu3 = mu_max;
+            const Scalar mu2 = 0.62 * element.I / W0;
+            if (mu2 >= mu3)
+                return 0.;
+            const Scalar a0 = 0.5 * W0 / momentum2;
+            const Scalar a1 = -1. / Wmax;
+            const Scalar a2 = E * E / (W0 * momentum2);
+            const Scalar cs0 = 1.535336E-05 / element.A; /* m^2/kg/GeV. */
+            return 2. * cs0 * element.Z *
+                   (0.5 * a0 * (mu3 * mu3 - mu2 * mu2) + a1 * (mu3 - mu2) +
+                    a2 * log(mu3 / mu2));
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6262
+         */
+        inline Scalar transverse_transport_photonuclear(
+                const Energy &kinetic_energy,
+                const AtomicElement<Scalar> &element,
+                const ParticleMass &mass) {
+            // Integration over the kinetic_energy transfer, q, done with a log sampling.
+            const Scalar E = kinetic_energy + mass;
+            return 2. * utils::numerics::quadrature6<Scalar>(
+                    log(1E-06), 0.,
+                    [&](const Scalar &t) {
+                        const Scalar nu = X_FRACTION * exp(t);
+                        const Scalar q = nu * kinetic_energy;
+
+                        // Analytical integration over mu.
+                        const Scalar m02 = 0.4;
+                        const Scalar q2 = q * q;
+                        const Scalar tmax = 1.876544 * q;
+                        const Scalar tmin =
+                                q2 * mass * mass / (E * (E - q));
+                        const Scalar b1 = 1. / (1. - q2 / m02);
+                        const Scalar c1 = 1. / (1. - m02 / q2);
+                        Scalar L1 = b1 * log((q2 + tmax) / (q2 + tmin));
+                        Scalar L2 = c1 * log((m02 + tmax) / (m02 + tmin));
+                        const Scalar I0 = log(tmax / tmin) - L1 - L2;
+                        L1 *= q2;
+                        L2 *= m02;
+                        const Scalar I1 = L1 + L2;
+                        L1 *= q2;
+                        L2 *= m02;
+                        const Scalar I2 =
+                                (tmax - tmin) * (b1 * q2 + c1 * m02) - L1 - L2;
+                        const Scalar ratio =
+                                (I1 * tmax - I2) / ((I0 * tmax - I1) * kinetic_energy *
+                                                    (kinetic_energy + 2. * mass));
+
+                        return photonuclear(kinetic_energy, q, element, mass) * ratio * nu;
+                    },
+                    100);
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8730
+         */
+        inline const auto soft_scattering =
+                [](const Calculation &ms1,
+                   const Energies &K,
+                   const AtomicElement<Scalar> &element,
+                   const ParticleMass &mass) {
+                    utils::vmap<Scalar>(
+                            K,
+                            [&](const Scalar &k) { return transverse_transport_ionisation(k, element, mass) +
+                                                          transverse_transport_photonuclear(k, element, mass); },
+                            ms1);
+                };
+
     } // namespace noa::pms::dcs::pumas
 
     template<>
     inline auto cel_integral<Scalar>(const decltype(pumas::ionisation) &dcs_func) {
         return [&dcs_func](const Scalar &kinetic_energy,
                            const Scalar &xlow,
-                           const AtomicElement <Scalar> &element,
+                           const AtomicElement<Scalar> &element,
                            const Scalar &mass,
                            const int min_points) {
             const Scalar m1 = mass - ELECTRON_MASS;
@@ -575,9 +1077,9 @@ namespace noa::pms::dcs {
                    recoil_energy_integral<Scalar>(
                            [&dcs_func](const Scalar &k,
                                        const Scalar &q,
-                                       const AtomicElement <Scalar> &el,
-                                       const ParticleMass &mu) {
-                               return dcs_func(k, q, el, mu) * q * q;
+                                       const AtomicElement<Scalar> &el,
+                                       const ParticleMass &m) {
+                               return dcs_func(k, q, el, m) * q * q;
                            })(kinetic_energy, xlow, element, mass, min_points);
         };
     }
@@ -586,7 +1088,7 @@ namespace noa::pms::dcs {
     inline auto del_integral<Scalar>(const decltype(pumas::ionisation) &dcs_func) {
         return [&dcs_func](const Scalar &kinetic_energy,
                            const Scalar &xlow,
-                           const AtomicElement <Scalar> &element,
+                           const AtomicElement<Scalar> &element,
                            const Scalar &mass,
                            const int min_points) {
             const Scalar m1 = mass - ELECTRON_MASS;
@@ -596,9 +1098,9 @@ namespace noa::pms::dcs {
                    recoil_energy_integral<Scalar>(
                            [&dcs_func](const Scalar &k,
                                        const Scalar &q,
-                                       const AtomicElement <Scalar> &el,
-                                       const ParticleMass &mu) {
-                               return dcs_func(k, q, el, mu) * q;
+                                       const AtomicElement<Scalar> &el,
+                                       const ParticleMass &m) {
+                               return dcs_func(k, q, el, m) * q;
                            })(kinetic_energy, xlow, element, mass, min_points);
         };
     }

@@ -63,12 +63,12 @@ namespace noa::pms {
     using DCSData = Tabulation;               // DCS model coefficients
 
     struct CoulombWorkspace {
-        pumas::TransportCoefs G;
-        pumas::CMLorentz fCM;
-        pumas::ScreeningFactors screening;
-        pumas::InvLambdas invlambda;
-        pumas::FSpins fspin;
-        pumas::SoftScatter table_ms1;
+        dcs::pumas::TransportCoefs G;
+        dcs::pumas::CMLorentz fCM;
+        dcs::pumas::ScreeningFactors screening;
+        dcs::pumas::InvLambdas invlambda;
+        dcs::pumas::FSpins fspin;
+        dcs::pumas::SoftScatter table_ms1;
     };
 
     
@@ -111,7 +111,7 @@ namespace noa::pms {
         }
 
         inline AtomicElement <Scalar> process_element(const AtomicElement <Scalar> &element) const {
-            return AtomicElement<Scalar>{element.A, 1E-6 * pumas::ENERGY_SCALE * element.I, element.Z};
+            return AtomicElement<Scalar>{element.A, 1E-6 * dcs::pumas::ENERGY_SCALE * element.I, element.Z};
         }
 
         inline Material <Scalar> process_material(
@@ -119,11 +119,11 @@ namespace noa::pms {
             return Material<Scalar>{
                     material.element_ids,
                     material.fractions.to(tensor_ops()),
-                    pumas::DENSITY_SCALE * material.density};
+                    dcs::pumas::DENSITY_SCALE * material.density};
         }
 
         inline utils::Status process_dedx_data_header(mdf::MaterialsDEDXData &dedx_data) {
-            if (!mdf::check_particle_mass(MUON_MASS / pumas::ENERGY_SCALE, dedx_data))
+            if (!mdf::check_particle_mass(MUON_MASS / dcs::pumas::ENERGY_SCALE, dedx_data))
                 return false;
 
             const int nmat = num_materials();
@@ -145,7 +145,7 @@ namespace noa::pms {
             auto &values = std::get<mdf::DEDXTable>(data->second).T;
             const int nkin = values.size();
             auto tensor = torch::from_blob(values.data(), nkin, torch::kDouble);
-            table_K = tensor.to(tensor_ops()) * pumas::ENERGY_SCALE;
+            table_K = tensor.to(tensor_ops()) * dcs::pumas::ENERGY_SCALE;
             data++;
             for (auto &it = data; it != dedx_data.end(); it++) {
                 auto &it_vals = std::get<mdf::DEDXTable>(it->second).T;
@@ -162,12 +162,12 @@ namespace noa::pms {
         }
 
         inline void init_dcs_data(const int nel, const int nkin) {
-            dcs_data = torch::zeros({nel, pumas::NPR - 1, nkin, pumas::NDM}, tensor_ops());
+            dcs_data = torch::zeros({nel, dcs::pumas::NPR - 1, nkin, dcs::pumas::NDM}, tensor_ops());
         }
 
         inline void init_per_element_data(const int nel) {
             const int nkin = table_K.numel();
-            table_CSn = torch::zeros({nel, pumas::NPR, nkin}, tensor_ops());
+            table_CSn = torch::zeros({nel, dcs::pumas::NPR, nkin}, tensor_ops());
             cel_table = torch::zeros_like(table_CSn);
             coulomb_workspace = CoulombWorkspaceRef{
                     torch::zeros({nel, nkin, 2}, tensor_ops()),
@@ -182,7 +182,7 @@ namespace noa::pms {
         inline void compute_per_element_data() {
             const int nel = num_elements();
             const auto &model_K = table_K.index(
-                    {table_K >= pumas::DCS_MODEL_MIN_KINETIC});
+                    {table_K >= dcs::pumas::DCS_MODEL_MIN_KINETIC});
 
             init_per_element_data(nel);
             init_dcs_data(nel, model_K.numel());
