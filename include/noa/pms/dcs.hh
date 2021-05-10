@@ -72,7 +72,7 @@ namespace noa::pms::dcs {
                                 const Dtype &xlow,
                                 const AtomicElement<Dtype> &element,
                                 const Dtype &mass,
-                                const int min_points) {
+                                const Index min_points) {
             return utils::numerics::quadrature6<Dtype>(
                     log(kinetic_energy * xlow), log(kinetic_energy),
                     [&](const Dtype &t) {
@@ -113,7 +113,7 @@ namespace noa::pms::dcs {
                               const EnergyTransfer &xlow,
                               const AtomicElement<Dtype> &element,
                               const ParticleMass &mass,
-                              const int min_points) {
+                              const Index min_points) {
             utils::vmap<Dtype>(
                     kinetic_energies,
                     [&](const Dtype &k) {
@@ -135,7 +135,7 @@ namespace noa::pms::dcs {
                 const Energy &recoil_energy,
                 const AtomicElement<Scalar> &element,
                 const ParticleMass &mass) {
-            const int Z = element.Z;
+            const Index Z = element.Z;
             const Scalar A = element.A;
             const Scalar me = ELECTRON_MASS;
             const Scalar sqrte = 1.648721271;
@@ -180,7 +180,7 @@ namespace noa::pms::dcs {
                                                const Energy &recoil_energy,
                                                const AtomicElement<Scalar> &element,
                                                const ParticleMass &mass) {
-            const int Z = element.Z;
+            const Index Z = element.Z;
             const Scalar A = element.A;
             // Check the bounds of the energy transfer
             if (recoil_energy <= 4. * ELECTRON_MASS)
@@ -471,7 +471,7 @@ namespace noa::pms::dcs {
                                           const AtomicElement<Scalar> &element,
                                           const ParticleMass &mass) {
             const Scalar A = element.A;
-            const int Z = element.Z;
+            const Index Z = element.Z;
 
             const Scalar P2 = kinetic_energy * (kinetic_energy + 2. * mass);
             const Scalar E = kinetic_energy + mass;
@@ -638,14 +638,14 @@ namespace noa::pms::dcs {
             // Phys. Rev. D 89, 116016 (2014). Valid for ultra-relativistic
             // particles only.
 
-            const int Z = element.Z;
+            const Index Z = element.Z;
             const Scalar etot = kinetic_energy + mass;
             const Scalar ZE = Z * etot;
             const Scalar zeta2 = 5.3251346E-05 * (ZE * ZE) / p2;
             Scalar cK;
             if (zeta2 > 1.) {
                 // Let's perform the serie computation.
-                int i, n = 10 + Z;
+                Index i, n = 10 + Z;
                 Scalar f = 0.;
                 for (i = 1; i <= n; i++)
                     f += zeta2 / (i * (i * i + zeta2));
@@ -689,15 +689,15 @@ namespace noa::pms::dcs {
                         const Energies &kinetic_energies,
                         const AtomicElement<Scalar> &element,
                         const ParticleMass &mass) {
-                    const int nkin = kinetic_energies.numel();
-                    Scalar *pK = kinetic_energies.data_ptr<Scalar>();
+                    const Index nkin = kinetic_energies.numel();
+                    auto *pK = kinetic_energies.data_ptr<Scalar>();
 
-                    Scalar *pfCM = fCM.data_ptr<Scalar>();
-                    Scalar *pscreen = screening.data_ptr<Scalar>();
-                    Scalar *pfspin = fspin.data_ptr<Scalar>();
-                    Scalar *pinvlbd = invlambda.data_ptr<Scalar>();
+                    auto *pfCM = fCM.data_ptr<Scalar>();
+                    auto *pscreen = screening.data_ptr<Scalar>();
+                    auto *pfspin = fspin.data_ptr<Scalar>();
+                    auto *pinvlbd = invlambda.data_ptr<Scalar>();
 
-                    for (int i = 0; i < nkin; i++) {
+                    for (Index i = 0; i < nkin; i++) {
                         const Scalar kinetic0 = coulomb_frame_parameters(pfCM + 2 * i, pK[i], element, mass);
                         pfspin[i] = coulomb_spin_factor(kinetic0, mass);
                         pinvlbd[i] = coulomb_screening_parameters(pscreen + NSF * i, kinetic0, element, mass);
@@ -711,7 +711,7 @@ namespace noa::pms::dcs {
          */
         inline void coulomb_transport_coefficients(
                 Scalar *pcoefs,
-                Scalar *pscreen,
+                const Scalar *pscreen,
                 const Scalar &fspin,
                 const Scalar &mu) {
             const Scalar nuclear_screening =
@@ -727,7 +727,7 @@ namespace noa::pms::dcs {
             } else {
                 // We need to take all factors into account using a pole reduction.
                 Scalar I0[3], I1[3], I2[3], J0[3], J1[3], J2[3];
-                int i;
+                Index i;
                 Scalar mu2 = 0.5 * mu * mu;
                 for (i = 0; i < 3; i++) {
                     Scalar r = mu / (mu + pscreen[i]);
@@ -764,15 +764,15 @@ namespace noa::pms::dcs {
                    const ScreeningFactors &screening,
                    const FSpins &fspin,
                    const AngularCutoff &mu) {
-                    Scalar *pcoefs = coefficients.data_ptr<Scalar>();
-                    Scalar *pscreen = screening.data_ptr<Scalar>();
-                    Scalar *pfspin = fspin.data_ptr<Scalar>();
+                    auto *pcoefs = coefficients.data_ptr<Scalar>();
+                    auto *pscreen = screening.data_ptr<Scalar>();
+                    auto *pfspin = fspin.data_ptr<Scalar>();
 
                     const bool nmu = (mu.numel() == 1);
-                    Scalar *pmu = mu.data_ptr<Scalar>();
+                    auto *pmu = mu.data_ptr<Scalar>();
 
-                    const int nspin = fspin.numel();
-                    for (int i = 0; i < nspin; i++)
+                    const Index nspin = fspin.numel();
+                    for (Index i = 0; i < nspin; i++)
                         coulomb_transport_coefficients(
                                 pcoefs + 2 * i,
                                 pscreen + NSF * i,
@@ -788,7 +788,7 @@ namespace noa::pms::dcs {
         inline Scalar coulomb_restricted_cs(
                 const Scalar &mu,
                 const Scalar &fspin,
-                Scalar *screen) {
+                const Scalar *screen) {
             if (mu >= 1.)
                 return 0.;
 
@@ -804,7 +804,7 @@ namespace noa::pms::dcs {
             } else {
                 // We need to take all factors into account using a pole reduction.
                 Scalar I0[3], I1[3], J0[3], J1[3];
-                int i;
+                Index i;
                 for (i = 0; i < 3; i++) {
                     const Scalar L =
                             log((screen[i] + 1.) / (screen[i] + mu));
@@ -830,14 +830,14 @@ namespace noa::pms::dcs {
         inline Scalar cutoff_objective(
                 const Scalar &cs_h,
                 const Scalar &mu,
-                Scalar *invlambda,
+                const Scalar *invlambda,
                 Scalar *fspin,
                 Scalar *screen,
-                const int nel = 1,
-                const int nkin = 1) {
+                const Index nel = 1,
+                const Index nkin = 1) {
             Scalar cs_tot = 0.;
-            for (int iel = 0; iel < nel; iel++) {
-                const int off = iel * nkin;
+            for (Index iel = 0; iel < nel; iel++) {
+                const Index off = iel * nkin;
                 cs_tot += invlambda[off] * coulomb_restricted_cs(mu, fspin[off], screen + NSF * off);
             }
             return cs_tot - cs_h;
@@ -849,18 +849,18 @@ namespace noa::pms::dcs {
          *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8472
          */
         inline void coulomb_hard_scattering(Scalar &mu0, Scalar &lb_h,
-                                            Scalar *G, Scalar *fCM,
+                                            const Scalar *G, const Scalar *fCM,
                                             Scalar *screen,
                                             Scalar *invlambda,
                                             Scalar *fspin,
-                                            const int nel = 1,
-                                            const int nkin = 1) {
+                                            const Index nel = 1,
+                                            const Index nkin = 1) {
 
             Scalar invlb_m = 0., invlb1_m = 0.;
             Scalar s_m_l = 0., s_m_h = 0.;
 
-            for (int iel = 0; iel < nel; iel++) {
-                const int off = iel * nkin;
+            for (Index iel = 0; iel < nel; iel++) {
+                const Index off = iel * nkin;
 
                 const Scalar invlb = invlambda[off];
                 const Scalar scr = screen[NSF * off];
@@ -944,19 +944,19 @@ namespace noa::pms::dcs {
                    const ScreeningFactors &screening,
                    const InvLambdas &invlambdas,
                    const FSpins &fspins) {
-                    const int nel = invlambdas.size(0);
-                    const int nkin = invlambdas.size(1);
+                    const Index nel = invlambdas.size(0);
+                    const Index nkin = invlambdas.size(1);
 
-                    Scalar *pmu0 = mu0.data_ptr<Scalar>();
-                    Scalar *plb_h = lb_h.data_ptr<Scalar>();
+                    auto *pmu0 = mu0.data_ptr<Scalar>();
+                    auto *plb_h = lb_h.data_ptr<Scalar>();
 
-                    Scalar *invlambda = invlambdas.data_ptr<Scalar>();
-                    Scalar *fspin = fspins.data_ptr<Scalar>();
-                    Scalar *G = coefficients.data_ptr<Scalar>();
-                    Scalar *fCM = transform.data_ptr<Scalar>();
-                    Scalar *screen = screening.data_ptr<Scalar>();
+                    auto *invlambda = invlambdas.data_ptr<Scalar>();
+                    auto *fspin = fspins.data_ptr<Scalar>();
+                    auto *G = coefficients.data_ptr<Scalar>();
+                    auto *fCM = transform.data_ptr<Scalar>();
+                    auto *screen = screening.data_ptr<Scalar>();
 
-                    for (int i = 0; i < nkin; i++)
+                    for (Index i = 0; i < nkin; i++)
                         coulomb_hard_scattering(
                                 pmu0[i],
                                 plb_h[i],
@@ -1069,7 +1069,7 @@ namespace noa::pms::dcs {
                            const Scalar &xlow,
                            const AtomicElement<Scalar> &element,
                            const Scalar &mass,
-                           const int min_points) {
+                           const Index min_points) {
             const Scalar m1 = mass - ELECTRON_MASS;
             return (kinetic_energy <= 0.5 * m1 * m1 / ELECTRON_MASS) ?
                    pumas::analytic_recoil_energy_integral_ionisation<decltype(pumas::analytic_cel_ionisation_interactions)>
@@ -1090,7 +1090,7 @@ namespace noa::pms::dcs {
                            const Scalar &xlow,
                            const AtomicElement<Scalar> &element,
                            const Scalar &mass,
-                           const int min_points) {
+                           const Index min_points) {
             const Scalar m1 = mass - ELECTRON_MASS;
             return (kinetic_energy <= 0.5 * m1 * m1 / ELECTRON_MASS) ?
                    pumas::analytic_recoil_energy_integral_ionisation<decltype(pumas::analytic_del_ionisation_interactions)>

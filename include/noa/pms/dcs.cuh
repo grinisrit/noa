@@ -41,7 +41,7 @@ namespace noa::pms::dcs {
                 const Energy &recoil_energy,
                 const AtomicElement <Scalar> &element,
                 const ParticleMass &mass) {
-            const int Z = element.Z;
+            const Index Z = element.Z;
             const Scalar A = element.A;
             const Scalar me = ELECTRON_MASS;
             const Scalar sqrte = 1.648721271;

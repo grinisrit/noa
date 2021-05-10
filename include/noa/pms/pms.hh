@@ -69,17 +69,17 @@ namespace noa::pms {
 
         // TODO: Composite materials
 
-        inline const AtomicElement <Dtype> process_element_(const AtomicElement <Dtype> &element) {
+        inline AtomicElement <Dtype> process_element_(const AtomicElement <Dtype> &element) {
             return static_cast<Physics *>(this)->process_element(element);
         }
 
-        inline const Material<Dtype> process_material_(
+        inline Material<Dtype> process_material_(
                 const Dtype &density,
                 const mdf::MaterialComponents &components) {
-            const int n = components.size();
+            const Index n = components.size();
             auto element_ids = torch::zeros(n, torch::kInt32);
             auto fractions = torch::zeros(n, torch::dtype(c10::CppTypeToScalarType<Dtype>{}));
-            int iel = 0;
+            Index iel = 0;
             for (const auto &[el, frac] : components) {
                 element_ids[iel] = get_element_id(el);
                 fractions[iel++] = frac;
@@ -105,7 +105,7 @@ namespace noa::pms {
             return element_id.at(name);
         }
 
-        inline int num_elements() const {
+        inline Index num_elements() const {
             return elements.size();
         }
 
@@ -125,12 +125,12 @@ namespace noa::pms {
             return material_id.at(name);
         }
 
-        inline int num_materials() const {
+        inline Index num_materials() const {
             return materials.size();
         }
 
         inline void set_elements(const mdf::Elements &mdf_elements) {
-            int id = 0;
+            Index id = 0;
             elements.reserve(mdf_elements.size());
             for (auto[name, element] : mdf_elements) {
                 elements.push_back(process_element_(element));
@@ -141,8 +141,8 @@ namespace noa::pms {
         }
 
         inline void set_materials(const mdf::Materials &mdf_materials) {
-            int id = 0;
-            const int nmat = mdf_materials.size();
+            Index id = 0;
+            const Index nmat = mdf_materials.size();
 
             materials.reserve(nmat);
             material_name.reserve(nmat);

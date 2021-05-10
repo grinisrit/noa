@@ -43,8 +43,8 @@ namespace noa::utils {
     using Line = std::string;
     using TensorOpt = std::optional<torch::Tensor>;
 
-    constexpr double TOLERANCE = 1E-6;
-    constexpr int SEED = 987654;
+    constexpr double_t TOLERANCE = 1E-6;
+    constexpr int32_t SEED = 987654;
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
@@ -83,7 +83,7 @@ namespace noa::utils {
 
     template<typename Dtype>
     inline std::optional<std::vector<Dtype>> get_numerics(
-            const std::string &line, int size) {
+            const std::string &line, int64_t size) {
         auto no_data = std::sregex_iterator();
         auto nums = std::sregex_iterator(line.begin(), line.end(), num_pattern);
         if (std::distance(nums, no_data) != size)

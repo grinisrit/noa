@@ -132,7 +132,7 @@ TEST(DCS, CELIonisation) {
 
 TEST(DCS, CoulombHardScattering) {
     const auto kinetic_energies = DCSData::get_kinetic_energies();
-    const int nkin = kinetic_energies.size(0);
+    const Index nkin = kinetic_energies.size(0);
     auto fCM = torch::zeros({nkin, 2}, torch::dtype(torch::kDouble).layout(torch::kStrided));
     auto screen = torch::zeros({nkin, 9}, torch::dtype(torch::kDouble).layout(torch::kStrided));
     auto fspin = torch::zeros_like(kinetic_energies);

@@ -31,8 +31,8 @@
 #include <torch/types.h>
 
 namespace noa::pms {
-    using Scalar = double;
-    using Index = int;
+    using Scalar = double_t;
+    using Index = int32_t;
     using UniversalConst = Scalar;
     using ParticleMass = Scalar;
     using DecayLength = Scalar;

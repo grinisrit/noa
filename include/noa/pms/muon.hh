@@ -126,11 +126,11 @@ namespace noa::pms {
             if (!mdf::check_particle_mass(MUON_MASS / dcs::pumas::ENERGY_SCALE, dedx_data))
                 return false;
 
-            const int nmat = num_materials();
+            const Index nmat = num_materials();
             material_ZoA = torch::zeros(nmat, tensor_ops());
             material_I = torch::zeros(nmat, tensor_ops());
 
-            for (int i = 0; i < nmat; i++) {
+            for (Index i = 0; i < nmat; i++) {
                 const auto &coefs = std::get<mdf::DEDXMaterialCoefficients>(
                         dedx_data.at(get_material_name(i)));
                 material_ZoA[i] = coefs.ZoA;
@@ -143,7 +143,7 @@ namespace noa::pms {
         inline utils::Status set_table_K(mdf::MaterialsDEDXData &dedx_data) {
             auto data = dedx_data.begin();
             auto &values = std::get<mdf::DEDXTable>(data->second).T;
-            const int nkin = values.size();
+            const Index nkin = values.size();
             auto tensor = torch::from_blob(values.data(), nkin, torch::kDouble);
             table_K = tensor.to(tensor_ops()) * dcs::pumas::ENERGY_SCALE;
             data++;
@@ -161,12 +161,12 @@ namespace noa::pms {
             return true;
         }
 
-        inline void init_dcs_data(const int nel, const int nkin) {
+        inline void init_dcs_data(const Index nel, const Index nkin) {
             dcs_data = torch::zeros({nel, dcs::pumas::NPR - 1, nkin, dcs::pumas::NDM}, tensor_ops());
         }
 
-        inline void init_per_element_data(const int nel) {
-            const int nkin = table_K.numel();
+        inline void init_per_element_data(const Index nel) {
+            const Index nkin = table_K.numel();
             table_CSn = torch::zeros({nel, dcs::pumas::NPR, nkin}, tensor_ops());
             cel_table = torch::zeros_like(table_CSn);
             coulomb_workspace = CoulombWorkspaceRef{
@@ -180,7 +180,7 @@ namespace noa::pms {
 
         // TODO: implement CUDA version
         inline void compute_per_element_data() {
-            const int nel = num_elements();
+            const Index nel = num_elements();
             const auto &model_K = table_K.index(
                     {table_K >= dcs::pumas::DCS_MODEL_MIN_KINETIC});
 
