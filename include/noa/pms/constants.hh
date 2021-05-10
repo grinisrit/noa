@@ -97,6 +97,7 @@ namespace noa::pms {
 
         constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
         constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
+        constexpr Scalar DEDX_SCALE = 1E-4; // from MeV cm^2/g to GeV m^2/kg
 
         // Default relative switch between continuous and discrete energy loss
         constexpr EnergyTransfer X_FRACTION = 5E-02;
@@ -123,8 +124,6 @@ namespace noa::pms {
         constexpr Index NDM = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + DCS_SAMPLING_N + 1;
 
         using MomentumIntegral = Scalar;
-        using ThresholdIndex = Index;
-        using Thresholds = torch::Tensor;
 
         using InvLambdas = torch::Tensor;       // Inverse of the mean free grammage
         using ScreeningFactors = torch::Tensor; // Atomic and nuclear screening factors & pole reduction

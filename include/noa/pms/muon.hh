@@ -62,6 +62,8 @@ namespace noa::pms {
     using TableMs1 = Tabulation;              // Multiple scattering 1st moment
     using TableLi = Tabulation;               // Magnetic deflection momenta
     using DCSData = Tabulation;               // DCS model coefficients
+    using ThresholdIndex = Index;
+
 
     struct CoulombWorkspace {
         dcs::pumas::TransportCoefs G;
@@ -104,7 +106,7 @@ namespace noa::pms {
         DCSData dcs_data;
 
         TableCSn cel_table;
-        CoulombWorkspaceRef coulomb_workspace;
+        CoulombWorkspace coulomb_workspace;
 
         // TODO: parametrise MuonPhysics by device when CUDA support available
         inline c10::TensorOptions tensor_ops() const {
@@ -170,13 +172,40 @@ namespace noa::pms {
             const Index nkin = table_K.numel();
             table_CSn = torch::zeros({nel, dcs::pumas::NPR, nkin}, tensor_ops());
             cel_table = torch::zeros_like(table_CSn);
-            coulomb_workspace = CoulombWorkspaceRef{
+            table_Xt = torch::ones_like(table_CSn);
+            coulomb_workspace = CoulombWorkspace{
                     torch::zeros({nel, nkin, 2}, tensor_ops()),
                     torch::zeros({nel, nkin, 2}, tensor_ops()),
-                    torch::zeros({nel, nkin, dcs::NSF}, tensor_ops()),
+                    torch::zeros({nel, nkin, dcs::pumas::NSF}, tensor_ops()),
                     torch::zeros({nel, nkin}, tensor_ops()),
                     torch::zeros({nel, nkin}, tensor_ops()),
                     torch::zeros({nel, nkin}, tensor_ops())};
+        }
+
+        inline void init_dedx_tables(const Index nmat) {
+            table_CSf = TableCSf(nmat);
+            table_CS = torch::zeros({nmat, table_K.numel()}, tensor_ops());
+            table_dE = torch::zeros_like(table_CS);
+            table_dE_CSDA = torch::zeros_like(table_CS);
+            table_NI_in = torch::zeros_like(table_CS);
+            table_Kt = torch::zeros(nmat, tensor_ops());
+            table_a_max = torch::zeros_like(table_Kt);
+            table_b_max = torch::zeros_like(table_Kt);
+        }
+
+        inline void init_coulomb_parameters() {
+            table_Mu0 = torch::zeros_like(table_dE);
+            table_Lb = torch::zeros_like(table_Mu0);
+            table_NI_el = torch::zeros_like(table_Mu0);
+            table_Ms1 = torch::zeros_like(table_Mu0);
+        }
+
+        inline void init_cel_integrals(const int nmat) {
+            table_X = torch::zeros_like(table_dE);
+            table_X_CSDA = torch::zeros_like(table_dE);
+            table_T = torch::zeros_like(table_dE);
+            table_T_CSDA = torch::zeros_like(table_dE);
+            table_Li = torch::zeros({nmat, table_K.numel(), dcs::pumas::NLAR}, tensor_ops());
         }
 
         template<typename EnergyIntegrand>
@@ -199,7 +228,6 @@ namespace noa::pms {
                     (result[3], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
         }
 
-
         inline void compute_dcs_model(
                 const Tabulation &result,
                 const TableK &high_kinetic_energies,
@@ -216,7 +244,6 @@ namespace noa::pms {
         }
 
         inline void compute_coulomb_data(const AtomicElement<Scalar> &element, const ElementId iel) {
-            ;
 
             const auto &screen = coulomb_workspace.screening[iel];
             const auto &fspin = coulomb_workspace.fspin[iel];
@@ -246,12 +273,190 @@ namespace noa::pms {
             init_per_element_data(nel);
             init_dcs_data(nel, model_K.numel());
 
-            for (int iel = 0; iel < nel; iel++) {
+            for (Index iel = 0; iel < nel; iel++) {
                 const auto &element = get_element(iel);
                 compute_recoil_energy_integrals(table_CSn[iel], dcs::del_integrand<Scalar>, element);
                 compute_recoil_energy_integrals(cel_table[iel], dcs::cel_integrand<Scalar>, element);
                 compute_dcs_model(dcs_data[iel], model_K, element);
                 compute_coulomb_data(element, iel);
+            }
+        }
+
+        inline Tabulation compute_be_cel(
+                const Tabulation &br,
+                const Tabulation &pp,
+                const Tabulation &ph,
+                const Tabulation &io,
+                const Tabulation &cs) {
+            auto be_cel = torch::zeros_like(br);
+            be_cel += torch::where(cs[0] < br, cs[0], br);
+            be_cel += torch::where(cs[1] < pp, cs[1], pp);
+            be_cel += torch::where(cs[2] < ph, cs[2], ph);
+            be_cel += torch::where(cs[3] < io, cs[3], io);
+            return be_cel;
+        }
+
+        inline void compute_dedx_tables(
+                MaterialId imat, mdf::DEDXTable &dedx_table) {
+
+            auto &material = get_material(imat);
+            const Index nel = material.element_ids.numel();
+            const Index nkin = table_K.numel();
+
+            table_CSf[imat] = material.fractions.view({nel, 1, 1}) *
+                              table_CSn.index_select(0, material.element_ids);
+            table_CS[imat] = table_CSf[imat].sum(0).sum(0);
+
+            table_CSf[imat] *= torch::where(table_CS[imat] <= 0.0,
+                                            torch::tensor(0.0, tensor_ops()), torch::tensor(1.0, tensor_ops()))
+                    .view({1, 1, nkin});
+            table_CSf[imat] = table_CSf[imat].view({nel * dcs::NPR, nkin}).cumsum(0).view({nel, dcs::NPR, nkin}) /
+                              torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, tensor_ops()),
+                                           table_CS[imat]).view({1, 1, nkin});
+
+            auto ionisation = dcs::pumas::DEDX_SCALE *
+                              torch::from_blob(dedx_table.Ionisation.data(), nkin, torch::kDouble).to(tensor_ops());
+
+            auto be_cel = compute_be_cel(
+                    dcs::pumas::DEDX_SCALE *
+                    torch::from_blob(dedx_table.brems.data(), nkin, torch::kDouble).to(tensor_ops()),
+                    dcs::pumas::DEDX_SCALE *
+                    torch::from_blob(dedx_table.pair.data(), nkin, torch::kDouble).to(tensor_ops()),
+                    dcs::pumas::DEDX_SCALE *
+                    torch::from_blob(dedx_table.photonuc.data(), nkin, torch::kDouble).to(tensor_ops()),
+                    ionisation,
+                    torch::tensordot(
+                            material.fractions,
+                            cel_table.index_select(0, material.element_ids), 0, 0)
+            );
+
+            table_dE_CSDA[imat] = dcs::pumas::DEDX_SCALE *
+                                  torch::from_blob(dedx_table.dEdX.data(), nkin, torch::kDouble).to(tensor_ops());
+            table_dE[imat] = table_dE_CSDA[imat] - be_cel;
+            table_NI_in[imat] = table_CS[imat] / table_dE[imat];
+            table_a_max[imat] = ionisation[nkin - 1];
+            table_b_max[imat] =
+                    (dcs::pumas::DEDX_SCALE * dedx_table.Radloss[nkin - 1] - be_cel[nkin - 1]) /
+                    (MUON_MASS + table_K[nkin - 1]);
+        }
+
+        inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data) {
+            const int nmat = num_materials();
+            init_dedx_tables(nmat);
+            for (int imat = 0; imat < nmat; imat++)
+                compute_dedx_tables(
+                        imat, std::get<mdf::DEDXTable>(dedx_data.at(get_material_name(imat)))
+                );
+            cel_table = Tabulation{}; // drop data in cel_table
+        }
+
+        inline ThresholdIndex compute_kinetic_threshold(const MaterialId &imat, const Index &nkin) {
+            ThresholdIndex ri = 0;
+            Scalar cs0 = 0.0;
+            auto *cs = table_CS[imat].data_ptr<Scalar>();
+            for (ri = 0; ri < nkin; ri++)
+                if ((cs0 = cs[ri]) > 0)
+                    break;
+            auto *dE = table_dE[imat].data_ptr<Scalar>();
+            auto *NI_in = table_NI_in[imat].data_ptr<Scalar>();
+            for (ThresholdIndex i = 0; i < ri; i++) {
+                cs[i] = cs0;
+                NI_in[i] = cs0 / dE[i];
+            }
+            return ri;
+        }
+
+        inline void compute_del_thresholds(
+                const Tabulation &result,
+                const AtomicElement<Scalar> &element,
+                const ThresholdIndex th_i) {
+            dcs::pumas::compute_threshold(dcs::pumas::bremsstrahlung, result[0], table_K,
+                                          dcs::pumas::X_FRACTION, element, MUON_MASS, th_i);
+            dcs::pumas::compute_threshold(dcs::pumas::pair_production, result[1], table_K,
+                                          dcs::pumas::X_FRACTION, element, MUON_MASS, th_i);
+            dcs::pumas::compute_threshold(dcs::pumas::photonuclear, result[2], table_K,
+                                          dcs::pumas::X_FRACTION, element, MUON_MASS, th_i);
+            dcs::pumas::compute_threshold(dcs::pumas::ionisation, result[3], table_K,
+                                          dcs::pumas::X_FRACTION, element, MUON_MASS, th_i);
+        }
+
+        // TODO: implement CUDA version
+        inline void compute_del_thresholds() {
+            ThresholdIndex th_i = 0;
+            const Index nmat = num_materials();
+            const Index nkin = table_K.numel();
+            const Index nel = num_elements();
+
+            for (Index imat = 0; imat < nmat; imat++) {
+                ThresholdIndex ri = compute_kinetic_threshold(imat, nkin);
+                table_Kt[imat] = table_K[ri];
+                th_i = std::max(th_i, ri);
+            }
+
+            for (Index iel = 0; iel < nel; iel++)
+                compute_del_thresholds(table_Xt[iel], get_element(iel), th_i);
+        }
+
+        // TODO: implement CUDA version
+        inline void compute_coulomb_scattering_tables(const MaterialIdRef imat) {
+            const auto &elids = get_material(imat).element_ids;
+            const auto &fracs = get_material(imat).fractions;
+            const Index nel = elids.numel();
+
+            const auto G = coulomb_workspace.G.index_select(0, elids);
+            const auto fCM = coulomb_workspace.fCM.index_select(0, elids);
+            const auto screen = coulomb_workspace.screening.index_select(0, elids);
+            const auto invlambda =
+                    coulomb_workspace.invlambda.index_select(0, elids) * fracs.view({nel, 1});
+            const auto fspin = coulomb_workspace.fspin.index_select(0, elids);
+            const auto ms1 = coulomb_workspace.table_ms1.index_select(0, elids) * fracs.view({nel, 1});
+
+            const auto &mu0 = table_Mu0[imat];
+            const auto lb_h = torch::zeros_like(mu0);
+
+            dcs::pumas::hard_scattering(
+                    mu0, lb_h, G, fCM, screen, invlambda, fspin);
+
+            table_Lb[imat] = lb_h * table_K * (table_K + 2 * MUON_MASS);
+            table_NI_el[imat] = 1. / (table_dE[imat] * lb_h);
+
+            for (int iel = 0; iel < nel; iel++) {
+                const auto &Gi = G[iel];
+                dcs::pumas::coulomb_transport(
+                        Gi, screen[iel], fspin[iel], mu0);
+
+                const auto &fCMi = fCM[iel];
+
+                table_Ms1[imat] += ms1[iel] +
+                                   invlambda[iel] * Gi.index({Ellipsis, 1}) *
+                                   (1. / (fCMi.index({Ellipsis, 0}) * (1. + fCMi.index({Ellipsis, 1})))).pow(2);
+            }
+        }
+
+        inline void set_coulomb_parameters() {
+            const int nmat = num_materials();
+            init_coulomb_parameters();
+
+            for (int imat = 0; imat < nmat; imat++)
+                compute_coulomb_scattering_tables(imat);
+
+            coulomb_workspace = CoulombWorkspace{}; // drop CoulombWorkspace data
+        }
+
+        inline void set_cel_integrals() {
+            const int nmat = num_materials();
+            init_cel_integrals(nmat);
+
+            const Scalar I0 = dcs::pumas::compute_momentum_integral(table_K[0].item<Scalar>(), MUON_MASS);
+            for (int imat = 0; imat < nmat; imat++) {
+                dcs::pumas::compute_cel_grammage_integral(table_X[imat], table_dE[imat], table_K);
+                dcs::pumas::compute_cel_grammage_integral(table_X_CSDA[imat], table_dE_CSDA[imat], table_K);
+                dcs::pumas::compute_time_integral(table_T[imat], table_X[imat], table_K, MUON_MASS, I0);
+                dcs::pumas::compute_time_integral(table_T_CSDA[imat], table_X_CSDA[imat], table_K, MUON_MASS, I0);
+                dcs::pumas::compute_kinetic_integral(table_NI_el[imat], table_K);
+                dcs::pumas::compute_kinetic_integral(table_NI_in[imat], table_K);
+                dcs::pumas::compute_csda_magnetic_transport(table_Li[imat], table_T_CSDA[imat], table_X_CSDA[imat],
+                                                            MUON_MASS, LARMOR_FACTOR);
             }
         }
 
@@ -270,6 +475,10 @@ namespace noa::pms {
                 return false;
 
             compute_per_element_data();
+            set_dedx_tables(dedx_data);
+            compute_del_thresholds();
+            set_coulomb_parameters();
+            set_cel_integrals();
 
             return true;
         }

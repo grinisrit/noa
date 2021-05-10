@@ -1154,6 +1154,215 @@ namespace noa::pms::dcs {
                     .view({nkin, n});
         }
 
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8886
+         */
+        template<typename DCSFunc>
+        inline void compute_threshold(
+                const DCSFunc &dcs_func,
+                const Calculation &Xt,
+                const Energies &kinetic_energies,
+                const EnergyTransfer &xlow,
+                const AtomicElement <Scalar> &element,
+                const ParticleMass &mass,
+                const Index th_i) {
+            const Index n = kinetic_energies.numel();
+            auto *pXt = Xt.data_ptr<Scalar>();
+            auto *pK = kinetic_energies.data_ptr<Scalar>();
+            for (Index i = th_i; i < n; i++) {
+                Scalar x = xlow;
+                while ((x < 1.) && (dcs_func(pK[i], pK[i] * x, element, mass) <= 0.))
+                    x *= 2;
+                if (x >= 1.)
+                    x = 1.;
+                else if (x > xlow) {
+                    const Scalar eps = 1E-02 * xlow;
+                    Scalar x0 = 0.5 * x;
+                    Scalar dcs = 0.;
+                    for (;;) {
+                        if (dcs == 0.)
+                            x0 += 0.5 * (x - x0);
+                        else {
+                            const Scalar dx =
+                                    x - x0;
+                            x = x0;
+                            x0 -= 0.5 * dx;
+                        }
+                        if ((x - x0) <= eps)
+                            break;
+                        dcs = dcs_func(pK[i], pK[i] * x0, element, mass);
+                    }
+                }
+                pXt[i] = x;
+            }
+        }
+
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8392
+         */
+        inline void compute_cel_grammage_integral(
+                const Calculation &result,
+                const Tabulation &table_dE,
+                const Energies &kinetic_energies)
+        {
+            const Index nkin = kinetic_energies.numel();
+            const auto *kinetic = kinetic_energies.data_ptr<Scalar>();
+            const auto *dEdX = table_dE.data_ptr<Scalar>();
+            auto *table = result.data_ptr<Scalar>();
+
+            // Compute the cumulative integral.
+
+            Scalar y0 = 1. / dEdX[0];
+            table[0] = kinetic[0] * y0;
+            for (Index i = 1; i < nkin; i++)
+            {
+                const Scalar y1 = 1. / dEdX[i];
+                table[i] = table[i - 1] +
+                           0.5 * (kinetic[i] - kinetic[i - 1]) * (y0 + y1);
+                y0 = y1;
+            }
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8334
+         */
+        inline MomentumIntegral compute_momentum_integral(
+                const Energy &kinetic_energy,
+                const ParticleMass &mass)
+        {
+            // Compute the integral of 1/momemtum for the lowest energy bin using trapezes.
+            const Index n = 101;
+            const Scalar dK = kinetic_energy / (n - 1);
+            Scalar Ki = dK;
+            Scalar I0 = 0.5 / sqrt(Ki * (Ki + 2. * mass));
+            for (Index i = 2; i < n - 1; i++)
+            {
+                Ki += dK;
+                const Scalar pi = sqrt(Ki * (Ki + 2. * mass));
+                I0 += 1. / pi;
+            }
+            Ki += dK;
+            I0 += 0.5 / sqrt(Ki * (Ki + 2. * mass));
+            I0 /= n - 1;
+            return I0;
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8334
+         */
+        inline void compute_time_integral(
+                const Calculation &result,
+                const Tabulation &table_X,
+                const Energies &kinetic_energies,
+                const ParticleMass &mass,
+                const MomentumIntegral &I0)
+        {
+            // Compute the cumulative path integrals .
+            const Index nkin = kinetic_energies.numel();
+            const auto *pK = kinetic_energies.data_ptr<Scalar>();
+            auto *T = result.data_ptr<Scalar>();
+            const auto *X = table_X.data_ptr<Scalar>();
+
+            T[0] = I0 * X[0] * mass;
+
+            for (Index i = 1; i < nkin; i++)
+            {
+                const Scalar p0 =
+                        sqrt(pK[i - 1] * (pK[i - 1] + 2. * mass));
+                const Scalar p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
+                const Scalar psi = 1. / p0 + 1. / p1;
+                const Scalar dy = 0.5 * (X[i] - X[i - 1]) * psi;
+                T[i] = T[i - 1] + dy * mass;
+            }
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8311
+         */
+        inline void compute_kinetic_integral(const Calculation &result,
+                                             const Energies &kinetic_energies)
+        {
+            const Index nkin = kinetic_energies.numel();
+            const auto *pK = kinetic_energies.data_ptr<Scalar>();
+            auto *table = result.data_ptr<Scalar>();
+
+            Scalar value = 0.5 * pK[0] * table[0];
+
+            for (Index i = 1; i < nkin; i++)
+            {
+                const Scalar dv = 0.5 * (pK[i] - pK[i - 1]) * (table[i - 1] + table[i]);
+                table[i - 1] = value;
+                value += dv;
+            }
+            table[nkin - 1] = value;
+        }
+
+        /*
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8420
+         */
+        inline void compute_csda_magnetic_transport(
+                const Calculation &table_Li,
+                const Tabulation &table_T,
+                const Tabulation &table_X,
+                const ParticleMass &mass,
+                const LarmorFactor &larmor)
+        {
+            const Index imax = table_T.numel() - 1;
+            if (imax == 0)
+                return;
+
+            const auto *X0 = table_X.data_ptr<Scalar>();
+            const auto *T = table_T.data_ptr<Scalar>();
+
+            std::array<Scalar, NLAR> x{}, dx{};
+
+            auto *Li = table_Li.data_ptr<Scalar>();
+
+            // The magnetic phase shift is proportional to the proper time integral.
+            // We refer to this table.
+            const Scalar factor = larmor / mass;
+
+            // Compute the deflection starting from max energy down to 0
+            Index i, j;
+            for (i = imax; i >= 1; i--)
+            {
+                Scalar dX0 = 0.5 * (X0[i] - X0[i - 1]);
+                Scalar p1 = (T[imax] - T[i - 1]) * factor;
+                Scalar p2 = (T[imax] - T[i]) * factor;
+
+                Scalar f1 = 1., f2 = 1.;
+                for (j = 0; j < NLAR; j++)
+                {
+                    dx[j] = dX0 * (f1 + f2);
+                    x[j] += dx[j];
+                    f1 *= p1;
+                    f2 *= p2;
+
+                    Li[j + i * NLAR] = x[j];
+                }
+            }
+
+            // Extrapolate the end points
+            for (j = 0; j < NLAR; j++)
+            {
+                Scalar hx = X0[0] / (X0[1] - X0[0]);
+                Li[j] = x[j] + hx * dx[j];
+            }
+        }
+
     } // namespace noa::pms::dcs::pumas
 
     template<>
