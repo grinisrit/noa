@@ -20,21 +20,21 @@ set(NOA_TEST_SRC
 
 # Main test executables
 if (BUILD_CUDA)
-    add_executable(noa_test ${NOA_TEST_SRC} test-dcs-cuda.cc kernels.cu)
-    set_target_properties(noa_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    add_executable(noa_suite ${NOA_TEST_SRC} test-dcs-cuda.cc kernels.cu)
+    set_target_properties(noa_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()
-    add_executable(noa_test ${NOA_TEST_SRC})
+    add_executable(noa_suite ${NOA_TEST_SRC})
 endif ()
-add_dependencies(noa_test test_data)
+add_dependencies(noa_suite test_data)
 
 # Link libraries
-target_link_libraries(noa_test PRIVATE gtest ${PROJECT_NAME})
-target_compile_options(noa_test
+target_link_libraries(noa_suite PRIVATE gtest ${PROJECT_NAME})
+target_compile_options(noa_suite
         PRIVATE -Wall -Wextra -Wpedantic -O3
         $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
 
 
 # Set up test
 add_test(NAME TEST_${PROJECT_NAME}
-        COMMAND noa_test
+        COMMAND noa_suite
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

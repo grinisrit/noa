@@ -29,7 +29,6 @@ auto main(int argc, char **argv) -> int {
     if (!dedx_data.has_value()) return 1;
 
     auto muon_physics = MuonPhysics{}.set_mdf_settings(*mdf_settings);
-    muon_physics.load_dedx_data(*dedx_data);
 
     if (!muon_physics.load_dedx_data(*dedx_data)){
         std::cerr << "Failed to load the physics model from:\n"
