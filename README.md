@@ -40,8 +40,8 @@ target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 ## Applications
 
 `NOA` offers several advanced applications for Bayesian computation. Please refer to the documentation and usage examples for each component to find out more:
-* [GHMC](apps/ghmc) the core component focused on the Geometric HMC algorithm dedicated to sampling from higher-dimensional probability distributions. The rest of the library builds on top of it.
-* [PMS](apps/pms) provides a framework for simulating the passage of particles through matter. 
+* [GHMC](docs/ghmc) the core component focused on the Geometric HMC algorithm dedicated to sampling from higher-dimensional probability distributions. The rest of the library builds on top of it.
+* [PMS](docs/pms) provides a framework for simulating the passage of particles through matter. 
 
 ## Contributions and Support
 

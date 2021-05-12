@@ -1,4 +1,4 @@
-#include "noa-bench.hh"
+#include "noa-benchmark.hh"
 
 #include <noa/pms/dcs.hh>
 

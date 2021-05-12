@@ -10,7 +10,7 @@ To enable parallel execution of some of the algorithms you should link against `
 
 To load MDF configurations we rely on [pugixml](https://github.com/zeux/pugixml)  version `1.11` provided.
 
-To build `CUDA` routines specify at `cmake` command line `-DBUILD_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75` (or the GPU architecture of your choice). 
+To build `CUDA` routines specify at `cmake` command line `-DBUILD_NOA_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75` (or the GPU architecture of your choice). 
 Enabling separable compilation, you should add the kernels to a `.cu` source file:
 ```cpp
 // in kernels.cu 

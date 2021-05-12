@@ -1,4 +1,4 @@
-#include "noa-suite.hh"
+#include "noa-test-suite.hh"
 
 #include <gtest/gtest.h>
 

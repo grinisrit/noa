@@ -18,20 +18,20 @@ set(NOA_BENCH_SRC
         benchmark-dcs.cc)
 
 # Main test executables
-if (BUILD_CUDA)
-    add_executable(noa_bench ${NOA_BENCH_SRC} benchmark-dcs-cuda.cc ${NOA_ROOT_DIR}/test/kernels.cu)
-    set_target_properties(noa_bench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+if (BUILD_NOA_CUDA)
+    add_executable(noa_benchmark ${NOA_BENCH_SRC} benchmark-dcs-cuda.cc ${NOA_ROOT_DIR}/test/unit/kernels.cu)
+    set_target_properties(noa_benchmark PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()
-    add_executable(noa_bench ${NOA_BENCH_SRC})
+    add_executable(noa_benchmark ${NOA_BENCH_SRC})
 endif ()
-add_dependencies(noa_bench test_data)
+add_dependencies(noa_benchmark test_data)
 
 # Extra include directories
-target_include_directories(noa_bench PRIVATE ${NOA_ROOT_DIR}/test)
+target_include_directories(noa_benchmark PRIVATE ${NOA_ROOT_DIR}/test/unit)
 
 # Link libraries
-target_link_libraries(noa_bench PRIVATE benchmark_main ${PROJECT_NAME} openmp)
-target_compile_options(noa_bench
+target_link_libraries(noa_benchmark PRIVATE benchmark_main ${PROJECT_NAME} openmp)
+target_compile_options(noa_benchmark
         PRIVATE
         -Wall -Wextra -Wpedantic -O3
         $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)

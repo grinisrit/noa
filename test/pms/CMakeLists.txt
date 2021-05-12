@@ -1,8 +1,6 @@
 ####################################################################################################
-##################                     NOA Apps: PMS examples                    ###################
+##################                      PMS functional tests                     ###################
 ####################################################################################################
-
-message(STATUS "Building PMS apps required")
 
 # Gflags
 include(fetch-gflags)
@@ -16,9 +14,9 @@ include(conda-omp)
 include(noa-pms-models)
 
 # Main executables
-add_executable(muography muography.cc)
-add_dependencies(muography pms_models)
+add_executable(load_pms_model load-pms-model.cc)
+add_dependencies(load_pms_model pms_models)
 
 # Link libraries
-target_link_libraries(muography PRIVATE ${PROJECT_NAME} gflags openmp)
-target_compile_options(muography PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(load_pms_model PRIVATE ${PROJECT_NAME} gflags openmp)
+target_compile_options(load_pms_model PRIVATE -Wall -Wextra -Wpedantic -O3)

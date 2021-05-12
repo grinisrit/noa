@@ -74,4 +74,6 @@ inline Status sample_funnel_dist(const Path &save_result_to,
     // save result for analysis
     auto [acc_rate, sample] = result.value();
     torch::save(sample, save_result_to);
+
+    return true;
 }

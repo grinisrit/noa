@@ -1,7 +1,11 @@
 #pragma once
 
+#include "test-data.hh"
+
 #include <noa/ghmc.hh>
 #include <noa/utils/common.hh>
+
+#include <gtest/gtest.h>
 
 using namespace noa;
 using namespace noa::utils;
@@ -51,4 +55,31 @@ inline ghmc::Hamiltonian get_hamiltonian(
     auto ntheta = theta.clone().requires_grad_();
     auto nmomentum = momentum.clone().requires_grad_();
     return ghmc::hamiltonian(alog_funnel, ntheta, nmomentum, 0.);
+}
+
+inline void test_fisher_info(torch::DeviceType device = torch::kCPU)
+{
+    auto fisher = get_fisher_info(GHMCData::get_theta(), device);
+
+    ASSERT_TRUE(fisher.has_value());
+    ASSERT_TRUE(fisher.value().device().type() == device);
+    auto res = fisher.value().to(torch::kCPU);
+    auto err = (res - GHMCData::get_expected_fisher()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-3);
+}
+
+inline void test_symplectic_flow(torch::DeviceType device = torch::kCPU)
+{
+    auto flow = get_symplectic_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
+
+    ASSERT_TRUE(flow.has_value());
+    auto [p_flow_, m_flow_] = flow.value();
+    ASSERT_TRUE(p_flow_.device().type() == device);
+    auto p_flow = p_flow_.to(torch::kCPU);
+    ASSERT_TRUE(m_flow_.device().type() == device);
+    auto m_flow = m_flow_.to(torch::kCPU);
+    auto err = (p_flow[-1] - GHMCData::get_expected_flow_theta()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-2);
+    err = (m_flow[-1] - GHMCData::get_expected_flow_moment()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-2);
 }

@@ -18,5 +18,4 @@ dist/
 .idea
 .ipynb_checkpoints/
 .mypy_cache/
-*.ipynb
 .DS_Store
