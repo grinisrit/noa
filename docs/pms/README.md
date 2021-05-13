@@ -2,11 +2,11 @@
 
 :warning: This component is under active development.
 
-To build theses examples add `-DBUILD_PMS_APPS=ON` to the top level cmake command.
+Basic usage examples can be found in [functional tests](../../test/pms).
 
 The materials configuration files for the physical models are available from [noa-pms-models](https://github.com/grinisrit/noa-pms-models).
 
-To enable parallel execution of some of the algorithms you should link against `OpenMP`.
+To enable parallel execution for some algorithms you should link against `OpenMP`.
 
 To load MDF configurations we rely on [pugixml](https://github.com/zeux/pugixml)  version `1.11` provided.
 
