@@ -19,3 +19,7 @@ dist/
 .ipynb_checkpoints/
 .mypy_cache/
 .DS_Store
+
+# User data
+data/
+*.pt
