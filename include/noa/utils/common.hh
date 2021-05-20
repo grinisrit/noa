@@ -35,6 +35,7 @@
 #include <regex>
 
 #include <torch/torch.h>
+#include <torch/script.h>
 
 namespace noa::utils {
 
@@ -42,6 +43,7 @@ namespace noa::utils {
     using Status = bool;
     using Line = std::string;
     using TensorOpt = std::optional<torch::Tensor>;
+    using JitModuleOpt = std::optional<torch::jit::Module>;
 
     constexpr double_t TOLERANCE = 1E-6;
     constexpr int32_t SEED = 987654;
@@ -115,39 +117,39 @@ namespace noa::utils {
 
     template<typename Dtype, typename Lambda>
     inline void for_each(const Lambda &lambda, const torch::Tensor &result) {
-        for_eachi<Dtype>([&lambda](const int64_t, Dtype &k){lambda(k);}, result);
+        for_eachi<Dtype>([&lambda](const int64_t, Dtype &k) { lambda(k); }, result);
     }
 
     template<typename Dtype, typename Lambda>
     inline void pfor_each(const Lambda &lambda, const torch::Tensor &result) {
-        pfor_eachi<Dtype>([&lambda](const int64_t, Dtype &k){lambda(k);}, result);
+        pfor_eachi<Dtype>([&lambda](const int64_t, Dtype &k) { lambda(k); }, result);
     }
 
     template<typename Dtype, typename Lambda>
     inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
-        for_eachi<Dtype>([&lambda, &pvals](const int64_t i, Dtype &k){k = lambda(i, pvals[i]);}, result);
+        for_eachi<Dtype>([&lambda, &pvals](const int64_t i, Dtype &k) { k = lambda(i, pvals[i]); }, result);
     }
 
     template<typename Dtype, typename Lambda>
     inline void pvmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
-        pfor_eachi<Dtype>([&lambda, &pvals](const int64_t i, Dtype &k){k = lambda(i, pvals[i]);}, result);
+        pfor_eachi<Dtype>([&lambda, &pvals](const int64_t i, Dtype &k) { k = lambda(i, pvals[i]); }, result);
     }
 
 
     template<typename Dtype, typename Lambda>
     inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         vmapi<Dtype>(values,
-              [&lambda](const int64_t, const Dtype &k){ return lambda(k);},
-              result);
+                     [&lambda](const int64_t, const Dtype &k) { return lambda(k); },
+                     result);
     }
 
     template<typename Dtype, typename Lambda>
     inline void pvmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
         pvmapi<Dtype>(values,
-                     [&lambda](const int64_t, const Dtype &k){ return lambda(k);},
-                     result);
+                      [&lambda](const int64_t, const Dtype &k) { return lambda(k); },
+                      result);
     }
 
     template<typename Dtype, typename Lambda>
@@ -192,5 +194,29 @@ namespace noa::utils {
     inline torch::Tensor mean_error(const torch::Tensor &computed, const torch::Tensor &expected) {
         return torch::abs(computed - expected).mean();
     }
+
+    template<typename Net>
+    inline std::vector<torch::Tensor> parameters(const Net &net) {
+        auto res = std::vector<torch::Tensor>{};
+        for (const auto &params : net.parameters())
+            res.push_back(params);
+        return res;
+    }
+
+    inline JitModuleOpt load_module(const Path &jit_module_pt){
+        if (check_path_exists(jit_module_pt)) {
+            try {
+                return torch::jit::load(jit_module_pt);
+            }
+            catch (...) {
+                std::cerr << "Failed to load JIT module from " << jit_module_pt << "\n";
+                return std::nullopt;
+            }
+        } else {
+            return std::nullopt;
+        }
+    }
+
+
 
 } // namespace noa::utils

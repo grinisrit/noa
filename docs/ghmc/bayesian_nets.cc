@@ -1,43 +1,52 @@
 #include "noa/ghmc.hh"
 #include "noa/utils/common.hh"
 
-#include <iostream>
 #include <torch/extension.h>
 
 using namespace noa;
 using namespace noa::utils;
 
-torch::Tensor run_ghmc() {
-    torch::manual_seed(utils::SEED);
 
-    // Sample from the 3 dimensional Gaussian distribution
-    // HMC requires the log density up to additive constants
-    auto mean = torch::tensor({0., 5., 10.});
-    auto sigma = torch::tensor({.5, 1., 2.});
-    auto alog_prob_normal = [&mean, &sigma](const auto &theta) {
-        return -0.5 * ((theta - mean) / sigma).pow(2).sum();
-    };
+torch::Tensor train_jit_module(
+        std::string jit_model_pt,
+        torch::Tensor x_val,
+        torch::Tensor x_train,
+        torch::Tensor y_train,
+        int nepochs) {
 
-    // Initialise parameters
-    auto params_init = torch::zeros(3);
-
-    // Create sampler configuration
-    auto conf = ghmc::SampleConf{}
-            .set_num_iter(200)
-            .set_leap_steps(5)
-            .set_epsilon(0.3);
-
-    // Run sampler
-    auto result = ghmc::sample(alog_prob_normal, params_init, conf);
-
-    // Check result
-    if (!result.has_value())
-    {
+    auto module = load_module(jit_model_pt);
+    if (!module.has_value())
         return torch::Tensor{};
+
+    auto net = module.value();
+    auto params = parameters(net);
+
+    auto loss_fn = torch::nn::MSELoss{};
+    auto optimizer = torch::optim::Adam{params, torch::optim::AdamOptions(0.005)};
+
+    auto inputs_val = std::vector<torch::jit::IValue>{x_val};
+    auto inputs_train = std::vector<torch::jit::IValue>{x_train};
+
+    auto preds = std::vector<at::Tensor>{};
+    preds.reserve(nepochs);
+
+    net.train();
+
+    for (int i = 0; i < nepochs; i++) {
+
+        optimizer.zero_grad();
+        auto output = net.forward(inputs_train).toTensor();
+        auto loss = loss_fn(output, y_train);
+        loss.backward();
+        optimizer.step();
+
+        preds.push_back(net.forward(inputs_val).toTensor().detach().clone());
     }
-    return std::get<1>(result.value()).detach();
+
+    return torch::stack(preds);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("run_ghmc", &run_ghmc, py::call_guard<py::gil_scoped_release>(), "GHMC example");
+    m.def("train_jit_module", &train_jit_module, py::call_guard<py::gil_scoped_release>(),
+          "Train a TorchScript module");
 }
