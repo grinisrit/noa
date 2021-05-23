@@ -29,7 +29,7 @@ inline const auto noa_test_data = noa::utils::Path{"noa-test-data"};
 inline const auto ghmc_dir = noa_test_data / "ghmc";
 inline const auto theta_pt = ghmc_dir / "theta.pt";
 inline const auto momentum_pt = ghmc_dir / "momentum.pt";
-inline const auto expected_fisher_pt = ghmc_dir / "expected_fisher.pt";
+inline const auto expected_neg_hessian_funnel_pt = ghmc_dir / "expected_neg_hessian_funnel.pt";
 inline const auto expected_spectrum_pt = ghmc_dir / "expected_spectrum.pt";
 inline const auto expected_energy_pt = ghmc_dir / "expected_energy.pt";
 inline const auto expected_flow_theta_pt = ghmc_dir / "expected_flow_theta.pt";
@@ -62,7 +62,7 @@ class GHMCData
 {
     inline static TensorOpt theta = std::nullopt;
     inline static TensorOpt momentum = std::nullopt;
-    inline static TensorOpt expected_fisher = std::nullopt;
+    inline static TensorOpt expected_neg_hessian_funnel = std::nullopt;
     inline static TensorOpt expected_spectrum = std::nullopt;
     inline static TensorOpt expected_energy = std::nullopt;
     inline static TensorOpt expected_flow_theta = std::nullopt;
@@ -79,9 +79,9 @@ public:
         return lazy_load_or_fail(momentum, momentum_pt);
     }
 
-    static torch::Tensor get_expected_fisher()
+    static torch::Tensor get_neg_hessian_funnel()
     {
-        return lazy_load_or_fail(expected_fisher, expected_fisher_pt);
+        return lazy_load_or_fail(expected_neg_hessian_funnel, expected_neg_hessian_funnel_pt);
     }
 
     static torch::Tensor get_expected_spectrum()
@@ -108,7 +108,7 @@ public:
     {
         get_theta();
         get_momentum();
-        get_expected_fisher();
+        get_neg_hessian_funnel();
         get_expected_spectrum();
         get_expected_energy();
         get_expected_flow_theta();

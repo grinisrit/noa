@@ -1,5 +1,9 @@
 #include "test-ghmc-sampler.hh"
 
+TEST(GHMC, FunnelHessian)
+{
+    test_funnel_hessian();
+}
 
 TEST(GHMC, FisherInfo)
 {

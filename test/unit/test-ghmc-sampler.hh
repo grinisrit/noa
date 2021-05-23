@@ -16,6 +16,25 @@ inline const auto alog_funnel = [](const auto &ntheta) {
                    (ntheta[0].pow(2) / 9) - dim * ntheta[0]);
 };
 
+inline TensorOpt get_funnel_hessian(const torch::Tensor &theta, torch::DeviceType device)
+{
+    torch::manual_seed(utils::SEED);
+    auto ntheta = theta.clone().to(device).requires_grad_();
+    auto log_prob = alog_funnel(ntheta);
+    return numerics::hessian(log_prob, ntheta);
+}
+
+inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU)
+{
+    auto hess = get_funnel_hessian(GHMCData::get_theta(), device);
+
+    ASSERT_TRUE(hess.has_value());
+    ASSERT_TRUE(hess.value().device().type() == device);
+    auto res = hess.value().detach().to(torch::kCPU);
+    auto err = (res + GHMCData::get_neg_hessian_funnel()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-3);
+}
+
 inline ghmc::FisherInfo get_fisher_info(const torch::Tensor &theta, torch::DeviceType device)
 {
     torch::manual_seed(utils::SEED);
@@ -64,7 +83,7 @@ inline void test_fisher_info(torch::DeviceType device = torch::kCPU)
     ASSERT_TRUE(fisher.has_value());
     ASSERT_TRUE(fisher.value().device().type() == device);
     auto res = fisher.value().to(torch::kCPU);
-    auto err = (res - GHMCData::get_expected_fisher()).abs().sum().item<float>();
+    auto err = (res - GHMCData::get_neg_hessian_funnel()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 }
 

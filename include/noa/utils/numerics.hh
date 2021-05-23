@@ -34,6 +34,29 @@
 
 namespace noa::utils::numerics {
 
+    inline TensorOpt hessian(const torch::Tensor &function_value, const torch::Tensor &parameter) {
+        if ((function_value.dim() > 0) || (parameter.dim() > 1)) {
+            std::cerr << "Invalid arguments to noa::utils::numerics::hessian : "
+                      << "expecting 0D function value and 1D parameter\n";
+            return std::nullopt;
+        }
+        auto n = parameter.numel();
+        auto res = function_value.new_zeros({n, n});
+        auto grad = torch::autograd::grad({function_value}, {parameter}, {}, torch::nullopt, true)[0];
+        int i = 0;
+        for (int j = 0; j < n; j++) {
+            auto row = grad[j].requires_grad()
+                       ? torch::autograd::grad({grad[i]}, {parameter}, {}, true, true, true)[0].slice(0, j, n)
+                       : grad[j].new_zeros(n - j);
+            res[i].slice(0, i, n).add_(row);
+            i++;
+        }
+        auto check = torch::triu(res.detach()).sum();
+        return (torch::isnan(check).item<bool>() || torch::isinf(check).item<bool>())
+               ? std::nullopt
+               : std::make_optional(res + torch::triu(res, 1).t());
+    }
+
     // https://pomax.github.io/bezierinfo/legendre-gauss.html
     template<typename Dtype, typename Function>
     inline Dtype legendre_gaussian_quadrature(const Dtype &lower_bound,

@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include "noa/utils/numerics.hh"
+
 #include <iostream>
 #include <chrono>
 
@@ -35,15 +37,69 @@
 
 namespace noa::ghmc
 {
+
+    using Parameters = torch::Tensor;
+    using Momentum = torch::Tensor;
+    using LogProbability = torch::Tensor;
+
+
+
     using SafeResult = std::optional<torch::Tensor>;
     using SampleResult = std::optional<std::tuple<double, torch::Tensor>>;
     using Params = torch::Tensor;
-    using Momentum = torch::Tensor;
     using LogProb = torch::Tensor;
     using FisherInfo = std::optional<torch::Tensor>;
     using SoftAbsMap = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
     using Hamiltonian = std::optional<std::tuple<torch::Tensor, std::optional<Momentum>>>;
     using SymplecticFlow = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
+
+    template<typename Dtype>
+    struct Configuration {
+        uint32_t flow_steps = 10;
+        Dtype step_size = 0.1;
+        Dtype binding_const = 100.;
+        Dtype perturbation = 0.001;
+        uint32_t perturb_max_tries = 10;
+        Dtype softabs_const = 1e6;
+        bool verbose = false;
+
+        inline Configuration &set_flow_steps(uint32_t flow_steps_) {
+            flow_steps = flow_steps_;
+            return *this;
+        }
+
+        inline Configuration &set_step_size(const Dtype &step_size_) {
+            step_size = step_size_;
+            return *this;
+        }
+
+        inline Configuration &set_binding_const(const Dtype &binding_const_) {
+            binding_const = binding_const_;
+            return *this;
+        }
+
+        inline Configuration &set_perturbation(const Dtype &perturbation_) {
+            perturbation = perturbation_;
+            return *this;
+        }
+
+        inline Configuration &set_perturb_max(uint32_t perturb_max_) {
+            perturb_max_tries = perturb_max_;
+            return *this;
+        }
+
+        inline Configuration &set_softabs_const(const Dtype &softabs_const_) {
+            softabs_const = softabs_const_;
+            return *this;
+        }
+
+        inline Configuration &set_verbosity(bool verbose_)
+        {
+            verbose = verbose_;
+            return *this;
+        }
+    };
+
 
     inline FisherInfo fisher_info(LogProb log_prob, Params params)
     {
