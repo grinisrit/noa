@@ -5,6 +5,11 @@ TEST(GHMC, FunnelHessian)
     test_funnel_hessian();
 }
 
+TEST(GHMC, SoftAbsMetric)
+{
+    test_softabs_metric();
+}
+
 TEST(GHMC, FisherInfo)
 {
     test_fisher_info();

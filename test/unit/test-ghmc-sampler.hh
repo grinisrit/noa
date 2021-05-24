@@ -10,18 +10,20 @@
 using namespace noa;
 using namespace noa::utils;
 
-inline const auto alog_funnel = [](const auto &ntheta) {
-    auto dim = ntheta.numel() - 1;
-    return -0.5 * ((torch::exp(ntheta[0]) * ntheta.slice(0, 1, dim + 1).pow(2).sum()) +
-                   (ntheta[0].pow(2) / 9) - dim * ntheta[0]);
+inline const auto alog_funnel = [](const auto &theta_) {
+    auto dim = theta_.numel() - 1;
+    return -0.5 * ((torch::exp(theta_[0]) * theta_.slice(0, 1, dim + 1).pow(2).sum()) +
+                   (theta_[0].pow(2) / 9) - dim * theta_[0]);
 };
 
-inline TensorOpt get_funnel_hessian(const torch::Tensor &theta, torch::DeviceType device)
+inline const auto conf = ghmc::Configuration<float>{}.set_perturbation(1e-6f);
+
+inline TensorOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device)
 {
     torch::manual_seed(utils::SEED);
-    auto ntheta = theta.clone().to(device).requires_grad_();
-    auto log_prob = alog_funnel(ntheta);
-    return numerics::hessian(log_prob, ntheta);
+    auto theta = theta_.detach().to(device, false, true).requires_grad_();
+    auto log_prob = alog_funnel(theta);
+    return numerics::hessian(log_prob, theta);
 }
 
 inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU)
@@ -32,15 +34,43 @@ inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU)
     ASSERT_TRUE(hess.value().device().type() == device);
     auto res = hess.value().detach().to(torch::kCPU);
     auto err = (res + GHMCData::get_neg_hessian_funnel()).abs().sum().item<float>();
-    ASSERT_NEAR(err, 0., 1e-3);
+    ASSERT_NEAR(err, 0.f, 1e-3f);
 }
 
-inline ghmc::FisherInfo get_fisher_info(const torch::Tensor &theta, torch::DeviceType device)
+inline ghmc::LocalMetricOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device)
 {
     torch::manual_seed(utils::SEED);
-    auto ntheta = theta.clone().to(device).requires_grad_();
-    auto log_prob = alog_funnel(ntheta);
-    return ghmc::fisher_info(log_prob, ntheta);
+    auto theta = theta_.detach().to(device, false, true).requires_grad_();
+    auto log_prob = alog_funnel(theta);
+    return ghmc::softabs_metric(conf)(log_prob, theta);
+}
+
+inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
+
+    auto metric_ = get_softabs_metric(GHMCData::get_theta(), device);
+    ASSERT_TRUE(metric_.has_value());
+
+    auto[spec_, Q_] = metric_.value();
+    ASSERT_TRUE(spec_.device().type() == device);
+    ASSERT_TRUE(Q_.device().type() == device);
+    auto spec = spec_.detach().to(torch::kCPU);
+    auto Q = Q_.detach().to(torch::kCPU);
+
+    auto err = (spec - GHMCData::get_expected_spectrum()).abs().sum().item<float>();
+    auto orthogonality = (Q.mm(Q.t()) - torch::eye(GHMCData::get_theta().numel())).abs().sum().item<float>();
+
+    ASSERT_NEAR(err, 0.f, 1e-3f);
+    ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
+}
+
+
+/////////////////////////////////////////////////////////////////
+inline ghmc::FisherInfo get_fisher_info(const torch::Tensor &theta_, torch::DeviceType device)
+{
+    torch::manual_seed(utils::SEED);
+    auto theta = theta_.clone().to(device).requires_grad_();
+    auto log_prob = alog_funnel(theta);
+    return ghmc::fisher_info(log_prob, theta);
 }
 
 inline ghmc::SymplecticFlow get_symplectic_flow(
