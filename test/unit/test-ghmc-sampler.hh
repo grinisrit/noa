@@ -16,7 +16,7 @@ inline const auto alog_funnel = [](const auto &theta_) {
                    (theta_[0].pow(2) / 9) - dim * theta_[0]);
 };
 
-inline const auto conf = ghmc::Configuration<float>{}.set_perturbation(1e-6f);
+inline const auto conf = ghmc::Configuration<float>{}.set_cutoff(1e-6f);
 
 inline TensorOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device)
 {

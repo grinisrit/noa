@@ -61,8 +61,7 @@ namespace noa::ghmc {
         uint32_t flow_steps = 10;
         Dtype step_size = 0.1;
         Dtype binding_const = 100.;
-        Dtype perturbation = 0.001;
-        uint32_t perturb_max_tries = 10;
+        Dtype cutoff = 1e-6;
         Dtype softabs_const = 1e6;
         bool verbose = false;
 
@@ -81,13 +80,8 @@ namespace noa::ghmc {
             return *this;
         }
 
-        inline Configuration &set_perturbation(const Dtype &perturbation_) {
-            perturbation = perturbation_;
-            return *this;
-        }
-
-        inline Configuration &set_perturb_max_tries(uint32_t perturb_max_tries_) {
-            perturb_max_tries = perturb_max_tries_;
+        inline Configuration &set_cutoff(const Dtype &cutoff_) {
+            cutoff = cutoff_;
             return *this;
         }
 
@@ -118,7 +112,6 @@ namespace noa::ghmc {
     template<typename Configuration_t>
     inline auto softabs_metric(const Configuration_t &conf) {
         return [&conf](const LogProbability &log_prob, const Parameters &params) {
-
             auto hess_ = utils::numerics::hessian(log_prob, params);
             if (!hess_.has_value()) {
                 if (conf.verbose)
@@ -127,27 +120,9 @@ namespace noa::ghmc {
                 return LocalMetricOpt{};
             }
 
-            auto hess = -hess_.value();
-            auto n = params.numel();
-            auto hess_perturb = conf.perturbation *
-                                hess.detach().abs().mean() * torch::eye(n, params.options());
-            auto hess_reg = regularise_hessian(hess, hess_perturb);
-
-            uint32_t tries = 0;
-            auto sym_eig = hess_reg(torch::rand_like(params));
-            while (!sym_eig.has_value()) {
-                tries += 1;
-                if (tries > conf.perturb_max_tries) {
-                    if (conf.verbose)
-                        std::cerr << "Failed to regularise hessian for log probability:\n"
-                                  << log_prob << "\n";
-                    return LocalMetricOpt{};
-                }
-
-                sym_eig = hess_reg(torch::rand_like(params));
-            }
-
-            auto[eigs, rotation] = sym_eig.value();
+            auto[eigs, rotation] = torch::symeig(-hess_.value(), true);
+            auto threshold = torch::nn::Threshold{conf.cutoff, conf.cutoff};
+            eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
             auto spectrum = torch::abs((1. / torch::tanh(conf.softabs_const * eigs)) * eigs);
             return LocalMetricOpt{LocalMetric{spectrum, rotation}};
         };
