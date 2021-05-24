@@ -43,8 +43,8 @@ namespace noa::utils::numerics {
         auto n = parameter.numel();
         auto res = function_value.new_zeros({n, n});
         auto grad = torch::autograd::grad({function_value}, {parameter}, {}, torch::nullopt, true)[0];
-        int i = 0;
-        for (int j = 0; j < n; j++) {
+        uint32_t i = 0;
+        for (uint32_t j = 0; j < n; j++) {
             auto row = grad[j].requires_grad()
                        ? torch::autograd::grad({grad[i]}, {parameter}, {}, true, true, true)[0].slice(0, j, n)
                        : grad[j].new_zeros(n - j);
@@ -62,17 +62,17 @@ namespace noa::utils::numerics {
     inline Dtype legendre_gaussian_quadrature(const Dtype &lower_bound,
                                               const Dtype &upper_bound,
                                               const Function &function,
-                                              const int32_t min_points,
-                                              const int32_t order,
+                                              const uint32_t min_points,
+                                              const uint32_t order,
                                               const Dtype *abscissa,
                                               const Dtype *weight) {
-        const int32_t n_itv = (min_points + order - 1) / order;
+        const uint32_t n_itv = (min_points + order - 1) / order;
         const Dtype h = (upper_bound - lower_bound) / n_itv;
-        const int32_t N = n_itv * order;
+        const uint32_t N = n_itv * order;
         Dtype res = 0;
         Dtype x0 = lower_bound;
-        for (int32_t i = 0; i < N; i++) {
-            int32_t j = i % order;
+        for (uint32_t i = 0; i < N; i++) {
+            uint32_t j = i % order;
             res += function(x0 + h * ((i / order) + abscissa[j])) * h * weight[j];
         }
         return res;
@@ -82,8 +82,8 @@ namespace noa::utils::numerics {
     inline Dtype quadrature6(const Dtype &lower_bound,
                              const Dtype &upper_bound,
                              const Function &function,
-                             const int32_t min_points = 1) {
-        constexpr int32_t N_GQ = 6;
+                             const uint32_t min_points = 1) {
+        constexpr size_t N_GQ = 6;
         const Dtype xGQ[N_GQ] = {(Dtype) 0.03376524, (Dtype) 0.16939531, (Dtype) 0.38069041,
                                  (Dtype) 0.61930959, (Dtype) 0.83060469, (Dtype) 0.96623476};
         const Dtype wGQ[N_GQ] = {(Dtype) 0.08566225, (Dtype) 0.18038079, (Dtype) 0.23395697,
@@ -101,8 +101,8 @@ namespace noa::utils::numerics {
     inline Dtype quadrature8(const Dtype &lower_bound,
                              const Dtype &upper_bound,
                              const Function &function,
-                             const int32_t min_points = 1) {
-        constexpr int32_t N_GQ = 8;
+                             const uint32_t min_points = 1) {
+        constexpr size_t N_GQ = 8;
         const Dtype xGQ[N_GQ] = {(Dtype) 0.01985507, (Dtype) 0.10166676, (Dtype) 0.2372338,
                                  (Dtype) 0.40828268, (Dtype) 0.59171732, (Dtype) 0.7627662,
                                  (Dtype) 0.89833324, (Dtype) 0.98014493};
@@ -122,8 +122,8 @@ namespace noa::utils::numerics {
     inline Dtype quadrature9(const Dtype &lower_bound,
                              const Dtype &upper_bound,
                              const Function &function,
-                             const int32_t min_points = 1) {
-        constexpr int32_t N_GQ = 9;
+                             const uint32_t min_points = 1) {
+        constexpr size_t N_GQ = 9;
         const Dtype xGQ[N_GQ] = {(Dtype) 0.0000000000000000, (Dtype) -0.8360311073266358,
                                  (Dtype) 0.8360311073266358, (Dtype) -0.9681602395076261, (Dtype) 0.9681602395076261,
                                  (Dtype) -0.3242534234038089, (Dtype) 0.3242534234038089, (Dtype) -0.6133714327005904,
@@ -155,7 +155,7 @@ namespace noa::utils::numerics {
             //The absolute & relative tolerance on the root value.
             const Dtype &xtol = TOLERANCE,
             const Dtype &rtol = TOLERANCE,
-            const int32_t max_iter = 100) {
+            const uint32_t max_iter = 100) {
         //  Check the initial values
         Dtype fa = (fa_.has_value()) ? fa_.value() : function(xa);
         Dtype fb = (fb_.has_value()) ? fb_.value() : function(xb);
@@ -173,7 +173,7 @@ namespace noa::utils::numerics {
 
         // Do the bracketing using Ridder's update rule.
         Dtype xn = 0.;
-        for (int32_t i = 0; i < max_iter; i++) {
+        for (uint32_t i = 0; i < max_iter; i++) {
             Dtype dm = 0.5 * (xb - xa);
             const Dtype xm = xa + dm;
             const Dtype fm = function(xm);

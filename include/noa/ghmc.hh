@@ -83,8 +83,8 @@ namespace noa::ghmc
             return *this;
         }
 
-        inline Configuration &set_perturb_max(uint32_t perturb_max_) {
-            perturb_max_tries = perturb_max_;
+        inline Configuration &set_perturb_max_tries(uint32_t perturb_max_tries_) {
+            perturb_max_tries = perturb_max_tries_;
             return *this;
         }
 
