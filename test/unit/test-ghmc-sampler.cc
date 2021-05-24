@@ -10,6 +10,13 @@ TEST(GHMC, SoftAbsMetric)
     test_softabs_metric();
 }
 
+TEST(GHMC, Hamiltonian)
+{
+    test_hamiltonian();
+}
+
+/////////////////////////////////////////////////////////////
+
 TEST(GHMC, FisherInfo)
 {
     test_fisher_info();
@@ -26,9 +33,9 @@ TEST(GHMC, SoftAbsMap)
     ASSERT_NEAR(orth, 0., 1e-3);
 }
 
-TEST(GHMC, Hamiltonian)
+TEST(GHMC, HamiltonianRef)
 {
-    auto ham_ = get_hamiltonian(GHMCData::get_theta(), GHMCData::get_momentum());
+    auto ham_ = get_hamiltonian_ref(GHMCData::get_theta(), GHMCData::get_momentum());
     ASSERT_TRUE(ham_.has_value());
     torch::Tensor energy = std::get<0>(ham_.value());
     auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();

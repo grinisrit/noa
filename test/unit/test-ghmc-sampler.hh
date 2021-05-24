@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 using namespace noa;
+using namespace noa::ghmc;
 using namespace noa::utils;
 
 inline const auto alog_funnel = [](const auto &theta_) {
@@ -16,18 +17,16 @@ inline const auto alog_funnel = [](const auto &theta_) {
                    (theta_[0].pow(2) / 9) - dim * theta_[0]);
 };
 
-inline const auto conf = ghmc::Configuration<float>{}.set_cutoff(1e-6f);
+inline const auto conf = Configuration<float>{}.set_cutoff(1e-6f);
 
-inline TensorOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device)
-{
+inline TensorOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
     auto theta = theta_.detach().to(device, false, true).requires_grad_();
     auto log_prob = alog_funnel(theta);
     return numerics::hessian(log_prob, theta);
 }
 
-inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU)
-{
+inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU) {
     auto hess = get_funnel_hessian(GHMCData::get_theta(), device);
 
     ASSERT_TRUE(hess.has_value());
@@ -37,12 +36,11 @@ inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU)
     ASSERT_NEAR(err, 0.f, 1e-3f);
 }
 
-inline ghmc::LocalMetricOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device)
-{
+inline LocalMetricOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
     auto theta = theta_.detach().to(device, false, true).requires_grad_();
     auto log_prob = alog_funnel(theta);
-    return ghmc::softabs_metric(conf)(log_prob, theta);
+    return softabs_metric(conf)(log_prob, theta);
 }
 
 inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
@@ -63,51 +61,70 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
 }
 
+inline std::optional<Hamiltonian> get_hamiltonian(
+        const torch::Tensor &theta_,
+        const torch::Tensor &momentum_,
+        torch::DeviceType device) {
+    torch::manual_seed(utils::SEED);
+    auto theta = theta_.detach().to(device, false, true).requires_grad_();
+    auto log_prob = alog_funnel(theta);
+    auto metric = softabs_metric(conf)(log_prob, theta);
+    if(!metric.has_value()) return std::nullopt;
+
+    auto momentum = momentum_.detach().to(device, false, true);
+    return hamiltonian(log_prob, theta, metric.value(), momentum);
+
+}
+
+inline void test_hamiltonian(torch::DeviceType device = torch::kCPU)
+{
+    auto ham_ = get_hamiltonian(GHMCData::get_theta(), GHMCData::get_momentum(), device);
+    ASSERT_TRUE(ham_.has_value());
+    torch::Tensor energy = std::get<0>(ham_.value());
+    auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-3);
+}
+
 
 /////////////////////////////////////////////////////////////////
-inline ghmc::FisherInfo get_fisher_info(const torch::Tensor &theta_, torch::DeviceType device)
-{
+inline FisherInfo get_fisher_info(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
     auto theta = theta_.clone().to(device).requires_grad_();
     auto log_prob = alog_funnel(theta);
-    return ghmc::fisher_info(log_prob, theta);
+    return fisher_info(log_prob, theta);
 }
 
-inline ghmc::SymplecticFlow get_symplectic_flow(
-    const torch::Tensor &theta, 
-    const torch::Tensor &momentum,
-    torch::DeviceType device)
-{
+inline SymplecticFlow get_symplectic_flow(
+        const torch::Tensor &theta,
+        const torch::Tensor &momentum,
+        torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
     auto ntheta = theta.clone().to(device);
     auto nmomentum = momentum.clone().to(device);
 
-    return ghmc::symplectic_flow(/*log_probability_density=*/alog_funnel,
-                                 /*params=*/ntheta, /*nmomentum=*/nmomentum,
-                                 /*leap_steps=*/1, /*epsilon=*/0.14, /*binding_const=*/10.,
-                                 /*jitter=*/0.00001, /*jitter_max=*/0);
+    return symplectic_flow(/*log_probability_density=*/alog_funnel,
+            /*params=*/ntheta, /*nmomentum=*/nmomentum,
+            /*leap_steps=*/1, /*epsilon=*/0.14, /*binding_const=*/10.,
+            /*jitter=*/0.00001, /*jitter_max=*/0);
 }
 
-inline ghmc::SoftAbsMap get_metric(const torch::Tensor &theta)
-{
+inline SoftAbsMap get_metric(const torch::Tensor &theta) {
     torch::manual_seed(utils::SEED);
     auto ntheta = theta.clone().requires_grad_();
     auto log_prob = alog_funnel(ntheta);
-    return ghmc::softabs_map(log_prob, ntheta, 0.);
+    return softabs_map(log_prob, ntheta, 0.);
 }
 
-inline ghmc::Hamiltonian get_hamiltonian(
-    const torch::Tensor &theta,
-    const torch::Tensor &momentum)
-{
+inline HamiltonianRef get_hamiltonian_ref(
+        const torch::Tensor &theta,
+        const torch::Tensor &momentum) {
     torch::manual_seed(utils::SEED);
     auto ntheta = theta.clone().requires_grad_();
     auto nmomentum = momentum.clone().requires_grad_();
-    return ghmc::hamiltonian(alog_funnel, ntheta, nmomentum, 0.);
+    return hamiltonian(alog_funnel, ntheta, nmomentum, 0.);
 }
 
-inline void test_fisher_info(torch::DeviceType device = torch::kCPU)
-{
+inline void test_fisher_info(torch::DeviceType device = torch::kCPU) {
     auto fisher = get_fisher_info(GHMCData::get_theta(), device);
 
     ASSERT_TRUE(fisher.has_value());
@@ -117,12 +134,11 @@ inline void test_fisher_info(torch::DeviceType device = torch::kCPU)
     ASSERT_NEAR(err, 0., 1e-3);
 }
 
-inline void test_symplectic_flow(torch::DeviceType device = torch::kCPU)
-{
+inline void test_symplectic_flow(torch::DeviceType device = torch::kCPU) {
     auto flow = get_symplectic_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
 
     ASSERT_TRUE(flow.has_value());
-    auto [p_flow_, m_flow_] = flow.value();
+    auto[p_flow_, m_flow_] = flow.value();
     ASSERT_TRUE(p_flow_.device().type() == device);
     auto p_flow = p_flow_.to(torch::kCPU);
     ASSERT_TRUE(m_flow_.device().type() == device);

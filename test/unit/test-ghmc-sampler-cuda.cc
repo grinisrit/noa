@@ -7,11 +7,19 @@ TEST(GHMC, FunnelHessianCUDA)
     test_funnel_hessian(torch::kCUDA);
 }
 
-TEST(GHMC, FunnelHessianCUDA)
+TEST(GHMC, SoftAbsMetricCUDA)
 {
     ASSERT_TRUE(torch::cuda::is_available());
     test_softabs_metric(torch::kCUDA);
 }
+
+TEST(GHMC, HamiltonianCUDA)
+{
+    ASSERT_TRUE(torch::cuda::is_available());
+    test_hamiltonian(torch::kCUDA);
+}
+
+////////////////////////////////////////////
 
 TEST(GHMC, FisherInfoCUDA)
 {

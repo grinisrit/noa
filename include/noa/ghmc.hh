@@ -39,11 +39,14 @@ namespace noa::ghmc {
 
     using Parameters = torch::Tensor;
     using Momentum = torch::Tensor;
+    using MomentumOpt = std::optional<Momentum>;
     using LogProbability = torch::Tensor;
     using Spectrum = torch::Tensor;
     using Rotation = torch::Tensor;
     using LocalMetric = std::tuple<Spectrum, Rotation>;
     using LocalMetricOpt = std::optional<LocalMetric>;
+    using Energy = torch::Tensor;
+    using Hamiltonian = std::tuple<Energy, Momentum>;
 
 
 
@@ -53,7 +56,7 @@ namespace noa::ghmc {
     using LogProb = torch::Tensor;
     using FisherInfo = std::optional<torch::Tensor>;
     using SoftAbsMap = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
-    using Hamiltonian = std::optional<std::tuple<torch::Tensor, std::optional<Momentum>>>;
+    using HamiltonianRef = std::optional<std::tuple<torch::Tensor, std::optional<Momentum>>>;
     using SymplecticFlow = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
 
     template<typename Dtype>
@@ -96,19 +99,6 @@ namespace noa::ghmc {
         }
     };
 
-    inline auto regularise_hessian(
-            const torch::Tensor &hess,
-            const torch::Tensor &perturbation) {
-        return [&hess, &perturbation](const torch::Tensor &eps) {
-            auto hess_reg = hess + perturbation * eps;
-            auto sym_eigs = torch::symeig(hess_reg, true);
-            auto check = std::get<0>(sym_eigs).detach().prod();
-            return (torch::isinf(check).item<bool>() || torch::isinf(1 / check).item<bool>())
-                   ? LocalMetricOpt{}
-                   : LocalMetricOpt{sym_eigs};
-        };
-    }
-
     template<typename Configuration_t>
     inline auto softabs_metric(const Configuration_t &conf) {
         return [&conf](const LogProbability &log_prob, const Parameters &params) {
@@ -121,11 +111,28 @@ namespace noa::ghmc {
             }
 
             auto[eigs, rotation] = torch::symeig(-hess_.value(), true);
-            auto threshold = torch::nn::Threshold{conf.cutoff, conf.cutoff};
             eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
             auto spectrum = torch::abs((1. / torch::tanh(conf.softabs_const * eigs)) * eigs);
+
             return LocalMetricOpt{LocalMetric{spectrum, rotation}};
         };
+    }
+
+    inline Hamiltonian hamiltonian(
+            const LogProbability &log_prob,
+            const Parameters &parameters,
+            const LocalMetric &metric,
+            const MomentumOpt &momentum_ = std::nullopt){
+        
+        const auto&[spectrum, rotation] = metric;
+        auto momentum = momentum_.has_value()
+                        ? momentum_.value()
+                        : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
+        auto first_order_term = 0.5 * spectrum.log().sum();
+        auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
+        auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
+        auto energy = -log_prob + first_order_term + second_order_term;
+        return Hamiltonian{energy, momentum};
     }
 
 
@@ -163,15 +170,15 @@ namespace noa::ghmc {
     }
 
     template<typename LogProbabilityDensity>
-    Hamiltonian hamiltonian(LogProbabilityDensity log_probability_density,
+    HamiltonianRef hamiltonian(LogProbabilityDensity log_probability_density,
                             Params params, std::optional<Momentum> momentum_,
                             double jitter = 0.001, double softabs_const = 1e6) {
         torch::Tensor log_prob = log_probability_density(params);
         if (torch::isnan(log_prob).item<bool>() || torch::isinf(log_prob).item<bool>())
-            return Hamiltonian{};
+            return HamiltonianRef{};
         auto metric = softabs_map(log_prob, params, jitter, softabs_const);
         if (!metric.has_value())
-            return Hamiltonian{};
+            return HamiltonianRef{};
         auto[spectrum, rotation] = metric.value();
         auto momentum = momentum_.has_value()
                         ? momentum_.value()
@@ -181,7 +188,7 @@ namespace noa::ghmc {
         auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
         auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
         auto energy = -log_prob + first_order_term + second_order_term;
-        return Hamiltonian{
+        return HamiltonianRef{
                 std::make_tuple(energy, momentum_.has_value() ? std::nullopt : std::make_optional(momentum))};
     }
 
