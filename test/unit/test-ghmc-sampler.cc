@@ -42,7 +42,7 @@ TEST(GHMC, HamiltonianRef)
     ASSERT_NEAR(err, 0., 1e-3);
 }
 
-TEST(GHMC, SymplecticFlow)
+TEST(GHMC, SymplecticFlowRef)
 {
-    test_symplectic_flow();
+    test_symplectic_flow_ref();
 }

@@ -40,18 +40,18 @@ namespace noa::utils::numerics {
                       << "expecting 0D function value and 1D parameter\n";
             return std::nullopt;
         }
-        auto n = parameter.numel();
-        auto res = function_value.new_zeros({n, n});
-        auto grad = torch::autograd::grad({function_value}, {parameter}, {}, torch::nullopt, true)[0];
+        const auto n = parameter.numel();
+        const auto res = function_value.new_zeros({n, n});
+        const auto grad = torch::autograd::grad({function_value}, {parameter}, {}, torch::nullopt, true)[0];
         uint32_t i = 0;
         for (uint32_t j = 0; j < n; j++) {
-            auto row = grad[j].requires_grad()
+            const auto row = grad[j].requires_grad()
                        ? torch::autograd::grad({grad[i]}, {parameter}, {}, true, true, true)[0].slice(0, j, n)
                        : grad[j].new_zeros(n - j);
             res[i].slice(0, i, n).add_(row);
             i++;
         }
-        auto check = torch::triu(res.detach()).sum();
+        const auto check = torch::triu(res.detach()).sum();
         return (torch::isnan(check).item<bool>() || torch::isinf(check).item<bool>())
                ? std::nullopt
                : std::make_optional(res + torch::triu(res, 1).t());
@@ -70,10 +70,9 @@ namespace noa::utils::numerics {
         const Dtype h = (upper_bound - lower_bound) / n_itv;
         const uint32_t N = n_itv * order;
         Dtype res = 0;
-        Dtype x0 = lower_bound;
         for (uint32_t i = 0; i < N; i++) {
             uint32_t j = i % order;
-            res += function(x0 + h * ((i / order) + abscissa[j])) * h * weight[j];
+            res += function(lower_bound + h * ((i / order) + abscissa[j])) * h * weight[j];
         }
         return res;
     }
@@ -203,7 +202,7 @@ namespace noa::utils::numerics {
                 return xn;
         }
 
-        /* The maximum number of iterations was reached*/
+        // The maximum number of iterations was reached
         return std::nullopt;
     }
 

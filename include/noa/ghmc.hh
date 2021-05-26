@@ -61,15 +61,15 @@ namespace noa::ghmc {
 
     template<typename Dtype>
     struct Configuration {
-        uint32_t flow_steps = 10;
+        uint32_t max_num_steps = 3;
         Dtype step_size = 0.1;
         Dtype binding_const = 100.;
         Dtype cutoff = 1e-6;
         Dtype softabs_const = 1e6;
         bool verbose = false;
 
-        inline Configuration &set_flow_steps(uint32_t flow_steps_) {
-            flow_steps = flow_steps_;
+        inline Configuration &set_max_num_steps(const Dtype &max_num_steps_) {
+            max_num_steps = max_num_steps_;
             return *this;
         }
 
@@ -102,7 +102,7 @@ namespace noa::ghmc {
     template<typename Configuration_t>
     inline auto softabs_metric(const Configuration_t &conf) {
         return [&conf](const LogProbability &log_prob, const Parameters &params) {
-            auto hess_ = utils::numerics::hessian(log_prob, params);
+            const auto hess_ = utils::numerics::hessian(log_prob, params);
             if (!hess_.has_value()) {
                 if (conf.verbose)
                     std::cerr << "Failed to compute hessian for log probability:\n"
@@ -112,7 +112,7 @@ namespace noa::ghmc {
 
             auto[eigs, rotation] = torch::symeig(-hess_.value(), true);
             eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
-            auto spectrum = torch::abs((1. / torch::tanh(conf.softabs_const * eigs)) * eigs);
+            const auto spectrum = torch::abs((1. / torch::tanh(conf.softabs_const * eigs)) * eigs);
 
             return LocalMetricOpt{LocalMetric{spectrum, rotation}};
         };
@@ -122,20 +122,36 @@ namespace noa::ghmc {
             const LogProbability &log_prob,
             const Parameters &parameters,
             const LocalMetric &metric,
-            const MomentumOpt &momentum_ = std::nullopt){
-        
+            const MomentumOpt &momentum_ = std::nullopt) {
+
         const auto&[spectrum, rotation] = metric;
-        auto momentum = momentum_.has_value()
+        const auto momentum = momentum_.has_value()
                         ? momentum_.value()
                         : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
-        auto first_order_term = 0.5 * spectrum.log().sum();
-        auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
-        auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
-        auto energy = -log_prob + first_order_term + second_order_term;
+        const auto first_order_term = 0.5 * spectrum.log().sum();
+        const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
+        const auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
+        const auto energy = -log_prob + first_order_term + second_order_term;
         return Hamiltonian{energy, momentum};
     }
 
 
+    template<typename Configuration_t, typename LogProbabilityDensity>
+    inline auto symplectic_flow(const Configuration_t &conf) {
+        return [&conf](const LogProbabilityDensity &log_prob_density,
+                       const Parameters &parameters,
+                       const MomentumOpt &momentum_ = std::nullopt) {
+
+            const auto energies = std::vector<Energy>();
+            const auto params_flow = std::vector<Parameters>();
+            const auto momentum_flow = std::vector<Momentum>();
+
+
+        };
+    }
+
+
+    ///////////////////////////////////////////////////
     inline FisherInfo fisher_info(LogProb log_prob, Params params) {
         auto n = params.numel();
         auto res = log_prob.new_zeros({n, n});
@@ -171,8 +187,8 @@ namespace noa::ghmc {
 
     template<typename LogProbabilityDensity>
     HamiltonianRef hamiltonian(LogProbabilityDensity log_probability_density,
-                            Params params, std::optional<Momentum> momentum_,
-                            double jitter = 0.001, double softabs_const = 1e6) {
+                               Params params, std::optional<Momentum> momentum_,
+                               double jitter = 0.001, double softabs_const = 1e6) {
         torch::Tensor log_prob = log_probability_density(params);
         if (torch::isnan(log_prob).item<bool>() || torch::isinf(log_prob).item<bool>())
             return HamiltonianRef{};

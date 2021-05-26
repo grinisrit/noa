@@ -27,8 +27,8 @@ TEST(GHMC, FisherInfoCUDA)
     test_fisher_info(torch::kCUDA);
 }
 
-TEST(GHMC, SymplecticFlowCUDA)
+TEST(GHMC, SymplecticFlowRefCUDA)
 {
     ASSERT_TRUE(torch::cuda::is_available());
-    test_symplectic_flow(torch::kCUDA);
+    test_symplectic_flow_ref(torch::kCUDA);
 }

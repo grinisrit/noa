@@ -86,7 +86,7 @@ namespace noa::utils {
     template<typename Dtype>
     inline std::optional<std::vector<Dtype>> get_numerics(
             const std::string &line, int64_t size) {
-        auto no_data = std::sregex_iterator();
+        const auto no_data = std::sregex_iterator();
         auto nums = std::sregex_iterator(line.begin(), line.end(), num_pattern);
         if (std::distance(nums, no_data) != size)
             return std::nullopt;
@@ -154,28 +154,28 @@ namespace noa::utils {
 
     template<typename Dtype, typename Lambda>
     inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda) {
-        auto result = torch::zeros_like(values);
+        const auto result = torch::zeros_like(values);
         vmapi<Dtype>(values, lambda, result);
         return result;
     }
 
     template<typename Dtype, typename Lambda>
     inline torch::Tensor pvmapi(const torch::Tensor &values, const Lambda &lambda) {
-        auto result = torch::zeros_like(values);
+        const auto result = torch::zeros_like(values);
         pvmapi<Dtype>(values, lambda, result);
         return result;
     }
 
     template<typename Dtype, typename Lambda>
     inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
-        auto result = torch::zeros_like(values);
+        const auto result = torch::zeros_like(values);
         vmap<Dtype>(values, lambda, result);
         return result;
     }
 
     template<typename Dtype, typename Lambda>
     inline torch::Tensor pvmap(const torch::Tensor &values, const Lambda &lambda) {
-        auto result = torch::zeros_like(values);
+        const auto result = torch::zeros_like(values);
         pvmap<Dtype>(values, lambda, result);
         return result;
     }
