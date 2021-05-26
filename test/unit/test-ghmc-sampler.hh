@@ -18,6 +18,7 @@ inline const auto log_funnel = [](const auto &theta_) {
 };
 
 inline const auto conf = Configuration<float>{}
+        .set_max_flow_steps(1)
         .set_cutoff(1e-6f)
         .set_verbosity(true);
 
@@ -38,7 +39,7 @@ inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(err, 0.f, 1e-3f);
 }
 
-inline LocalMetricOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device) {
+inline MetricDecompositionOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
     const auto theta = theta_.detach().to(device, false, true).requires_grad_();
     const auto log_prob = log_funnel(theta);
@@ -74,7 +75,7 @@ inline std::optional<Hamiltonian> get_hamiltonian(
     if (!metric.has_value()) return std::nullopt;
 
     const auto momentum = momentum_.detach().to(device, false, true);
-    return hamiltonian(log_prob, theta, metric.value(), momentum);
+    return geometric_hamiltonian(log_prob, theta, metric.value(), momentum);
 
 }
 
@@ -86,6 +87,15 @@ inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
     const auto energy = energy_.detach().to(torch::kCPU);
     const auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
+}
+
+inline void get_symplectic_map(
+        const torch::Tensor &theta_,
+        const torch::Tensor &momentum_,
+        torch::DeviceType device) {
+    torch::manual_seed(utils::SEED);
+    const auto theta = theta_.detach().to(device, false, true).requires_grad_();
+    const auto momentum = momentum_.detach().to(device, false, true);
 }
 
 

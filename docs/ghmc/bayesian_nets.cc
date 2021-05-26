@@ -40,7 +40,7 @@ torch::Tensor train_jit_module(
         loss.backward();
         optimizer.step();
 
-        preds.push_back(net.forward(inputs_val).toTensor().detach().clone());
+        preds.push_back(net.forward(inputs_val).toTensor().detach());
     }
 
     return torch::stack(preds);

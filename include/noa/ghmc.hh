@@ -43,8 +43,8 @@ namespace noa::ghmc {
     using LogProbability = torch::Tensor;
     using Spectrum = torch::Tensor;
     using Rotation = torch::Tensor;
-    using LocalMetric = std::tuple<Spectrum, Rotation>;
-    using LocalMetricOpt = std::optional<LocalMetric>;
+    using MetricDecomposition = std::tuple<Spectrum, Rotation>;
+    using MetricDecompositionOpt = std::optional<MetricDecomposition>;
     using Energy = torch::Tensor;
     using Hamiltonian = std::tuple<Energy, Momentum>;
 
@@ -61,15 +61,15 @@ namespace noa::ghmc {
 
     template<typename Dtype>
     struct Configuration {
-        uint32_t max_num_steps = 3;
+        uint32_t max_flow_steps = 3;
         Dtype step_size = 0.1;
         Dtype binding_const = 100.;
         Dtype cutoff = 1e-6;
         Dtype softabs_const = 1e6;
         bool verbose = false;
 
-        inline Configuration &set_max_num_steps(const Dtype &max_num_steps_) {
-            max_num_steps = max_num_steps_;
+        inline Configuration &set_max_flow_steps(const Dtype &max_flow_steps_) {
+            max_flow_steps = max_flow_steps_;
             return *this;
         }
 
@@ -99,55 +99,83 @@ namespace noa::ghmc {
         }
     };
 
-    template<typename Configuration_t>
-    inline auto softabs_metric(const Configuration_t &conf) {
+    template<typename Configurations>
+    inline auto softabs_metric(const Configurations &conf) {
         return [&conf](const LogProbability &log_prob, const Parameters &params) {
             const auto hess_ = utils::numerics::hessian(log_prob, params);
             if (!hess_.has_value()) {
                 if (conf.verbose)
                     std::cerr << "Failed to compute hessian for log probability:\n"
                               << log_prob << "\n";
-                return LocalMetricOpt{};
+                return MetricDecompositionOpt{};
             }
 
             auto[eigs, rotation] = torch::symeig(-hess_.value(), true);
             eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
             const auto spectrum = torch::abs((1. / torch::tanh(conf.softabs_const * eigs)) * eigs);
 
-            return LocalMetricOpt{LocalMetric{spectrum, rotation}};
+            return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
         };
     }
 
-    inline Hamiltonian hamiltonian(
+    inline const auto geometric_hamiltonian = [](
             const LogProbability &log_prob,
             const Parameters &parameters,
-            const LocalMetric &metric,
+            const MetricDecomposition &metric,
             const MomentumOpt &momentum_ = std::nullopt) {
 
         const auto&[spectrum, rotation] = metric;
         const auto momentum = momentum_.has_value()
-                        ? momentum_.value()
-                        : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
+                              ? momentum_.value()
+                              : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
         const auto first_order_term = 0.5 * spectrum.log().sum();
         const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
         const auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
         const auto energy = -log_prob + first_order_term + second_order_term;
         return Hamiltonian{energy, momentum};
-    }
+    };
 
-
-    template<typename Configuration_t, typename LogProbabilityDensity>
-    inline auto symplectic_flow(const Configuration_t &conf) {
-        return [&conf](const LogProbabilityDensity &log_prob_density,
-                       const Parameters &parameters,
-                       const MomentumOpt &momentum_ = std::nullopt) {
-
-            const auto energies = std::vector<Energy>();
-            const auto params_flow = std::vector<Parameters>();
-            const auto momentum_flow = std::vector<Momentum>();
+    template<typename Configurations,
+            typename LogProbabilityDensity,
+            typename LocalMetric,
+            typename HamiltonianFunction>
+    inline auto explicit_symplectomorphism(
+            const Configurations &conf,
+            const LocalMetric &local_metric,
+            const HamiltonianFunction &hamiltonian_func) {
+        return [&conf, &local_metric, &hamiltonian_func](
+                const LogProbabilityDensity &log_prob_density,
+                const Parameters &parameters,
+                const MomentumOpt &momentum_ = std::nullopt) {
 
 
         };
+    }
+
+    template<typename Configurations, typename LogProbabilityDensity, typename Symplectomorphism>
+    inline auto hamiltonian_flow(const Configurations &conf,
+                                 const Symplectomorphism &symplectomorphism) {
+        return [&conf, &symplectomorphism](const LogProbabilityDensity &log_prob_density,
+                                           const Parameters &parameters,
+                                           const MomentumOpt &momentum_ = std::nullopt) {
+
+            auto energies = std::vector<Energy>();
+            auto params_flow = std::vector<Parameters>();
+            auto momentum_flow = std::vector<Momentum>();
+
+            energies.reserve(conf.max_num_steps);
+            params_flow.reserve(conf.max_num_steps);
+            momentum_flow.reserve(conf.max_num_steps);
+
+
+        };
+    }
+
+    template<typename Dtype, typename LogProbabilityDensity>
+    inline auto explicit_hamiltonian_flow(const Configuration<Dtype> &conf){
+        const auto metric = softabs_metric(conf);
+        const auto symplectic_map = explicit_symplectomorphism(conf, metric, geometric_hamiltonian);
+        return hamiltonian_flow<LogProbabilityDensity>(conf, symplectic_map);
     }
 
 
