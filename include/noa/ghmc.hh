@@ -46,9 +46,10 @@ namespace noa::ghmc {
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
     using MetricDecompositionOpt = std::optional<MetricDecomposition>;
     using Energy = torch::Tensor;
-    using Hamiltonian = std::tuple<Energy, Momentum>;
-
-
+    using ParametersFlow = std::vector<Parameters>;
+    using MomentumFlow = std::vector<Momentum>;
+    using HamiltonianFlow = std::tuple<ParametersFlow, MomentumFlow>;
+    using HamiltonianFlowOpt = std::optional<HamiltonianFlow>;
 
     using SafeResult = std::optional<torch::Tensor>;
     using SampleResult = std::optional<std::tuple<double, torch::Tensor>>;
@@ -105,77 +106,68 @@ namespace noa::ghmc {
             const auto hess_ = utils::numerics::hessian(log_prob, params);
             if (!hess_.has_value()) {
                 if (conf.verbose)
-                    std::cerr << "Failed to compute hessian for log probability:\n"
+                    std::cerr << "GHMC: failed to compute hessian for log probability:\n"
                               << log_prob << "\n";
                 return MetricDecompositionOpt{};
             }
 
             auto[eigs, rotation] = torch::symeig(-hess_.value(), true);
             eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
-            const auto spectrum = torch::abs((1. / torch::tanh(conf.softabs_const * eigs)) * eigs);
+            const auto spectrum = torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs);
 
             return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
         };
     }
 
-    inline const auto geometric_hamiltonian = [](
+    inline Energy hamiltonian(
             const LogProbability &log_prob,
             const Parameters &parameters,
             const MetricDecomposition &metric,
-            const MomentumOpt &momentum_ = std::nullopt) {
-
+            const Momentum &momentum) {
         const auto&[spectrum, rotation] = metric;
-        const auto momentum = momentum_.has_value()
-                              ? momentum_.value()
-                              : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
         const auto first_order_term = 0.5 * spectrum.log().sum();
         const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
         const auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
-        const auto energy = -log_prob + first_order_term + second_order_term;
-        return Hamiltonian{energy, momentum};
-    };
+        return -log_prob + first_order_term + second_order_term;
+    }
 
-    template<typename Configurations,
-            typename LogProbabilityDensity,
-            typename LocalMetric,
-            typename HamiltonianFunction>
-    inline auto explicit_symplectomorphism(
-            const Configurations &conf,
-            const LocalMetric &local_metric,
-            const HamiltonianFunction &hamiltonian_func) {
-        return [&conf, &local_metric, &hamiltonian_func](
-                const LogProbabilityDensity &log_prob_density,
+
+    template<typename LogProbabilityDensity, typename Configurations>
+    inline auto hamiltonian_flow(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
+        const auto local_metric = softabs_metric(conf);
+        return [conf, log_prob_density, local_metric](
                 const Parameters &parameters,
                 const MomentumOpt &momentum_ = std::nullopt) {
 
+            auto params_flow = ParametersFlow{};
+            params_flow.reserve(conf.max_flow_steps);
+
+            auto momentum_flow = MomentumFlow{};
+            momentum_flow.reserve(conf.max_flow_steps);
+
+            const auto params = parameters.detach().requires_grad_(true);
+            const auto log_prob = log_prob_density(params);
+
+            const auto metric = local_metric(log_prob, params);
+            if (!metric.has_value()) {
+                if (conf.verbose)
+                    std::cerr << "GHMC: failed to initialise Hamiltonian flow for log probability:\n"
+                              << log_prob << "\n";
+                return HamiltonianFlowOpt{};
+            }
+            const auto&[spectrum, rotation] = metric.value();
+
+            const auto initial_momentum = momentum_.has_value()
+                                  ? momentum_.value()
+                                  : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
+
+            auto momentum_copy = initial_momentum.detach().requires_grad_(true);
+
+            const auto energy = hamiltonian(log_prob, params, metric.value(), momentum_copy);
+
+            return HamiltonianFlowOpt{HamiltonianFlow{params_flow, momentum_flow}};
 
         };
-    }
-
-    template<typename Configurations, typename LogProbabilityDensity, typename Symplectomorphism>
-    inline auto hamiltonian_flow(const Configurations &conf,
-                                 const Symplectomorphism &symplectomorphism) {
-        return [&conf, &symplectomorphism](const LogProbabilityDensity &log_prob_density,
-                                           const Parameters &parameters,
-                                           const MomentumOpt &momentum_ = std::nullopt) {
-
-            auto energies = std::vector<Energy>();
-            auto params_flow = std::vector<Parameters>();
-            auto momentum_flow = std::vector<Momentum>();
-
-            energies.reserve(conf.max_num_steps);
-            params_flow.reserve(conf.max_num_steps);
-            momentum_flow.reserve(conf.max_num_steps);
-
-
-        };
-    }
-
-    template<typename Dtype, typename LogProbabilityDensity>
-    inline auto explicit_hamiltonian_flow(const Configuration<Dtype> &conf){
-        const auto metric = softabs_metric(conf);
-        const auto symplectic_map = explicit_symplectomorphism(conf, metric, geometric_hamiltonian);
-        return hamiltonian_flow<LogProbabilityDensity>(conf, symplectic_map);
     }
 
 
@@ -214,9 +206,9 @@ namespace noa::ghmc {
     }
 
     template<typename LogProbabilityDensity>
-    HamiltonianRef hamiltonian(LogProbabilityDensity log_probability_density,
-                               Params params, std::optional<Momentum> momentum_,
-                               double jitter = 0.001, double softabs_const = 1e6) {
+    HamiltonianRef hamiltonianref(LogProbabilityDensity log_probability_density,
+                                  Params params, std::optional<Momentum> momentum_,
+                                  double jitter = 0.001, double softabs_const = 1e6) {
         torch::Tensor log_prob = log_probability_density(params);
         if (torch::isnan(log_prob).item<bool>() || torch::isinf(log_prob).item<bool>())
             return HamiltonianRef{};
@@ -244,7 +236,7 @@ namespace noa::ghmc {
         auto ham_grad_params_ = [&log_probability_density, jitter, softabs_const](torch::Tensor params_,
                                                                                   torch::Tensor momentum_) {
             params_ = params_.detach().requires_grad_();
-            auto ham_ = hamiltonian(log_probability_density, params_, momentum_.detach(), jitter, softabs_const);
+            auto ham_ = hamiltonianref(log_probability_density, params_, momentum_.detach(), jitter, softabs_const);
             if (!ham_.has_value())
                 return SafeResult{};
             torch::Tensor ham = std::get<0>(ham_.value());
@@ -271,7 +263,7 @@ namespace noa::ghmc {
                                                                                    torch::Tensor momentum_) {
             momentum_ = momentum_.detach().requires_grad_();
             params_ = params_.detach().requires_grad_();
-            auto ham_ = hamiltonian(log_probability_density, params_, momentum_, jitter, softabs_const);
+            auto ham_ = hamiltonianref(log_probability_density, params_, momentum_, jitter, softabs_const);
             if (!ham_.has_value())
                 return SafeResult{};
             torch::Tensor ham = std::get<0>(ham_.value());
@@ -424,9 +416,9 @@ namespace noa::ghmc {
         auto start = std::chrono::steady_clock::now();
         for (int iter = 0; iter < conf.num_iter; iter++) {
             params = params.detach().requires_grad_();
-            auto ham_ = hamiltonian(log_probability_density, params, std::nullopt, conf.jitter, conf.softabs_const);
+            auto ham_ = hamiltonianref(log_probability_density, params, std::nullopt, conf.jitter, conf.softabs_const);
             if (!ham_.has_value()) {
-                printf("GHMC: Failed to compute hamiltonian\n");
+                printf("GHMC: Failed to compute hamiltonianref\n");
                 if (skip_iter(iter))
                     return SampleResult{};
                 continue;
@@ -444,10 +436,10 @@ namespace noa::ghmc {
             auto[flow_params, flow_momenta] = flow_.value();
 
             params = flow_params[-1].detach().requires_grad_();
-            auto new_ham = hamiltonian(log_probability_density, params, flow_momenta[-1], conf.jitter,
+            auto new_ham = hamiltonianref(log_probability_density, params, flow_momenta[-1], conf.jitter,
                                        conf.softabs_const);
             if (!new_ham.has_value()) {
-                printf("GHMC: Failed to compute proposed hamiltonian\n");
+                printf("GHMC: Failed to compute proposed hamiltonianref\n");
                 if (skip_iter(iter))
                     return SampleResult{};
                 continue;

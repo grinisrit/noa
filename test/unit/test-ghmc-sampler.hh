@@ -18,7 +18,7 @@ inline const auto log_funnel = [](const auto &theta_) {
 };
 
 inline const auto conf = Configuration<float>{}
-        .set_max_flow_steps(1)
+        .set_max_flow_steps(2)
         .set_cutoff(1e-6f)
         .set_verbosity(true);
 
@@ -64,7 +64,7 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
 }
 
-inline std::optional<Hamiltonian> get_hamiltonian(
+inline std::optional<Energy> get_hamiltonian(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
@@ -75,29 +75,33 @@ inline std::optional<Hamiltonian> get_hamiltonian(
     if (!metric.has_value()) return std::nullopt;
 
     const auto momentum = momentum_.detach().to(device, false, true);
-    return geometric_hamiltonian(log_prob, theta, metric.value(), momentum);
-
+    return hamiltonian(log_prob, theta, metric.value(), momentum);
 }
 
 inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
     const auto ham_ = get_hamiltonian(GHMCData::get_theta(), GHMCData::get_momentum(), device);
     ASSERT_TRUE(ham_.has_value());
-    const auto energy_ = std::get<0>(ham_.value());
+    const auto energy_ = ham_.value();
     ASSERT_TRUE(energy_.device().type() == device);
     const auto energy = energy_.detach().to(torch::kCPU);
     const auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 }
 
-inline void get_symplectic_map(
+inline HamiltonianFlowOpt get_hamiltonian_flow(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto theta = theta_.detach().to(device, false, true).requires_grad_();
+    const auto theta = theta_.detach().to(device, false, true);
     const auto momentum = momentum_.detach().to(device, false, true);
+    return hamiltonian_flow(log_funnel, conf)(theta, momentum);
 }
 
+inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU){
+    const auto flow_ = get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
+    ASSERT_TRUE(flow_.has_value());
+}
 
 /////////////////////////////////////////////////////////////////
 inline FisherInfo get_fisher_info(const torch::Tensor &theta_, torch::DeviceType device) {
@@ -134,7 +138,7 @@ inline HamiltonianRef get_hamiltonian_ref(
     torch::manual_seed(utils::SEED);
     auto ntheta = theta.clone().requires_grad_();
     auto nmomentum = momentum.clone().requires_grad_();
-    return hamiltonian(log_funnel, ntheta, nmomentum, 0.);
+    return hamiltonianref(log_funnel, ntheta, nmomentum, 0.);
 }
 
 inline void test_fisher_info(torch::DeviceType device = torch::kCPU) {
@@ -149,7 +153,6 @@ inline void test_fisher_info(torch::DeviceType device = torch::kCPU) {
 
 inline void test_symplectic_flow_ref(torch::DeviceType device = torch::kCPU) {
     auto flow = get_symplectic_flow_ref(GHMCData::get_theta(), GHMCData::get_momentum(), device);
-
     ASSERT_TRUE(flow.has_value());
     auto[p_flow_, m_flow_] = flow.value();
     ASSERT_TRUE(p_flow_.device().type() == device);
@@ -157,7 +160,12 @@ inline void test_symplectic_flow_ref(torch::DeviceType device = torch::kCPU) {
     ASSERT_TRUE(m_flow_.device().type() == device);
     auto m_flow = m_flow_.to(torch::kCPU);
     auto err = (p_flow[-1] - GHMCData::get_expected_flow_theta()).abs().sum().item<float>();
+
+    std::cout << err << "\n";
+
     ASSERT_NEAR(err, 0., 1e-2);
     err = (m_flow[-1] - GHMCData::get_expected_flow_moment()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-2);
+
+    std::cout << err << "\n";
 }
