@@ -64,20 +64,20 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
 }
 
-inline MomentumSpaceOpt get_hamiltonian(
+inline PhaseSpaceOpt get_hamiltonian(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto theta = theta_.detach().to(device, false, true).requires_grad_();
-    const auto momentum = momentum_.detach().to(device, false, true);
+    const auto theta = theta_.to(device, false, true).requires_grad_();
+    const auto momentum = momentum_.to(device, false, true);
     return hamiltonian(log_funnel, conf)(theta, momentum);
 }
 
 inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
     const auto ham_ = get_hamiltonian(GHMCData::get_theta(), GHMCData::get_momentum(), device);
     ASSERT_TRUE(ham_.has_value());
-    const auto &energy_ = std::get<1>(ham_.value());
+    const auto &energy_ = std::get<2>(ham_.value());
     ASSERT_TRUE(energy_.device().type() == device);
     const auto energy = energy_.detach().to(torch::kCPU);
     const auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
@@ -96,7 +96,7 @@ inline HamiltonianFlow get_hamiltonian_flow(
 
 inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU){
     const auto flow = get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
-    std::cout << std::get<0>(flow).size() << "\n";
+    ASSERT_TRUE(std::get<0>(flow).size() > 0);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -157,11 +157,8 @@ inline void test_symplectic_flow_ref(torch::DeviceType device = torch::kCPU) {
     auto m_flow = m_flow_.to(torch::kCPU);
     auto err = (p_flow[-1] - GHMCData::get_expected_flow_theta()).abs().sum().item<float>();
 
-    std::cout << err << "\n";
-
-    ASSERT_NEAR(err, 0., 1e-2);
+    ASSERT_NEAR(err, 0., 1e-3);
     err = (m_flow[-1] - GHMCData::get_expected_flow_moment()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-2);
 
-    std::cout << err << "\n";
 }

@@ -46,8 +46,8 @@ namespace noa::ghmc {
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
     using MetricDecompositionOpt = std::optional<MetricDecomposition>;
     using Energy = torch::Tensor;
-    using MomentumSpace = std::tuple<Momentum, Energy>;
-    using MomentumSpaceOpt = std::optional<MomentumSpace>;
+    using PhaseSpace = std::tuple<Parameters, Momentum, Energy>;
+    using PhaseSpaceOpt = std::optional<PhaseSpace>;
     using ParametersFlow = std::vector<Parameters>;
     using MomentumFlow = std::vector<Momentum>;
     using EnergyFluctuation = std::vector<Energy>;
@@ -137,7 +137,7 @@ namespace noa::ghmc {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to compute local metric for log probability:\n"
                               << log_prob << "\n";
-                return MomentumSpaceOpt{};
+                return PhaseSpaceOpt{};
             }
             const auto&[spectrum, rotation] = metric.value();
 
@@ -149,7 +149,7 @@ namespace noa::ghmc {
             const auto first_order_term = 0.5 * spectrum.log().sum();
             const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
             const auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
-            return MomentumSpaceOpt{MomentumSpace{momentum, -log_prob + first_order_term + second_order_term}};
+            return PhaseSpaceOpt{PhaseSpace{params, momentum, -log_prob + first_order_term + second_order_term}};
         };
     }
 
@@ -160,21 +160,26 @@ namespace noa::ghmc {
         return [ham, conf](const Parameters &parameters,
                            const MomentumOpt &momentum_ = std::nullopt) {
 
-            auto energy_fluctuation = EnergyFluctuation{};
-            energy_fluctuation.reserve(conf.max_flow_steps + 1);
-
             auto params_flow = ParametersFlow{};
             params_flow.reserve(conf.max_flow_steps + 1);
 
             auto momentum_flow = MomentumFlow{};
             momentum_flow.reserve(conf.max_flow_steps + 1);
 
-            const auto energy_ = ham(parameters, momentum_);
-            if (!energy_.has_value()) {
+            auto energy_fluctuation = EnergyFluctuation{};
+            energy_fluctuation.reserve(conf.max_flow_steps + 1);
+
+            const auto phase_ = ham(parameters, momentum_);
+            if (!phase_.has_value()) {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to initialise Hamiltonian flow\n";
                 return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
             }
+
+            const auto &[params, momentum, energy_level] = phase_.value();
+            params_flow.push_back(params.detach());
+            momentum_flow.push_back(params.detach());
+            energy_fluctuation.push_back(params.detach());
 
             return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
 
