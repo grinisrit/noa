@@ -96,7 +96,7 @@ inline HamiltonianFlow get_hamiltonian_flow(
 
 inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU){
     const auto flow = get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
-    ASSERT_TRUE(std::get<0>(flow).size() > 0);
+    ASSERT_FALSE(std::get<0>(flow).empty());
 }
 
 /////////////////////////////////////////////////////////////////

@@ -146,9 +146,9 @@ namespace noa::ghmc {
                                        : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
             const auto momentum = momentum_lift.detach().requires_grad_(true);
 
-            const auto first_order_term = 0.5 * spectrum.log().sum();
+            const auto first_order_term = spectrum.log().sum() / 2;
             const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
-            const auto second_order_term = 0.5 * momentum.dot(mass.mv(momentum));
+            const auto second_order_term = momentum.dot(mass.mv(momentum)) / 2;
             return PhaseSpaceOpt{PhaseSpace{params, momentum, -log_prob + first_order_term + second_order_term}};
         };
     }
@@ -157,8 +157,10 @@ namespace noa::ghmc {
     template<typename LogProbabilityDensity, typename Configurations>
     inline auto hamiltonian_flow(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
         const auto ham = hamiltonian(log_prob_density, conf);
-        return [ham, conf](const Parameters &parameters,
-                           const MomentumOpt &momentum_ = std::nullopt) {
+        const auto theta = 2 * conf.binding_const * conf.step_size;
+        const auto rot = std::make_tuple(cos(theta), sin(theta));
+        return [ham, conf, rot](const Parameters &parameters,
+                                const MomentumOpt &momentum_ = std::nullopt) {
 
             auto params_flow = ParametersFlow{};
             params_flow.reserve(conf.max_flow_steps + 1);
@@ -178,8 +180,8 @@ namespace noa::ghmc {
 
             const auto &[params, momentum, energy_level] = phase_.value();
             params_flow.push_back(params.detach());
-            momentum_flow.push_back(params.detach());
-            energy_fluctuation.push_back(params.detach());
+            momentum_flow.push_back(momentum.detach());
+            energy_fluctuation.push_back(energy_level.detach());
 
             return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
 
