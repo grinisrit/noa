@@ -74,7 +74,8 @@ namespace noa::ghmc {
         uint32_t max_flow_steps = 3;
         Dtype step_size = 0.1;
         Dtype binding_const = 100.;
-        Dtype cutoff = 1e-6;
+        Dtype cutoff = 1e-12;
+        Dtype jitter = 1e-6;
         Dtype softabs_const = 1e6;
         bool verbose = false;
 
@@ -95,6 +96,11 @@ namespace noa::ghmc {
 
         inline Configuration &set_cutoff(const Dtype &cutoff_) {
             cutoff = cutoff_;
+            return *this;
+        }
+
+        inline Configuration &set_jitter(const Dtype &jitter_) {
+            jitter = jitter_;
             return *this;
         }
 
@@ -119,8 +125,11 @@ namespace noa::ghmc {
                               << log_prob << "\n";
                 return MetricDecompositionOpt{};
             }
-
-            auto[eigs, rotation] = torch::symeig(-hess_.value(), true);
+            const auto n = params.numel();
+            auto[eigs, rotation] =
+                    torch::symeig(
+                            -hess_.value() + conf.jitter * torch::eye(n, params.options()) * torch::rand_like(params),
+                            true);
             eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
             const auto spectrum = torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs);
 
@@ -209,7 +218,7 @@ namespace noa::ghmc {
             auto energy_fluctuation = EnergyFluctuation{};
             energy_fluctuation.reserve(conf.max_flow_steps + 1);
 
-            const auto foliation = ham(parameters, momentum_);
+            auto foliation = ham(parameters, momentum_);
             if (!foliation.has_value()) {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to initialise Hamiltonian flow.\n";
@@ -245,6 +254,54 @@ namespace noa::ghmc {
             auto params_copy = params + std::get<1>(dynamics.value()) * delta;
             auto momentum = momentum_copy - std::get<0>(dynamics.value()) * delta;
 
+            for(iter_step = 0; iter_step < conf.max_flow_steps; iter_step++){
+
+                foliation = ham(params_copy, momentum);
+                dynamics = ham_grad(foliation);
+                if (!dynamics.has_value()) {
+                    error_msg();
+                    break;
+                }
+
+                params = params + std::get<1>(dynamics.value()) * delta;
+                momentum_copy = momentum_copy - std::get<0>(dynamics.value()) * delta;
+
+                params = (params + params_copy + c * (params - params_copy) + s * (momentum - momentum_copy)) / 2;
+                momentum = (momentum + momentum_copy - s * (params - params_copy) + c * (momentum - momentum_copy)) / 2;
+                params_copy = (params + params_copy - c * (params - params_copy) - s * (momentum - momentum_copy)) / 2;
+                momentum_copy =
+                        (momentum + momentum_copy + s * (params - params_copy) - c * (momentum - momentum_copy)) / 2;
+
+                foliation = ham(params_copy, momentum);
+                dynamics = ham_grad(foliation);
+                if (!dynamics.has_value()) {
+                    error_msg();
+                    break;
+                }
+                params = params + std::get<1>(dynamics.value()) * delta;
+                momentum_copy = momentum_copy - std::get<0>(dynamics.value()) * delta;
+
+                foliation = ham(params, momentum_copy);
+                dynamics = ham_grad(foliation);
+                if (!dynamics.has_value()) {
+                    error_msg();
+                    break;
+                }
+                params_copy = params_copy + std::get<1>(dynamics.value()) * delta;
+                momentum = momentum - std::get<0>(dynamics.value()) * delta;
+
+                foliation = ham(params, momentum);
+                if (!foliation.has_value()) {
+                    error_msg();
+                    break;
+                }
+
+                params_flow.push_back(params);
+                momentum_flow.push_back(momentum);
+                energy_fluctuation.push_back(std::get<2>(foliation.value()).detach());
+
+
+            }
 
             return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
 

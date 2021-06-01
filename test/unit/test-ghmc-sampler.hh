@@ -21,7 +21,7 @@ inline const auto conf = Configuration<float>{}
         .set_max_flow_steps(1)
         .set_step_size(0.14f)
         .set_binding_const(10.f)
-        .set_cutoff(1e-6f)
+        .set_jitter(0.00001)
         .set_verbosity(true);
 
 inline TensorOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device) {
