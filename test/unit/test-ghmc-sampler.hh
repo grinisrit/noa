@@ -18,7 +18,7 @@ inline const auto log_funnel = [](const auto &theta_) {
 };
 
 inline const auto conf = Configuration<float>{}
-        .set_max_flow_steps(2)
+        .set_max_flow_steps(1)
         .set_cutoff(1e-6f)
         .set_verbosity(true);
 
@@ -64,7 +64,7 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
 }
 
-inline PhaseSpaceOpt get_hamiltonian(
+inline PhaseSpaceFoliationOpt get_hamiltonian(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
