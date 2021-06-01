@@ -19,6 +19,12 @@ TEST(GHMC, HamiltonianCUDA)
     test_hamiltonian(torch::kCUDA);
 }
 
+TEST(GHMC, HamiltonianFlowCUDA)
+{
+    ASSERT_TRUE(torch::cuda::is_available());
+    test_hamiltonian_flow(torch::kCUDA);
+}
+
 ////////////////////////////////////////////
 
 TEST(GHMC, FisherInfoCUDA)

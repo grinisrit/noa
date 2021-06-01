@@ -56,8 +56,8 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     const auto &[spec_, Q_] = metric_.value();
     ASSERT_TRUE(spec_.device().type() == device);
     ASSERT_TRUE(Q_.device().type() == device);
-    const auto spec = spec_.detach().to(torch::kCPU);
-    const auto Q = Q_.detach().to(torch::kCPU);
+    const auto spec = spec_.detach().to(torch::kCPU, false, true);
+    const auto Q = Q_.detach().to(torch::kCPU, false, true);
 
     const auto err = (spec - GHMCData::get_expected_spectrum()).abs().sum().item<float>();
     const auto orthogonality = (Q.mm(Q.t()) - torch::eye(GHMCData::get_theta().numel())).abs().sum().item<float>();
@@ -81,7 +81,7 @@ inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
     ASSERT_TRUE(ham_.has_value());
     const auto &energy_ = std::get<2>(ham_.value());
     ASSERT_TRUE(energy_.device().type() == device);
-    const auto energy = energy_.detach().to(torch::kCPU);
+    const auto energy = energy_.detach().to(torch::kCPU, false, true);
     const auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 }
@@ -97,8 +97,25 @@ inline HamiltonianFlow get_hamiltonian_flow(
 }
 
 inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU){
-    const auto flow = get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
-    ASSERT_FALSE(std::get<0>(flow).empty());
+
+    const auto [theta_flow, momentum_flow, energy_fluctuation] =
+            get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
+
+    ASSERT_TRUE(theta_flow.size() == 2);
+    ASSERT_TRUE(momentum_flow.size() == 2);
+    ASSERT_TRUE(energy_fluctuation.size() == 2);
+
+    ASSERT_TRUE(theta_flow[1].device().type() == device);
+    ASSERT_TRUE(momentum_flow[1].device().type() == device);
+    ASSERT_TRUE(energy_fluctuation[1].device().type() == device);
+
+    const auto theta_proposal = theta_flow[1].to(torch::kCPU, false, true);
+    auto err = (theta_proposal - GHMCData::get_expected_flow_theta()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-3);
+
+    const auto momentum_proposal = momentum_flow[1].to(torch::kCPU, false, true);
+    err = (momentum_proposal - GHMCData::get_expected_flow_moment()).abs().sum().item<float>();
+    ASSERT_NEAR(err, 0., 1e-2);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -158,7 +175,6 @@ inline void test_symplectic_flow_ref(torch::DeviceType device = torch::kCPU) {
     ASSERT_TRUE(m_flow_.device().type() == device);
     auto m_flow = m_flow_.to(torch::kCPU);
     auto err = (p_flow[-1] - GHMCData::get_expected_flow_theta()).abs().sum().item<float>();
-
     ASSERT_NEAR(err, 0., 1e-3);
     err = (m_flow[-1] - GHMCData::get_expected_flow_moment()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-2);

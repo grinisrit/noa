@@ -127,9 +127,9 @@ namespace noa::ghmc {
             }
             const auto n = params.numel();
             auto[eigs, rotation] =
-                    torch::symeig(
-                            -hess_.value() + conf.jitter * torch::eye(n, params.options()) * torch::rand_like(params),
-                            true);
+            torch::symeig(
+                    -hess_.value() + conf.jitter * torch::eye(n, params.options()) * torch::rand_like(params),
+                    true);
             eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
             const auto spectrum = torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs);
 
@@ -234,7 +234,7 @@ namespace noa::ghmc {
             if (iter_step >= conf.max_flow_steps)
                 return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
 
-            const auto error_msg = [&iter_step, &conf](){
+            const auto error_msg = [&iter_step, &conf]() {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to evolve flow at step: "
                               << iter_step << "/" << conf.max_flow_steps << "\n";
@@ -247,14 +247,14 @@ namespace noa::ghmc {
             }
 
             const auto delta = conf.step_size / 2;
-            const auto &[c,s] = rot;
+            const auto &[c, s] = rot;
 
             auto params = params_flow[0];
             auto momentum_copy = momentum_flow[0];
             auto params_copy = params + std::get<1>(dynamics.value()) * delta;
             auto momentum = momentum_copy - std::get<0>(dynamics.value()) * delta;
 
-            for(iter_step = 0; iter_step < conf.max_flow_steps; iter_step++){
+            for (iter_step = 0; iter_step < conf.max_flow_steps; iter_step++) {
 
                 foliation = ham(params_copy, momentum);
                 dynamics = ham_grad(foliation);
@@ -300,9 +300,14 @@ namespace noa::ghmc {
                 momentum_flow.push_back(momentum);
                 energy_fluctuation.push_back(std::get<2>(foliation.value()).detach());
 
-
+                if (iter_step < conf.max_flow_steps - 1) {
+                    const auto rho = -torch::relu(energy_fluctuation[iter_step + 1] - energy_fluctuation[0]);
+                    if ((rho >= torch::log(torch::rand_like(rho))).item<bool>()) {
+                        params_copy = params_copy + std::get<1>(dynamics.value()) * delta;
+                        momentum = momentum - std::get<0>(dynamics.value()) * delta;
+                    } else break;
+                }
             }
-
             return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
 
         };
