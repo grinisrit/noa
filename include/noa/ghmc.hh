@@ -153,7 +153,8 @@ namespace noa::ghmc {
             const auto first_order_term = spectrum.log().sum() / 2;
             const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
             const auto second_order_term = momentum.dot(mass.mv(momentum)) / 2;
-            return PhaseSpaceFoliationOpt{PhaseSpaceFoliation{params, momentum, -log_prob + first_order_term + second_order_term}};
+            return PhaseSpaceFoliationOpt{
+                    PhaseSpaceFoliation{params, momentum, -log_prob + first_order_term + second_order_term}};
         };
     }
 
@@ -197,7 +198,7 @@ namespace noa::ghmc {
         const auto theta = 2 * conf.binding_const * conf.step_size;
         const auto rot = std::make_tuple(cos(theta), sin(theta));
         return [ham, ham_grad, conf, rot](const Parameters &parameters,
-                                const MomentumOpt &momentum_ = std::nullopt) {
+                                          const MomentumOpt &momentum_ = std::nullopt) {
 
             auto params_flow = ParametersFlow{};
             params_flow.reserve(conf.max_flow_steps + 1);
@@ -215,14 +216,34 @@ namespace noa::ghmc {
                 return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
             }
 
-            const auto &[params, momentum, energy_level] = foliation.value();
-            params_flow.push_back(params.detach());
-            momentum_flow.push_back(momentum.detach());
+            const auto &[initial_params, initial_momentum, energy_level] = foliation.value();
+            params_flow.push_back(initial_params.detach());
+            momentum_flow.push_back(initial_momentum.detach());
             energy_fluctuation.push_back(energy_level.detach());
 
             uint32_t iter_step = 0;
             if (iter_step >= conf.max_flow_steps)
                 return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
+
+            const auto error_msg = [&iter_step, &conf](){
+                if (conf.verbose)
+                    std::cerr << "GHMC: failed to evolve flow at step: "
+                              << iter_step << "/" << conf.max_flow_steps << "\n";
+            };
+
+            auto dynamics = ham_grad(foliation);
+            if (!dynamics.has_value()) {
+                error_msg();
+                return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
+            }
+
+            const auto delta = conf.step_size / 2;
+            const auto &[c,s] = rot;
+
+            auto params = params_flow[0];
+            auto momentum_copy = momentum_flow[0];
+            auto params_copy = params + std::get<1>(dynamics.value()) * delta;
+            auto momentum = momentum_copy - std::get<0>(dynamics.value()) * delta;
 
 
             return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};

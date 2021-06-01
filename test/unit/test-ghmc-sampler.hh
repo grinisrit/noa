@@ -19,6 +19,8 @@ inline const auto log_funnel = [](const auto &theta_) {
 
 inline const auto conf = Configuration<float>{}
         .set_max_flow_steps(1)
+        .set_step_size(0.14f)
+        .set_binding_const(10.f)
         .set_cutoff(1e-6f)
         .set_verbosity(true);
 
