@@ -56,6 +56,7 @@ namespace noa::ghmc {
     using MomentumGradient = torch::Tensor;
     using HamiltonianGradient = std::tuple<ParametersGradient, MomentumGradient>;
     using HamiltonianGradientOpt = std::optional<HamiltonianGradient>;
+    using Samples = std::vector<Parameters>;
 
     //////////////////////
     using SafeResult = std::optional<torch::Tensor>;
@@ -305,14 +306,53 @@ namespace noa::ghmc {
                     if ((rho >= torch::log(torch::rand_like(rho))).item<bool>()) {
                         params_copy = params_copy + std::get<1>(dynamics.value()) * delta;
                         momentum = momentum - std::get<0>(dynamics.value()) * delta;
-                    } else break;
+                    } else {
+                        if (conf.verbose)
+                            std::cout << "GHMC: rejecting sample at iteration: "
+                                      << iter_step + 1 << "/" << conf.max_flow_steps << "\n";
+                        break;
+                    }
                 }
             }
             return HamiltonianFlow{params_flow, momentum_flow, energy_fluctuation};
-
         };
     }
 
+
+    template<typename LogProbabilityDensity, typename Configurations>
+    inline auto sampler(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
+        const auto ham_flow = hamiltonian_flow(log_prob_density, conf);
+        return [ham_flow, conf](const Parameters &initial_parameters, const uint32_t num_iterations) {
+            const auto max_num_samples = conf.max_flow_steps * num_iterations;
+
+            auto samples = Samples{};
+            samples.reserve(max_num_samples + 1);
+
+            if (conf.verbose)
+                std::cout << "GHMC: Riemannian HMC simulation\n"
+                          << "GHMC: generating MCMC chain of maximum length "
+                          << max_num_samples <<  " ...\n";
+
+            auto params = initial_parameters.detach().clone();
+            samples.push_back(params);
+
+            for(uint32_t iter; iter < num_iterations; iter++){
+                auto flow = ham_flow(params);
+                const auto &params_flow = std::get<0>(flow);
+                if(params_flow.size() > 1){
+                    samples.insert(samples.end(), params_flow.begin() + 1, params_flow.end());
+                    params = params_flow.back().clone();
+                }
+            }
+
+            if (conf.verbose)
+                std::cout << "GHMC: generated "
+                          << samples.size() <<  " samples.\n";
+
+            return samples;
+
+        };
+    }
 
     ///////////////////////////////////////////////////
     inline FisherInfo fisher_info(LogProb log_prob, Params params) {

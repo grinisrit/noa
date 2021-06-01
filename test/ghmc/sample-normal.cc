@@ -2,5 +2,6 @@
 
 int main()
 {
-    return sample_normal_dist("ghmc_sample_normal.pt");
+    return sample_normal_distribution("ghmc_sample_normal_distribution.pt");
 }
+
