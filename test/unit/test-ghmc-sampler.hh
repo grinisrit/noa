@@ -47,7 +47,7 @@ inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU) {
 
 inline MetricDecompositionOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto log_prob_graph = log_funnel({theta_.to(device, false, true)});
+    const auto log_prob_graph = log_funnel(Parameters{theta_.to(device, false, true)});
     return softabs_metric(conf)(log_prob_graph);
 }
 
@@ -68,27 +68,26 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(err, 0.f, 1e-3f);
     ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
 }
-/*
+
 inline PhaseSpaceFoliationOpt get_hamiltonian(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto theta = theta_.to(device, false, true).requires_grad_();
-    const auto momentum = momentum_.to(device, false, true);
-    return hamiltonian(alog_funnel, conf)(theta, momentum);
+    return hamiltonian(log_funnel, conf)(Parameters{theta_.to(device, false, true)},
+                                         Momentum{momentum_.to(device, false, true)});
 }
 
 inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
     const auto ham_ = get_hamiltonian(GHMCData::get_theta(), GHMCData::get_momentum(), device);
     ASSERT_TRUE(ham_.has_value());
-    const auto &energy_ = std::get<2>(ham_.value());
+    const auto &energy_ = std::get<Energy>(ham_.value());
     ASSERT_TRUE(energy_.device().type() == device);
     const auto energy = energy_.detach().to(torch::kCPU, false, true);
     const auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 }
-
+/*
 inline HamiltonianFlow get_hamiltonian_flow(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,

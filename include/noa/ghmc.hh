@@ -46,9 +46,8 @@ namespace noa::ghmc {
     using Rotation = Tensors;
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
     using MetricDecompositionOpt = std::optional<MetricDecomposition>;
-
     using Energy = torch::Tensor;
-    using PhaseSpaceFoliation = std::tuple<Parameters, Momentum, Energy>;
+    using PhaseSpaceFoliation = std::tuple<Energy, Parameters, Momentum>;
     using PhaseSpaceFoliationOpt = std::optional<PhaseSpaceFoliation>;
     using ParametersFlow = std::vector<Parameters>;
     using MomentumFlow = std::vector<Momentum>;
@@ -130,57 +129,75 @@ namespace noa::ghmc {
                 return MetricDecompositionOpt{};
             }
 
-            const auto nvar = hess_.value().size();
-            auto spectra = Tensors{};
-            spectra.reserve(nvar);
-            auto rotations = Tensors{};
-            rotations.reserve(nvar);
+            const auto nparam = hess_.value().size();
+            auto spectrum = Tensors{};
+            spectrum.reserve(nparam);
+            auto rotation = Tensors{};
+            rotation.reserve(nparam);
 
             for (const auto &hess : hess_.value()) {
                 const auto n = hess.size(0);
-                auto[eigs, rotation] =
-                torch::symeig(
+                auto[eigs, Q] = torch::symeig(
                         -hess + conf.jitter * torch::eye(n, hess.options()) * torch::rand(n, hess.options()),
                         true);
                 eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, hess.options()));
 
-                spectra.push_back(torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs));
-                rotations.push_back(rotation);
+                spectrum.push_back(torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs));
+                rotation.push_back(Q);
             }
-            return MetricDecompositionOpt{MetricDecomposition{spectra, rotations}};
+            return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
         };
     }
-/*
+
     template<typename LogProbabilityDensity, typename Configurations>
     inline auto hamiltonian(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
         const auto local_metric = softabs_metric(conf);
         return [log_prob_density, local_metric, conf](
                 const Parameters &parameters,
                 const MomentumOpt &momentum_ = std::nullopt) {
-            const auto params = parameters.detach().requires_grad_(true);
-            const auto log_prob = log_prob_density(params);
-            const auto metric = local_metric(log_prob, params);
+
+            const auto log_prob_graph = log_prob_density(parameters);
+            const auto metric = local_metric(log_prob_graph);
             if (!metric.has_value()) {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to compute local metric for log probability:\n"
-                              << log_prob << "\n";
+                              << std::get<LogProbability>(log_prob_graph) << "\n";
                 return PhaseSpaceFoliationOpt{};
             }
             const auto&[spectrum, rotation] = metric.value();
 
-            const auto momentum_lift = momentum_.has_value()
-                                       ? momentum_.value()
-                                       : rotation.mv(torch::sqrt(spectrum) * torch::randn_like(parameters));
-            const auto momentum = momentum_lift.detach().requires_grad_(true);
+            auto energy = - std::get<LogProbability>(log_prob_graph);
+            const auto lift = momentum_.has_value();
 
-            const auto first_order_term = spectrum.log().sum() / 2;
-            const auto mass = rotation.mm(torch::diag(1 / spectrum)).mm(rotation.t());
-            const auto second_order_term = momentum.dot(mass.mv(momentum)) / 2;
+            const auto nparam = parameters.size();
+            auto momentum = Momentum{};
+            momentum.reserve(nparam);
+
+            for (uint32_t i = 0; i < nparam; i++) {
+
+                const auto &rotation_i = rotation.at(i);
+                const auto &spectrum_i = spectrum.at(i);
+
+                const auto momentum_lift = lift
+                                           ? momentum_.value().at(i)
+                                           : rotation_i.detach().mv(
+                                                   torch::sqrt(spectrum_i.detach()) * torch::randn_like(spectrum_i));
+
+                const auto momentum_i = momentum_lift.detach().requires_grad_(true);
+                const auto first_order_term = spectrum_i.log().sum() / 2;
+                const auto mass = rotation_i.mm(torch::diag(1 /spectrum_i)).mm(rotation_i.t());
+                const auto second_order_term = momentum_i.dot(mass.mv(momentum_i)) / 2;
+
+                energy += first_order_term + second_order_term;
+                momentum.push_back(momentum_i);
+            }
+
             return PhaseSpaceFoliationOpt{
-                    PhaseSpaceFoliation{params, momentum, -log_prob + first_order_term + second_order_term}};
+                    PhaseSpaceFoliation{energy, std::get<Parameters>(log_prob_graph), momentum}};
         };
     }
 
+/*
     template<typename Configurations>
     inline auto hamiltonian_gradient(const Configurations &conf) {
         return [conf](const PhaseSpaceFoliationOpt &foliation) {
