@@ -28,8 +28,7 @@ inline const auto conf = Configuration<float>{}
 
 inline TensorsOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto theta = theta_.detach().to(device, false, true).requires_grad_();
-    const auto log_prob_graph = log_funnel({theta});
+    const auto log_prob_graph = log_funnel({theta_.to(device, false, true)});
     return numerics::hessian(log_prob_graph);
 }
 
@@ -45,12 +44,11 @@ inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU) {
     const auto err = (res + GHMCData::get_neg_hessian_funnel()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0.f, 1e-3f);
 }
-/*
+
 inline MetricDecompositionOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto theta = theta_.detach().to(device, false, true).requires_grad_();
-    const auto log_prob = alog_funnel(theta);
-    return softabs_metric(conf)(log_prob, theta);
+    const auto log_prob_graph = log_funnel({theta_.to(device, false, true)});
+    return softabs_metric(conf)(log_prob_graph);
 }
 
 inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
@@ -59,10 +57,10 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_TRUE(metric_.has_value());
 
     const auto &[spec_, Q_] = metric_.value();
-    ASSERT_TRUE(spec_.device().type() == device);
-    ASSERT_TRUE(Q_.device().type() == device);
-    const auto spec = spec_.detach().to(torch::kCPU, false, true);
-    const auto Q = Q_.detach().to(torch::kCPU, false, true);
+    ASSERT_TRUE(spec_.at(0).device().type() == device);
+    ASSERT_TRUE(Q_.at(0).device().type() == device);
+    const auto spec = spec_.at(0).detach().to(torch::kCPU, false, true);
+    const auto Q = Q_.at(0).detach().to(torch::kCPU, false, true);
 
     const auto err = (spec - GHMCData::get_expected_spectrum()).abs().sum().item<float>();
     const auto orthogonality = (Q.mm(Q.t()) - torch::eye(GHMCData::get_theta().numel())).abs().sum().item<float>();
@@ -70,7 +68,7 @@ inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
     ASSERT_NEAR(err, 0.f, 1e-3f);
     ASSERT_NEAR(orthogonality, 0.f, 1e-5f);
 }
-
+/*
 inline PhaseSpaceFoliationOpt get_hamiltonian(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,

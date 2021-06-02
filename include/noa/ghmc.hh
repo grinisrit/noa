@@ -41,11 +41,12 @@ namespace noa::ghmc {
     using Momentum = Tensors;
     using MomentumOpt = std::optional<Momentum>;
     using LogProbability = Tensor;
-
-    using Spectrum = torch::Tensor;
-    using Rotation = torch::Tensor;
+    using LogProbabilityGraph = ADGraph;
+    using Spectrum = Tensors;
+    using Rotation = Tensors;
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
     using MetricDecompositionOpt = std::optional<MetricDecomposition>;
+
     using Energy = torch::Tensor;
     using PhaseSpaceFoliation = std::tuple<Parameters, Momentum, Energy>;
     using PhaseSpaceFoliationOpt = std::optional<PhaseSpaceFoliation>;
@@ -117,29 +118,39 @@ namespace noa::ghmc {
             return *this;
         }
     };
-/*
+
     template<typename Configurations>
     inline auto softabs_metric(const Configurations &conf) {
-        return [&conf](const LogProbability &log_prob, const Parameters &params) {
-            const auto hess_ = utils::numerics::hessian(log_prob, params);
+        return [&conf](const LogProbabilityGraph &log_prob_graph) {
+            const auto hess_ = utils::numerics::hessian(log_prob_graph);
             if (!hess_.has_value()) {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to compute hessian for log probability:\n"
-                              << log_prob << "\n";
+                              << std::get<LogProbability>(log_prob_graph) << "\n";
                 return MetricDecompositionOpt{};
             }
-            const auto n = params.numel();
-            auto[eigs, rotation] =
-            torch::symeig(
-                    -hess_.value() + conf.jitter * torch::eye(n, params.options()) * torch::rand_like(params),
-                    true);
-            eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, params.options()));
-            const auto spectrum = torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs);
 
-            return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
+            const auto nvar = hess_.value().size();
+            auto spectra = Tensors{};
+            spectra.reserve(nvar);
+            auto rotations = Tensors{};
+            rotations.reserve(nvar);
+
+            for (const auto &hess : hess_.value()) {
+                const auto n = hess.size(0);
+                auto[eigs, rotation] =
+                torch::symeig(
+                        -hess + conf.jitter * torch::eye(n, hess.options()) * torch::rand(n, hess.options()),
+                        true);
+                eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, hess.options()));
+
+                spectra.push_back(torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs));
+                rotations.push_back(rotation);
+            }
+            return MetricDecompositionOpt{MetricDecomposition{spectra, rotations}};
         };
     }
-
+/*
     template<typename LogProbabilityDensity, typename Configurations>
     inline auto hamiltonian(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
         const auto local_metric = softabs_metric(conf);
