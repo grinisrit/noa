@@ -42,8 +42,15 @@ namespace noa::utils {
     using Path = std::filesystem::path;
     using Status = bool;
     using Line = std::string;
-    using TensorOpt = std::optional<torch::Tensor>;
-    using JitModuleOpt = std::optional<torch::jit::Module>;
+    using Tensor = torch::Tensor;
+    using TensorOpt = std::optional<Tensor>;
+    using Tensors = std::vector<Tensor>;
+    using TensorsOpt = std::optional<Tensors>;
+    using ScriptModule = torch::jit::Module;
+    using ScriptModuleOpt = std::optional<ScriptModule>;
+    using OutputLeaf = Tensor;
+    using InputLeaves = Tensors;
+    using ADGraph = std::tuple<OutputLeaf, InputLeaves>;
 
     constexpr double_t TOLERANCE = 1E-6;
     constexpr int32_t SEED = 987654;
@@ -203,7 +210,7 @@ namespace noa::utils {
         return res;
     }
 
-    inline JitModuleOpt load_module(const Path &jit_module_pt){
+    inline ScriptModuleOpt load_module(const Path &jit_module_pt){
         if (check_path_exists(jit_module_pt)) {
             try {
                 return torch::jit::load(jit_module_pt);

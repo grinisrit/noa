@@ -37,10 +37,11 @@
 
 namespace noa::ghmc {
 
-    using Parameters = torch::Tensor;
-    using Momentum = torch::Tensor;
+    using Parameters = Tensors;
+    using Momentum = Tensors;
     using MomentumOpt = std::optional<Momentum>;
-    using LogProbability = torch::Tensor;
+    using LogProbability = Tensor;
+
     using Spectrum = torch::Tensor;
     using Rotation = torch::Tensor;
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
@@ -59,13 +60,14 @@ namespace noa::ghmc {
     using Samples = std::vector<Parameters>;
 
     //////////////////////
+    using MomentumRef = torch::Tensor;
     using SafeResult = std::optional<torch::Tensor>;
     using SampleResult = std::optional<std::tuple<double, torch::Tensor>>;
     using Params = torch::Tensor;
     using LogProb = torch::Tensor;
     using FisherInfo = std::optional<torch::Tensor>;
     using SoftAbsMap = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
-    using HamiltonianRef = std::optional<std::tuple<torch::Tensor, std::optional<Momentum>>>;
+    using HamiltonianRef = std::optional<std::tuple<torch::Tensor, std::optional<MomentumRef>>>;
     using SymplecticFlow = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
     ///////////////////////
 
@@ -115,7 +117,7 @@ namespace noa::ghmc {
             return *this;
         }
     };
-
+/*
     template<typename Configurations>
     inline auto softabs_metric(const Configurations &conf) {
         return [&conf](const LogProbability &log_prob, const Parameters &params) {
@@ -353,7 +355,7 @@ namespace noa::ghmc {
 
         };
     }
-
+*/
     ///////////////////////////////////////////////////
     inline FisherInfo fisher_info(LogProb log_prob, Params params) {
         auto n = params.numel();
@@ -390,7 +392,7 @@ namespace noa::ghmc {
 
     template<typename LogProbabilityDensity>
     HamiltonianRef hamiltonianref(LogProbabilityDensity log_probability_density,
-                                  Params params, std::optional<Momentum> momentum_,
+                                  Params params, std::optional<MomentumRef> momentum_,
                                   double jitter = 0.001, double softabs_const = 1e6) {
         torch::Tensor log_prob = log_probability_density(params);
         if (torch::isnan(log_prob).item<bool>() || torch::isinf(log_prob).item<bool>())
@@ -413,7 +415,7 @@ namespace noa::ghmc {
 
     template<typename LogProbabilityDensity>
     SymplecticFlow symplectic_flow(LogProbabilityDensity log_probability_density,
-                                   Params params, Momentum momentum,
+                                   Params params, MomentumRef momentum,
                                    int leap_steps = 10, double epsilon = 0.1, double binding_const = 100,
                                    double jitter = 0.01, int jitter_max = 10, double softabs_const = 1e6) {
         auto ham_grad_params_ = [&log_probability_density, jitter, softabs_const](torch::Tensor params_,

@@ -18,7 +18,7 @@ inline void save_result(const torch::Tensor &sample, const Path &save_result_to)
     std::cout << "Saving result to " << save_result_to << "\n";
     torch::save(sample, save_result_to);
 }
-
+/*
 inline Status sample_normal_distribution(const Path &save_result_to,
                                          torch::DeviceType device = torch::kCPU) {
     torch::manual_seed(utils::SEED);
@@ -76,7 +76,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
 
     // Sample from the 10 dimensional Funnel distribution
     // HMC requires the log density up to additive constants
-    const auto log_funnel = [](const auto &w) {
+    const auto alog_funnel = [](const auto &w) {
         const auto dim = w.numel() - 1;
         return -((torch::exp(w[0]) * w.slice(0, 1, dim + 1).pow(2).sum()) +
                  (w[0].pow(2) / 9) - dim * w[0]) / 2;
@@ -88,7 +88,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
 
     // Create sampler
     const auto sampler = ghmc::sampler(
-            log_funnel,
+            alog_funnel,
             ghmc::Configuration<float>{}
                     .set_max_flow_steps(25)
                     .set_jitter(0.001)
@@ -110,7 +110,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
 
     return true;
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////////////////
 
 inline Status sample_normal_dist(const Path &save_result_to,
