@@ -37,16 +37,16 @@
 
 namespace noa::ghmc {
 
-    using Parameters = Tensors;
-    using Momentum = Tensors;
+    using Parameters = utils::Tensors;
+    using Momentum = utils::Tensors;
     using MomentumOpt = std::optional<Momentum>;
-    using LogProbability = Tensor;
-    using LogProbabilityGraph = ADGraph;
-    using Spectrum = Tensors;
-    using Rotation = Tensors;
+    using LogProbability = utils::Tensor;
+    using LogProbabilityGraph = utils::ADGraph;
+    using Spectrum = utils::Tensors;
+    using Rotation = utils::Tensors;
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
     using MetricDecompositionOpt = std::optional<MetricDecomposition>;
-    using Energy = torch::Tensor;
+    using Energy = utils::Tensor;
     using PhaseSpaceFoliation = std::tuple<Parameters, Momentum, Energy>;
     using PhaseSpaceFoliationOpt = std::optional<PhaseSpaceFoliation>;
 
@@ -55,8 +55,8 @@ namespace noa::ghmc {
     using EnergyLevel = std::vector<Energy>;
 
     using HamiltonianFlow = std::tuple<ParametersFlow, MomentumFlow, EnergyLevel>;
-    using ParametersGradient = Tensors;
-    using MomentumGradient = Tensors;
+    using ParametersGradient = utils::Tensors;
+    using MomentumGradient = utils::Tensors;
     using HamiltonianGradient = std::tuple<ParametersGradient, MomentumGradient>;
     using HamiltonianGradientOpt = std::optional<HamiltonianGradient>;
     using Samples = std::vector<Parameters>;
@@ -132,9 +132,9 @@ namespace noa::ghmc {
             }
 
             const auto nparam = hess_.value().size();
-            auto spectrum = Tensors{};
+            auto spectrum = Spectrum{};
             spectrum.reserve(nparam);
-            auto rotation = Tensors{};
+            auto rotation = Rotation{};
             rotation.reserve(nparam);
 
             for (const auto &hess : hess_.value()) {
@@ -221,7 +221,7 @@ namespace noa::ghmc {
             const auto &[params, momentum, energy] = foliation.value();
 
             const auto nparam = params.size();
-            auto variables = Tensors{};
+            auto variables = utils::Tensors{};
             variables.reserve(2 * nparam);
 
             variables.insert(variables.end(), params.begin(), params.end());
@@ -327,8 +327,8 @@ namespace noa::ghmc {
             auto momentum = momentum_copy;
 
             for(uint32_t i = 0; i < nparam; i++){
-                params_copy.at(i) += std::get<1>(dynamics.value()).at(i) * delta;
-                momentum.at(i) -= std::get<0>(dynamics.value()).at(i) * delta;
+                params_copy.at(i) = params_copy.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
+                momentum.at(i) = momentum.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
             }
 
             for (iter_step = 0; iter_step < conf.max_flow_steps; iter_step++) {
@@ -342,8 +342,8 @@ namespace noa::ghmc {
 
                 for(uint32_t i = 0; i < nparam; i++) {
 
-                    params.at(i) += std::get<1>(dynamics.value()).at(i) * delta;
-                    momentum_copy.at(i) -= std::get<0>(dynamics.value()).at(i) * delta;
+                    params.at(i) = params.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
+                    momentum_copy.at(i) = momentum_copy.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
 
                     params.at(i) = (params.at(i) + params_copy.at(i) +
                             c * (params.at(i) - params_copy.at(i)) + s * (momentum.at(i) - momentum_copy.at(i))) / 2;
@@ -364,8 +364,8 @@ namespace noa::ghmc {
                 }
 
                 for(uint32_t i = 0; i < nparam; i++){
-                    params.at(i) += std::get<1>(dynamics.value()).at(i) * delta;
-                    momentum_copy.at(i) -= std::get<0>(dynamics.value()).at(i) * delta;
+                    params.at(i) = params.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
+                    momentum_copy.at(i) = momentum_copy.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
                 }
 
                 foliation = ham(params, momentum_copy);
@@ -376,8 +376,8 @@ namespace noa::ghmc {
                 }
 
                 for(uint32_t i = 0; i < nparam; i++){
-                    params_copy.at(i) += std::get<1>(dynamics.value()).at(i) * delta;
-                    momentum.at(i) -= std::get<0>(dynamics.value()).at(i) * delta;
+                    params_copy.at(i) = params_copy.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
+                    momentum.at(i) = momentum.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
                 }
 
                 foliation = ham(params, momentum);
@@ -391,11 +391,11 @@ namespace noa::ghmc {
                 energy_level.push_back(std::get<Energy>(foliation.value()).detach());
 
                 if (iter_step < conf.max_flow_steps - 1) {
-                    const Tensor rho = -torch::relu(energy_level.at(iter_step + 1) - energy_level.at(0));
+                    const auto rho = -torch::relu(energy_level.at(iter_step + 1) - energy_level.at(0));
                     if ((rho >= torch::log(torch::rand_like(rho))).item<bool>())
                         for(uint32_t i = 0; i < nparam; i++){
-                            params_copy.at(i) += std::get<1>(dynamics.value()).at(i) * delta;
-                            momentum.at(i) -= std::get<0>(dynamics.value()).at(i) * delta;
+                            params_copy.at(i) = params_copy.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
+                            momentum.at(i) = momentum.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
                         }
                     else {
                         if (conf.verbose)
