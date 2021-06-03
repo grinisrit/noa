@@ -6,21 +6,14 @@
 using namespace noa::ghmc;
 using namespace noa::utils;
 
-inline torch::Tensor lazy_load_or_fail(TensorOpt &tensor, const Path &path)
-{
-    if (tensor.has_value())
-    {
+inline torch::Tensor lazy_load_or_fail(TensorOpt &tensor, const Path &path) {
+    if (tensor.has_value()) {
         return tensor.value();
-    }
-    else
-    {
+    } else {
         auto tensor_from_file = load_tensor(path);
-        if (tensor_from_file.has_value())
-        {
+        if (tensor_from_file.has_value()) {
             return tensor_from_file.value();
-        }
-        else
-        {
+        } else {
             throw std::runtime_error("CORRUPTED TEST DATA");
         }
     }
@@ -41,7 +34,6 @@ inline const auto conf = Configuration<float>{}
         .set_jitter(0.00001)
         .set_verbosity(true);
 
-
 inline const auto noa_test_data = noa::utils::Path{"noa-test-data"};
 
 inline const auto ghmc_dir = noa_test_data / "ghmc";
@@ -52,6 +44,7 @@ inline const auto expected_spectrum_pt = ghmc_dir / "expected_spectrum.pt";
 inline const auto expected_energy_pt = ghmc_dir / "expected_energy.pt";
 inline const auto expected_flow_theta_pt = ghmc_dir / "expected_flow_theta.pt";
 inline const auto expected_flow_moment_pt = ghmc_dir / "expected_flow_moment.pt";
+inline const auto jit_net_pt = ghmc_dir / "jit_net.pt";
 
 inline const auto pms_dir = noa_test_data / "pms";
 inline const auto kinetic_energies_pt = pms_dir / "kinetic_energies.pt";
@@ -75,9 +68,7 @@ inline const auto pumas_mu0_pt = pms_dir / "pumas_mu0.pt";
 inline const auto pumas_lb_h_pt = pms_dir / "pumas_lb_h.pt";
 inline const auto pumas_soft_scatter_pt = pms_dir / "pumas_soft_scatter.pt";
 
-
-class GHMCData 
-{
+class GHMCData {
     inline static TensorOpt theta = std::nullopt;
     inline static TensorOpt momentum = std::nullopt;
     inline static TensorOpt expected_neg_hessian_funnel = std::nullopt;
@@ -87,43 +78,35 @@ class GHMCData
     inline static TensorOpt expected_flow_moment = std::nullopt;
 
 public:
-    static torch::Tensor get_theta()
-    {
+    static torch::Tensor get_theta() {
         return lazy_load_or_fail(theta, theta_pt);
     }
 
-    static torch::Tensor get_momentum()
-    {
+    static torch::Tensor get_momentum() {
         return lazy_load_or_fail(momentum, momentum_pt);
     }
 
-    static torch::Tensor get_neg_hessian_funnel()
-    {
+    static torch::Tensor get_neg_hessian_funnel() {
         return lazy_load_or_fail(expected_neg_hessian_funnel, expected_neg_hessian_funnel_pt);
     }
 
-    static torch::Tensor get_expected_spectrum()
-    {
+    static torch::Tensor get_expected_spectrum() {
         return lazy_load_or_fail(expected_spectrum, expected_spectrum_pt);
     }
 
-    static torch::Tensor get_expected_energy()
-    {
+    static torch::Tensor get_expected_energy() {
         return lazy_load_or_fail(expected_energy, expected_energy_pt);
     }
 
-    static torch::Tensor get_expected_flow_theta()
-    {
+    static torch::Tensor get_expected_flow_theta() {
         return lazy_load_or_fail(expected_flow_theta, expected_flow_theta_pt);
     }
 
-    static torch::Tensor get_expected_flow_moment()
-    {
+    static torch::Tensor get_expected_flow_moment() {
         return lazy_load_or_fail(expected_flow_moment, expected_flow_moment_pt);
     }
 
-    static void get_all()
-    {
+    static void get_all() {
         get_theta();
         get_momentum();
         get_neg_hessian_funnel();
@@ -134,8 +117,7 @@ public:
     }
 };
 
-class DCSData 
-{
+class DCSData {
 
     inline static TensorOpt kinetic_energies = std::nullopt;
     inline static TensorOpt recoil_energies = std::nullopt;
@@ -159,92 +141,88 @@ class DCSData
     inline static TensorOpt pumas_soft_scatter = std::nullopt;
 
 public:
-    static torch::Tensor get_kinetic_energies()
-    {
+    static torch::Tensor get_kinetic_energies() {
         return lazy_load_or_fail(kinetic_energies, kinetic_energies_pt);
     }
 
-    static torch::Tensor get_recoil_energies()
-    {
+    static torch::Tensor get_recoil_energies() {
         return lazy_load_or_fail(recoil_energies, recoil_energies_pt);
     }
 
-    static torch::Tensor get_pumas_brems()
-    {
+    static torch::Tensor get_pumas_brems() {
         return lazy_load_or_fail(pumas_brems, pumas_brems_pt);
     }
-    static torch::Tensor get_pumas_brems_del()
-    {
+
+    static torch::Tensor get_pumas_brems_del() {
         return lazy_load_or_fail(pumas_brems_del, pumas_brems_del_pt);
     }
-    static torch::Tensor get_pumas_brems_cel()
-    {
+
+    static torch::Tensor get_pumas_brems_cel() {
         return lazy_load_or_fail(pumas_brems_cel, pumas_brems_cel_pt);
     }
-    static torch::Tensor get_pumas_pprod()
-    {
+
+    static torch::Tensor get_pumas_pprod() {
         return lazy_load_or_fail(pumas_pprod, pumas_pprod_pt);
     }
-    static torch::Tensor get_pumas_pprod_del()
-    {
+
+    static torch::Tensor get_pumas_pprod_del() {
         return lazy_load_or_fail(pumas_pprod_del, pumas_pprod_del_pt);
     }
-    static torch::Tensor get_pumas_pprod_cel()
-    {
+
+    static torch::Tensor get_pumas_pprod_cel() {
         return lazy_load_or_fail(pumas_pprod_cel, pumas_pprod_cel_pt);
     }
-    static torch::Tensor get_pumas_photo()
-    {
+
+    static torch::Tensor get_pumas_photo() {
         return lazy_load_or_fail(pumas_photo, pumas_photo_pt);
     }
-    static torch::Tensor get_pumas_photo_del()
-    {
+
+    static torch::Tensor get_pumas_photo_del() {
         return lazy_load_or_fail(pumas_photo_del, pumas_photo_del_pt);
     }
-    static torch::Tensor get_pumas_photo_cel()
-    {
+
+    static torch::Tensor get_pumas_photo_cel() {
         return lazy_load_or_fail(pumas_photo_cel, pumas_photo_cel_pt);
     }
-    static torch::Tensor get_pumas_ion()
-    {
+
+    static torch::Tensor get_pumas_ion() {
         return lazy_load_or_fail(pumas_ion, pumas_ion_pt);
     }
-    static torch::Tensor get_pumas_ion_del()
-    {
+
+    static torch::Tensor get_pumas_ion_del() {
         return lazy_load_or_fail(pumas_ion_del, pumas_ion_del_pt);
     }
-    static torch::Tensor get_pumas_ion_cel()
-    {
+
+    static torch::Tensor get_pumas_ion_cel() {
         return lazy_load_or_fail(pumas_ion_cel, pumas_ion_cel_pt);
     }
-    static torch::Tensor get_pumas_screening()
-    {
+
+    static torch::Tensor get_pumas_screening() {
         return lazy_load_or_fail(pumas_screening, pumas_screening_pt);
     }
-    static torch::Tensor get_pumas_invlambda()
-    {
+
+    static torch::Tensor get_pumas_invlambda() {
         return lazy_load_or_fail(pumas_invlambda, pumas_invlambda_pt);
     }
-    static torch::Tensor get_pumas_transport()
-    {
+
+    static torch::Tensor get_pumas_transport() {
         return lazy_load_or_fail(pumas_transport, pumas_transport_pt);
     }
-    static torch::Tensor get_pumas_mu0()
-    {
+
+    static torch::Tensor get_pumas_mu0() {
         return lazy_load_or_fail(pumas_mu0, pumas_mu0_pt);
     }
-    static torch::Tensor get_pumas_lb_h()
-    {
+
+    static torch::Tensor get_pumas_lb_h() {
         return lazy_load_or_fail(pumas_lb_h, pumas_lb_h_pt);
     }
-    static torch::Tensor get_pumas_soft_scatter()
-    {
+
+    static torch::Tensor get_pumas_soft_scatter() {
         return lazy_load_or_fail(pumas_soft_scatter, pumas_soft_scatter_pt);
     }
 
-    
-    static void get_all()
-    {
+
+    static void get_all() {
         get_kinetic_energies();
         get_recoil_energies();
         get_pumas_brems();

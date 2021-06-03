@@ -1,6 +1,6 @@
 #pragma once
 
-#include "test-data.hh"
+#include "../test/test-data.hh"
 
 #include <noa/pms/constants.hh>
 #include <noa/pms/dcs.hh>

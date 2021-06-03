@@ -18,4 +18,7 @@ if(NOT TARGET googletest)
             ${googletest_SOURCE_DIR}
             ${googletest_BINARY_DIR})
     endif()
+
+    # Compatibility with LibTorch cxx11 ABI
+    target_compile_definitions(gtest PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 endif()

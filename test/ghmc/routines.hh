@@ -77,6 +77,7 @@ inline Status sample_normal_distribution(const Path &save_result_to,
     return true;
 }
 
+
 inline Status sample_funnel_distribution(const Path &save_result_to,
                                          torch::DeviceType device = torch::kCPU) {
     torch::manual_seed(SEED);
@@ -109,6 +110,17 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
 
     const auto result = stack(samples);
     save_result(result, save_result_to);
+
+    return true;
+}
+
+
+inline Status sample_bayesian_net(const Path &save_result_to,
+                                  torch::DeviceType device = torch::kCPU){
+
+    auto module = load_module(jit_net_pt);
+    if (!module.has_value())
+        return false;
 
     return true;
 }

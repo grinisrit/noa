@@ -5,12 +5,16 @@
 # Gflags
 include(fetch-gflags)
 
+# Test data
+include(noa-test-data)
+
 # Main executable
 add_executable(sampler sampler.cc)
 
-# Extra include directories
-target_include_directories(sampler PRIVATE ${NOA_ROOT_DIR}/test/unit)
+add_dependencies(sampler test_data)
 
+# Extra include directories
+target_include_directories(sampler PRIVATE ${NOA_ROOT_DIR}/test)
 
 # Link libraries
 target_link_libraries(sampler PRIVATE ${PROJECT_NAME} gflags)

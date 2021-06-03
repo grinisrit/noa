@@ -19,4 +19,7 @@ if(NOT TARGET benchmark)
             ${benchmark_SOURCE_DIR}
             ${benchmark_BINARY_DIR})
     endif()
+
+    # Compatibility with LibTorch cxx11 ABI
+    target_compile_definitions(benchmark PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 endif()

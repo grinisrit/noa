@@ -5,8 +5,6 @@
 
 # GTest
 include(fetch-gtest)
-# Compatibility with LibTorch cxx11 ABI
-target_compile_definitions(gtest PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 
 # Test data
 include(noa-test-data)
@@ -19,16 +17,19 @@ set(NOA_TEST_SRC
 
 # Main test executables
 if (BUILD_NOA_CUDA)
-    add_executable(noa_test_suite 
-        ${NOA_TEST_SRC} 
-        test-ghmc-sampler-cuda.cc
-        test-dcs-calc-cuda.cc 
-        kernels.cu)
+    add_executable(noa_test_suite
+            ${NOA_TEST_SRC}
+            test-ghmc-sampler-cuda.cc
+            test-dcs-calc-cuda.cc
+            ${NOA_ROOT_DIR}/test/kernels.cu)
     set_target_properties(noa_test_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 else ()
     add_executable(noa_test_suite ${NOA_TEST_SRC})
 endif ()
 add_dependencies(noa_test_suite test_data)
+
+# Extra include directories
+target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test)
 
 # Link libraries
 target_link_libraries(noa_test_suite PRIVATE gtest ${PROJECT_NAME})
