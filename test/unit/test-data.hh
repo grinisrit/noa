@@ -1,7 +1,9 @@
 #pragma once
 
+#include <noa/ghmc.hh>
 #include <noa/utils/common.hh>
 
+using namespace noa::ghmc;
 using namespace noa::utils;
 
 inline torch::Tensor lazy_load_or_fail(TensorOpt &tensor, const Path &path)
@@ -23,6 +25,22 @@ inline torch::Tensor lazy_load_or_fail(TensorOpt &tensor, const Path &path)
         }
     }
 }
+
+inline const auto log_funnel = [](const Parameters &theta_) {
+    const auto theta = theta_.at(0).detach().requires_grad_(true);
+    const auto dim = theta.numel() - 1;
+    const auto log_prob = -((torch::exp(theta[0]) * theta.slice(0, 1, dim + 1).pow(2).sum()) +
+                            (theta[0].pow(2) / 9) - dim * theta[0]) / 2;
+    return LogProbabilityGraph{log_prob, {theta}};
+};
+
+inline const auto conf = Configuration<float>{}
+        .set_max_flow_steps(1)
+        .set_step_size(0.14f)
+        .set_binding_const(10.f)
+        .set_jitter(0.00001)
+        .set_verbosity(true);
+
 
 inline const auto noa_test_data = noa::utils::Path{"noa-test-data"};
 

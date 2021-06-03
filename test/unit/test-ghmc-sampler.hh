@@ -11,20 +11,6 @@ using namespace noa;
 using namespace noa::ghmc;
 using namespace noa::utils;
 
-inline const auto log_funnel = [](const Parameters &theta_) {
-    const auto theta = theta_.at(0).detach().requires_grad_(true);
-    const auto dim = theta.numel() - 1;
-    const auto log_prob = -((torch::exp(theta[0]) * theta.slice(0, 1, dim + 1).pow(2).sum()) +
-                            (theta[0].pow(2) / 9) - dim * theta[0]) / 2;
-    return LogProbabilityGraph{log_prob, {theta}};
-};
-
-inline const auto conf = Configuration<float>{}
-        .set_max_flow_steps(1)
-        .set_step_size(0.14f)
-        .set_binding_const(10.f)
-        .set_jitter(0.00001)
-        .set_verbosity(true);
 
 inline TensorsOpt get_funnel_hessian(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
@@ -97,10 +83,10 @@ inline HamiltonianFlow get_hamiltonian_flow(
                                               Momentum{momentum_.to(device, false, true)});
 }
 
-inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU){
+inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU) {
 
-    const auto [theta_flow, momentum_flow, energy] =
-            get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
+    const auto[theta_flow, momentum_flow, energy] =
+    get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
 
     ASSERT_TRUE(theta_flow.size() == 2);
     ASSERT_TRUE(momentum_flow.size() == 2);

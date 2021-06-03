@@ -224,6 +224,19 @@ namespace noa::utils {
         }
     }
 
+    inline Tensor stack(const std::vector<Tensors> &vec_tensors){
+        auto result = Tensors{};
+        result.reserve(vec_tensors.size());
+        for(const auto &tensors: vec_tensors){
+            auto tensors_flat = Tensors{};
+            tensors_flat.reserve(tensors.size());
+            for(const auto &tensor: tensors)
+                tensors_flat.push_back(tensor.flatten());
+            result.push_back(torch::cat(tensors_flat));
+        }
+        return torch::stack(result);
+    }
+
 
 
 } // namespace noa::utils

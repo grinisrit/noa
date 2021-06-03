@@ -4,13 +4,12 @@
 
 
 # Main executables
-add_executable(sample_normal sample-normal.cc)
-add_executable(sample_funnel sample-funnel.cc)
+add_executable(ghmc_sampler ghmc-sampler.cc)
+
+# Extra include directories
+target_include_directories(ghmc_sampler PRIVATE ${NOA_ROOT_DIR}/test/unit)
 
 
 # Link libraries
-target_link_libraries(sample_normal PRIVATE ${PROJECT_NAME})
-target_compile_options(sample_normal PRIVATE -Wall -Wextra -Wpedantic -O3)
-
-target_link_libraries(sample_funnel PRIVATE ${PROJECT_NAME})
-target_compile_options(sample_funnel PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_link_libraries(ghmc_sampler PRIVATE ${PROJECT_NAME})
+target_compile_options(ghmc_sampler PRIVATE -Wall -Wextra -Wpedantic -O3)
