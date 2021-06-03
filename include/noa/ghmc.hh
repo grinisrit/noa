@@ -77,11 +77,11 @@ namespace noa::ghmc {
     template<typename Dtype>
     struct Configuration {
         uint32_t max_flow_steps = 3;
-        Dtype step_size = 0.1;
-        Dtype binding_const = 100.;
-        Dtype cutoff = 1e-12;
-        Dtype jitter = 1e-6;
-        Dtype softabs_const = 1e6;
+        Dtype step_size = 0.1f;
+        Dtype binding_const = 100.f;
+        Dtype cutoff = 1e-6f;
+        Dtype jitter = 1e-6f;
+        Dtype softabs_const = 1e6f;
         bool verbose = false;
 
         inline Configuration &set_max_flow_steps(const Dtype &max_flow_steps_) {
@@ -122,7 +122,7 @@ namespace noa::ghmc {
 
     template<typename Configurations>
     inline auto softabs_metric(const Configurations &conf) {
-        return [&conf](const LogProbabilityGraph &log_prob_graph) {
+        return [conf](const LogProbabilityGraph &log_prob_graph) {
             const auto hess_ = utils::numerics::hessian(log_prob_graph);
             if (!hess_.has_value()) {
                 if (conf.verbose)
@@ -173,7 +173,6 @@ namespace noa::ghmc {
         return [log_prob_density, local_metric, conf](
                 const Parameters &parameters,
                 const MomentumOpt &momentum_ = std::nullopt) {
-
             const auto log_prob_graph = log_prob_density(parameters);
             const LogProbability check_log_prob = std::get<LogProbability>(log_prob_graph).detach();
             if (torch::isnan(check_log_prob).item<bool>() || torch::isinf(check_log_prob).item<bool>()) {
@@ -198,7 +197,6 @@ namespace noa::ghmc {
             momentum.reserve(nparam);
 
             for (uint32_t i = 0; i < nparam; i++) {
-
 
                 const auto &rotation_i = rotation.at(i);
                 const auto &spectrum_i = spectrum.at(i);
@@ -293,7 +291,6 @@ namespace noa::ghmc {
         const auto rot = std::make_tuple(cos(theta), sin(theta));
         return [ham, ham_grad, conf, rot](const Parameters &parameters,
                                           const MomentumOpt &momentum_ = std::nullopt) {
-
             auto params_flow = ParametersFlow{};
             params_flow.reserve(conf.max_flow_steps + 1);
 
@@ -469,7 +466,6 @@ namespace noa::ghmc {
                           << samples.size() <<  " samples.\n";
 
             return samples;
-
         };
     }
 

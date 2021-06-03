@@ -43,12 +43,16 @@ inline Status sample_normal_distribution(const Path &save_result_to,
     // Initialise parameters
     const auto params_init = Parameters{torch::zeros(3, torch::device(device))};
 
+    const auto conf = Configuration<float>{}
+            .set_max_flow_steps(10)
+            .set_step_size(0.05f).set_verbosity(true);
+
     // Create sampler
     const auto normal_sampler = sampler(
             log_prob_normal,
             Configuration<float>{}
                     .set_max_flow_steps(10)
-                    .set_step_size(0.05).set_verbosity(true));
+                    .set_step_size(0.05f).set_verbosity(true));
 
     // Run sampler
     const auto begin = steady_clock::now();
