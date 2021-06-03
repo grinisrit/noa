@@ -1,4 +1,4 @@
-# NOA: Bayesian Computation for Deep Learning
+# NOA: Bayesian Computation Algorithms
 
 We aim to make it easier to integrate Bayesian computation algorithms with deep learning and larger simulation frameworks. 
 Our solution is suitable for both research and applications in performance demanding systems such as encountered in streaming analytics, game development and high frequency trading.
