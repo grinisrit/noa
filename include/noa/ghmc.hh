@@ -159,6 +159,13 @@ namespace noa::ghmc {
                 const MomentumOpt &momentum_ = std::nullopt) {
 
             const auto log_prob_graph = log_prob_density(parameters);
+            const LogProbability check_log_prob = std::get<LogProbability>(log_prob_graph).detach();
+            if (torch::isnan(check_log_prob).item<bool>() || torch::isinf(check_log_prob).item<bool>()) {
+                if (conf.verbose)
+                    std::cerr << "GHMC: failed to compute log probability.\n";
+                return PhaseSpaceFoliationOpt{};
+            }
+
             const auto metric = local_metric(log_prob_graph);
             if (!metric.has_value()) {
                 if (conf.verbose)
@@ -409,7 +416,7 @@ namespace noa::ghmc {
         };
     }
 
-/*
+
     template<typename LogProbabilityDensity, typename Configurations>
     inline auto sampler(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
         const auto ham_flow = hamiltonian_flow(log_prob_density, conf);
@@ -424,16 +431,21 @@ namespace noa::ghmc {
                           << "GHMC: generating MCMC chain of maximum length "
                           << max_num_samples <<  " ...\n";
 
-            auto params = initial_parameters.detach().clone();
-            samples.push_back(params);
+            const auto nparam = initial_parameters.size();
+            auto params = Parameters{};
+            params.reserve(nparam);
+            for(const auto &param : initial_parameters)
+                params.push_back(param.detach());
 
-            for(uint32_t iter; iter < num_iterations; iter++){
-                auto flow = ham_flow(params);
+            samples.push_back(params);
+            uint32_t iter = 0;
+
+            while(iter < num_iterations){
+                auto flow = ham_flow(samples.back());
                 const auto &params_flow = std::get<0>(flow);
-                if(params_flow.size() > 1){
+                if(params_flow.size() > 1)
                     samples.insert(samples.end(), params_flow.begin() + 1, params_flow.end());
-                    params = params_flow.back().clone();
-                }
+                iter++;
             }
 
             if (conf.verbose)
@@ -444,7 +456,7 @@ namespace noa::ghmc {
 
         };
     }
-*/
+
     ///////////////////////////////////////////////////
     inline FisherInfo fisher_info(LogProb log_prob, Params params) {
         auto n = params.numel();

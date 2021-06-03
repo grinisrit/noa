@@ -16,7 +16,7 @@ inline const auto log_funnel = [](const Parameters &theta_) {
     const auto dim = theta.numel() - 1;
     const auto log_prob = -((torch::exp(theta[0]) * theta.slice(0, 1, dim + 1).pow(2).sum()) +
                             (theta[0].pow(2) / 9) - dim * theta[0]) / 2;
-    return ADGraph{log_prob, {theta}};
+    return LogProbabilityGraph{log_prob, {theta}};
 };
 
 inline const auto conf = Configuration<float>{}
