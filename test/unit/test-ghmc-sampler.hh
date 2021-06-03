@@ -87,39 +87,38 @@ inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
     const auto err = (energy - GHMCData::get_expected_energy()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 }
-/*
+
 inline HamiltonianFlow get_hamiltonian_flow(
         const torch::Tensor &theta_,
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    const auto theta = theta_.detach().to(device, false, true);
-    const auto momentum = momentum_.detach().to(device, false, true);
-    return hamiltonian_flow(alog_funnel, conf)(theta, momentum);
+    return hamiltonian_flow(log_funnel, conf)(Parameters{theta_.to(device, false, true)},
+                                              Momentum{momentum_.to(device, false, true)});
 }
 
 inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU){
 
-    const auto [theta_flow, momentum_flow, energy_fluctuation] =
+    const auto [theta_flow, momentum_flow, energy] =
             get_hamiltonian_flow(GHMCData::get_theta(), GHMCData::get_momentum(), device);
 
     ASSERT_TRUE(theta_flow.size() == 2);
     ASSERT_TRUE(momentum_flow.size() == 2);
-    ASSERT_TRUE(energy_fluctuation.size() == 2);
+    ASSERT_TRUE(energy.size() == 2);
 
-    ASSERT_TRUE(theta_flow[1].device().type() == device);
-    ASSERT_TRUE(momentum_flow[1].device().type() == device);
-    ASSERT_TRUE(energy_fluctuation[1].device().type() == device);
+    ASSERT_TRUE(theta_flow.at(1).at(0).device().type() == device);
+    ASSERT_TRUE(momentum_flow.at(1).at(0).device().type() == device);
+    ASSERT_TRUE(energy.at(1).device().type() == device);
 
-    const auto theta_proposal = theta_flow[1].to(torch::kCPU, false, true);
+    const auto theta_proposal = theta_flow.at(1).at(0).to(torch::kCPU, false, true);
     auto err = (theta_proposal - GHMCData::get_expected_flow_theta()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-3);
 
-    const auto momentum_proposal = momentum_flow[1].to(torch::kCPU, false, true);
+    const auto momentum_proposal = momentum_flow.at(1).at(0).to(torch::kCPU, false, true);
     err = (momentum_proposal - GHMCData::get_expected_flow_moment()).abs().sum().item<float>();
     ASSERT_NEAR(err, 0., 1e-2);
 }
-*/
+
 /////////////////////////////////////////////////////////////////
 
 inline const auto alog_funnel = [](const auto &theta_) {

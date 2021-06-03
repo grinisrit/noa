@@ -15,12 +15,12 @@ TEST(GHMC, Hamiltonian)
 {
     test_hamiltonian();
 }
-/*
+
 TEST(GHMC, HamiltonianFlow)
 {
     test_hamiltonian_flow();
 }
-*/
+
 /////////////////////////////////////////////////////////////
 
 TEST(GHMC, FisherInfo)

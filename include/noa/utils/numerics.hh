@@ -36,7 +36,7 @@ namespace noa::utils::numerics {
         const auto &value = std::get<OutputLeaf>(ad_graph);
         if ((value.dim() > 0)) {
             std::cerr << "Invalid arguments to noa::utils::numerics::hessian : "
-                      << "expecting 0-dim tensor for output leaf in the graph\n";
+                      << "expecting 0-dim tensor for output leaf in the AD graph\n";
             return TensorsOpt{};
         }
 
