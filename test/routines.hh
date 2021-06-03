@@ -139,17 +139,18 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     net.train();
     net.to(device);
     const auto params_init = parameters(net);
+    const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
+    const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
 
+    /*
     auto loss_fn = torch::nn::MSELoss{};
     auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
 
-    const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
-    const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
+
 
     auto preds = Tensors{};
     preds.reserve(n_epochs);
 
-    net.train();
     std::cout << " Running Adam gradient descent optimisation ...\n";
     for (uint32_t i = 0; i < n_epochs; i++) {
 
@@ -164,13 +165,13 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     std::cout << " Initial MSE loss:\n" << loss_fn(preds.front(), y_val) << "\n"
               << " Optimal MSE loss:\n" << loss_fn(preds.back(), y_val) << "\n";
+    */
 
-    // Define the log probability function for the regression model
-    const auto log_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
+    const auto log_prob_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
         auto log_prob = torch::tensor(0, y_train.options());
         for (const auto &param: net.parameters()) {
-            param.set_data(theta.at(i));
+            param.set_data(theta.at(i).detach());
             log_prob += param.pow(2).sum();
             i++;
         }
@@ -178,6 +179,19 @@ inline Status sample_bayesian_net(const Path &save_result_to,
         log_prob = -50 * (y_train - output).pow(2).sum() - log_prob / 2;
         return LogProbabilityGraph{log_prob, parameters(net)};
     };
+
+    const auto conf_bnet = Configuration<float>{}
+            .set_max_flow_steps(2)
+            .set_jitter(0.001f)
+            .set_step_size(0.005f)
+            .set_verbosity(true);
+
+    const auto bnet_sampler = sampler(log_prob_bnet, conf_bnet);
+    //const auto samples = bnet_sampler(params_init, 1);
+
+    const auto lg = log_prob_bnet(params_init);
+    const auto hess = numerics::hessian(lg);
+    std::cout << hess.value().at(0) << "\n";
 
 
     return true;

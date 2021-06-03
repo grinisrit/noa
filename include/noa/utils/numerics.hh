@@ -48,15 +48,15 @@ namespace noa::utils::numerics {
         hess.reserve(nvar);
 
         for(uint32_t ivar = 0; ivar < nvar; ivar++){
-            const auto variable = variables.at(ivar).flatten();
+            const auto variable = variables.at(ivar);
             const auto n = variable.numel();
             const auto res = value.new_zeros({n, n});
-            const auto grad = gradients.at(ivar);
+            const auto grad = gradients.at(ivar).flatten();
 
             uint32_t i = 0;
             for (uint32_t j = 0; j < n; j++) {
                 const auto row = grad[j].requires_grad()
-                                 ? torch::autograd::grad({grad[i]}, {variable}, {}, true, true, true)[0].slice(0, j, n)
+                                 ? torch::autograd::grad({grad[i]}, {variable}, {}, true, true, true)[0].flatten().slice(0, j, n)
                                  : grad[j].new_zeros(n - j);
                 res[i].slice(0, i, n).add_(row);
                 i++;
