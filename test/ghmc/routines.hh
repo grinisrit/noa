@@ -116,11 +116,55 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
 
 
 inline Status sample_bayesian_net(const Path &save_result_to,
-                                  torch::DeviceType device = torch::kCPU){
+                                  torch::DeviceType device = torch::kCPU) {
+    //torch::manual_seed(SEED);
+
+    std::cout << "Bayesian Deep Learning regression example:\n";
 
     auto module = load_module(jit_net_pt);
     if (!module.has_value())
         return false;
+
+    const auto n_tr = 6;
+    const auto n_val = 300;
+    const auto n_epochs = 250;
+
+    const auto x_val = torch::linspace(-5.f, 5.f, n_val, torch::device(device)).view({-1, 1});
+    const auto y_val = torch::sin(x_val);
+
+    const auto x_train = torch::linspace(-3.14f, 3.14f, n_tr, torch::device(device)).view({-1, 1});
+    const auto y_train = torch::sin(x_train) + 0.1f * torch::randn_like(x_train);
+
+    auto net = module.value();
+    net.train();
+    net.to(device);
+    auto params = parameters(net);
+
+    auto loss_fn = torch::nn::MSELoss{};
+    auto optimizer = torch::optim::Adam{params, torch::optim::AdamOptions(0.005)};
+
+    auto inputs_val = std::vector<torch::jit::IValue>{x_val};
+    auto inputs_train = std::vector<torch::jit::IValue>{x_train};
+
+    auto preds = std::vector<at::Tensor>{};
+    preds.reserve(n_epochs);
+
+    net.train();
+    std::cout << " Running Adam gradient descent optimisation ...\n";
+    for (uint32_t i = 0; i < n_epochs; i++) {
+
+        optimizer.zero_grad();
+        auto output = net.forward(inputs_train).toTensor();
+        auto loss = loss_fn(output, y_train);
+        loss.backward();
+        optimizer.step();
+
+        preds.push_back(net.forward(inputs_val).toTensor().detach());
+    }
+
+    std::cout << " Initial MSE loss:\n" << loss_fn(preds.front(), y_val) << "\n"
+              << " Optimal MSE loss:\n" << loss_fn(preds.back(), y_val) << "\n";
+
 
     return true;
 }
