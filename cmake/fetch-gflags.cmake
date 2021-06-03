@@ -22,4 +22,8 @@ if(NOT TARGET gflags)
             ${gflags_SOURCE_DIR}
             ${gflags_BINARY_DIR})
     endif()
+
+    # Compatibility with LibTorch cxx11 ABI
+    target_compile_definitions(gflags_nothreads_static PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+
 endif()

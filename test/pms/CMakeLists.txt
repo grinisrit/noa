@@ -4,8 +4,6 @@
 
 # Gflags
 include(fetch-gflags)
-# Compatibility with LibTorch cxx11 ABI
-target_compile_definitions(gflags_nothreads_static PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 
 # Find OpenMP
 include(conda-omp)
