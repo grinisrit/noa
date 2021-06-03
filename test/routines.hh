@@ -91,7 +91,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
     // Create sampler
     const auto funnel_sampler = ghmc::sampler(
             log_funnel,
-            ghmc::Configuration<float>{}
+            Configuration<float>{}
                     .set_max_flow_steps(25)
                     .set_jitter(0.001f)
                     .set_step_size(0.14f)
@@ -117,7 +117,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
 
 inline Status sample_bayesian_net(const Path &save_result_to,
                                   torch::DeviceType device = torch::kCPU) {
-    //torch::manual_seed(SEED);
+    torch::manual_seed(SEED);
 
     std::cout << "Bayesian Deep Learning regression example:\n";
 
@@ -135,18 +135,18 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto x_train = torch::linspace(-3.14f, 3.14f, n_tr, torch::device(device)).view({-1, 1});
     const auto y_train = torch::sin(x_train) + 0.1f * torch::randn_like(x_train);
 
-    auto net = module.value();
+    auto &net = module.value();
     net.train();
     net.to(device);
-    auto params = parameters(net);
+    const auto params_init = parameters(net);
 
     auto loss_fn = torch::nn::MSELoss{};
-    auto optimizer = torch::optim::Adam{params, torch::optim::AdamOptions(0.005)};
+    auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
 
-    auto inputs_val = std::vector<torch::jit::IValue>{x_val};
-    auto inputs_train = std::vector<torch::jit::IValue>{x_train};
+    const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
+    const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
 
-    auto preds = std::vector<at::Tensor>{};
+    auto preds = Tensors{};
     preds.reserve(n_epochs);
 
     net.train();
@@ -154,8 +154,8 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     for (uint32_t i = 0; i < n_epochs; i++) {
 
         optimizer.zero_grad();
-        auto output = net.forward(inputs_train).toTensor();
-        auto loss = loss_fn(output, y_train);
+        const auto output = net.forward(inputs_train).toTensor();
+        const auto loss = loss_fn(output, y_train);
         loss.backward();
         optimizer.step();
 
@@ -164,6 +164,20 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     std::cout << " Initial MSE loss:\n" << loss_fn(preds.front(), y_val) << "\n"
               << " Optimal MSE loss:\n" << loss_fn(preds.back(), y_val) << "\n";
+
+    // Define the log probability function for the regression model
+    const auto log_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
+        uint32_t i = 0;
+        auto log_prob = torch::tensor(0, y_train.options());
+        for (const auto &param: net.parameters()) {
+            param.set_data(theta.at(i));
+            log_prob += param.pow(2).sum();
+            i++;
+        }
+        const auto output = net.forward(inputs_train).toTensor();
+        log_prob = -50 * (y_train - output).pow(2).sum() - log_prob / 2;
+        return LogProbabilityGraph{log_prob, parameters(net)};
+    };
 
 
     return true;

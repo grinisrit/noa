@@ -27,7 +27,7 @@ inline const auto log_funnel = [](const Parameters &theta_) {
     return LogProbabilityGraph{log_prob, {theta}};
 };
 
-inline const auto conf = Configuration<float>{}
+inline const auto conf_funnel = Configuration<float>{}
         .set_max_flow_steps(1)
         .set_step_size(0.14f)
         .set_binding_const(10.f)

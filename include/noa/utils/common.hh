@@ -67,7 +67,7 @@ namespace noa::utils {
 
     inline TensorOpt load_tensor(const Path &path) {
         if (check_path_exists(path)) {
-            auto tensor = torch::Tensor{};
+            auto tensor = Tensor{};
             try {
                 torch::load(tensor, path);
             }
@@ -106,7 +106,7 @@ namespace noa::utils {
     }
 
     template<typename Dtype, typename Lambda>
-    inline void for_eachi(const Lambda &lambda, const torch::Tensor &result) {
+    inline void for_eachi(const Lambda &lambda, const Tensor &result) {
         Dtype *pres = result.data_ptr<Dtype>();
         const int64_t n = result.numel();
         for (int64_t i = 0; i < n; i++)
@@ -114,7 +114,7 @@ namespace noa::utils {
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pfor_eachi(const Lambda &lambda, const torch::Tensor &result) {
+    inline void pfor_eachi(const Lambda &lambda, const Tensor &result) {
         Dtype *pres = result.data_ptr<Dtype>();
         const int64_t n = result.numel();
 #pragma omp parallel for default(none) shared(n, lambda, pres)
@@ -123,72 +123,72 @@ namespace noa::utils {
     }
 
     template<typename Dtype, typename Lambda>
-    inline void for_each(const Lambda &lambda, const torch::Tensor &result) {
+    inline void for_each(const Lambda &lambda, const Tensor &result) {
         for_eachi<Dtype>([&lambda](const int64_t, Dtype &k) { lambda(k); }, result);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pfor_each(const Lambda &lambda, const torch::Tensor &result) {
+    inline void pfor_each(const Lambda &lambda, const Tensor &result) {
         pfor_eachi<Dtype>([&lambda](const int64_t, Dtype &k) { lambda(k); }, result);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void vmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+    inline void vmapi(const Tensor &values, const Lambda &lambda, const Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         for_eachi<Dtype>([&lambda, &pvals](const int64_t i, Dtype &k) { k = lambda(i, pvals[i]); }, result);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pvmapi(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+    inline void pvmapi(const Tensor &values, const Lambda &lambda, const Tensor &result) {
         const Dtype *pvals = values.data_ptr<Dtype>();
         pfor_eachi<Dtype>([&lambda, &pvals](const int64_t i, Dtype &k) { k = lambda(i, pvals[i]); }, result);
     }
 
 
     template<typename Dtype, typename Lambda>
-    inline void vmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+    inline void vmap(const Tensor &values, const Lambda &lambda, const Tensor &result) {
         vmapi<Dtype>(values,
                      [&lambda](const int64_t, const Dtype &k) { return lambda(k); },
                      result);
     }
 
     template<typename Dtype, typename Lambda>
-    inline void pvmap(const torch::Tensor &values, const Lambda &lambda, const torch::Tensor &result) {
+    inline void pvmap(const Tensor &values, const Lambda &lambda, const Tensor &result) {
         pvmapi<Dtype>(values,
                       [&lambda](const int64_t, const Dtype &k) { return lambda(k); },
                       result);
     }
 
     template<typename Dtype, typename Lambda>
-    inline torch::Tensor vmapi(const torch::Tensor &values, const Lambda &lambda) {
+    inline Tensor vmapi(const Tensor &values, const Lambda &lambda) {
         const auto result = torch::zeros_like(values);
         vmapi<Dtype>(values, lambda, result);
         return result;
     }
 
     template<typename Dtype, typename Lambda>
-    inline torch::Tensor pvmapi(const torch::Tensor &values, const Lambda &lambda) {
+    inline Tensor pvmapi(const Tensor &values, const Lambda &lambda) {
         const auto result = torch::zeros_like(values);
         pvmapi<Dtype>(values, lambda, result);
         return result;
     }
 
     template<typename Dtype, typename Lambda>
-    inline torch::Tensor vmap(const torch::Tensor &values, const Lambda &lambda) {
+    inline Tensor vmap(const Tensor &values, const Lambda &lambda) {
         const auto result = torch::zeros_like(values);
         vmap<Dtype>(values, lambda, result);
         return result;
     }
 
     template<typename Dtype, typename Lambda>
-    inline torch::Tensor pvmap(const torch::Tensor &values, const Lambda &lambda) {
+    inline Tensor pvmap(const Tensor &values, const Lambda &lambda) {
         const auto result = torch::zeros_like(values);
         pvmap<Dtype>(values, lambda, result);
         return result;
     }
 
-    inline torch::Tensor relative_error(const torch::Tensor &computed, const torch::Tensor &expected) {
-        auto res = torch::Tensor{};
+    inline Tensor relative_error(const Tensor &computed, const Tensor &expected) {
+        auto res = Tensor{};
         AT_DISPATCH_FLOATING_TYPES(computed.scalar_type(), "relative_error", [&] {
             res = torch::abs(
                     (computed - expected) / (computed + std::numeric_limits<scalar_t>::min()))
@@ -198,13 +198,13 @@ namespace noa::utils {
         return res;
     }
 
-    inline torch::Tensor mean_error(const torch::Tensor &computed, const torch::Tensor &expected) {
+    inline Tensor mean_error(const Tensor &computed, const Tensor &expected) {
         return torch::abs(computed - expected).mean();
     }
 
     template<typename Net>
-    inline std::vector<torch::Tensor> parameters(const Net &net) {
-        auto res = std::vector<torch::Tensor>{};
+    inline Tensors parameters(const Net &net) {
+        auto res = std::vector<Tensor>{};
         for (const auto &params : net.parameters())
             res.push_back(params);
         return res;

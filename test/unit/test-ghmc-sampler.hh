@@ -34,7 +34,7 @@ inline void test_funnel_hessian(torch::DeviceType device = torch::kCPU) {
 inline MetricDecompositionOpt get_softabs_metric(const torch::Tensor &theta_, torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
     const auto log_prob_graph = log_funnel(Parameters{theta_.to(device, false, true)});
-    return softabs_metric(conf)(log_prob_graph);
+    return softabs_metric(conf_funnel)(log_prob_graph);
 }
 
 inline void test_softabs_metric(torch::DeviceType device = torch::kCPU) {
@@ -60,7 +60,7 @@ inline PhaseSpaceFoliationOpt get_hamiltonian(
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    return hamiltonian(log_funnel, conf)(Parameters{theta_.to(device, false, true)},
+    return hamiltonian(log_funnel, conf_funnel)(Parameters{theta_.to(device, false, true)},
                                          Momentum{momentum_.to(device, false, true)});
 }
 
@@ -79,7 +79,7 @@ inline HamiltonianFlow get_hamiltonian_flow(
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    return hamiltonian_flow(log_funnel, conf)(Parameters{theta_.to(device, false, true)},
+    return hamiltonian_flow(log_funnel, conf_funnel)(Parameters{theta_.to(device, false, true)},
                                               Momentum{momentum_.to(device, false, true)});
 }
 
