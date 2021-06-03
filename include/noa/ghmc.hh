@@ -139,12 +139,28 @@ namespace noa::ghmc {
 
             for (const auto &hess : hess_.value()) {
                 const auto n = hess.size(0);
-                auto[eigs, Q] = torch::symeig(
+                const auto[eigs, Q] = torch::symeig(
                         -hess + conf.jitter * torch::eye(n, hess.options()) * torch::rand(n, hess.options()),
                         true);
-                eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, hess.options()));
 
-                spectrum.push_back(torch::abs((1 / torch::tanh(conf.softabs_const * eigs)) * eigs));
+                const Tensor check_Q = Q.detach().sum();
+                if(torch::isnan(check_Q).item<bool>() || torch::isinf(check_Q).item<bool>()){
+                    std::cerr << "GHMC: failed to compute local rotation matrix for log probability\n"
+                              << std::get<LogProbability>(log_prob_graph) << "\n";
+                    return MetricDecompositionOpt{};
+                }
+
+                const auto reg_eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, hess.options()));
+                const auto softabs = torch::abs((1 / torch::tanh(conf.softabs_const * reg_eigs)) * reg_eigs);
+
+                const Tensor check_softabs= softabs.detach().sum();
+                if(torch::isnan(check_softabs).item<bool>() || torch::isinf(check_softabs).item<bool>()){
+                    std::cerr << "GHMC: failed to compute SoftAbs map for log probability\n"
+                              << std::get<LogProbability>(log_prob_graph) << "\n";
+                    return MetricDecompositionOpt{};
+                }
+
+                spectrum.push_back(softabs);
                 rotation.push_back(Q);
             }
             return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
@@ -398,7 +414,7 @@ namespace noa::ghmc {
                 energy_level.push_back(std::get<Energy>(foliation.value()).detach());
 
                 if (iter_step < conf.max_flow_steps - 1) {
-                    const auto rho = -torch::relu(energy_level.at(iter_step + 1) - energy_level.at(0));
+                    const auto rho = -torch::relu(energy_level.back() - energy_level.front());
                     if ((rho >= torch::log(torch::rand_like(rho))).item<bool>())
                         for(uint32_t i = 0; i < nparam; i++){
                             params_copy.at(i) = params_copy.at(i) + std::get<1>(dynamics.value()).at(i) * delta;

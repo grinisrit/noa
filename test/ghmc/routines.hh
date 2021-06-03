@@ -22,12 +22,12 @@ inline void save_result(const Tensor &sample, const Path &save_result_to) {
 
 inline Status sample_normal_distribution(const Path &save_result_to,
                                          torch::DeviceType device = torch::kCPU) {
-    //torch::manual_seed(SEED);
+    torch::manual_seed(SEED);
 
     // Sample from the 3 dimensional Gaussian distribution
     // HMC requires the log density up to additive constants
-    const auto mean = torch::tensor({0., 10., 5.}, torch::device(device));
-    const auto sigma = torch::tensor({.5, 1., 2.}, torch::device(device));
+    const auto mean = torch::tensor({0.f, 10.f, 5.f}, torch::device(device));
+    const auto sigma = torch::tensor({.5f, 1.f, 2.f}, torch::device(device));
 
     const auto log_prob_normal = [&mean, &sigma](const Parameters &theta_) {
         const auto theta = theta_.at(0).detach().requires_grad_(true);
@@ -47,8 +47,8 @@ inline Status sample_normal_distribution(const Path &save_result_to,
     const auto normal_sampler = sampler(
             log_prob_normal,
             Configuration<float>{}
-                    .set_max_flow_steps(5)
-                    .set_step_size(0.3).set_verbosity(true));
+                    .set_max_flow_steps(10)
+                    .set_step_size(0.05).set_verbosity(true));
 
     // Run sampler
     const auto begin = steady_clock::now();
