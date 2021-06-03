@@ -142,10 +142,8 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
     const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
 
-    /*
     auto loss_fn = torch::nn::MSELoss{};
     auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
-
 
 
     auto preds = Tensors{};
@@ -165,7 +163,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     std::cout << " Initial MSE loss:\n" << loss_fn(preds.front(), y_val) << "\n"
               << " Optimal MSE loss:\n" << loss_fn(preds.back(), y_val) << "\n";
-    */
+
 
     const auto log_prob_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
@@ -181,18 +179,33 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     };
 
     const auto conf_bnet = Configuration<float>{}
-            .set_max_flow_steps(2)
-            .set_jitter(0.001f)
-            .set_step_size(0.005f)
+            .set_max_flow_steps(10)
+            .set_jitter(0.01f)
+            .set_step_size(0.001f)
+            .set_binding_const(10.f)
             .set_verbosity(true);
 
     const auto bnet_sampler = sampler(log_prob_bnet, conf_bnet);
-    //const auto samples = bnet_sampler(params_init, 1);
 
-    const auto lg = log_prob_bnet(params_init);
-    const auto hess = numerics::hessian(lg);
-    std::cout << hess.value().at(0) << "\n";
+    // Run sampler
+    const auto begin = steady_clock::now();
+    const auto samples = bnet_sampler(params_init, 0);
+    const auto end = steady_clock::now();
+    std::cout << "GHMC: sampler took " << duration_cast<microseconds>(end - begin).count() / 1E+6
+              << " seconds" << std::endl;
+    if (samples.size() <= 1) {
+        std::cerr << "Sampler failed\n";
+        return false;
+    }
 
+    const auto result = stack(samples);
+    save_result(result, save_result_to);
+    //const auto result = load_tensor(save_result_to).value();
+
+    set_flat_parameters(net, result.slice(0, result.size(0) / 5).mean(0));
+    const auto posterior_pred = net.forward(inputs_val).toTensor();
+
+    std::cout << " Posterior MSE loss:\n" << loss_fn(posterior_pred, y_val) << "\n";
 
     return true;
 }

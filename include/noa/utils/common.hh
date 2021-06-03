@@ -237,6 +237,24 @@ namespace noa::utils {
         return torch::stack(result);
     }
 
+    template <typename Net>
+    inline bool set_flat_parameters(Net &net, const Tensor &parameters)
+    {
+        if (parameters.dim() > 1)
+        {
+            std::cerr << "Invalid arguments to noa::utils::set_flat_parameters : "
+                      << "expecting 1D parameters\n";
+            return false;
+        }
+        int64_t i = 0;
+        for (const auto &param : net.parameters())
+        {
+            const auto i0 = i;
+            i += param.numel();
+            param.set_data(parameters.slice(0, i0, i).view_as(param));
+        }
+        return true;
+    }
 
 
 } // namespace noa::utils
