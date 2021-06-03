@@ -143,7 +143,7 @@ namespace noa::ghmc {
                         -hess + conf.jitter * torch::eye(n, hess.options()) * torch::rand(n, hess.options()),
                         true);
 
-                const Tensor check_Q = Q.detach().sum();
+                const utils::Tensor check_Q = Q.detach().sum();
                 if(torch::isnan(check_Q).item<bool>() || torch::isinf(check_Q).item<bool>()){
                     std::cerr << "GHMC: failed to compute local rotation matrix for log probability\n"
                               << std::get<LogProbability>(log_prob_graph) << "\n";
@@ -153,7 +153,7 @@ namespace noa::ghmc {
                 const auto reg_eigs = torch::where(eigs.abs() >= conf.cutoff, eigs, torch::tensor(conf.cutoff, hess.options()));
                 const auto softabs = torch::abs((1 / torch::tanh(conf.softabs_const * reg_eigs)) * reg_eigs);
 
-                const Tensor check_softabs= softabs.detach().sum();
+                const utils::Tensor check_softabs = softabs.detach().sum();
                 if(torch::isnan(check_softabs).item<bool>() || torch::isinf(check_softabs).item<bool>()){
                     std::cerr << "GHMC: failed to compute SoftAbs map for log probability\n"
                               << std::get<LogProbability>(log_prob_graph) << "\n";
