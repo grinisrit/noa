@@ -143,23 +143,6 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
 
     auto loss_fn = torch::nn::MSELoss{};
-    auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
-
-
-    auto adam_preds = Tensors{};
-    adam_preds.reserve(n_epochs);
-
-    std::cout << " Running Adam gradient descent optimisation ...\n";
-    for (uint32_t i = 0; i < n_epochs; i++) {
-
-        optimizer.zero_grad();
-        const auto output = net.forward(inputs_train).toTensor();
-        const auto loss = loss_fn(output, y_train);
-        loss.backward();
-        optimizer.step();
-
-        adam_preds.push_back(net.forward(inputs_val).toTensor().detach());
-    }
 
     const auto log_prob_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
@@ -211,6 +194,22 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto bayes_preds = torch::stack(bayes_preds_);
     const auto bayes_mean_pred = bayes_preds.mean(0);
     const auto bayes_std_pred = bayes_preds.std(0);
+
+    auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
+    auto adam_preds = Tensors{};
+    adam_preds.reserve(n_epochs);
+
+    std::cout << " Running Adam gradient descent optimisation ...\n";
+    for (uint32_t i = 0; i < n_epochs; i++) {
+
+        optimizer.zero_grad();
+        const auto output = net.forward(inputs_train).toTensor();
+        const auto loss = loss_fn(output, y_train);
+        loss.backward();
+        optimizer.step();
+
+        adam_preds.push_back(net.forward(inputs_val).toTensor().detach());
+    }
 
     std::cout << " Initial MSE loss:\n" << loss_fn(adam_preds.front(), y_val) << "\n"
               << " Optimal MSE loss:\n" << loss_fn(adam_preds.back(), y_val) << "\n"
