@@ -146,8 +146,8 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
 
 
-    auto preds = Tensors{};
-    preds.reserve(n_epochs);
+    auto adam_preds = Tensors{};
+    adam_preds.reserve(n_epochs);
 
     std::cout << " Running Adam gradient descent optimisation ...\n";
     for (uint32_t i = 0; i < n_epochs; i++) {
@@ -158,12 +158,8 @@ inline Status sample_bayesian_net(const Path &save_result_to,
         loss.backward();
         optimizer.step();
 
-        preds.push_back(net.forward(inputs_val).toTensor().detach());
+        adam_preds.push_back(net.forward(inputs_val).toTensor().detach());
     }
-
-    std::cout << " Initial MSE loss:\n" << loss_fn(preds.front(), y_val) << "\n"
-              << " Optimal MSE loss:\n" << loss_fn(preds.back(), y_val) << "\n";
-
 
     const auto log_prob_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
@@ -189,7 +185,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     // Run sampler
     const auto begin = steady_clock::now();
-    const auto samples = bnet_sampler(params_init, 0);
+    const auto samples = bnet_sampler(params_init, 50);
     const auto end = steady_clock::now();
     std::cout << "GHMC: sampler took " << duration_cast<microseconds>(end - begin).count() / 1E+6
               << " seconds" << std::endl;
@@ -201,10 +197,29 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto result = stack(samples);
     save_result(result, save_result_to);
 
-    set_flat_parameters(net, result.slice(0, result.size(0) / 5).mean(0));
-    const auto posterior_pred = net.forward(inputs_val).toTensor();
+    const auto stationary_sample = result.slice(0, result.size(0) / 10);
 
-    std::cout << " Posterior MSE loss:\n" << loss_fn(posterior_pred, y_val) << "\n";
+    set_flat_parameters(net, stationary_sample.mean(0));
+    const auto posterior_mean_pred = net.forward(inputs_val).toTensor();
+
+    auto bayes_preds_ = Tensors{};
+    bayes_preds_.reserve(stationary_sample.size(0));
+    for (uint32_t i = 0; i < stationary_sample.size(0); i++) {
+        set_flat_parameters(net, stationary_sample[i]);
+        bayes_preds_.push_back(net.forward(inputs_val).toTensor());
+    }
+    const auto bayes_preds = torch::stack(bayes_preds_);
+    const auto bayes_mean_pred = bayes_preds.mean(0);
+    const auto bayes_std_pred = bayes_preds.std(0);
+
+    std::cout << " Initial MSE loss:\n" << loss_fn(adam_preds.front(), y_val) << "\n"
+              << " Optimal MSE loss:\n" << loss_fn(adam_preds.back(), y_val) << "\n"
+              << " Posterior mean MSE loss:\n" << loss_fn(posterior_mean_pred, y_val) << "\n"
+              << " Bayes prediction mean MSE loss:\n" << loss_fn(bayes_mean_pred, y_val) << "\n"
+              << " Bayes prediction +/- std MSE loss:\n"
+              << torch::stack({loss_fn(bayes_mean_pred + bayes_std_pred, y_val),
+                               loss_fn(bayes_mean_pred - bayes_std_pred, y_val)}).view({1,2})
+              << "\n";
 
     return true;
 }
