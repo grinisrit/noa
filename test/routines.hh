@@ -136,13 +136,12 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto y_train = torch::sin(x_train) + 0.1f * torch::randn_like(x_train);
 
     auto &net = module.value();
+    net.train(true);
     net.to(device);
 
     const auto params_init = parameters(net);
     const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
     const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
-
-    auto loss_fn = torch::nn::MSELoss{};
 
     const auto log_prob_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
@@ -195,6 +194,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto bayes_mean_pred = bayes_preds.mean(0);
     const auto bayes_std_pred = bayes_preds.std(0);
 
+    auto loss_fn = torch::nn::MSELoss{};
     auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
     auto adam_preds = Tensors{};
     adam_preds.reserve(n_epochs);

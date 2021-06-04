@@ -210,6 +210,33 @@ namespace noa::utils {
         return res;
     }
 
+    template<typename Net>
+    inline Tensor flat_parameters(const Net &net) {
+        auto res = std::vector<Tensor>{};
+        for (const auto &params : net.parameters())
+            res.push_back(params.detach().flatten());
+        return torch::cat(res);
+    }
+
+    template <typename Net>
+    inline bool set_flat_parameters(Net &net, const Tensor &parameters)
+    {
+        if (parameters.dim() > 1)
+        {
+            std::cerr << "Invalid arguments to noa::utils::set_flat_parameters : "
+                      << "expecting 1D parameters\n";
+            return false;
+        }
+        int64_t i = 0;
+        for (const auto &param : net.parameters())
+        {
+            const auto i0 = i;
+            i += param.numel();
+            param.set_data(parameters.slice(0, i0, i).view_as(param));
+        }
+        return true;
+    }
+
     inline ScriptModuleOpt load_module(const Path &jit_module_pt){
         if (check_path_exists(jit_module_pt)) {
             try {
@@ -236,25 +263,5 @@ namespace noa::utils {
         }
         return torch::stack(result);
     }
-
-    template <typename Net>
-    inline bool set_flat_parameters(Net &net, const Tensor &parameters)
-    {
-        if (parameters.dim() > 1)
-        {
-            std::cerr << "Invalid arguments to noa::utils::set_flat_parameters : "
-                      << "expecting 1D parameters\n";
-            return false;
-        }
-        int64_t i = 0;
-        for (const auto &param : net.parameters())
-        {
-            const auto i0 = i;
-            i += param.numel();
-            param.set_data(parameters.slice(0, i0, i).view_as(param));
-        }
-        return true;
-    }
-
 
 } // namespace noa::utils
