@@ -136,8 +136,8 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto y_train = torch::sin(x_train) + 0.1f * torch::randn_like(x_train);
 
     auto &net = module.value();
-    net.train();
     net.to(device);
+
     const auto params_init = parameters(net);
     const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
     const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
@@ -185,7 +185,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     // Run sampler
     const auto begin = steady_clock::now();
-    const auto samples = bnet_sampler(params_init, 50);
+    const auto samples = bnet_sampler(params_init, 20);
     const auto end = steady_clock::now();
     std::cout << "GHMC: sampler took " << duration_cast<microseconds>(end - begin).count() / 1E+6
               << " seconds" << std::endl;
@@ -200,13 +200,13 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto stationary_sample = result.slice(0, result.size(0) / 10);
 
     set_flat_parameters(net, stationary_sample.mean(0));
-    const auto posterior_mean_pred = net.forward(inputs_val).toTensor();
+    const auto posterior_mean_pred = net.forward(inputs_val).toTensor().detach();
 
     auto bayes_preds_ = Tensors{};
     bayes_preds_.reserve(stationary_sample.size(0));
     for (uint32_t i = 0; i < stationary_sample.size(0); i++) {
         set_flat_parameters(net, stationary_sample[i]);
-        bayes_preds_.push_back(net.forward(inputs_val).toTensor());
+        bayes_preds_.push_back(net.forward(inputs_val).toTensor().detach());
     }
     const auto bayes_preds = torch::stack(bayes_preds_);
     const auto bayes_mean_pred = bayes_preds.mean(0);
