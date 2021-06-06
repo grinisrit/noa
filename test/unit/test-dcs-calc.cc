@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 using namespace noa::pms;
+using namespace noa::utils;
 
 TEST(DCS, Bremsstrahlung) {
     auto kinetic_energies = DCSData::get_kinetic_energies();
