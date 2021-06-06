@@ -1,6 +1,5 @@
 #include <noa/pms/kernels.cuh>
 #include <noa/pms/constants.hh>
-#include <noa/utils/common.hh>
 
 #include <torch/extension.h>
 
