@@ -24,7 +24,6 @@ inline torch::Tensor rot(const torch::Tensor &theta){
     const auto n = theta.numel();
     const auto c = torch::cos(theta);
     const auto s = torch::sin(theta);
-    std::cout << torch::stack({c,-s, s, c}) << "\n";
     return torch::stack({c,-s, s, c}).t().view({n,2,2});
 }
 
