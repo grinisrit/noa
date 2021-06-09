@@ -28,7 +28,7 @@ inline torch::Tensor rot(const torch::Tensor &theta){
 }
 
 inline torch::Tensor mix_density(const torch::Tensor &states, const torch::Tensor &node){
-    return torch::exp(-(states - node.slice(0,0,2)).pow(2).sum(1) / node[2].abs());
+    return torch::exp(-(states - node.slice(0,0,2)).pow(2).sum(-1) / node[2].abs());
 }
 
 
