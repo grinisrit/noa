@@ -50,7 +50,7 @@ inline Status sample_normal_distribution(const Path &save_result_to,
     const auto conf = Configuration<float>{}
             .set_max_flow_steps(5)
             .set_step_size(0.3f).set_verbosity(true);
-    const auto ham_dym = explicit_dynamics(log_prob_normal, conf);
+    const auto ham_dym = riemannian_dynamics(log_prob_normal, softabs_metric(conf), conf);
     const auto normal_sampler = sampler(ham_dym, full_trajectory, conf);
 
     // Run sampler
@@ -94,7 +94,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
             .set_jitter(0.001f)
             .set_step_size(0.14f)
             .set_binding_const(10.f).set_verbosity(true);
-    const auto ham_dym = explicit_dynamics(log_funnel, conf);
+    const auto ham_dym = riemannian_dynamics(log_funnel,  softabs_metric(conf), conf);
     const auto funnel_sampler = sampler(ham_dym, full_trajectory, conf);
 
     // Run sampler

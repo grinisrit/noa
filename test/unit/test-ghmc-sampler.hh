@@ -81,10 +81,10 @@ inline HamiltonianFlow get_hamiltonian_flow(
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    return non_separable_dynamics(
-            hamiltonian(log_funnel,
-                        softabs_metric(conf_funnel),
-                        conf_funnel), conf_funnel)(
+    return riemannian_dynamics(
+            log_funnel,
+            softabs_metric(conf_funnel),
+            conf_funnel)(
             Parameters{theta_.to(device, false, true)},
             Momentum{momentum_.to(device, false, true)});
 }
