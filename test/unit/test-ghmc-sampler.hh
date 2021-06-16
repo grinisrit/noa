@@ -60,8 +60,10 @@ inline PhaseSpaceFoliationOpt get_hamiltonian(
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    return hamiltonian(log_funnel, conf_funnel)(Parameters{theta_.to(device, false, true)},
-                                         Momentum{momentum_.to(device, false, true)});
+    return hamiltonian(log_funnel,
+                       softabs_metric(conf_funnel),
+                       conf_funnel)(Parameters{theta_.to(device, false, true)},
+                                    Momentum{momentum_.to(device, false, true)});
 }
 
 inline void test_hamiltonian(torch::DeviceType device = torch::kCPU) {
@@ -79,8 +81,12 @@ inline HamiltonianFlow get_hamiltonian_flow(
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    return hamiltonian_flow(log_funnel, conf_funnel)(Parameters{theta_.to(device, false, true)},
-                                              Momentum{momentum_.to(device, false, true)});
+    return non_separable_dynamics(
+            hamiltonian(log_funnel,
+                        softabs_metric(conf_funnel),
+                        conf_funnel), conf_funnel)(
+            Parameters{theta_.to(device, false, true)},
+            Momentum{momentum_.to(device, false, true)});
 }
 
 inline void test_hamiltonian_flow(torch::DeviceType device = torch::kCPU) {

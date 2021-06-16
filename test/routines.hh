@@ -47,11 +47,11 @@ inline Status sample_normal_distribution(const Path &save_result_to,
     const auto params_init = Parameters{torch::zeros(3, torch::device(device))};
 
     // Create sampler
-    const auto normal_sampler = sampler(
-            log_prob_normal,
-            Configuration<float>{}
-                    .set_max_flow_steps(5)
-                    .set_step_size(0.3f).set_verbosity(true));
+    const auto conf = Configuration<float>{}
+            .set_max_flow_steps(5)
+            .set_step_size(0.3f).set_verbosity(true);
+    const auto ham_dym = explicit_dynamics(log_prob_normal, conf);
+    const auto normal_sampler = sampler(ham_dym, full_trajectory, conf);
 
     // Run sampler
     const auto begin = steady_clock::now();
@@ -89,13 +89,13 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
     params_init[0] = 0.;
 
     // Create sampler
-    const auto funnel_sampler = ghmc::sampler(
-            log_funnel,
-            Configuration<float>{}
-                    .set_max_flow_steps(25)
-                    .set_jitter(0.001f)
-                    .set_step_size(0.14f)
-                    .set_binding_const(10.f).set_verbosity(true));
+    const auto conf = Configuration<float>{}
+            .set_max_flow_steps(25)
+            .set_jitter(0.001f)
+            .set_step_size(0.14f)
+            .set_binding_const(10.f).set_verbosity(true);
+    const auto ham_dym = explicit_dynamics(log_funnel, conf);
+    const auto funnel_sampler = sampler(ham_dym, full_trajectory, conf);
 
     // Run sampler
     const auto begin = steady_clock::now();
@@ -120,7 +120,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     torch::manual_seed(SEED);
 
     std::cout << "Bayesian Deep Learning regression example:\n";
-
+/*
     auto module = load_module(jit_net_pt);
     if (!module.has_value())
         return false;
@@ -217,6 +217,6 @@ inline Status sample_bayesian_net(const Path &save_result_to,
               << torch::stack({loss_fn(bayes_mean_pred + bayes_std_pred, y_val),
                                loss_fn(bayes_mean_pred - bayes_std_pred, y_val)}).view({1,2})
               << "\n";
-
+*/
     return true;
 }

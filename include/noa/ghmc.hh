@@ -62,7 +62,6 @@ namespace noa::ghmc {
     using Samples = std::vector<Parameters>;
 
 
-
     template<typename Dtype>
     struct Configuration {
         uint32_t max_flow_steps = 3;
@@ -157,9 +156,11 @@ namespace noa::ghmc {
         };
     }
 
-    template<typename LogProbabilityDensity, typename Configurations>
-    inline auto hamiltonian(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
-        const auto local_metric = softabs_metric(conf);
+    template<typename LogProbabilityDensity, typename LocalMetric, typename Configurations>
+    inline auto hamiltonian(
+            const LogProbabilityDensity &log_prob_density,
+            const LocalMetric &local_metric,
+            const Configurations &conf) {
         return [log_prob_density, local_metric, conf](
                 const Parameters &parameters,
                 const MomentumOpt &momentum_ = std::nullopt) {
@@ -273,9 +274,10 @@ namespace noa::ghmc {
     }
 
 
-    template<typename LogProbabilityDensity, typename Configurations>
-    inline auto hamiltonian_flow(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
-        const auto ham = hamiltonian(log_prob_density, conf);
+    template<typename Hamiltonian, typename Configurations>
+    inline auto non_separable_dynamics(
+            const Hamiltonian &ham,
+            const Configurations &conf) {
         const auto ham_grad = hamiltonian_gradient(conf);
         const auto theta = 2 * conf.binding_const * conf.step_size;
         const auto rot = std::make_tuple(cos(theta), sin(theta));
@@ -425,9 +427,30 @@ namespace noa::ghmc {
 
 
     template<typename LogProbabilityDensity, typename Configurations>
-    inline auto sampler(const LogProbabilityDensity &log_prob_density, const Configurations &conf) {
-        const auto ham_flow = hamiltonian_flow(log_prob_density, conf);
-        return [ham_flow, conf](const Parameters &initial_parameters, const uint32_t num_iterations) {
+    inline auto explicit_dynamics(
+            const LogProbabilityDensity &log_prob_density,
+            const Configurations &conf) {
+        return non_separable_dynamics(
+                hamiltonian(log_prob_density, softabs_metric(conf), conf), conf);
+    }
+
+    inline const auto full_trajectory = [](const HamiltonianFlow &hamiltonian_flow) {
+        return std::get<0>(hamiltonian_flow);
+    };
+
+    inline const auto take_last = [](const HamiltonianFlow &hamiltonian_flow) {
+        const auto flow = std::get<0>(hamiltonian_flow);
+        return ParametersFlow{flow.front(), flow.back()};
+    };
+
+    template<typename HamiltonianDynamics, typename TrajectorySampling, typename Configurations>
+    inline auto sampler(
+            const HamiltonianDynamics &hamiltonian_dynamics,
+            const TrajectorySampling &trajectory_sampling,
+            const Configurations &conf) {
+        return [hamiltonian_dynamics,
+                trajectory_sampling,
+                conf](const Parameters &initial_parameters, const uint32_t num_iterations) {
             const auto max_num_samples = conf.max_flow_steps * num_iterations;
 
             auto samples = Samples{};
@@ -448,8 +471,8 @@ namespace noa::ghmc {
             uint32_t iter = 0;
 
             while (iter < num_iterations) {
-                auto flow = ham_flow(samples.back());
-                const auto &params_flow = std::get<0>(flow);
+                auto flow = hamiltonian_dynamics(samples.back());
+                const auto &params_flow = trajectory_sampling(flow);
                 if (params_flow.size() > 1)
                     samples.insert(samples.end(), params_flow.begin() + 1, params_flow.end());
                 iter++;
