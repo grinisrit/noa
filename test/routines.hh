@@ -136,14 +136,12 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto y_train = torch::sin(x_train) + 0.1f * torch::randn_like(x_train);
 
     auto &net = module.value();
-    net.train(true);
+    net.train();
     net.to(device);
 
     const auto params_init = parameters(net);
-    const auto inputs_val = std::vector<torch::jit::IValue>{x_val};
-    const auto inputs_train = std::vector<torch::jit::IValue>{x_train};
 
-    const auto log_prob_bnet = [&net, &inputs_train, &y_train](const Parameters &theta) {
+    const auto log_prob_bnet = [&net, &x_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
         auto log_prob = torch::tensor(0, y_train.options());
         for (const auto &param: net.parameters()) {
@@ -151,7 +149,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
             log_prob += param.pow(2).sum();
             i++;
         }
-        const auto output = net.forward(inputs_train).toTensor();
+        const auto output = net({x_train}).toTensor();
         log_prob = -50 * (y_train - output).pow(2).sum() - log_prob / 2;
         return LogProbabilityGraph{log_prob, parameters(net)};
     };
@@ -167,7 +165,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     // Run sampler
     const auto begin = steady_clock::now();
-    const auto samples = bnet_sampler(params_init, 20);
+    const auto samples = bnet_sampler(params_init, 2);
     const auto end = steady_clock::now();
     std::cout << "GHMC: sampler took " << duration_cast<microseconds>(end - begin).count() / 1E+6
               << " seconds" << std::endl;
@@ -182,13 +180,13 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto stationary_sample = result.slice(0, result.size(0) / 10);
 
     set_flat_parameters(net, stationary_sample.mean(0));
-    const auto posterior_mean_pred = net.forward(inputs_val).toTensor().detach();
+    const auto posterior_mean_pred = net({x_val}).toTensor().detach();
 
     auto bayes_preds_ = Tensors{};
     bayes_preds_.reserve(stationary_sample.size(0));
     for (uint32_t i = 0; i < stationary_sample.size(0); i++) {
         set_flat_parameters(net, stationary_sample[i]);
-        bayes_preds_.push_back(net.forward(inputs_val).toTensor().detach());
+        bayes_preds_.push_back(net({x_val}).toTensor().detach());
     }
     const auto bayes_preds = torch::stack(bayes_preds_);
     const auto bayes_mean_pred = bayes_preds.mean(0);
@@ -203,12 +201,12 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     for (uint32_t i = 0; i < n_epochs; i++) {
 
         optimizer.zero_grad();
-        const auto output = net.forward(inputs_train).toTensor();
+        const auto output = net({x_train}).toTensor();
         const auto loss = loss_fn(output, y_train);
         loss.backward();
         optimizer.step();
 
-        adam_preds.push_back(net.forward(inputs_val).toTensor().detach());
+        adam_preds.push_back(net({x_val}).toTensor().detach());
     }
 
     std::cout << " Initial MSE loss:\n" << loss_fn(adam_preds.front(), y_val) << "\n"

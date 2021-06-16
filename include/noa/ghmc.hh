@@ -61,17 +61,6 @@ namespace noa::ghmc {
     using HamiltonianGradientOpt = std::optional<HamiltonianGradient>;
     using Samples = std::vector<Parameters>;
 
-    //////////////////////
-    using MomentumRef = torch::Tensor;
-    using SafeResult = std::optional<torch::Tensor>;
-    using SampleResult = std::optional<std::tuple<double, torch::Tensor>>;
-    using Params = torch::Tensor;
-    using LogProb = torch::Tensor;
-    using FisherInfo = std::optional<torch::Tensor>;
-    using SoftAbsMap = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
-    using HamiltonianRef = std::optional<std::tuple<torch::Tensor, std::optional<MomentumRef>>>;
-    using SymplecticFlow = std::optional<std::tuple<torch::Tensor, torch::Tensor>>;
-    ///////////////////////
 
 
     template<typename Dtype>
