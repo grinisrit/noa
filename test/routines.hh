@@ -139,7 +139,8 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     net.train();
     net.to(device);
 
-    const auto params_init = parameters(net);
+    const auto params_init = flat_parameters(net);
+    const auto net_params = parameters(net);
 
     const auto log_prob_bnet = [&net, &x_train, &y_train](const Parameters &theta) {
         uint32_t i = 0;
@@ -155,15 +156,17 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     };
 
     const auto conf_bnet = Configuration<float>{}
-            .set_max_flow_steps(2) //20
-            .set_step_size(0.00512f)
+            .set_max_flow_steps(25)
+            .set_step_size(0.001f)
             .set_verbosity(true);
 
-    /*const auto bnet_sampler = sampler(log_prob_bnet, conf_bnet);
+    const auto ham_dym = euclidean_dynamics(
+            log_prob_bnet, identity_metric(net_params), metropolis_criterion, conf_bnet);
+    const auto bnet_sampler = sampler(ham_dym, end_of_trajectory, conf_bnet);
 
     // Run sampler
     const auto begin = steady_clock::now();
-    const auto samples = bnet_sampler(params_init, 2);
+    const auto samples = bnet_sampler(net_params, 300);
     const auto end = steady_clock::now();
     std::cout << "GHMC: sampler took " << duration_cast<microseconds>(end - begin).count() / 1E+6
               << " seconds" << std::endl;
@@ -180,7 +183,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     set_flat_parameters(net, stationary_sample.mean(0));
     const auto posterior_mean_pred = net({x_val}).toTensor().detach();
 
-    auto bayes_preds_ = Tensors{};
+    /*auto bayes_preds_ = Tensors{};
     bayes_preds_.reserve(stationary_sample.size(0));
     for (uint32_t i = 0; i < stationary_sample.size(0); i++) {
         set_flat_parameters(net, stationary_sample[i]);
@@ -188,12 +191,12 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     }
     const auto bayes_preds = torch::stack(bayes_preds_);
     const auto bayes_mean_pred = bayes_preds.mean(0);
-    const auto bayes_std_pred = bayes_preds.std(0);
+    const auto bayes_std_pred = bayes_preds.std(0);*/
 
+    set_flat_parameters(net, params_init);
     auto loss_fn = torch::nn::MSELoss{};
-    auto optimizer = torch::optim::Adam{params_init, torch::optim::AdamOptions(0.005)};
-    auto adam_preds = Tensors{};
-    adam_preds.reserve(n_epochs);
+    auto optimizer = torch::optim::Adam{net_params, torch::optim::AdamOptions(0.005)};
+    const auto initial_loss = loss_fn(net({x_val}).toTensor().detach(), y_val);
 
     std::cout << " Running Adam gradient descent optimisation ...\n";
     for (uint32_t i = 0; i < n_epochs; i++) {
@@ -203,18 +206,16 @@ inline Status sample_bayesian_net(const Path &save_result_to,
         const auto loss = loss_fn(output, y_train);
         loss.backward();
         optimizer.step();
-
-        adam_preds.push_back(net({x_val}).toTensor().detach());
     }
 
-    std::cout << " Initial MSE loss:\n" << loss_fn(adam_preds.front(), y_val) << "\n"
-              << " Optimal MSE loss:\n" << loss_fn(adam_preds.back(), y_val) << "\n"
+    std::cout << " Initial MSE loss:\n" << initial_loss << "\n"
+              << " Optimal MSE loss:\n" << loss_fn(net({x_val}).toTensor().detach(), y_val) << "\n"
               << " Posterior mean MSE loss:\n" << loss_fn(posterior_mean_pred, y_val) << "\n"
-              << " Bayes prediction mean MSE loss:\n" << loss_fn(bayes_mean_pred, y_val) << "\n"
+              /*<< " Bayes prediction mean MSE loss:\n" << loss_fn(bayes_mean_pred, y_val) << "\n"
               << " Bayes prediction +/- std MSE loss:\n"
               << torch::stack({loss_fn(bayes_mean_pred + bayes_std_pred, y_val),
-                               loss_fn(bayes_mean_pred - bayes_std_pred, y_val)}).view({1,2})
+                               loss_fn(bayes_mean_pred - bayes_std_pred, y_val)}).view({1,2})*/
               << "\n";
-*/
+
     return true;
 }

@@ -158,7 +158,7 @@ namespace noa::ghmc {
         };
     }
 
-    inline auto identity_metric(const Parameters &initial_parameters) {
+    inline MetricDecomposition identity_metric(const Parameters &initial_parameters) {
         const auto nparam = initial_parameters.size();
         auto spectrum = Spectrum{};
         spectrum.reserve(nparam);
@@ -169,7 +169,7 @@ namespace noa::ghmc {
             spectrum.push_back(torch::ones(n, param.options()));
             rotation.push_back(torch::eye(n, param.options()));
         }
-        return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
+        return MetricDecomposition{spectrum, rotation};
     }
 
     inline const auto max_steps_flow = [](const HamiltonianFlow &) { return false; };
@@ -216,8 +216,9 @@ namespace noa::ghmc {
                                   << log_prob << "\n";
                     return ParametersGradientOpt{};
                 }
-                return ParametersGradientOpt{params_grad};
             }
+
+            return ParametersGradientOpt{params_grad};
         };
     }
 
@@ -437,7 +438,7 @@ namespace noa::ghmc {
             }
 
             for (uint32_t i = 0; i < nparam; i++)
-                momentum.at(i) = momentum.at(i) + dynamics.at(i) * delta;
+                momentum.at(i) = momentum.at(i) + dynamics.value().at(i) * delta;
 
             for (iter_step = 0; iter_step < conf.max_flow_steps; iter_step++) {
 
@@ -453,7 +454,7 @@ namespace noa::ghmc {
                 }
 
                 for (uint32_t i = 0; i < nparam; i++)
-                    momentum.at(i) = momentum.at(i) + dynamics.at(i) * delta;
+                    momentum.at(i) = momentum.at(i) + dynamics.value().at(i) * delta;
 
                 energy = -std::get<LogProbability>(log_prob_graph.value()).detach();
                 for (uint32_t i = 0; i < nparam; i++) {
@@ -468,7 +469,7 @@ namespace noa::ghmc {
                 if (iter_step < conf.max_flow_steps - 1) {
                     if (stop_flow_criterion(flow))
                         for (uint32_t i = 0; i < nparam; i++)
-                            momentum.at(i) = momentum.at(i) + dynamics.at(i) * delta;
+                            momentum.at(i) = momentum.at(i) + dynamics.value().at(i) * delta;
                     else {
                         if (conf.verbose)
                             std::cout << "GHMC: rejecting sample at iteration "
