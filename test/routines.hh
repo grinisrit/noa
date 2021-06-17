@@ -50,7 +50,7 @@ inline Status sample_normal_distribution(const Path &save_result_to,
     const auto conf = Configuration<float>{}
             .set_max_flow_steps(5)
             .set_step_size(0.3f).set_verbosity(true);
-    const auto ham_dym = riemannian_dynamics(log_prob_normal, softabs_metric(conf), conf);
+    const auto ham_dym = riemannian_dynamics(log_prob_normal, softabs_metric(conf), metropolis_criterion, conf);
     const auto normal_sampler = sampler(ham_dym, full_trajectory, conf);
 
     // Run sampler
@@ -94,7 +94,7 @@ inline Status sample_funnel_distribution(const Path &save_result_to,
             .set_jitter(0.001f)
             .set_step_size(0.14f)
             .set_binding_const(10.f).set_verbosity(true);
-    const auto ham_dym = riemannian_dynamics(log_funnel,  softabs_metric(conf), conf);
+    const auto ham_dym = riemannian_dynamics(log_funnel,  softabs_metric(conf), metropolis_criterion, conf);
     const auto funnel_sampler = sampler(ham_dym, full_trajectory, conf);
 
     // Run sampler
@@ -120,7 +120,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     torch::manual_seed(SEED);
 
     std::cout << "Bayesian Deep Learning regression example:\n";
-/*
+
     auto module = load_module(jit_net_pt);
     if (!module.has_value())
         return false;
@@ -155,13 +155,11 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     };
 
     const auto conf_bnet = Configuration<float>{}
-            .set_max_flow_steps(10)
-            .set_jitter(0.01f)
-            .set_step_size(0.001f)
-            .set_binding_const(10.f)
+            .set_max_flow_steps(2) //20
+            .set_step_size(0.00512f)
             .set_verbosity(true);
 
-    const auto bnet_sampler = sampler(log_prob_bnet, conf_bnet);
+    /*const auto bnet_sampler = sampler(log_prob_bnet, conf_bnet);
 
     // Run sampler
     const auto begin = steady_clock::now();

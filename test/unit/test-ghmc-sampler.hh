@@ -84,6 +84,7 @@ inline HamiltonianFlow get_hamiltonian_flow(
     return riemannian_dynamics(
             log_funnel,
             softabs_metric(conf_funnel),
+            metropolis_criterion,
             conf_funnel)(
             Parameters{theta_.to(device, false, true)},
             Momentum{momentum_.to(device, false, true)});
