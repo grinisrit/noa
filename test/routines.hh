@@ -162,7 +162,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
 
     const auto ham_dym = euclidean_dynamics(
             log_prob_bnet, identity_metric(net_params), metropolis_criterion, conf_bnet);
-    const auto bnet_sampler = sampler(ham_dym, end_of_trajectory, conf_bnet);
+    const auto bnet_sampler = sampler(ham_dym, full_trajectory, conf_bnet);
 
     // Run sampler
     const auto begin = steady_clock::now();
@@ -178,7 +178,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto result = stack(samples);
     save_result(result, save_result_to);
 
-    const auto stationary_sample = result.slice(0, result.size(0) / 10);
+    const auto stationary_sample = result.slice(0, result.size(0) / 2);
 
     set_flat_parameters(net, stationary_sample.mean(0));
     const auto posterior_mean_pred = net({x_val}).toTensor().detach();
