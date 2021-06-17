@@ -60,9 +60,9 @@ inline PhaseSpaceFoliationOpt get_hamiltonian(
         const torch::Tensor &momentum_,
         torch::DeviceType device) {
     torch::manual_seed(utils::SEED);
-    return hamiltonian(log_funnel,
-                       softabs_metric(conf_funnel),
-                       conf_funnel)(Parameters{theta_.to(device, false, true)},
+    return riemannian_hamiltonian(log_funnel,
+                                  softabs_metric(conf_funnel),
+                                  conf_funnel)(Parameters{theta_.to(device, false, true)},
                                     Momentum{momentum_.to(device, false, true)});
 }
 

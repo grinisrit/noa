@@ -42,6 +42,7 @@ namespace noa::ghmc {
     using MomentumOpt = std::optional<Momentum>;
     using LogProbability = utils::Tensor;
     using LogProbabilityGraph = utils::ADGraph;
+    using LogProbabilityGraphOpt = std::optional<LogProbabilityGraph>;
     using Spectrum = utils::Tensors;
     using Rotation = utils::Tensors;
     using MetricDecomposition = std::tuple<Spectrum, Rotation>;
@@ -56,6 +57,7 @@ namespace noa::ghmc {
 
     using HamiltonianFlow = std::tuple<ParametersFlow, MomentumFlow, EnergyLevel>;
     using ParametersGradient = utils::Tensors;
+    using ParametersGradientOpt = std::optional<ParametersGradient>;
     using MomentumGradient = utils::Tensors;
     using HamiltonianGradient = std::tuple<ParametersGradient, MomentumGradient>;
     using HamiltonianGradientOpt = std::optional<HamiltonianGradient>;
@@ -162,32 +164,69 @@ namespace noa::ghmc {
         spectrum.reserve(nparam);
         auto rotation = Rotation{};
         rotation.reserve(nparam);
-        for (const auto &param : initial_parameters){
+        for (const auto &param : initial_parameters) {
             const auto n = param.numel();
             spectrum.push_back(torch::ones(n, param.options()));
             rotation.push_back(torch::eye(n, param.options()));
         }
-        auto local_metric = MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
-        return [local_metric](const LogProbabilityGraph &) {
-            return local_metric;
-        };
+        return MetricDecompositionOpt{MetricDecomposition{spectrum, rotation}};
     }
 
-    template<typename LogProbabilityDensity, typename LocalMetric, typename Configurations>
-    inline auto hamiltonian(
+    template<typename LogProbabilityDensity, typename Configurations>
+    inline auto log_probability(
             const LogProbabilityDensity &log_prob_density,
-            const LocalMetric &local_metric,
-            const Configurations &conf) {
-        return [log_prob_density, local_metric, conf](
-                const Parameters &parameters,
-                const MomentumOpt &momentum_ = std::nullopt) {
+            const Configurations &conf){
+        return [log_prob_density, conf](const Parameters &parameters) {
             const auto log_prob_graph = log_prob_density(parameters);
             const LogProbability check_log_prob = std::get<LogProbability>(log_prob_graph).detach();
             if (torch::isnan(check_log_prob).item<bool>() || torch::isinf(check_log_prob).item<bool>()) {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to compute log probability.\n";
-                return PhaseSpaceFoliationOpt{};
+                return LogProbabilityGraphOpt{};
             }
+            return LogProbabilityGraphOpt{log_prob_graph};
+        };
+    }
+
+    template<typename Configurations>
+    inline auto log_probability_gradient(const Configurations &conf) {
+        return [conf](const LogProbabilityGraphOpt &log_prob_graph) {
+            if (!log_prob_graph.has_value()) {
+                if (conf.verbose)
+                    std::cerr << "GHMC: no log probability graph provided.\n";
+                return ParametersGradientOpt{};
+            }
+            const auto &[log_prob, params] = log_prob_graph.value();
+            const auto params_grad = torch::autograd::grad({log_prob}, params);
+
+            for (const auto &param_grad_ : params_grad) {
+                const auto param_grad = param_grad_.detach();
+                const auto check_params = param_grad.sum();
+                if (torch::isnan(check_params).item<bool>() || torch::isinf(check_params).item<bool>()) {
+                    if (conf.verbose)
+                        std::cerr << "GHMC: failed to compute parameters gradient for log probability\n"
+                                  << log_prob << "\n";
+                    return ParametersGradientOpt{};
+                }
+                return ParametersGradientOpt{params_grad};
+            }
+        };
+    }
+
+    template<typename LogProbabilityDensity, typename LocalMetric, typename Configurations>
+    inline auto riemannian_hamiltonian(
+            const LogProbabilityDensity &log_prob_density,
+            const LocalMetric &local_metric,
+            const Configurations &conf) {
+        const auto log_prob_func = log_probability(log_prob_density, conf);
+        return [log_prob_func, local_metric, conf](
+                const Parameters &parameters,
+                const MomentumOpt &momentum_ = std::nullopt) {
+
+            const auto log_prob_graph_ = log_prob_func(parameters);
+            if (!log_prob_graph_.has_value())
+                return PhaseSpaceFoliationOpt{};
+            const auto &log_prob_graph = log_prob_graph_.value();
 
             const auto metric = local_metric(log_prob_graph);
             if (!metric.has_value()) {
@@ -206,8 +245,8 @@ namespace noa::ghmc {
 
             for (uint32_t i = 0; i < nparam; i++) {
 
-                const auto &rotation_i = rotation.at(i);
                 const auto &spectrum_i = spectrum.at(i);
+                const auto &rotation_i = rotation.at(i);
 
                 const auto momentum_lift = momentum_.has_value()
                                            ? momentum_.value().at(i)
@@ -290,13 +329,31 @@ namespace noa::ghmc {
         };
     }
 
-    /*template<typename Hamiltonian, typename Configurations>
-    inline auto separable_dynamics(
-            const Hamiltonian &ham,
+    template<typename LogProbabilityDensity, typename Configurations>
+    inline auto euclidean_dynamics(
+            const LogProbabilityDensity &log_prob_density,
+            const MetricDecomposition &constant_metric,
             const Configurations &conf) {
-        const auto ham_grad = hamiltonian_gradient(conf);
-        return [ham, ham_grad, conf](const Parameters &parameters,
-                                     const MomentumOpt &momentum_ = std::nullopt) {
+
+        const auto &[spectrum, rotation] = constant_metric;
+        const auto nparam = spectrum.size();
+        auto mass = utils::Tensors{};
+        mass.reserve(nparam);
+        for (uint32_t i = 0; i < nparam; i++) {
+            const auto &rotation_i = rotation.at(i);
+            const auto &spectrum_i = spectrum.at(i);
+            mass.push_back(rotation_i.mm(torch::diag(1 / spectrum_i)).mm(rotation_i.t()));
+        }
+
+        const auto log_prob_func = log_probability(log_prob_density, conf);
+        const auto log_prob_grad = log_probability_gradient(conf);
+
+        return [log_prob_func, log_prob_grad, constant_metric, mass, conf](
+                const Parameters &parameters,
+                const MomentumOpt &momentum_ = std::nullopt) {
+
+            const auto &[spectrum, rotation] = constant_metric;
+
             auto params_flow = ParametersFlow{};
             params_flow.reserve(conf.max_flow_steps + 1);
 
@@ -306,29 +363,46 @@ namespace noa::ghmc {
             auto energy_level = EnergyLevel{};
             energy_level.reserve(conf.max_flow_steps + 1);
 
-            auto foliation = ham(parameters, momentum_);
-            if (!foliation.has_value()) {
+            auto log_prob_graph = log_prob_func(parameters);
+            if (!log_prob_graph.has_value()) {
                 if (conf.verbose)
                     std::cerr << "GHMC: failed to initialise Hamiltonian flow.\n";
                 return HamiltonianFlow{params_flow, momentum_flow, energy_level};
             }
+            const auto &[log_prob, initial_params] = log_prob_graph.value();
 
-            const auto &[initial_params, initial_momentum, initial_energy] = foliation.value();
 
             const auto nparam = parameters.size();
             auto params = Parameters{};
             params.reserve(nparam);
             auto momentum = Momentum{};
             momentum.reserve(nparam);
+            auto energy = - log_prob.detach();
 
             for (uint32_t i = 0; i < nparam; i++) {
+
                 params.push_back(initial_params.at(i).detach());
-                momentum.push_back(initial_momentum.at(i).detach());
+
+                const auto &spectrum_i = spectrum.at(i);
+                const auto &rotation_i = rotation.at(i);
+
+                const auto momentum_lift = momentum_.has_value()
+                                           ? momentum_.value().at(i)
+                                           : rotation_i.mv(
+                                torch::sqrt(spectrum_i) * torch::randn_like(spectrum_i));
+
+                const auto momentum_i = momentum_lift.detach().view_as(parameters.at(i));
+
+                const auto momentum_vec = momentum_i.flatten();
+                const auto second_order_term = momentum_vec.dot(mass.at(i).mv(momentum_vec)) / 2;
+
+                energy += second_order_term;
+                momentum.push_back(momentum_i);
             }
 
             params_flow.push_back(params);
             momentum_flow.push_back(momentum);
-            energy_level.push_back(initial_energy.detach());
+            energy_level.push_back(energy);
 
             uint32_t iter_step = 0;
             if (iter_step >= conf.max_flow_steps)
@@ -342,45 +416,46 @@ namespace noa::ghmc {
 
             const auto delta = conf.step_size / 2;
 
+            auto dynamics = log_prob_grad(log_prob_graph);
+            if (!dynamics.has_value()) {
+                error_msg();
+                return HamiltonianFlow{params_flow, momentum_flow, energy_level};
+            }
+
+            for (uint32_t i = 0; i < nparam; i++)
+                momentum.at(i) = momentum.at(i) + dynamics.at(i) * delta;
+
             for (iter_step = 0; iter_step < conf.max_flow_steps; iter_step++) {
 
-                auto dynamics = ham_grad(foliation);
+                for (uint32_t i = 0; i < nparam; i++)
+                    params.at(i) = params.at(i) +
+                            mass.at(i).mv(momentum.at(i).flatten()).view_as(params.at(i)) * conf.step_size;
+
+                log_prob_graph = log_prob_func(params);
+                dynamics = log_prob_grad(log_prob_graph);
                 if (!dynamics.has_value()) {
                     error_msg();
-                    break;
+                    return HamiltonianFlow{params_flow, momentum_flow, energy_level};
                 }
 
-                for (uint32_t i = 0; i < nparam; i++) {
-                    momentum.at(i) = momentum.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
-                }
+                for (uint32_t i = 0; i < nparam; i++)
+                    momentum.at(i) = momentum.at(i) + dynamics.at(i) * delta;
 
-                foliation = ham(params, momentum);
-                if (!foliation.has_value()) {
-                    error_msg();
-                    break;
-                }
-
-                dynamics = ham_grad(foliation);
-                if (!dynamics.has_value()) {
-                    error_msg();
-                    break;
-                }
-
-                for (uint32_t i = 0; i < nparam; i++) {
-                    params.at(i) = params.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
+                energy = - std::get<LogProbability>(log_prob_graph.value()).detach();
+                for(uint32_t i = 0; i < nparam; i++){
+                    const auto momentum_vec = momentum.at(i).flatten();
+                    energy += momentum_vec.dot(mass.at(i).mv(momentum_vec)) / 2;
                 }
 
                 params_flow.push_back(params);
                 momentum_flow.push_back(momentum);
-                energy_level.push_back(std::get<Energy>(foliation.value()).detach());
+                energy_level.push_back(energy);
 
                 if (iter_step < conf.max_flow_steps - 1) {
                     const auto rho = -torch::relu(energy_level.back() - energy_level.front());
                     if ((rho >= torch::log(torch::rand_like(rho))).item<bool>())
-                        for (uint32_t i = 0; i < nparam; i++) {
-                            params_copy.at(i) = params_copy.at(i) + std::get<1>(dynamics.value()).at(i) * delta;
-                            momentum.at(i) = momentum.at(i) - std::get<0>(dynamics.value()).at(i) * delta;
-                        }
+                        for (uint32_t i = 0; i < nparam; i++)
+                            momentum.at(i) = momentum.at(i) + dynamics.at(i) * delta;
                     else {
                         if (conf.verbose)
                             std::cout << "GHMC: rejecting sample at iteration "
@@ -389,16 +464,17 @@ namespace noa::ghmc {
                     }
                 }
             }
+
             return HamiltonianFlow{params_flow, momentum_flow, energy_level};
         };
-    }*/
+    }
 
     template<typename LogProbabilityDensity, typename LocalMetric, typename Configurations>
     inline auto riemannian_dynamics(
             const LogProbabilityDensity &log_prob_density,
             const LocalMetric &local_metric,
             const Configurations &conf) {
-        const auto ham = hamiltonian(log_prob_density, local_metric, conf);
+        const auto ham = riemannian_hamiltonian(log_prob_density, local_metric, conf);
         const auto ham_grad = hamiltonian_gradient(conf);
         const auto theta = 2 * conf.binding_const * conf.step_size;
         const auto rot = std::make_tuple(cos(theta), sin(theta));
@@ -545,8 +621,6 @@ namespace noa::ghmc {
             return HamiltonianFlow{params_flow, momentum_flow, energy_level};
         };
     }
-
-
 
 
     inline const auto full_trajectory = [](const HamiltonianFlow &hamiltonian_flow) {
