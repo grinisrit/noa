@@ -158,7 +158,7 @@ namespace noa::ghmc {
         };
     }
 
-    inline MetricDecomposition identity_metric(const Parameters &initial_parameters) {
+    inline MetricDecomposition identity_metric_like(const Parameters &initial_parameters) {
         const auto nparam = initial_parameters.size();
         auto spectrum = Spectrum{};
         spectrum.reserve(nparam);

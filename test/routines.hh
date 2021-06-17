@@ -161,7 +161,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
             .set_verbosity(true);
 
     const auto ham_dym = euclidean_dynamics(
-            log_prob_bnet, identity_metric(net_params), metropolis_criterion, conf_bnet);
+            log_prob_bnet, identity_metric_like(net_params), metropolis_criterion, conf_bnet);
     const auto bnet_sampler = sampler(ham_dym, full_trajectory, conf_bnet);
 
     // Run sampler
