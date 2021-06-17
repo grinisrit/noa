@@ -183,7 +183,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     set_flat_parameters(net, stationary_sample.mean(0));
     const auto posterior_mean_pred = net({x_val}).toTensor().detach();
 
-    /*auto bayes_preds_ = Tensors{};
+    auto bayes_preds_ = Tensors{};
     bayes_preds_.reserve(stationary_sample.size(0));
     for (uint32_t i = 0; i < stationary_sample.size(0); i++) {
         set_flat_parameters(net, stationary_sample[i]);
@@ -191,7 +191,7 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     }
     const auto bayes_preds = torch::stack(bayes_preds_);
     const auto bayes_mean_pred = bayes_preds.mean(0);
-    const auto bayes_std_pred = bayes_preds.std(0);*/
+    const auto bayes_std_pred = bayes_preds.std(0);
 
     set_flat_parameters(net, params_init);
     auto loss_fn = torch::nn::MSELoss{};
@@ -211,10 +211,10 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     std::cout << " Initial MSE loss:\n" << initial_loss << "\n"
               << " Optimal MSE loss:\n" << loss_fn(net({x_val}).toTensor().detach(), y_val) << "\n"
               << " Posterior mean MSE loss:\n" << loss_fn(posterior_mean_pred, y_val) << "\n"
-              /*<< " Bayes prediction mean MSE loss:\n" << loss_fn(bayes_mean_pred, y_val) << "\n"
+              << " Bayes prediction mean MSE loss:\n" << loss_fn(bayes_mean_pred, y_val) << "\n"
               << " Bayes prediction +/- std MSE loss:\n"
               << torch::stack({loss_fn(bayes_mean_pred + bayes_std_pred, y_val),
-                               loss_fn(bayes_mean_pred - bayes_std_pred, y_val)}).view({1,2})*/
+                               loss_fn(bayes_mean_pred - bayes_std_pred, y_val)}).view({1,2})
               << "\n";
 
     return true;
