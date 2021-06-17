@@ -8,7 +8,13 @@ DEFINE_bool(bnet, false, "Test GHMC sampler for Bayesian Deep Learning");
 DEFINE_bool(cuda, false, "Run on GPU");
 
 auto main(int argc, char **argv) -> int {
+
+    gflags::SetUsageMessage("Functional tests for GHMC component");
+
     gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    if(!(FLAGS_normal || FLAGS_funnel || FLAGS_bnet))
+        std::cout << "Add --help for command line description\n";
 
     auto device = FLAGS_cuda ? torch::kCUDA : torch::kCPU;
 
@@ -29,6 +35,7 @@ auto main(int argc, char **argv) -> int {
         if (!sample_bayesian_net("ghmc_sample_bayesian_net.pt", device))
             return 1;
 
+    gflags::ShutDownCommandLineFlags();
     return 0;
 }
 

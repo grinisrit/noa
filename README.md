@@ -25,7 +25,8 @@ $ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
 $ cmake --build . --target install
 $ ctest -V
 ```
-To build benchmarks specify `-DBUILD_NOA_BENCHMARKS=ON`.
+To build benchmarks specify `-DBUILD_NOA_BENCHMARKS=ON`. To enable parallel execution for some algorithms you should link against `OpenMP`.  To build `CUDA` tests add `-DBUILD_NOA_CUDA=ON` and  `-DCMAKE_CUDA_ARCHITECTURES=75` (or the GPU architecture of your choice).
+
 
 In your `CMakeLists.txt` file, make sure you add `LibTorch` and then you can link `NOA`:
 ```cmake
