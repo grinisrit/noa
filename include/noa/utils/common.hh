@@ -46,6 +46,7 @@ namespace noa::utils {
     using TensorOpt = std::optional<Tensor>;
     using Tensors = std::vector<Tensor>;
     using TensorsOpt = std::optional<Tensors>;
+    using NamedTensors = std::unordered_map<std::string, Tensor>;
     using ScriptModule = torch::jit::Module;
     using ScriptModuleOpt = std::optional<ScriptModule>;
     using OutputLeaf = Tensor;
@@ -202,42 +203,109 @@ namespace noa::utils {
         return torch::abs(computed - expected).mean();
     }
 
-    template<typename Net>
-    inline Tensors parameters(const Net &net) {
+    template<typename NetData>
+    inline Tensors to_tensors(const NetData &net_data, bool copy) {
         auto res = std::vector<Tensor>{};
-        for (const auto &params : net.parameters())
-            res.push_back(params);
+        for (const auto &val : net_data)
+            res.push_back(copy ? val.detach().clone() : val);
+        return res;
+    }
+
+
+    template<typename NetNamedData>
+    inline NamedTensors to_named_tensors(const NetNamedData &net_named_data, bool copy) {
+        auto res = std::unordered_map<std::string, Tensor>{};
+        for (const auto &[name, val] : net_named_data)
+            res[name] = copy ? val.detach().clone() : val;
         return res;
     }
 
     template<typename Net>
-    inline Tensor flat_parameters(const Net &net) {
+    inline Tensors parameters(const Net &net, bool copy = false) {
+        return to_tensors(net.parameters(), copy);
+    }
+
+    template<typename Net>
+    inline Tensors buffers(const Net &net, bool copy = false) {
+        return to_tensors(net.buffers(), copy);
+    }
+
+    template<typename Net>
+    inline NamedTensors named_parameters(const Net &net, bool copy = false) {
+        return to_named_tensors(net.named_parameters(), copy);
+    }
+
+    template<typename Net>
+    inline NamedTensors named_buffers(const Net &net, bool copy = false) {
+        return to_named_tensors(net.named_buffers(), copy);
+    }
+
+    template<typename NetData>
+    inline Tensor flat_data(const NetData &net_data, bool detach) {
         auto res = std::vector<Tensor>{};
-        for (const auto &params : net.parameters())
-            res.push_back(params.detach().flatten());
+        for (const auto &val : net_data)
+            res.push_back((detach ? val.detach() : val).flatten());
         return torch::cat(res);
     }
 
-    template <typename Net>
-    inline bool set_flat_parameters(Net &net, const Tensor &parameters)
-    {
-        if (parameters.dim() > 1)
-        {
-            std::cerr << "Invalid arguments to noa::utils::set_flat_parameters : "
-                      << "expecting 1D parameters\n";
-            return false;
-        }
-        int64_t i = 0;
-        for (const auto &param : net.parameters())
-        {
-            const auto i0 = i;
-            i += param.numel();
-            param.set_data(parameters.slice(0, i0, i).view_as(param));
+    template<typename Net>
+    inline Tensor flat_parameters(const Net &net, bool detach = true) {
+        return flat_data(net.parameters(), detach);
+    }
+
+    template<typename Net>
+    inline Tensor flat_buffers(const Net &net, bool detach = true) {
+        return flat_data(net.buffers(), detach);
+    }
+
+    template<typename NetData>
+    inline bool set_data(const NetData &net_data, const Tensors &data, bool copy) {
+        uint32_t i = 0;
+        for (const auto &val : net_data) {
+            val.set_data(copy ? data.at(i).detach().clone() : data.at(i));
+            i++;
         }
         return true;
     }
 
-    inline ScriptModuleOpt load_module(const Path &jit_module_pt){
+    template<typename Net>
+    inline bool set_parameters(Net &net, const Tensors &parameters, bool copy = false) {
+        return set_data(net.parameters(), parameters, copy);
+    }
+
+    template<typename Net>
+    inline bool set_buffers(Net &net, const Tensors &buffers, bool copy = false) {
+        return set_data(net.buffers(), buffers, copy);
+    }
+
+    template<typename NetData>
+    inline bool set_flat_data(const NetData &net_data, const Tensor &data, bool copy) {
+        if (data.dim() > 1) {
+            std::cerr << "Invalid arguments to noa::utils::set_flat_data : "
+                      << "expecting 1D parameters\n";
+            return false;
+        }
+        int64_t i = 0;
+        for (const auto &val : net_data) {
+            const auto i0 = i;
+            i += val.numel();
+            val.set_data(copy ? data.slice(0, i0, i).detach().clone().view_as(val)
+                              : data.slice(0, i0, i).view_as(val));
+        }
+        return true;
+    }
+
+    template<typename Net>
+    inline bool set_flat_parameters(Net &net, const Tensor &parameters, bool copy = false) {
+        return set_flat_data(net.parameters(), parameters, copy);
+    }
+
+    template<typename Net>
+    inline bool set_flat_buffers(Net &net, const Tensor &buffers, bool copy = false) {
+        return set_flat_data(net.buffers(), buffers, copy);
+    }
+
+    inline ScriptModuleOpt load_module(const Path &jit_module_pt) {
         if (check_path_exists(jit_module_pt)) {
             try {
                 return torch::jit::load(jit_module_pt);
@@ -251,13 +319,13 @@ namespace noa::utils {
         }
     }
 
-    inline Tensor stack(const std::vector<Tensors> &vec_tensors){
+    inline Tensor stack(const std::vector<Tensors> &vec_tensors) {
         auto result = Tensors{};
         result.reserve(vec_tensors.size());
-        for(const auto &tensors: vec_tensors){
+        for (const auto &tensors: vec_tensors) {
             auto tensors_flat = Tensors{};
             tensors_flat.reserve(tensors.size());
-            for(const auto &tensor: tensors)
+            for (const auto &tensor: tensors)
                 tensors_flat.push_back(tensor.flatten());
             result.push_back(torch::cat(tensors_flat));
         }

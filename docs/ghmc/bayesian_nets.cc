@@ -49,7 +49,7 @@ std::tuple<torch::Tensor, torch::Tensor> train_jit_module(
         adam_preds.push_back(net({x_val}).toTensor().detach());
     }
 
-    return std::make_tuple(flat_parameters(net), torch::stack(adam_preds));
+    return std::make_tuple(flat_parameters(net, true), torch::stack(adam_preds));
 }
 
 torch::Tensor sample_jit_module(
@@ -57,33 +57,31 @@ torch::Tensor sample_jit_module(
         std::string save_sample_pt,
         torch::Tensor x_train,
         torch::Tensor y_train,
-        torch::Tensor prior_params,
+        torch::Tensor prior_flat_params,
         float tau_out,
         float tau_in,
         int niter,
         int max_flow_steps,
         float step_size) {
+
     torch::manual_seed(SEED);
+
     auto module = load_module(jit_model_pt);
     if (!module.has_value())
         return torch::Tensor{};
     auto &net = module.value();
     net.train();
 
-    set_flat_parameters(net, prior_params);
-
-    const auto net_params = parameters(net);
+    set_flat_parameters(net, prior_flat_params, true);
+    const auto prior_params = parameters(net, true);
 
     const auto log_prob_bnet = [&net, &x_train, &y_train, &tau_out, &tau_in, &prior_params]
             (const Parameters &theta) {
         uint32_t i = 0;
-        uint32_t ip = 0;
         auto log_prob = torch::tensor(0, y_train.options());
         for (const auto &param: net.parameters()) {
-            const auto i0 = ip;
-            ip += param.numel();
             param.set_data(theta.at(i).detach());
-            log_prob += (param.flatten() - prior_params.slice(0,i0,ip)).pow(2).sum();
+            log_prob += (param - prior_params.at(i)).pow(2).sum();
             i++;
         }
         const auto output = net({x_train}).toTensor();
@@ -96,6 +94,7 @@ torch::Tensor sample_jit_module(
             .set_step_size(step_size)
             .set_verbosity(true);
 
+    const auto net_params = parameters(net);
     const auto ham_dym = euclidean_dynamics(
             log_prob_bnet, identity_metric_like(net_params), metropolis_criterion, conf_bnet);
     const auto bnet_sampler = sampler(ham_dym, full_trajectory, conf_bnet);
