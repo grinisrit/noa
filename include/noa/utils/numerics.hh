@@ -47,7 +47,7 @@ namespace noa::utils::numerics {
         const auto nvar = variables.size();
         hess.reserve(nvar);
 
-        for(uint32_t ivar = 0; ivar < nvar; ivar++){
+        for (uint32_t ivar = 0; ivar < nvar; ivar++) {
             const auto variable = variables.at(ivar);
             const auto n = variable.numel();
             const auto res = value.new_zeros({n, n});
@@ -56,14 +56,15 @@ namespace noa::utils::numerics {
             uint32_t i = 0;
             for (uint32_t j = 0; j < n; j++) {
                 const auto row = grad[j].requires_grad()
-                                 ? torch::autograd::grad({grad[i]}, {variable}, {}, true, true, true)[0].flatten().slice(0, j, n)
+                                 ? torch::autograd::grad({grad[i]}, {variable}, {}, true, true,
+                                                         true)[0].flatten().slice(0, j, n)
                                  : grad[j].new_zeros(n - j);
                 res[i].slice(0, i, n).add_(row);
                 i++;
             }
 
             const auto check = torch::triu(res.detach()).sum();
-            if(torch::isnan(check).item<bool>() || torch::isinf(check).item<bool>())
+            if (torch::isnan(check).item<bool>() || torch::isinf(check).item<bool>())
                 return TensorsOpt{};
             else
                 hess.push_back(res + torch::triu(res, 1).t());
@@ -219,6 +220,32 @@ namespace noa::utils::numerics {
 
         // The maximum number of iterations was reached
         return std::nullopt;
+    }
+
+    template<typename Dtype, typename Net>
+    inline auto regression_log_probability(
+            Net &net,
+            const Dtype &model_variance,
+            const Tensors &params_mean,
+            const Dtype &params_variance) {
+        const auto tau_out = 1 / model_variance;
+        const auto tau_in = 1 / params_variance;
+        return [&net, params_mean, tau_out, tau_in](
+                const Tensor &x_train, const Tensor &y_train) {
+            return [&net, params_mean, tau_out, tau_in, x_train, y_train]
+                    (const Tensors &theta) {
+                uint32_t i = 0;
+                auto log_prob = torch::tensor(0, y_train.options());
+                for (const auto &param: net.parameters()) {
+                    param.set_data(theta.at(i).detach());
+                    log_prob += (param - params_mean.at(i)).pow(2).sum();
+                    i++;
+                }
+                const auto output = net({x_train}).toTensor();
+                log_prob = -tau_out * (y_train - output).pow(2).sum() / 2 - tau_in * log_prob / 2;
+                return ADGraph{log_prob, parameters(net)};
+            };
+        };
     }
 
 } // namespace noa::utils::numerics

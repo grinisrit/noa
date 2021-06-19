@@ -142,18 +142,10 @@ inline Status sample_bayesian_net(const Path &save_result_to,
     const auto params_init = flat_parameters(net);
     const auto net_params = parameters(net);
 
-    const auto log_prob_bnet = [&net, &x_train, &y_train](const Parameters &theta) {
-        uint32_t i = 0;
-        auto log_prob = torch::tensor(0, y_train.options());
-        for (const auto &param: net.parameters()) {
-            param.set_data(theta.at(i).detach());
-            log_prob += param.pow(2).sum();
-            i++;
-        }
-        const auto output = net({x_train}).toTensor();
-        log_prob = -50 * (y_train - output).pow(2).sum() - log_prob / 2;
-        return LogProbabilityGraph{log_prob, parameters(net)};
-    };
+    const auto zero_params = zeros_like(net_params, true);
+    const auto log_prob_bnet = numerics::regression_log_probability(
+            net, 0.01f, zero_params, 1.f)(x_train, y_train);
+
 
     const auto conf_bnet = Configuration<float>{}
             .set_max_flow_steps(25)

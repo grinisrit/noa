@@ -58,8 +58,8 @@ torch::Tensor sample_jit_module(
         torch::Tensor x_train,
         torch::Tensor y_train,
         torch::Tensor prior_flat_params,
-        float tau_out,
-        float tau_in,
+        float model_variance,
+        float params_variance,
         int niter,
         int max_flow_steps,
         float step_size) {
@@ -75,19 +75,8 @@ torch::Tensor sample_jit_module(
     set_flat_parameters(net, prior_flat_params, true);
     const auto prior_params = parameters(net, true);
 
-    const auto log_prob_bnet = [&net, &x_train, &y_train, &tau_out, &tau_in, &prior_params]
-            (const Parameters &theta) {
-        uint32_t i = 0;
-        auto log_prob = torch::tensor(0, y_train.options());
-        for (const auto &param: net.parameters()) {
-            param.set_data(theta.at(i).detach());
-            log_prob += (param - prior_params.at(i)).pow(2).sum();
-            i++;
-        }
-        const auto output = net({x_train}).toTensor();
-        log_prob = - tau_out * (y_train - output).pow(2).sum() / 2 - tau_in * log_prob / 2;
-        return LogProbabilityGraph{log_prob, parameters(net)};
-    };
+    const auto log_prob_bnet = numerics::regression_log_probability(
+            net, model_variance, prior_params, params_variance)(x_train, y_train);
 
     const auto conf_bnet = Configuration<float>{}
             .set_max_flow_steps(max_flow_steps)
@@ -145,7 +134,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("generate_data", &generate_data, py::call_guard<py::gil_scoped_release>(),
           "Generate synthetic data");
     m.def("train_jit_module", &train_jit_module, py::call_guard<py::gil_scoped_release>(),
-          "SGD training for a TorchScript module");
+          "Likelihood training for a TorchScript module");
     m.def("sample_jit_module", &sample_jit_module, py::call_guard<py::gil_scoped_release>(),
           "Bayesian training for a TorchScript module");
     m.def("compute_posterior_mean_prediction", &compute_posterior_mean_prediction,

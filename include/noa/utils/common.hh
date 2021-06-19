@@ -332,4 +332,12 @@ namespace noa::utils {
         return torch::stack(result);
     }
 
+    inline Tensors zeros_like(const Tensors &tensors, bool detach = false){
+        auto res = Tensors{};
+        res.reserve(tensors.size());
+        for(const auto &tensor: tensors)
+            res.push_back( detach ? tensor.detach() : tensor);
+        return res;
+    }
+
 } // namespace noa::utils
