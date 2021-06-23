@@ -9,28 +9,17 @@ using namespace noa::ghmc;
 using namespace noa::pms;
 using namespace noa::utils;
 
-inline Tensor bremsstrahlung(Tensor kinetic_energies, Tensor recoil_energies) {
-    const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap<Scalar>(dcs::pumas::bremsstrahlung)(
-            result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
-    return result;
-}
-
-inline void serialise(Tensor tensor, std::string path) {
-    torch::save(tensor, path);
-}
-
 inline const auto PI = 2.f * torch::acos(torch::tensor(0.f));
+
+inline Tensor mix_density(const Tensor &states, const Tensor &node) {
+    return torch::exp(-(states - node.slice(0, 0, 2)).pow(2).sum(-1) / node[2].abs());
+}
 
 inline Tensor rot(const Tensor &theta) {
     const auto n = theta.numel();
     const auto c = torch::cos(theta);
     const auto s = torch::sin(theta);
     return torch::stack({c, -s, s, c}).t().view({n, 2, 2});
-}
-
-inline Tensor mix_density(const Tensor &states, const Tensor &node) {
-    return torch::exp(-(states - node.slice(0, 0, 2)).pow(2).sum(-1) / node[2].abs());
 }
 
 inline std::tuple<Tensor, Tensor> backward_mc(
@@ -242,10 +231,6 @@ inline std::tuple<Tensor, Tensor> backward_mc_grad(
 
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("bremsstrahlung", &bremsstrahlung, py::call_guard<py::gil_scoped_release>(),
-          "Standard Rock Bremsstrahlung DCS for Muons");
-    m.def("serialise", &serialise, py::call_guard<py::gil_scoped_release>(),
-          "Save tensor to disk");
     m.def("backward_mc", &backward_mc, py::call_guard<py::gil_scoped_release>(),
           "Backward MC example");
     m.def("grad_convergence_test", &grad_convergence_test, py::call_guard<py::gil_scoped_release>(),
