@@ -20,12 +20,12 @@ auto main(int argc, char **argv) -> int {
 
     const auto materials_dir = noa::utils::Path{FLAGS_materials};
 
-    auto mdf_path = materials_dir / "mdf" / "standard.xml";
-    auto dedx_path = materials_dir / "dedx" / "muon";
+    const auto mdf_path = materials_dir / "mdf" / "standard.xml";
+    const auto dedx_path = materials_dir / "dedx" / "muon";
 
-    auto begin = steady_clock::now();
+    const auto begin = steady_clock::now();
 
-    auto mdf_settings = mdf::load_settings(mdf_path);
+    const auto mdf_settings = mdf::load_settings(mdf_path);
     if (!mdf_settings.has_value()) return 1;
 
     auto dedx_data = mdf::load_materials_data(*mdf_settings, dedx_path);

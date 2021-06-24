@@ -39,7 +39,7 @@ void noa::pms::dcs::pumas::cuda::vmap_bremsstrahlung(
         const AtomicElement<Scalar> &element,
         const ParticleMass &mass){
     const Scalar *pq = recoil_energies.data_ptr<Scalar>();
-    auto brems = [pq, element, mass] __device__(const Index i, const Scalar &k) {
+    const auto brems = [pq, element, mass] __device__(const Index i, const Scalar &k) {
         return bremsstrahlung(k, pq[i], element, mass);
     };
     utils::cuda::vmapi<Scalar>(kinetic_energies, brems, result);

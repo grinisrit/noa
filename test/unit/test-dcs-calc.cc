@@ -10,17 +10,17 @@ using namespace noa::pms;
 using namespace noa::utils;
 
 TEST(DCS, Bremsstrahlung) {
-    auto kinetic_energies = DCSData::get_kinetic_energies();
-    auto recoil_energies = DCSData::get_recoil_energies();
-    auto pumas_brems = DCSData::get_pumas_brems();
-    auto result = torch::zeros_like(kinetic_energies);
+    const auto kinetic_energies = DCSData::get_kinetic_energies();
+    const auto recoil_energies = DCSData::get_recoil_energies();
+    const auto pumas_brems = DCSData::get_pumas_brems();
+    const auto result = torch::zeros_like(kinetic_energies);
     dcs::vmap<Scalar>(dcs::pumas::bremsstrahlung)(
             result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
     ASSERT_TRUE(relative_error(result, pumas_brems).item<Scalar>() < 1E-11);
 }
 
 TEST(DCS, DELBremsstrahlung) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, dcs::del_integrand<Scalar>))(
             result,
@@ -30,7 +30,7 @@ TEST(DCS, DELBremsstrahlung) {
 }
 
 TEST(DCS, CELBremsstrahlung) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, dcs::cel_integrand<Scalar>))(
             result,
@@ -40,7 +40,7 @@ TEST(DCS, CELBremsstrahlung) {
 }
 
 TEST(DCS, PairProduction) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap<Scalar>(dcs::pumas::pair_production)(
             result,
             DCSData::get_kinetic_energies(),
@@ -51,7 +51,7 @@ TEST(DCS, PairProduction) {
 
 
 TEST(DCS, DELPairProduction) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, dcs::del_integrand<Scalar>))(
             result,
@@ -61,7 +61,7 @@ TEST(DCS, DELPairProduction) {
 }
 
 TEST(DCS, CELPairProduction) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, dcs::cel_integrand<Scalar>))(
             result,
@@ -71,7 +71,7 @@ TEST(DCS, CELPairProduction) {
 }
 
 TEST(DCS, Photonuclear) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap<Scalar>(dcs::pumas::photonuclear)(
             result,
             DCSData::get_kinetic_energies(),
@@ -81,7 +81,7 @@ TEST(DCS, Photonuclear) {
 }
 
 TEST(DCS, DELPhotonuclear) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, dcs::del_integrand<Scalar>))(
             result,
@@ -91,7 +91,7 @@ TEST(DCS, DELPhotonuclear) {
 }
 
 TEST(DCS, CELPhotonuclear) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, dcs::cel_integrand<Scalar>))(
             result,
@@ -102,7 +102,7 @@ TEST(DCS, CELPhotonuclear) {
 
 
 TEST(DCS, Ionisation) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap<Scalar>(dcs::pumas::ionisation)(
             result,
             DCSData::get_kinetic_energies(),
@@ -112,7 +112,7 @@ TEST(DCS, Ionisation) {
 }
 
 TEST(DCS, DELIonisation) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, dcs::del_integrand<Scalar>))(
             result,
@@ -122,7 +122,7 @@ TEST(DCS, DELIonisation) {
 }
 
 TEST(DCS, CELIonisation) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral<Scalar>(
             dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, dcs::cel_integrand<Scalar>))(
             result,
@@ -161,8 +161,8 @@ TEST(DCS, CoulombHardScattering) {
     invlambda = invlambda.view({1, nkin});
     fspin = fspin.view({1, nkin});
 
-    auto lb_h = torch::zeros_like(DCSData::get_kinetic_energies());
-    auto mu0 = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto lb_h = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto mu0 = torch::zeros_like(DCSData::get_kinetic_energies());
 
     dcs::pumas::hard_scattering(
             mu0, lb_h, G, fCM, screen, invlambda, fspin);
@@ -172,7 +172,7 @@ TEST(DCS, CoulombHardScattering) {
 }
 
 TEST(DCS, CoulombSoftScattering) {
-    auto result = torch::zeros_like(DCSData::get_kinetic_energies());
+    const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::pumas::soft_scattering(result, DCSData::get_kinetic_energies(), STANDARD_ROCK, MUON_MASS);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_soft_scatter()).item<Scalar>() < 1E-12);
 }

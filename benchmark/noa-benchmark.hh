@@ -28,7 +28,7 @@ struct DCSBenchmark : benchmark::Fixture {
     inline void vectorised_calculation(benchmark::State &state, const DCSFunc &dcs_func) {
         const auto kinetic_energies = DCSData::get_kinetic_energies();
         const auto recoil_energies = DCSData::get_recoil_energies();
-        auto result = torch::zeros_like(kinetic_energies);
+        const auto result = torch::zeros_like(kinetic_energies);
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
@@ -40,7 +40,7 @@ struct DCSBenchmark : benchmark::Fixture {
     inline void large_vectorised_calculation(benchmark::State &state, const DCSFunc &dcs_func) {
         const auto kinetic_energies = DCSData::get_kinetic_energies().repeat_interleave(1000);
         const auto recoil_energies = DCSData::get_recoil_energies().repeat_interleave(1000);
-        auto result = torch::zeros_like(kinetic_energies);
+        const auto result = torch::zeros_like(kinetic_energies);
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
@@ -52,7 +52,7 @@ struct DCSBenchmark : benchmark::Fixture {
     inline void large_vectorised_openmp_calculation(benchmark::State &state, const DCSFunc &dcs_func) {
         const auto kinetic_energies = DCSData::get_kinetic_energies().repeat_interleave(1000);
         const auto recoil_energies = DCSData::get_recoil_energies().repeat_interleave(1000);
-        auto result = torch::zeros_like(kinetic_energies);
+        const auto result = torch::zeros_like(kinetic_energies);
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)

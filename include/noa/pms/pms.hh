@@ -56,7 +56,7 @@ namespace noa::pms {
 
     template<typename Dtype, typename Physics>
     class Model {
-        using Elements = std::vector<AtomicElement < Dtype>>;
+        using Elements = std::vector<AtomicElement<Dtype>>;
         using Materials = std::vector<Material<Dtype>>;
 
         Elements elements;
@@ -69,7 +69,7 @@ namespace noa::pms {
 
         // TODO: Composite materials
 
-        inline AtomicElement <Dtype> process_element_(const AtomicElement <Dtype> &element) {
+        inline AtomicElement<Dtype> process_element_(const AtomicElement<Dtype> &element) {
             return static_cast<Physics *>(this)->process_element(element);
         }
 
@@ -77,8 +77,8 @@ namespace noa::pms {
                 const Dtype &density,
                 const mdf::MaterialComponents &components) {
             const Index n = components.size();
-            auto element_ids = torch::zeros(n, torch::kInt32);
-            auto fractions = torch::zeros(n, torch::dtype(c10::CppTypeToScalarType<Dtype>{}));
+            const auto element_ids = torch::zeros(n, torch::kInt32);
+            const auto fractions = torch::zeros(n, torch::dtype(c10::CppTypeToScalarType<Dtype>{}));
             Index iel = 0;
             for (const auto &[el, frac] : components) {
                 element_ids[iel] = get_element_id(el);
@@ -89,11 +89,11 @@ namespace noa::pms {
         }
 
     public:
-        inline const AtomicElement <Dtype> &get_element(const ElementId id) const {
+        inline const AtomicElement<Dtype> &get_element(const ElementId id) const {
             return elements.at(id);
         }
 
-        inline const AtomicElement <Dtype> &get_element(const mdf::ElementName &name) const {
+        inline const AtomicElement<Dtype> &get_element(const mdf::ElementName &name) const {
             return elements.at(element_id.at(name));
         }
 
@@ -132,7 +132,7 @@ namespace noa::pms {
         inline void set_elements(const mdf::Elements &mdf_elements) {
             Index id = 0;
             elements.reserve(mdf_elements.size());
-            for (auto[name, element] : mdf_elements) {
+            for (const auto &[name, element] : mdf_elements) {
                 elements.push_back(process_element_(element));
                 element_id[name] = id;
                 element_name.push_back(name);
@@ -148,14 +148,13 @@ namespace noa::pms {
             material_name.reserve(nmat);
 
             for (const auto &[name, material] : mdf_materials) {
-                auto[_, density, components] = material;
+                const auto &[_, density, components] = material;
                 materials.push_back(process_material_(density, components));
                 material_id[name] = id;
                 material_name.push_back(name);
                 id++;
             }
         }
-
     };
 
 } //namespace noa::pms

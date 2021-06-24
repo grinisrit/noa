@@ -127,7 +127,7 @@ namespace noa::pms {
                     dcs::pumas::DENSITY_SCALE * material.density};
         }
 
-        inline utils::Status process_dedx_data_header(mdf::MaterialsDEDXData &dedx_data) {
+        inline utils::Status process_dedx_data_header(const mdf::MaterialsDEDXData &dedx_data) {
             if (!mdf::check_particle_mass(MUON_MASS / dcs::pumas::ENERGY_SCALE, dedx_data))
                 return false;
 
@@ -149,12 +149,12 @@ namespace noa::pms {
             auto data = dedx_data.begin();
             auto &values = std::get<mdf::DEDXTable>(data->second).T;
             const Index nkin = values.size();
-            auto tensor = torch::from_blob(values.data(), nkin, torch::kDouble);
+            const auto tensor = torch::from_blob(values.data(), nkin, torch::kDouble);
             table_K = tensor.to(tensor_ops()) * dcs::pumas::ENERGY_SCALE;
             data++;
             for (auto &it = data; it != dedx_data.end(); it++) {
                 auto &it_vals = std::get<mdf::DEDXTable>(it->second).T;
-                auto it_ten = torch::from_blob(
+                const auto it_ten = torch::from_blob(
                         it_vals.data(), nkin, torch::kDouble);
                 if (!torch::equal(tensor, it_ten)) {
                     std::cerr
@@ -202,7 +202,7 @@ namespace noa::pms {
             table_Ms1 = torch::zeros_like(table_Mu0);
         }
 
-        inline void init_cel_integrals(const int nmat) {
+        inline void init_cel_integrals(const Index nmat) {
             table_X = torch::zeros_like(table_dE);
             table_X_CSDA = torch::zeros_like(table_dE);
             table_T = torch::zeros_like(table_dE);
@@ -302,7 +302,7 @@ namespace noa::pms {
         inline void compute_dedx_tables(
                 MaterialId imat, mdf::DEDXTable &dedx_table) {
 
-            auto &material = get_material(imat);
+            const auto &material = get_material(imat);
             const Index nel = material.element_ids.numel();
             const Index nkin = table_K.numel();
 
@@ -317,7 +317,7 @@ namespace noa::pms {
                               torch::where(table_CS[imat] <= 0.0, torch::tensor(1.0, tensor_ops()),
                                            table_CS[imat]).view({1, 1, nkin});
 
-            auto ionisation = dcs::pumas::DEDX_SCALE *
+            const auto ionisation = dcs::pumas::DEDX_SCALE *
                               torch::from_blob(dedx_table.Ionisation.data(), nkin, torch::kDouble).to(tensor_ops());
 
             auto be_cel = compute_be_cel(
@@ -344,9 +344,9 @@ namespace noa::pms {
         }
 
         inline void set_dedx_tables(mdf::MaterialsDEDXData &dedx_data) {
-            const int nmat = num_materials();
+            const Index nmat = num_materials();
             init_dedx_tables(nmat);
-            for (int imat = 0; imat < nmat; imat++)
+            for (Index imat = 0; imat < nmat; imat++)
                 compute_dedx_tables(
                         imat, std::get<mdf::DEDXTable>(dedx_data.at(get_material_name(imat)))
                 );
@@ -404,7 +404,7 @@ namespace noa::pms {
         inline void compute_coulomb_scattering_tables(const MaterialId imat) {
             const auto &elids = get_material(imat).element_ids;
             const auto &fracs = get_material(imat).fractions;
-            const Index nel = elids.numel();
+            const auto nel = elids.numel();
 
             const auto G = coulomb_workspace.G.index_select(0, elids);
             const auto fCM = coulomb_workspace.fCM.index_select(0, elids);
@@ -423,7 +423,7 @@ namespace noa::pms {
             table_Lb[imat] = lb_h * table_K * (table_K + 2 * MUON_MASS);
             table_NI_el[imat] = 1. / (table_dE[imat] * lb_h);
 
-            for (int iel = 0; iel < nel; iel++) {
+            for (Index iel = 0; iel < nel; iel++) {
                 const auto &Gi = G[iel];
                 dcs::pumas::coulomb_transport(
                         Gi, screen[iel], fspin[iel], mu0);
@@ -437,10 +437,10 @@ namespace noa::pms {
         }
 
         inline void set_coulomb_parameters() {
-            const int nmat = num_materials();
+            const Index nmat = num_materials();
             init_coulomb_parameters();
 
-            for (int imat = 0; imat < nmat; imat++)
+            for (Index imat = 0; imat < nmat; imat++)
                 compute_coulomb_scattering_tables(imat);
 
             coulomb_workspace = CoulombWorkspace{}; // drop CoulombWorkspace data
@@ -448,11 +448,11 @@ namespace noa::pms {
 
         // TODO: implement CUDA version
         inline void set_cel_integrals() {
-            const int nmat = num_materials();
+            const Index nmat = num_materials();
             init_cel_integrals(nmat);
 
             const Scalar I0 = dcs::pumas::compute_momentum_integral(table_K[0].item<Scalar>(), MUON_MASS);
-            for (int imat = 0; imat < nmat; imat++) {
+            for (Index imat = 0; imat < nmat; imat++) {
                 dcs::pumas::compute_cel_grammage_integral(table_X[imat], table_dE[imat], table_K);
                 dcs::pumas::compute_cel_grammage_integral(table_X_CSDA[imat], table_dE_CSDA[imat], table_K);
                 dcs::pumas::compute_time_integral(table_T[imat], table_X[imat], table_K, MUON_MASS, I0);
