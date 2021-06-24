@@ -129,9 +129,8 @@ namespace noa::ghmc {
 
             for (const auto &hess : hess_.value()) {
                 const auto n = hess.size(0);
-                const auto[eigs, Q] = torch::symeig(
-                        -hess + conf.jitter * torch::eye(n, hess.options()) * torch::rand(n, hess.options()),
-                        true);
+                const auto[eigs, Q] = torch::linalg::eigh(
+                        -hess + conf.jitter * torch::eye(n, hess.options()) * torch::rand(n, hess.options()), "L");
 
                 const utils::Tensor check_Q = Q.detach().sum();
                 if (torch::isnan(check_Q).item<bool>() || torch::isinf(check_Q).item<bool>()) {

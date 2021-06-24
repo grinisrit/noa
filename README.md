@@ -10,7 +10,8 @@ Currently, we support only `GNU`, and `CUDA` for GPU (check [WSL](https://docs.n
 `NOA` is a header-only library, so you can directly drop the `include/noa` folder into your project.
 
 
-The core of the library depends on [LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) (which is also distributed via `pip` and `conda`) tested with version `1.8.1`. 
+The core of the library depends on [LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) 
+(which is also distributed via `pip` and `conda`) tested with version `1.9.0`. 
 For additional configuration needed by some applications please refer to the documentation [below](#applications).
 
 We encourage you to work with `conda`. The provided environment contains all the required libraries:
