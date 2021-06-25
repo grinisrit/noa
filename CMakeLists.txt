@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 project(NOA
         VERSION 0.0.1
         DESCRIPTION
-        "Bayesian Computation for Deep Learning in Modern C++"
+        "Bayesian Computation in Modern C++"
         HOMEPAGE_URL https://github.com/grinisrit/noa
         LANGUAGES CXX)
 
