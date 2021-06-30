@@ -193,8 +193,7 @@ namespace noa::utils {
         AT_DISPATCH_FLOATING_TYPES(computed.scalar_type(), "relative_error", [&] {
             res = torch::abs(
                     (computed - expected) / (computed + std::numeric_limits<scalar_t>::min()))
-                          .sum() /
-                  computed.numel();
+                          .mean();
         });
         return res;
     }
