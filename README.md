@@ -14,11 +14,13 @@ The core of the library depends on [LibTorch Pre-cxx11 ABI](https://pytorch.org/
 (which is also distributed via `pip` and `conda`) tested with version `1.9.0`. 
 For additional configuration needed by some applications please refer to the documentation [below](#applications).
 
-We encourage you to work with `conda`. The provided environment contains all the required libraries:
+We encourage you to work with `conda`. If your system supports `CUDA`, the environment [env.yml](env.yml) contains all the required libraries:
 ```
 $ conda env create -f env.yml
 $ conda activate noa
 ```
+For a `CPU` only installation please use [env-cpu.yml](env-cpu.yml) instead.
+
 Build tests & install the library (to turn testing off add `-DBUILD_NOA_TESTS=OFF`):
 ```
 $ mkdir -p build && cd build

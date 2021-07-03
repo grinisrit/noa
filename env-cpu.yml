@@ -1,5 +1,6 @@
 name: noa
 channels:
+  - pytorch
   - defaults
   - conda-forge
 dependencies:
@@ -11,5 +12,5 @@ dependencies:
   - python
   - pip
   - seaborn
-  - pip:
-    - torch==1.9.0 # Assumes CUDA toolkit installed on your system
+  - pytorch==1.9.0
+  - cpuonly # CPU only version for LibTorch 
