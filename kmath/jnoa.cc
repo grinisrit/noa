@@ -26,26 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "noa/ghmc.hh"
-#include <torch/torch.h>
-
+#include "jnoa.hh"
 #include "space_kscience_kmath_noa_JNoa.h"
 
-JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_testException(JNIEnv *env, jclass)
-{
-    jclass noa_exception = env->FindClass("space/kscience/kmath/noa/NoaException");
-    try
-    {
-        std::cout << (torch::rand({2, 3}) + torch::rand({3, 2})) << "\n";
-    }
-    catch (const std::exception &e)
-    {
-        env->ThrowNew(noa_exception, e.what());
-        std::cout << "Caught LibTorch exception in native runtime\n";
-    }
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_testException
+        (JNIEnv *env, jclass, jint seed) {
+    const auto res = jnoa::safe_run<int>(env, jnoa::test_exception, seed);
+    return res.has_value() ? res.value() : 10;
 }
 
-JNIEXPORT jboolean JNICALL Java_space_kscience_kmath_noa_JNoa_cudaIsAvailable(JNIEnv *, jclass)
-{
+JNIEXPORT jboolean JNICALL Java_space_kscience_kmath_noa_JNoa_cudaIsAvailable(JNIEnv *, jclass) {
     return torch::cuda::is_available();
 }

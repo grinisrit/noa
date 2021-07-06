@@ -28,6 +28,25 @@
 
 #pragma once
 
+#include <jni.h>
+#include <torch/torch.h>
+
 namespace jnoa {
 
-}
+    template<typename Result, typename Runner, typename... Args>
+    std::optional<Result> safe_run(JNIEnv *env, const Runner &runner, Args &&... args) {
+        const auto noa_exception = env->FindClass("space/kscience/kmath/noa/NoaException");
+        try {
+            return std::make_optional(runner(std::forward<Args>(args)...));
+        } catch (const std::exception &e) {
+            env->ThrowNew(noa_exception, e.what());
+            return std::nullopt;
+        }
+    }
+
+    inline const auto test_exception = [](int seed) {
+        torch::rand({2, 3}) + torch::rand({3, 2}); //this should throw
+        return seed;
+    };
+
+} // namespace jnoa
