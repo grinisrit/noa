@@ -63,12 +63,12 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeTensor
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_emptyTensor
         (JNIEnv *, jclass) {
-    return (long)new jnoa::Tensor;
+    return (long) new jnoa::Tensor;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobDouble
-        (JNIEnv *env, jclass,  jdoubleArray data, jintArray shape, jint device){
-    return (long)new jnoa::Tensor(
+        (JNIEnv *env, jclass, jdoubleArray data, jintArray shape, jint device) {
+    return (long) new jnoa::Tensor(
             jnoa::from_blob<double>(
                     env->GetDoubleArrayElements(data, nullptr),
                     jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
@@ -76,8 +76,8 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobDouble
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobFloat
-        (JNIEnv *env, jclass,  jfloatArray data, jintArray shape, jint device){
-    return (long)new jnoa::Tensor(
+        (JNIEnv *env, jclass, jfloatArray data, jintArray shape, jint device) {
+    return (long) new jnoa::Tensor(
             jnoa::from_blob<float>(
                     env->GetFloatArrayElements(data, nullptr),
                     jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
@@ -85,8 +85,8 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobFloat
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobLong
-        (JNIEnv *env, jclass,  jlongArray data, jintArray shape, jint device){
-    return (long)new jnoa::Tensor(
+        (JNIEnv *env, jclass, jlongArray data, jintArray shape, jint device) {
+    return (long) new jnoa::Tensor(
             jnoa::from_blob<long>(
                     env->GetLongArrayElements(data, nullptr),
                     jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
@@ -94,10 +94,50 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobLong
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobInt
-        (JNIEnv *env, jclass,  jintArray data, jintArray shape, jint device){
-    return (long)new jnoa::Tensor(
+        (JNIEnv *env, jclass, jintArray data, jintArray shape, jint device) {
+    return (long) new jnoa::Tensor(
             jnoa::from_blob<int>(
                     env->GetIntArrayElements(data, nullptr),
                     jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
                     jnoa::int_to_device(device)));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).clone());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToDevice
+        (JNIEnv *, jclass, jlong tensor_handle, jint device) {
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .to(jnoa::int_to_device(device), false, true));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToDouble
+        (JNIEnv *, jclass, jlong tensor_handle){
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .to(jnoa::dtype<double>(), false, false));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToFloat
+        (JNIEnv *, jclass, jlong tensor_handle){
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .to(jnoa::dtype<float>(), false, false));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToLong
+        (JNIEnv *, jclass, jlong tensor_handle){
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .to(jnoa::dtype<long>(), false, false));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToInt
+        (JNIEnv *, jclass, jlong tensor_handle){
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .to(jnoa::dtype<int>(), false, false));
 }
