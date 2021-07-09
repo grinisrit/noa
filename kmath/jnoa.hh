@@ -39,16 +39,14 @@ namespace jnoa {
 
     using TensorHandle = void *;
 
-    template <typename Handle>
-    inline Tensor &cast_tensor(const Handle &tensor_handle)
-    {
-        return *static_cast<Tensor *>((TensorHandle)tensor_handle);
+    template<typename Handle>
+    inline Tensor &cast_tensor(const Handle &tensor_handle) {
+        return *static_cast<Tensor *>((TensorHandle) tensor_handle);
     }
 
-    template <typename Handle>
-    inline void dispose_tensor(const Handle &tensor_handle)
-    {
-        delete static_cast<torch::Tensor *>((TensorHandle)tensor_handle);
+    template<typename Dtype>
+    inline c10::TensorOptions dtype() {
+        return torch::dtype(c10::CppTypeToScalarType<Dtype>{});
     }
 
     template<typename Result, typename Runner, typename... Args>
@@ -62,9 +60,38 @@ namespace jnoa {
         }
     }
 
+    inline int device_to_int(const Tensor &tensor) {
+        return (tensor.device().type() == torch::kCPU) ? 0 : 1 + tensor.device().index();
+    }
+
+    inline torch::Device int_to_device(int device_int) {
+        return (device_int == 0) ? torch::kCPU : torch::Device(torch::kCUDA, device_int - 1);
+    }
+
+    inline std::vector<int64_t> to_vec_int(int *arr, int arr_size) {
+        auto vec = std::vector<int64_t>(arr_size);
+        vec.assign(arr, arr + arr_size);
+        return vec;
+    }
+
     inline const auto test_exception = [](int seed) {
         torch::rand({2, 3}) + torch::rand({3, 2}); //this should throw
         return seed;
     };
+
+    template<typename Handle>
+    inline void dispose_tensor(const Handle &tensor_handle) {
+        delete static_cast<Tensor *>((TensorHandle) tensor_handle);
+    }
+
+    template<typename Dtype>
+    inline Tensor from_blob(Dtype *data, const std::vector<int64_t> &shape, torch::Device device) {
+        return torch::from_blob(data, shape, dtype<Dtype>()).to(
+                dtype<Dtype>()
+                        .layout(torch::kStrided)
+                        .device(device),
+                false, true);
+    }
+
 
 } // namespace jnoa

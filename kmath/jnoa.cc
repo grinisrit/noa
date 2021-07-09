@@ -60,3 +60,44 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeTensor
     if (tensor_handle != 0L)
         jnoa::dispose_tensor(tensor_handle);
 }
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_emptyTensor
+        (JNIEnv *, jclass) {
+    return (long)new jnoa::Tensor;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobDouble
+        (JNIEnv *env, jclass,  jdoubleArray data, jintArray shape, jint device){
+    return (long)new jnoa::Tensor(
+            jnoa::from_blob<double>(
+                    env->GetDoubleArrayElements(data, nullptr),
+                    jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
+                    jnoa::int_to_device(device)));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobFloat
+        (JNIEnv *env, jclass,  jfloatArray data, jintArray shape, jint device){
+    return (long)new jnoa::Tensor(
+            jnoa::from_blob<float>(
+                    env->GetFloatArrayElements(data, nullptr),
+                    jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
+                    jnoa::int_to_device(device)));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobLong
+        (JNIEnv *env, jclass,  jlongArray data, jintArray shape, jint device){
+    return (long)new jnoa::Tensor(
+            jnoa::from_blob<long>(
+                    env->GetLongArrayElements(data, nullptr),
+                    jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
+                    jnoa::int_to_device(device)));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobInt
+        (JNIEnv *env, jclass,  jintArray data, jintArray shape, jint device){
+    return (long)new jnoa::Tensor(
+            jnoa::from_blob<int>(
+                    env->GetIntArrayElements(data, nullptr),
+                    jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape)),
+                    jnoa::int_to_device(device)));
+}
