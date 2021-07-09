@@ -115,29 +115,44 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToDevice
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToDouble
-        (JNIEnv *, jclass, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong tensor_handle) {
     return (long) new jnoa::Tensor(
             jnoa::cast_tensor(tensor_handle)
                     .to(jnoa::dtype<double>(), false, false));
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToFloat
-        (JNIEnv *, jclass, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong tensor_handle) {
     return (long) new jnoa::Tensor(
             jnoa::cast_tensor(tensor_handle)
                     .to(jnoa::dtype<float>(), false, false));
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToLong
-        (JNIEnv *, jclass, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong tensor_handle) {
     return (long) new jnoa::Tensor(
             jnoa::cast_tensor(tensor_handle)
                     .to(jnoa::dtype<long>(), false, false));
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_copyToInt
-        (JNIEnv *, jclass, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong tensor_handle) {
     return (long) new jnoa::Tensor(
             jnoa::cast_tensor(tensor_handle)
                     .to(jnoa::dtype<int>(), false, false));
 }
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_viewTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray shape) {
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .view(jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr), env->GetArrayLength(shape))));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_viewAsTensor
+        (JNIEnv *, jclass, jlong tensor_handle, jlong as_tensor_handle) {
+    return (long) new jnoa::Tensor(
+            jnoa::cast_tensor(tensor_handle)
+                    .view_as(jnoa::cast_tensor(as_tensor_handle)));
+}
+
