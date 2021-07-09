@@ -223,11 +223,24 @@ JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getItemInt
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getIndex
-        (JNIEnv *env, jclass, jlong tensor_handle, jint i){
+        (JNIEnv *env, jclass, jlong tensor_handle, jint index) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
-                                [](const jnoa::Tensor &tensor, int i) {
-                return tensor[i]; },
-                                jnoa::cast_tensor(tensor_handle), i);
+                                         [](const jnoa::Tensor &tensor, int index) {
+                                             return tensor[index];
+                                         },
+                                         jnoa::cast_tensor(tensor_handle), index);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getIndexTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jlong index_tensor_handle) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const jnoa::Tensor &tensor, const jnoa::Tensor &index_tensor) {
+                                             return tensor[index_tensor];
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         jnoa::cast_tensor(index_tensor_handle));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
