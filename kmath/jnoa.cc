@@ -32,9 +32,31 @@
 JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_testException
         (JNIEnv *env, jclass, jint seed) {
     const auto res = jnoa::safe_run<int>(env, jnoa::test_exception, seed);
-    return res.has_value() ? res.value() : 10;
+    return res.has_value() ? res.value() : 0;
 }
 
-JNIEXPORT jboolean JNICALL Java_space_kscience_kmath_noa_JNoa_cudaIsAvailable(JNIEnv *, jclass) {
+JNIEXPORT jboolean JNICALL Java_space_kscience_kmath_noa_JNoa_cudaIsAvailable
+        (JNIEnv *, jclass) {
     return torch::cuda::is_available();
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getNumThreads
+        (JNIEnv *, jclass) {
+    return torch::get_num_threads();
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setNumThreads
+        (JNIEnv *, jclass, jint num_threads) {
+    torch::set_num_threads(num_threads);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setSeed
+        (JNIEnv *, jclass, jint seed) {
+    torch::manual_seed(seed);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    if (tensor_handle != 0L)
+        jnoa::dispose_tensor(tensor_handle);
 }

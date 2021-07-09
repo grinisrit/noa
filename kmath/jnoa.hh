@@ -28,10 +28,28 @@
 
 #pragma once
 
+#include <noa/utils/common.hh>
+
 #include <jni.h>
 #include <torch/torch.h>
 
 namespace jnoa {
+
+    using namespace noa::utils;
+
+    using TensorHandle = void *;
+
+    template <typename Handle>
+    inline Tensor &cast_tensor(const Handle &tensor_handle)
+    {
+        return *static_cast<Tensor *>((TensorHandle)tensor_handle);
+    }
+
+    template <typename Handle>
+    inline void dispose_tensor(const Handle &tensor_handle)
+    {
+        delete static_cast<torch::Tensor *>((TensorHandle)tensor_handle);
+    }
 
     template<typename Result, typename Runner, typename... Args>
     std::optional<Result> safe_run(JNIEnv *env, const Runner &runner, Args &&... args) {
