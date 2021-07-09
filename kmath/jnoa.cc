@@ -156,3 +156,33 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_viewAsTensor
                     .view_as(jnoa::cast_tensor(as_tensor_handle)));
 }
 
+JNIEXPORT jstring JNICALL Java_space_kscience_kmath_noa_JNoa_tensorToString
+        (JNIEnv *env, jclass, jlong tensor_handle){
+    return env->NewStringUTF(jnoa::tensor_to_string(jnoa::cast_tensor(tensor_handle)).c_str());
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getDim
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return jnoa::cast_tensor(tensor_handle).dim();
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getNumel
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return jnoa::cast_tensor(tensor_handle).numel();
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getShapeAt
+        (JNIEnv *, jclass, jlong tensor_handle, jint d){
+    return jnoa::cast_tensor(tensor_handle).size(d);
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getStrideAt
+        (JNIEnv *, jclass, jlong tensor_handle, jint d){
+    return jnoa::cast_tensor(tensor_handle).stride(d);
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getDevice
+        (JNIEnv *, jclass, jlong tensor_handle){
+    return jnoa::device_to_int(jnoa::cast_tensor(tensor_handle));
+}
+

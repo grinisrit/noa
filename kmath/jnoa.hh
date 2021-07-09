@@ -93,5 +93,12 @@ namespace jnoa {
                 false, true);
     }
 
+    inline std::string tensor_to_string(const Tensor &tensor)
+    {
+        std::stringstream bufrep;
+        bufrep << tensor;
+        return bufrep.str();
+    }
+
 
 } // namespace jnoa
