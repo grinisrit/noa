@@ -433,3 +433,32 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintInt
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randLike
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long)new jnoa::Tensor(torch::rand_like(jnoa::cast_tensor(tensor_handle)));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_randLikeAssign
+        (JNIEnv *, jclass, jlong tensor_handle){
+    jnoa::cast_tensor(tensor_handle) = torch::rand_like(jnoa::cast_tensor(tensor_handle));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randnLike
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long)new jnoa::Tensor(torch::randn_like(jnoa::cast_tensor(tensor_handle)));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_randnLikeAssign
+        (JNIEnv *, jclass, jlong tensor_handle){
+    jnoa::cast_tensor(tensor_handle) = torch::randn_like(jnoa::cast_tensor(tensor_handle));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintLike
+        (JNIEnv *, jclass, jlong low, jlong high, jlong tensor_handle){
+    return (long)new jnoa::Tensor(torch::randint_like(jnoa::cast_tensor(tensor_handle), low, high));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_randintLikeAssign
+        (JNIEnv *, jclass, jlong low, jlong high, jlong tensor_handle){
+    jnoa::cast_tensor(tensor_handle) = torch::randint_like(jnoa::cast_tensor(tensor_handle), low, high);
+}
