@@ -233,14 +233,93 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getIndex
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
-JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getIndexTensor
-        (JNIEnv *env, jclass, jlong tensor_handle, jlong index_tensor_handle) {
+JNIEXPORT jdouble JNICALL Java_space_kscience_kmath_noa_JNoa_getDouble
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
     const auto res =
-            jnoa::safe_run<jnoa::Tensor>(env,
-                                         [](const jnoa::Tensor &tensor, const jnoa::Tensor &index_tensor) {
-                                             return tensor[index_tensor];
-                                         },
-                                         jnoa::cast_tensor(tensor_handle),
-                                         jnoa::cast_tensor(index_tensor_handle));
-    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+            jnoa::safe_run<double>(env,
+                                   [](const jnoa::Tensor &tensor, const int *index) {
+                                       return jnoa::get<double>(tensor, index);
+                                   },
+                                   jnoa::cast_tensor(tensor_handle),
+                                   env->GetIntArrayElements(index, nullptr));
+    return res.has_value() ? res.value() : 0.;
+}
+
+JNIEXPORT jfloat JNICALL Java_space_kscience_kmath_noa_JNoa_getFloat
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    const auto res =
+            jnoa::safe_run<float>(env,
+                                  [](const jnoa::Tensor &tensor, const int *index) {
+                                      return jnoa::get<float>(tensor, index);
+                                  },
+                                  jnoa::cast_tensor(tensor_handle),
+                                  env->GetIntArrayElements(index, nullptr));
+    return res.has_value() ? res.value() : 0.f;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getLong
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    const auto res =
+            jnoa::safe_run<long>(env,
+                                 [](const jnoa::Tensor &tensor, const int *index) {
+                                     return jnoa::get<long>(tensor, index);
+                                 },
+                                 jnoa::cast_tensor(tensor_handle),
+                                 env->GetIntArrayElements(index, nullptr));
+    return res.has_value() ? res.value() : 0L;
+}
+
+JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getInt
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    const auto res =
+            jnoa::safe_run<int>(env,
+                                [](const jnoa::Tensor &tensor, const int *index) {
+                                    return jnoa::get<int>(tensor, index);
+                                },
+                                jnoa::cast_tensor(tensor_handle),
+                                env->GetIntArrayElements(index, nullptr));
+    return res.has_value() ? res.value() : 0;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setDouble
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jdouble value) {
+    jnoa::safe_run(env,
+                   [](const jnoa::Tensor &tensor, const int *index, const double &value) {
+                       jnoa::set<double>(tensor, index, value);
+                   },
+                   jnoa::cast_tensor(tensor_handle),
+                   env->GetIntArrayElements(index, nullptr),
+                   value);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setFloat
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jfloat value) {
+    jnoa::safe_run(env,
+                   [](const jnoa::Tensor &tensor, const int *index, const float &value) {
+                       jnoa::set<float>(tensor, index, value);
+                   },
+                   jnoa::cast_tensor(tensor_handle),
+                   env->GetIntArrayElements(index, nullptr),
+                   value);
+}
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setLong
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jlong value) {
+    jnoa::safe_run(env,
+                   [](const jnoa::Tensor &tensor, const int *index, const long &value) {
+                       jnoa::set<long>(tensor, index, value);
+                   },
+                   jnoa::cast_tensor(tensor_handle),
+                   env->GetIntArrayElements(index, nullptr),
+                   value);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setInt
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jint value) {
+    jnoa::safe_run(env,
+                   [](const jnoa::Tensor &tensor, const int *index, const int &value) {
+                       jnoa::set<int>(tensor, index, value);
+                   },
+                   jnoa::cast_tensor(tensor_handle),
+                   env->GetIntArrayElements(index, nullptr),
+                   value);
 }

@@ -60,6 +60,16 @@ namespace jnoa {
         }
     }
 
+    template<typename Runner, typename... Args>
+    void safe_run(JNIEnv *env, const Runner &runner, Args &&... args) {
+        const auto noa_exception = env->FindClass("space/kscience/kmath/noa/NoaException");
+        try {
+            runner(std::forward<Args>(args)...);
+        } catch (const std::exception &e) {
+            env->ThrowNew(noa_exception, e.what());
+        }
+    }
+
     inline int device_to_int(const Tensor &tensor) {
         return (tensor.device().type() == torch::kCPU) ? 0 : 1 + tensor.device().index();
     }
@@ -72,6 +82,16 @@ namespace jnoa {
         auto vec = std::vector<int64_t>(arr_size);
         vec.assign(arr, arr + arr_size);
         return vec;
+    }
+
+    inline std::vector<at::indexing::TensorIndex> to_index(const int *arr, int arr_size)
+    {
+        std::vector<at::indexing::TensorIndex> index;
+        for (int i = 0; i < arr_size; i++)
+        {
+            index.emplace_back(arr[i]);
+        }
+        return index;
     }
 
     inline const auto test_exception = [](int seed) {
@@ -98,6 +118,18 @@ namespace jnoa {
         std::stringstream bufrep;
         bufrep << tensor;
         return bufrep.str();
+    }
+
+    template <typename DType>
+    inline DType get(const torch::Tensor &tensor, const int *index)
+    {
+        return tensor.index(to_index(index, tensor.dim())).item<DType>();
+    }
+
+    template <typename DType>
+    inline void set(const torch::Tensor &tensor, const int *index, const DType &value)
+    {
+        tensor.index(to_index(index, tensor.dim())) = value;
     }
 
 
