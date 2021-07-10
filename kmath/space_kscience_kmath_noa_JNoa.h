@@ -914,10 +914,10 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_argMaxTensor
 /*
  * Class:     space_kscience_kmath_noa_JNoa
  * Method:    flattenTensor
- * Signature: (J)J
+ * Signature: (JII)J
  */
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_flattenTensor
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jlong, jint, jint);
 
 /*
  * Class:     space_kscience_kmath_noa_JNoa

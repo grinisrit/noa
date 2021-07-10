@@ -870,5 +870,27 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_varDimTensor
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_argMaxTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep){
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return tensor.argmax(i, keep);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_flattenTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jint j){
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const int j) {
+                                             return tensor.flatten(i, j);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         i, j);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
 
