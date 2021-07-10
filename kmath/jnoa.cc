@@ -592,7 +592,7 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_timesTensorAssign
         (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
     jnoa::safe_run(env,
                    [](auto &lhs, const auto &rhs) {
-                       return lhs *= rhs;
+                       lhs *= rhs;
                    },
                    jnoa::cast_tensor(lhs),
                    jnoa::cast_tensor(rhs));
@@ -614,7 +614,7 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_divTensorAssign
         (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
     jnoa::safe_run(env,
                    [](auto &lhs, const auto &rhs) {
-                       return lhs /= rhs;
+                       lhs /= rhs;
                    },
                    jnoa::cast_tensor(lhs),
                    jnoa::cast_tensor(rhs));
@@ -636,7 +636,7 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_plusTensorAssign
         (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
     jnoa::safe_run(env,
                    [](auto &lhs, const auto &rhs) {
-                       return lhs += rhs;
+                       lhs += rhs;
                    },
                    jnoa::cast_tensor(lhs),
                    jnoa::cast_tensor(rhs));
@@ -658,7 +658,7 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_minusTensorAssign
         (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
     jnoa::safe_run(env,
                    [](auto &lhs, const auto &rhs) {
-                       return lhs -= rhs;
+                       lhs -= rhs;
                    },
                    jnoa::cast_tensor(lhs),
                    jnoa::cast_tensor(rhs));
@@ -871,7 +871,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_varDimTensor
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_argMaxTensor
-        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep){
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          [](const auto &tensor, const int i, const bool keep) {
@@ -883,7 +883,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_argMaxTensor
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_flattenTensor
-        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jint j){
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jint j) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          [](const auto &tensor, const int i, const int j) {
@@ -894,3 +894,34 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_flattenTensor
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_matmul
+        (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &lhs, const auto &rhs) {
+                                             return lhs.matmul(rhs);
+                                         },
+                                         jnoa::cast_tensor(lhs),
+                                         jnoa::cast_tensor(rhs));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_matmulAssign
+        (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
+    jnoa::safe_run(env,
+                   [](auto &lhs, const auto &rhs) {
+                       lhs = lhs.matmul(rhs);
+                   },
+                   jnoa::cast_tensor(lhs),
+                   jnoa::cast_tensor(rhs));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_matmulRightAssign
+        (JNIEnv *env, jclass, jlong lhs, jlong rhs) {
+    jnoa::safe_run(env,
+                   [](const auto &lhs, auto &rhs) {
+                       rhs = lhs.matmul(rhs);
+                   },
+                   jnoa::cast_tensor(lhs),
+                   jnoa::cast_tensor(rhs));
+}
