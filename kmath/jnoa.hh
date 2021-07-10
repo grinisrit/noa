@@ -132,7 +132,7 @@ namespace jnoa {
     };
 
     template <typename DType>
-    inline const auto setter = [](const torch::Tensor &tensor, const int *index, const DType &value)
+    inline const auto setter = [](torch::Tensor &tensor, const int *index, const DType &value)
     {
         tensor.index(to_index(index, tensor.dim())) = value;
     };
