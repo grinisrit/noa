@@ -37,6 +37,8 @@ namespace jnoa {
 
     using namespace noa::utils;
 
+    using TensorPair = std::tuple<Tensor, Tensor>;
+    using TensorTriple = std::tuple<Tensor, Tensor, Tensor>;
     using TensorHandle = void *;
 
     template<typename Handle>
