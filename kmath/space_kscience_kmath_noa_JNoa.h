@@ -657,19 +657,19 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_unaryMinus
 
 /*
  * Class:     space_kscience_kmath_noa_JNoa
- * Method:    absTensor
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_absTensor
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     space_kscience_kmath_noa_JNoa
  * Method:    transposeTensor
  * Signature: (JII)J
  */
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_transposeTensor
   (JNIEnv *, jclass, jlong, jint, jint);
+
+/*
+ * Class:     space_kscience_kmath_noa_JNoa
+ * Method:    absTensor
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_absTensor
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     space_kscience_kmath_noa_JNoa

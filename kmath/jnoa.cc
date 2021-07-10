@@ -665,7 +665,19 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_minusTensorAssign
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_unaryMinus
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(-jnoa::cast_tensor(tensor_handle));
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(-jnoa::cast_tensor(tensor_handle));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_transposeTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jint j) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const int j) {
+                                             return tensor.transpose(i,j);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         i, j);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
