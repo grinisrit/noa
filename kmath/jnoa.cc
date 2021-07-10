@@ -674,7 +674,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_transposeTensor
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          [](const auto &tensor, const int i, const int j) {
-                                             return tensor.transpose(i,j);
+                                             return tensor.transpose(i, j);
                                          },
                                          jnoa::cast_tensor(tensor_handle),
                                          i, j);
@@ -682,87 +682,193 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_transposeTensor
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_absTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).abs());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).abs());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_expTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).exp());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).exp());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_lnTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).log());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).log());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_sqrtTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sqrt());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sqrt());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_cosTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).cos());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).cos());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_acosTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).acos());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).acos());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_coshTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).cosh());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).cosh());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_acoshTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).acosh());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).acosh());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_sinTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sin());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sin());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_sinhTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sinh());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sinh());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_asinhTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).asinh());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).asinh());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_tanTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).tan());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).tan());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_atanTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).atan());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).atan());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_tanhTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).tanh());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).tanh());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_atanhTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).atanh());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).atanh());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_ceilTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).ceil());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).ceil());
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_floorTensor
-        (JNIEnv *, jclass, jlong tensor_handle){
-    return (long)new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).floor());
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).floor());
 }
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_sumTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).sum());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_sumDimTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return tensor.sum(i, keep);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_minTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).min());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_minDimTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return std::get<0>(torch::min(tensor, i, keep));
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_maxTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).max());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_maxDimTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return std::get<0>(torch::max(tensor, i, keep));
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_meanTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).mean());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_meanDimTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return tensor.mean(i, keep);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_stdTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).std());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_stdDimTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return tensor.std(i, keep);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_varTensor
+        (JNIEnv *, jclass, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(jnoa::cast_tensor(tensor_handle).var());
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_varDimTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint dim, jboolean keep) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor, const int i, const bool keep) {
+                                             return tensor.var(i, keep);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle),
+                                         dim, keep);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+
 
