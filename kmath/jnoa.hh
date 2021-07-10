@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <noa/utils/numerics.hh>
 #include <noa/utils/common.hh>
 
 #include <jni.h>
@@ -161,6 +162,14 @@ namespace jnoa {
     inline const auto full = [](const Dtype &value, const std::vector<int64_t> &shape, const torch::Device &device)
     {
         return torch::full(shape, value, dtype<Dtype>().layout(torch::kStrided).device(device));
+    };
+
+    inline const auto hess = [](const Tensor &value, const Tensor &variable){
+        const auto hess_ = numerics::hessian(ADGraph{value, {variable}});
+        if(hess_.has_value())
+            return hess_.value()[0];
+        else
+            throw std::invalid_argument("Failed to compute Hessian");
     };
 
 
