@@ -78,13 +78,13 @@ namespace jnoa {
         return (device_int == 0) ? torch::kCPU : torch::Device(torch::kCUDA, device_int - 1);
     }
 
-    inline std::vector<int64_t> to_vec_int(int *arr, int arr_size) {
+    inline std::vector<int64_t> to_vec_int(const int *arr, const int arr_size) {
         auto vec = std::vector<int64_t>(arr_size);
         vec.assign(arr, arr + arr_size);
         return vec;
     }
 
-    inline std::vector<at::indexing::TensorIndex> to_index(const int *arr, int arr_size)
+    inline std::vector<at::indexing::TensorIndex> to_index(const int *arr, const int arr_size)
     {
         std::vector<at::indexing::TensorIndex> index;
         for (int i = 0; i < arr_size; i++)
@@ -94,7 +94,7 @@ namespace jnoa {
         return index;
     }
 
-    inline const auto test_exception = [](int seed) {
+    inline const auto test_exception = [](const int seed) {
         torch::rand({2, 3}) + torch::rand({3, 2}); //this should throw
         return seed;
     };
@@ -105,13 +105,13 @@ namespace jnoa {
     }
 
     template<typename Dtype>
-    inline Tensor from_blob(Dtype *data, const std::vector<int64_t> &shape, torch::Device device) {
+    inline const auto from_blob = [](Dtype *data, const std::vector<int64_t> &shape, const torch::Device &device) {
         return torch::from_blob(data, shape, dtype<Dtype>()).to(
                 dtype<Dtype>()
                         .layout(torch::kStrided)
                         .device(device),
                 false, true);
-    }
+    };
 
     inline std::string tensor_to_string(const Tensor &tensor)
     {
@@ -121,16 +121,34 @@ namespace jnoa {
     }
 
     template <typename DType>
-    inline DType get(const torch::Tensor &tensor, const int *index)
+    inline const auto getter = [](const torch::Tensor &tensor, const int *index)
     {
         return tensor.index(to_index(index, tensor.dim())).item<DType>();
-    }
+    };
 
     template <typename DType>
-    inline void set(const torch::Tensor &tensor, const int *index, const DType &value)
+    inline const auto setter = [](const torch::Tensor &tensor, const int *index, const DType &value)
     {
         tensor.index(to_index(index, tensor.dim())) = value;
-    }
+    };
+
+    template <typename Dtype>
+    inline const auto randn = [](const std::vector<int64_t> &shape, const torch::Device &device)
+    {
+        return torch::randn(shape, dtype<Dtype>().layout(torch::kStrided).device(device));
+    };
+
+    template <typename Dtype>
+    inline const auto rand = [](const std::vector<int64_t> &shape, const torch::Device &device)
+    {
+        return torch::rand(shape, dtype<Dtype>().layout(torch::kStrided).device(device));
+    };
+
+    template <typename Dtype>
+    inline const auto randint = [](long low, long high, const std::vector<int64_t> &shape, const torch::Device &device)
+    {
+        return torch::randint(low, high, shape, dtype(dtype<Dtype>().layout(torch::kStrided).device(device)));
+    };
 
 
 } // namespace jnoa
