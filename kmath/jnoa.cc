@@ -72,8 +72,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobDouble
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::from_blob<double>,
                                          env->GetDoubleArrayElements(data, nullptr),
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -84,8 +83,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobFloat
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::from_blob<float>,
                                          env->GetFloatArrayElements(data, nullptr),
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -96,8 +94,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobLong
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::from_blob<long>,
                                          env->GetLongArrayElements(data, nullptr),
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -108,8 +105,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobInt
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::from_blob<int>,
                                          env->GetIntArrayElements(data, nullptr),
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -167,8 +163,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_viewTensor
                                              return tensor.view(shape);
                                          },
                                          jnoa::cast_tensor(tensor_handle),
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)));
+                                         jnoa::to_shape(env, shape));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
@@ -342,8 +337,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randDouble
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::rand<double>,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -353,8 +347,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randnDouble
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::randn<double>,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -364,8 +357,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randFloat
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::rand<float>,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
@@ -375,59 +367,54 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randnFloat
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::randn<float>,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device));
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintDouble
-        (JNIEnv *env , jclass, jlong low, jlong high, jintArray shape, jint device){
+        (JNIEnv *env, jclass, jlong low, jlong high, jintArray shape, jint device) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::randint<double>,
                                          low, high,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device)
-                                         );
+            );
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintFloat
-        (JNIEnv *env , jclass, jlong low, jlong high, jintArray shape, jint device){
+        (JNIEnv *env, jclass, jlong low, jlong high, jintArray shape, jint device) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::randint<float>,
                                          low, high,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device)
             );
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintLong
-        (JNIEnv *env , jclass, jlong low, jlong high, jintArray shape, jint device){
+        (JNIEnv *env, jclass, jlong low, jlong high, jintArray shape, jint device) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::randint<long>,
                                          low, high,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device)
             );
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintInt
-        (JNIEnv *env , jclass, jlong low, jlong high, jintArray shape, jint device){
+        (JNIEnv *env, jclass, jlong low, jlong high, jintArray shape, jint device) {
     const auto res =
             jnoa::safe_run<jnoa::Tensor>(env,
                                          jnoa::randint<int>,
                                          low, high,
-                                         jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
-                                                          env->GetArrayLength(shape)),
+                                         jnoa::to_shape(env, shape),
                                          jnoa::int_to_device(device)
             );
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
@@ -435,30 +422,76 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintInt
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randLike
         (JNIEnv *, jclass, jlong tensor_handle) {
-    return (long)new jnoa::Tensor(torch::rand_like(jnoa::cast_tensor(tensor_handle)));
+    return (long) new jnoa::Tensor(torch::rand_like(jnoa::cast_tensor(tensor_handle)));
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_randLikeAssign
-        (JNIEnv *, jclass, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong tensor_handle) {
     jnoa::cast_tensor(tensor_handle) = torch::rand_like(jnoa::cast_tensor(tensor_handle));
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randnLike
         (JNIEnv *, jclass, jlong tensor_handle) {
-    return (long)new jnoa::Tensor(torch::randn_like(jnoa::cast_tensor(tensor_handle)));
+    return (long) new jnoa::Tensor(torch::randn_like(jnoa::cast_tensor(tensor_handle)));
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_randnLikeAssign
-        (JNIEnv *, jclass, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong tensor_handle) {
     jnoa::cast_tensor(tensor_handle) = torch::randn_like(jnoa::cast_tensor(tensor_handle));
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randintLike
-        (JNIEnv *, jclass, jlong low, jlong high, jlong tensor_handle){
-    return (long)new jnoa::Tensor(torch::randint_like(jnoa::cast_tensor(tensor_handle), low, high));
+        (JNIEnv *, jclass, jlong low, jlong high, jlong tensor_handle) {
+    return (long) new jnoa::Tensor(torch::randint_like(jnoa::cast_tensor(tensor_handle), low, high));
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_randintLikeAssign
-        (JNIEnv *, jclass, jlong low, jlong high, jlong tensor_handle){
+        (JNIEnv *, jclass, jlong low, jlong high, jlong tensor_handle) {
     jnoa::cast_tensor(tensor_handle) = torch::randint_like(jnoa::cast_tensor(tensor_handle), low, high);
 }
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fullDouble
+        (JNIEnv *env, jclass, jdouble value, jintArray shape, jint device) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         jnoa::full<double>,
+                                         value,
+                                         jnoa::to_shape(env, shape),
+                                         jnoa::int_to_device(device));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fullFloat
+        (JNIEnv *env, jclass, jfloat value, jintArray shape, jint device) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         jnoa::full<float>,
+                                         value,
+                                         jnoa::to_shape(env, shape),
+                                         jnoa::int_to_device(device));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fullLong
+        (JNIEnv *env, jclass, jlong value, jintArray shape, jint device) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         jnoa::full<long>,
+                                         value,
+                                         jnoa::to_shape(env, shape),
+                                         jnoa::int_to_device(device));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fullInt
+        (JNIEnv *env, jclass, jint value, jintArray shape, jint device) {
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         jnoa::full<int>,
+                                         value,
+                                         jnoa::to_shape(env, shape),
+                                         jnoa::int_to_device(device));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+

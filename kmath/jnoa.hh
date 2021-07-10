@@ -84,6 +84,11 @@ namespace jnoa {
         return vec;
     }
 
+    inline std::vector<int64_t> to_shape(JNIEnv *env, const jintArray &shape) {
+        return jnoa::to_vec_int(env->GetIntArrayElements(shape, nullptr),
+                                env->GetArrayLength(shape));
+    }
+
     inline std::vector<at::indexing::TensorIndex> to_index(const int *arr, const int arr_size)
     {
         std::vector<at::indexing::TensorIndex> index;
@@ -148,6 +153,12 @@ namespace jnoa {
     inline const auto randint = [](long low, long high, const std::vector<int64_t> &shape, const torch::Device &device)
     {
         return torch::randint(low, high, shape, dtype<Dtype>().layout(torch::kStrided).device(device));
+    };
+
+    template <typename Dtype>
+    inline const auto full = [](const Dtype &value, const std::vector<int64_t> &shape, const torch::Device &device)
+    {
+        return torch::full(shape, value, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
 
