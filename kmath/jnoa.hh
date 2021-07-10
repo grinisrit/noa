@@ -147,7 +147,7 @@ namespace jnoa {
     template <typename Dtype>
     inline const auto randint = [](long low, long high, const std::vector<int64_t> &shape, const torch::Device &device)
     {
-        return torch::randint(low, high, shape, dtype(dtype<Dtype>().layout(torch::kStrided).device(device)));
+        return torch::randint(low, high, shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
 
