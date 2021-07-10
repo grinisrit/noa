@@ -925,3 +925,50 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_matmulRightAssign
                    jnoa::cast_tensor(lhs),
                    jnoa::cast_tensor(rhs));
 }
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_diagEmbed
+        (JNIEnv *env, jclass, jlong diags_handle, jint offset, jint dim1, jint dim2){
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &diag_tensor, const int offset,
+                                                 const int dim1, const int dim2) {
+                                             return torch::diag_embed(diag_tensor, offset, dim1, dim2);
+                                         },
+                                         jnoa::cast_tensor(diags_handle),
+                                         offset, dim1, dim2);
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_detTensor
+        (JNIEnv *env, jclass, jlong tensor_handle){
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor) {
+                                             return torch::linalg::det(tensor);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_invTensor
+        (JNIEnv *env, jclass, jlong tensor_handle){
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor) {
+                                             return torch::linalg::inv(tensor);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_choleskyTensor
+        (JNIEnv *env, jclass, jlong tensor_handle){
+    const auto res =
+            jnoa::safe_run<jnoa::Tensor>(env,
+                                         [](const auto &tensor) {
+                                             return torch::linalg::cholesky(tensor);
+                                         },
+                                         jnoa::cast_tensor(tensor_handle));
+    return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
+}
+
