@@ -494,4 +494,82 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fullInt
     return res.has_value() ? (long) new jnoa::Tensor(res.value()) : 0L;
 }
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_timesDouble(JNIEnv *, jclass, jdouble value, jlong other)
+{
+    return (long)new jnoa::Tensor(value * jnoa::cast_tensor(other));
+}
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_timesFloat(JNIEnv *, jclass, jfloat value, jlong other)
+{
+    return (long)new jnoa::Tensor(value * jnoa::cast_tensor(other));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_timesLong(JNIEnv *, jclass, jlong value, jlong other)
+{
+    return (long)new jnoa::Tensor(value * jnoa::cast_tensor(other));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_timesInt(JNIEnv *, jclass, jint value, jlong other)
+{
+    return (long)new jnoa::Tensor(value * jnoa::cast_tensor(other));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_timesDoubleAssign(JNIEnv *, jclass, jdouble value, jlong other)
+{
+    jnoa::cast_tensor(other) *= value;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_timesFloatAssign(JNIEnv *, jclass, jfloat value, jlong other)
+{
+    jnoa::cast_tensor(other) *= value;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_timesLongAssign(JNIEnv *, jclass, jlong value, jlong other)
+{
+    jnoa::cast_tensor(other) *= value;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_timesIntAssign(JNIEnv *, jclass, jint value, jlong other)
+{
+    jnoa::cast_tensor(other) *= value;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_plusDouble(JNIEnv *, jclass, jdouble value, jlong other)
+{
+    return (long)new jnoa::Tensor(value + jnoa::cast_tensor(other));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_plusFloat(JNIEnv *, jclass, jfloat value, jlong other)
+{
+    return (long)new jnoa::Tensor(value + jnoa::cast_tensor(other));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_plusLong(JNIEnv *, jclass, jlong value, jlong other)
+{
+    return (long)new jnoa::Tensor(value + jnoa::cast_tensor(other));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_plusInt(JNIEnv *, jclass, jint value, jlong other)
+{
+    return (long)new jnoa::Tensor(value + jnoa::cast_tensor(other));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_plusDoubleAssign(JNIEnv *, jclass, jdouble value, jlong other)
+{
+    jnoa::cast_tensor(other) += value;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_plusFloatAssign(JNIEnv *, jclass, jfloat value, jlong other)
+{
+    jnoa::cast_tensor(other) += value;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_plusLongAssign(JNIEnv *, jclass, jlong value, jlong other)
+{
+    jnoa::cast_tensor(other) += value;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_plusIntAssign(JNIEnv *, jclass, jint value, jlong other)
+{
+    jnoa::cast_tensor(other) += value;
+}
