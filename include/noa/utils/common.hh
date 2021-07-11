@@ -213,7 +213,7 @@ namespace noa::utils {
 
     template<typename NetNamedData>
     inline NamedTensors to_named_tensors(const NetNamedData &net_named_data, bool copy) {
-        auto res = std::unordered_map<std::string, Tensor>{};
+        auto res = NamedTensors{};
         for (const auto &[name, val] : net_named_data)
             res[name] = copy ? val.detach().clone() : val;
         return res;

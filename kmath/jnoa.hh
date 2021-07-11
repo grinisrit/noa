@@ -40,11 +40,11 @@ namespace jnoa {
 
     using TensorPair = std::tuple<Tensor, Tensor>;
     using TensorTriple = std::tuple<Tensor, Tensor, Tensor>;
-    using TensorHandle = void *;
+    using VoidHandle = void *;
 
-    template<typename Handle>
-    inline Tensor &cast_tensor(const Handle &tensor_handle) {
-        return *static_cast<Tensor *>((TensorHandle) tensor_handle);
+    template<typename Target, typename Handle>
+    inline Target &cast(const Handle &handle) {
+        return *static_cast<Target *>((VoidHandle) handle);
     }
 
     template<typename Dtype>
@@ -109,7 +109,7 @@ namespace jnoa {
 
     template<typename Handle>
     inline void dispose_tensor(const Handle &tensor_handle) {
-        delete static_cast<Tensor *>((TensorHandle) tensor_handle);
+        delete static_cast<Tensor *>((VoidHandle) tensor_handle);
     }
 
     template<typename Dtype>
@@ -141,19 +141,19 @@ namespace jnoa {
     };
 
     template <typename Dtype>
-    inline const auto randn = [](const std::vector<int64_t> &shape, const torch::Device &device)
+    inline const auto rand_normal = [](const std::vector<int64_t> &shape, const torch::Device &device)
     {
         return torch::randn(shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
     template <typename Dtype>
-    inline const auto rand = [](const std::vector<int64_t> &shape, const torch::Device &device)
+    inline const auto rand_uniform = [](const std::vector<int64_t> &shape, const torch::Device &device)
     {
         return torch::rand(shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
     template <typename Dtype>
-    inline const auto randint = [](long low, long high, const std::vector<int64_t> &shape, const torch::Device &device)
+    inline const auto rand_discrete = [](long low, long high, const std::vector<int64_t> &shape, const torch::Device &device)
     {
         return torch::randint(low, high, shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
