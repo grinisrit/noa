@@ -41,6 +41,8 @@ namespace jnoa {
     using TensorPair = std::tuple<Tensor, Tensor>;
     using TensorTriple = std::tuple<Tensor, Tensor, Tensor>;
     using VoidHandle = void *;
+    using AdamOptim = torch::optim::Adam;
+    using AdamOptimOpts = torch::optim::AdamOptions;
 
     struct JitModule {
         torch::jit::Module jit_module;
@@ -53,8 +55,8 @@ namespace jnoa {
                 throw std::invalid_argument("Failed to load JIT module from:\n" + path);
             else
                 jit_module = jit_module_.value();
-            parameters = named_parameters(jit_module);
-            buffers = named_buffers(jit_module);
+            parameters = named_parameters(jit_module, false);
+            buffers = named_buffers(jit_module, false);
         }
     };
 
@@ -82,6 +84,11 @@ namespace jnoa {
             env->ThrowNew(noa_exception, e.what());
             return std::nullopt;
         }
+    }
+
+    template<typename Optim, typename OptimOptions, typename... Options>
+    Optim get_optim(JitModule &module, Options &&... opts) {
+        return Optim(parameters(module.jit_module, false), OptimOptions(std::forward<Options>(opts)...));
     }
 
     template<typename Runner, typename... Args>
@@ -206,6 +213,5 @@ namespace jnoa {
                 module.jit_module.to(device);
                 return module;
             };
-
 
 } // namespace jnoa

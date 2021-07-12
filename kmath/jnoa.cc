@@ -1222,3 +1222,34 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setModuleBuffer
              to_string(env, name),
              cast<Tensor>(tensor_handle));
 }
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_adamOptim
+        (JNIEnv *, jclass, jlong jit_module_handle, jdouble learning_rate) {
+    return (long) new AdamOptim(get_optim<AdamOptim, AdamOptimOpts>(
+            cast<JitModule>(jit_module_handle), learning_rate));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeAdamOptim
+        (JNIEnv *, jclass, jlong adam_optim_handle) {
+    if (adam_optim_handle != 0L)
+        dispose<AdamOptim>(adam_optim_handle);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_stepAdamOptim
+        (JNIEnv *env, jclass, jlong adam_optim_handle) {
+    safe_run(env,
+             [](AdamOptim &adam_optim) {
+                 adam_optim.step();
+             },
+             cast<AdamOptim>(adam_optim_handle));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradAdamOptim
+        (JNIEnv *, jclass, jlong adam_optim_handle) {
+    cast<AdamOptim>(adam_optim_handle).zero_grad();
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_swapTensors
+        (JNIEnv *, jclass, jlong lhs_handle, jlong rhs_handle){
+    std::swap(cast<Tensor>(lhs_handle), cast<Tensor>(rhs_handle));
+}
