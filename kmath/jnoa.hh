@@ -42,9 +42,30 @@ namespace jnoa {
     using TensorTriple = std::tuple<Tensor, Tensor, Tensor>;
     using VoidHandle = void *;
 
+    struct JitModule {
+        torch::jit::Module jit_module;
+        NamedTensors parameters;
+        NamedTensors buffers;
+
+        explicit JitModule(const std::string &path) {
+            const auto jit_module_ = load_module(path);
+            if (!jit_module_.has_value())
+                throw std::invalid_argument("Failed to load JIT module from:\n" + path);
+            else
+                jit_module = jit_module_.value();
+            parameters = named_parameters(jit_module);
+            buffers = named_buffers(jit_module);
+        }
+    };
+
     template<typename Target, typename Handle>
     inline Target &cast(const Handle &handle) {
         return *static_cast<Target *>((VoidHandle) handle);
+    }
+
+    template<typename Target, typename Handle>
+    inline void dispose(const Handle &tensor_handle) {
+        delete static_cast<Target *>((VoidHandle) tensor_handle);
     }
 
     template<typename Dtype>
@@ -92,11 +113,9 @@ namespace jnoa {
                                 env->GetArrayLength(shape));
     }
 
-    inline std::vector<at::indexing::TensorIndex> to_index(const int *arr, const int arr_size)
-    {
+    inline std::vector<at::indexing::TensorIndex> to_index(const int *arr, const int arr_size) {
         std::vector<at::indexing::TensorIndex> index;
-        for (int i = 0; i < arr_size; i++)
-        {
+        for (int i = 0; i < arr_size; i++) {
             index.emplace_back(arr[i]);
         }
         return index;
@@ -107,11 +126,6 @@ namespace jnoa {
         return seed;
     };
 
-    template<typename Handle>
-    inline void dispose_tensor(const Handle &tensor_handle) {
-        delete static_cast<Tensor *>((VoidHandle) tensor_handle);
-    }
-
     template<typename Dtype>
     inline const auto from_blob = [](Dtype *data, const std::vector<int64_t> &shape, const torch::Device &device) {
         return torch::from_blob(data, shape, dtype<Dtype>()).to(
@@ -121,56 +135,78 @@ namespace jnoa {
                 false, true);
     };
 
-    inline std::string tensor_to_string(const Tensor &tensor)
-    {
+    inline std::string tensor_to_string(const Tensor &tensor) {
         std::stringstream bufrep;
         bufrep << tensor;
         return bufrep.str();
     }
 
-    template <typename DType>
-    inline const auto getter = [](const torch::Tensor &tensor, const int *index)
-    {
+    template<typename DType>
+    inline const auto getter = [](const torch::Tensor &tensor, const int *index) {
         return tensor.index(to_index(index, tensor.dim())).item<DType>();
     };
 
-    template <typename DType>
-    inline const auto setter = [](torch::Tensor &tensor, const int *index, const DType &value)
-    {
+    template<typename DType>
+    inline const auto setter = [](torch::Tensor &tensor, const int *index, const DType &value) {
         tensor.index(to_index(index, tensor.dim())) = value;
     };
 
-    template <typename Dtype>
-    inline const auto rand_normal = [](const std::vector<int64_t> &shape, const torch::Device &device)
-    {
+    template<typename Dtype>
+    inline const auto rand_normal = [](const std::vector<int64_t> &shape, const torch::Device &device) {
         return torch::randn(shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
-    template <typename Dtype>
-    inline const auto rand_uniform = [](const std::vector<int64_t> &shape, const torch::Device &device)
-    {
+    template<typename Dtype>
+    inline const auto rand_uniform = [](const std::vector<int64_t> &shape, const torch::Device &device) {
         return torch::rand(shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
-    template <typename Dtype>
-    inline const auto rand_discrete = [](long low, long high, const std::vector<int64_t> &shape, const torch::Device &device)
-    {
+    template<typename Dtype>
+    inline const auto rand_discrete = [](long low, long high, const std::vector<int64_t> &shape,
+                                         const torch::Device &device) {
         return torch::randint(low, high, shape, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
-    template <typename Dtype>
-    inline const auto full = [](const Dtype &value, const std::vector<int64_t> &shape, const torch::Device &device)
-    {
+    template<typename Dtype>
+    inline const auto full = [](const Dtype &value, const std::vector<int64_t> &shape, const torch::Device &device) {
         return torch::full(shape, value, dtype<Dtype>().layout(torch::kStrided).device(device));
     };
 
-    inline const auto hess = [](const Tensor &value, const Tensor &variable){
+    inline const auto hess = [](const Tensor &value, const Tensor &variable) {
         const auto hess_ = numerics::hessian(ADGraph{value, {variable}});
-        if(hess_.has_value())
+        if (hess_.has_value())
             return hess_.value()[0];
         else
             throw std::invalid_argument("Failed to compute Hessian");
     };
+
+    std::string to_string(JNIEnv *env, const jstring &jstr) {
+        if (!jstr)
+            return "";
+
+        const auto string_class = env->GetObjectClass(jstr);
+        const auto get_bytes = env->GetMethodID(string_class, "getBytes", "(Ljava/lang/String;)[B");
+        const auto jbytes = (jbyteArray) env->CallObjectMethod(jstr, get_bytes, env->NewStringUTF("UTF-8"));
+
+        const auto length = (size_t) env->GetArrayLength(jbytes);
+        const auto pbytes = env->GetByteArrayElements(jbytes, nullptr);
+
+        std::string ret = std::string((char *) pbytes, length);
+        env->ReleaseByteArrayElements(jbytes, pbytes, JNI_ABORT);
+
+        env->DeleteLocalRef(jbytes);
+        env->DeleteLocalRef(string_class);
+        return ret;
+    }
+
+    inline const auto load_jit_module =
+            [](JNIEnv *env, const jstring &jpath, torch::ScalarType dtype, torch::Device device) {
+                const auto path = to_string(env, jpath);
+                auto module = JitModule(path);
+                module.jit_module.to(dtype);
+                module.jit_module.to(device);
+                return module;
+            };
 
 
 } // namespace jnoa
