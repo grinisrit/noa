@@ -1112,7 +1112,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadJitModuleDouble
         (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<JitModule>(env, load_jit_module,
-                                env, jpath,
+                                to_string(env, jpath),
                                 torch::kDouble, int_to_device(device));
 
     return res.has_value() ? (long) new JitModule(res.value()) : 0L;
@@ -1122,7 +1122,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadJitModuleFloat
         (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<JitModule>(env, load_jit_module,
-                                env, jpath,
+                                to_string(env, jpath),
                                 torch::kFloat, int_to_device(device));
 
     return res.has_value() ? (long) new JitModule(res.value()) : 0L;
@@ -1132,7 +1132,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadJitModuleLong
         (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<JitModule>(env, load_jit_module,
-                                env, jpath,
+                                to_string(env, jpath),
                                 torch::kLong, int_to_device(device));
 
     return res.has_value() ? (long) new JitModule(res.value()) : 0L;
@@ -1142,7 +1142,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadJitModuleInt
         (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<JitModule>(env, load_jit_module,
-                                env, jpath,
+                                to_string(env, jpath),
                                 torch::kInt, int_to_device(device));
 
     return res.has_value() ? (long) new JitModule(res.value()) : 0L;
@@ -1173,3 +1173,52 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_forwardPassAssign
     );
 }
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getModuleParameter
+        (JNIEnv *env, jclass, jlong jit_module_handle, jstring name) {
+    const auto res =
+            safe_run<Tensor>(env,
+                             [](JitModule &module, const auto &name) {
+                                 return module.parameters.at(name);
+                             },
+                             cast<JitModule>(jit_module_handle),
+                             to_string(env, name)
+            );
+
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setModuleParameter
+        (JNIEnv *env, jclass, jlong jit_module_handle, jstring name, jlong tensor_handle) {
+    safe_run(env,
+             [](JitModule &module, const auto &name, const Tensor &tensor) {
+                 module.parameters.at(name).set_data(tensor);
+             },
+             cast<JitModule>(jit_module_handle),
+             to_string(env, name),
+             cast<Tensor>(tensor_handle));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getModuleBuffer
+        (JNIEnv *env, jclass, jlong jit_module_handle, jstring name) {
+    const auto res =
+            safe_run<Tensor>(env,
+                             [](JitModule &module, const auto &name) {
+                                 return module.buffers.at(name);
+                             },
+                             cast<JitModule>(jit_module_handle),
+                             to_string(env, name)
+            );
+
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setModuleBuffer
+        (JNIEnv *env, jclass, jlong jit_module_handle, jstring name, jlong tensor_handle) {
+    safe_run(env,
+             [](JitModule &module, const auto &name, const Tensor &tensor) {
+                 module.buffers.at(name).set_data(tensor);
+             },
+             cast<JitModule>(jit_module_handle),
+             to_string(env, name),
+             cast<Tensor>(tensor_handle));
+}

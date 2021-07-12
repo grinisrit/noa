@@ -200,8 +200,7 @@ namespace jnoa {
     }
 
     inline const auto load_jit_module =
-            [](JNIEnv *env, const jstring &jpath, torch::ScalarType dtype, torch::Device device) {
-                const auto path = to_string(env, jpath);
+            [](const std::string &path, torch::ScalarType dtype, torch::Device device) {
                 auto module = JitModule(path);
                 module.jit_module.to(dtype);
                 module.jit_module.to(device);
