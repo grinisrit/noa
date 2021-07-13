@@ -58,6 +58,18 @@ namespace jnoa {
             parameters = named_parameters(jit_module, false);
             buffers = named_buffers(jit_module, false);
         }
+
+        Tensor& get_parameter(const std::string &name) {
+            if (parameters.find(name) == parameters.end())
+                throw  std::invalid_argument("No parameter with name: " + name + "\n");
+            return parameters.at(name);
+        }
+
+        Tensor& get_buffer(const std::string &name) {
+            if (buffers.find(name) == buffers.end())
+                throw std::invalid_argument("No buffer with name: " + name + "\n");
+            return buffers.at(name);
+        }
     };
 
     template<typename Target, typename Handle>
@@ -88,7 +100,7 @@ namespace jnoa {
 
     template<typename Optim, typename OptimOptions, typename... Options>
     Optim get_optim(JitModule &module, Options &&... opts) {
-        return Optim(parameters(module.jit_module, false), OptimOptions(std::forward<Options>(opts)...));
+        return Optim{parameters(module.jit_module, false), OptimOptions(std::forward<Options>(opts)...)};
     }
 
     template<typename Runner, typename... Args>

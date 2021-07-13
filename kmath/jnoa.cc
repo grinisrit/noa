@@ -1163,13 +1163,14 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_forwardPass
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_forwardPassAssign
-        (JNIEnv *env, jclass, jlong jit_module_handle, jlong tensor_handle) {
+        (JNIEnv *env, jclass, jlong jit_module_handle, jlong feature_handle, jlong preds_handle) {
     safe_run(env,
-             [](auto &module, auto &tensor) {
-                 tensor = module.jit_module({tensor}).toTensor();
+             [](auto &module, const auto &features, auto &predictions) {
+                 predictions = module.jit_module({features}).toTensor();
              },
              cast<JitModule>(jit_module_handle),
-             cast<Tensor>(tensor_handle)
+             cast<Tensor>(feature_handle),
+             cast<Tensor>(preds_handle)
     );
 }
 
@@ -1178,7 +1179,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getModuleParameter
     const auto res =
             safe_run<Tensor>(env,
                              [](JitModule &module, const auto &name) {
-                                 return module.parameters.at(name);
+                                 return module.get_parameter(name);
                              },
                              cast<JitModule>(jit_module_handle),
                              to_string(env, name)
@@ -1191,7 +1192,7 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setModuleParameter
         (JNIEnv *env, jclass, jlong jit_module_handle, jstring name, jlong tensor_handle) {
     safe_run(env,
              [](JitModule &module, const auto &name, const Tensor &tensor) {
-                 module.parameters.at(name).set_data(tensor);
+                 module.get_parameter(name).set_data(tensor);
              },
              cast<JitModule>(jit_module_handle),
              to_string(env, name),
@@ -1203,7 +1204,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getModuleBuffer
     const auto res =
             safe_run<Tensor>(env,
                              [](JitModule &module, const auto &name) {
-                                 return module.buffers.at(name);
+                                 return module.get_buffer(name);
                              },
                              cast<JitModule>(jit_module_handle),
                              to_string(env, name)
@@ -1216,7 +1217,7 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setModuleBuffer
         (JNIEnv *env, jclass, jlong jit_module_handle, jstring name, jlong tensor_handle) {
     safe_run(env,
              [](JitModule &module, const auto &name, const Tensor &tensor) {
-                 module.buffers.at(name).set_data(tensor);
+                 module.get_buffer(name).set_data(tensor);
              },
              cast<JitModule>(jit_module_handle),
              to_string(env, name),

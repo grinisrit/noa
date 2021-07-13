@@ -204,7 +204,7 @@ namespace noa::utils {
 
     template<typename NetData>
     inline Tensors to_tensors(const NetData &net_data, bool copy) {
-        auto res = std::vector<Tensor>{};
+        auto res = Tensors{};
         for (const auto &val : net_data)
             res.push_back(copy ? val.detach().clone() : val);
         return res;
@@ -241,7 +241,7 @@ namespace noa::utils {
 
     template<typename NetData>
     inline Tensor flat_data(const NetData &net_data, bool detach) {
-        auto res = std::vector<Tensor>{};
+        auto res = Tensors{};
         for (const auto &val : net_data)
             res.push_back((detach ? val.detach() : val).flatten());
         return torch::cat(res);
