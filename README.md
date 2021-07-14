@@ -6,10 +6,10 @@ Our solution is suitable for both research and applications in performance deman
 ## Installation 
 
 Currently, we support only `GNU`, and `CUDA` for GPU (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
-
+A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly drop the `include/noa` folder into your project.
 
-
+### CMake project
 The core of the library depends on [LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) 
 (which is also distributed via `pip` and `conda`) tested with version `1.9.0`. 
 For additional configuration needed by some applications please refer to the documentation [below](#applications).
@@ -30,12 +30,7 @@ $ ctest -V
 ```
 To build benchmarks specify `-DBUILD_NOA_BENCHMARKS=ON`. To enable parallel execution for some algorithms you should link against `OpenMP`.  To build `CUDA` tests add `-DBUILD_NOA_CUDA=ON` and  `-DCMAKE_CUDA_ARCHITECTURES=75` (or the GPU architecture of your choice).
 
-To build the [KMath](https://github.com/mipt-npm/kmath) wrapper `JNoa` 
-add `-DBUILD_NOA_KMATH=ON`. This will build `libjnoa` inside the folder `kmath` to which
-you should point the `JAVA_LIBRARY_PATH` in order to use 
-[kmath-noa](https://github.com/grinisrit/kmath/tree/feature/noa/kmath-noa).
-
-Finally, once `NOA` is installed, you can link against it in your own `CMakeLists.txt` file. 
+Finally, once `NOA` is installed, you can link against it in your own `CMakeLists.txt` file.
 Make sure to add `LibTorch` as well:
 ```cmake
 cmake_minimum_required(VERSION 3.12)
@@ -45,6 +40,14 @@ find_package(NOA CONFIG REQUIRED)
 target_link_libraries(your_target torch NOA::NOA)
 target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 ```
+
+### KMath wrapper
+`NOA` is exposed within the `kotlin` library
+[KMath](https://github.com/mipt-npm/kmath) as a dedicated module
+[kmath-noa](https://github.com/mipt-npm/kmath/tree/feature/noa/kmath-noa).
+To build the [JNI wrapper](kmath) you need to add `-DBUILD_NOA_KMATH=ON`. 
+This will produce the shared library `jnoa` inside the folder `kmath` to which
+you should point the `java.library.path` for the `JVM` to load it.
 
 ## Applications
 

@@ -10,6 +10,10 @@ In the near future, our research focus on enhancing this scheme with [NUTS](http
  
 In the [notebook](bayesian_deep_learning.ipynb) you will find an introduction to Geometric Hamiltonian Monte-Carlo and a tutorial on Bayesian Deep Learning.
 
+A [talk](https://www.youtube.com/watch?v=d6ezzxzqEaA&t=25s) covering
+those topics has been given at 
+[itCppCon21](https://italiancpp.org/itcppcon21) conference.
+
 Basic usage examples can be found in [functional tests](../../test/ghmc). The log density function, that we sample from, should be compatible with `torch::autograd`. 
 It must be built out of instances of `torch::autograd::Function` or `torch::nn::Module` richly available from the PyTorch `C++` API. 
 
