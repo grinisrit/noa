@@ -1251,6 +1251,46 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradAdamOptim
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_swapTensors
-        (JNIEnv *, jclass, jlong lhs_handle, jlong rhs_handle){
+        (JNIEnv *, jclass, jlong lhs_handle, jlong rhs_handle) {
     std::swap(cast<Tensor>(lhs_handle), cast<Tensor>(rhs_handle));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorDouble
+        (JNIEnv *env, jclass, jstring jpath, jint device) {
+    const auto res =
+            safe_run<Tensor>(env, unsafe_load_tensor,
+                             to_string(env, jpath),
+                             torch::kDouble, int_to_device(device));
+
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorFloat
+(JNIEnv *env, jclass, jstring jpath, jint device) {
+    const auto res =
+            safe_run<Tensor>(env, unsafe_load_tensor,
+                             to_string(env, jpath),
+                             torch::kFloat, int_to_device(device));
+
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorLong
+(JNIEnv *env, jclass, jstring jpath, jint device) {
+    const auto res =
+            safe_run<Tensor>(env, unsafe_load_tensor,
+                             to_string(env, jpath),
+                             torch::kLong, int_to_device(device));
+
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorInt
+(JNIEnv *env, jclass, jstring jpath, jint device) {
+    const auto res =
+            safe_run<Tensor>(env, unsafe_load_tensor,
+                             to_string(env, jpath),
+                             torch::kInt, int_to_device(device));
+
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
 }

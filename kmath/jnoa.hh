@@ -59,13 +59,13 @@ namespace jnoa {
             buffers = named_buffers(jit_module, false);
         }
 
-        Tensor& get_parameter(const std::string &name) {
+        Tensor &get_parameter(const std::string &name) {
             if (parameters.find(name) == parameters.end())
-                throw  std::invalid_argument("No parameter with name: " + name + "\n");
+                throw std::invalid_argument("No parameter with name: " + name + "\n");
             return parameters.at(name);
         }
 
-        Tensor& get_buffer(const std::string &name) {
+        Tensor &get_buffer(const std::string &name) {
             if (buffers.find(name) == buffers.end())
                 throw std::invalid_argument("No buffer with name: " + name + "\n");
             return buffers.at(name);
@@ -224,6 +224,15 @@ namespace jnoa {
                 module.jit_module.to(dtype);
                 module.jit_module.to(device);
                 return module;
+            };
+
+    inline const auto unsafe_load_tensor =
+            [](const std::string &path, torch::ScalarType dtype, torch::Device device) {
+                auto tensor = load_tensor(path);
+                if (tensor.has_value())
+                    return tensor.value().to(dtype).to(device);
+                else
+                    throw std::invalid_argument("Failed to load tensor from " + path);
             };
 
 } // namespace jnoa
