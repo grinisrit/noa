@@ -1266,7 +1266,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorDouble
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorFloat
-(JNIEnv *env, jclass, jstring jpath, jint device) {
+        (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<Tensor>(env, unsafe_load_tensor,
                              to_string(env, jpath),
@@ -1276,7 +1276,7 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorFloat
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorLong
-(JNIEnv *env, jclass, jstring jpath, jint device) {
+        (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<Tensor>(env, unsafe_load_tensor,
                              to_string(env, jpath),
@@ -1286,11 +1286,31 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorLong
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorInt
-(JNIEnv *env, jclass, jstring jpath, jint device) {
+        (JNIEnv *env, jclass, jstring jpath, jint device) {
     const auto res =
             safe_run<Tensor>(env, unsafe_load_tensor,
                              to_string(env, jpath),
                              torch::kInt, int_to_device(device));
 
     return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_saveTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jstring jpath) {
+    safe_run(env,
+             [](const Tensor &tensor, const auto &path) {
+                 torch::save(tensor, path);
+             },
+             cast<Tensor>(tensor_handle),
+             to_string(env, jpath));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_saveJitModule
+        (JNIEnv *env, jclass, jlong jit_module_handle, jstring jpath) {
+    safe_run(env,
+             [](const JitModule &module, const auto &path) {
+                 module.jit_module.save(path);
+             },
+             cast<JitModule>(jit_module_handle),
+             to_string(env, jpath));
 }

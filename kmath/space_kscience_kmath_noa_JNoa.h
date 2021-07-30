@@ -1231,6 +1231,22 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorLong
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_loadTensorInt
   (JNIEnv *, jclass, jstring, jint);
 
+/*
+ * Class:     space_kscience_kmath_noa_JNoa
+ * Method:    saveTensor
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_saveTensor
+  (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     space_kscience_kmath_noa_JNoa
+ * Method:    saveJitModule
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_saveJitModule
+  (JNIEnv *, jclass, jlong, jstring);
+
 #ifdef __cplusplus
 }
 #endif
