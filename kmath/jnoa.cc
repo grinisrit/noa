@@ -1435,3 +1435,68 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_getBlobInt
              cast<Tensor>(tensor_handle), data);
     env->ReleaseIntArrayElements(array, data, JNI_COMMIT);
 }
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jlong value_handle) {
+    safe_run(env,
+             [](Tensor &tensor, int i, const Tensor &value) {
+                 tensor[i] = value;
+             },
+             cast<Tensor>(tensor_handle), i, cast<Tensor>(value_handle));
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getSliceTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint d, jint s, jint e) {
+    const auto res =
+            safe_run<Tensor>(env, [](const Tensor &tensor, int d, int s, int e) {
+                return tensor.slice(d, s, e);
+            }, cast<Tensor>(tensor_handle), d, s, e);
+    return res.has_value() ? (long) new Tensor(res.value()) : 0L;
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setSliceTensor
+        (JNIEnv *env, jclass, jlong tensor_handle, jint d, jint s, jint e, jlong value_handle) {
+    safe_run(env,
+             [](Tensor &tensor, int d, int s, int e, const Tensor &value) {
+                 tensor.slice(d, s, e) = value;
+             },
+             cast<Tensor>(tensor_handle), d, s, e, cast<Tensor>(value_handle));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setSliceBlobDouble
+        (JNIEnv *env, jclass, jlong tensor_handle, jint d, jint s, jint e, jdoubleArray array) {
+    auto data = env->GetDoubleArrayElements(array, nullptr);
+    safe_run(env,
+             set_slice_blob<double>,
+             cast<Tensor>(tensor_handle), d, s, e, data);
+    env->ReleaseDoubleArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setSliceBlobFloat
+        (JNIEnv *env, jclass, jlong tensor_handle, jint d, jint s, jint e, jfloatArray array) {
+    auto data = env->GetFloatArrayElements(array, nullptr);
+    safe_run(env,
+             set_slice_blob<float>,
+             cast<Tensor>(tensor_handle), d, s, e, data);
+    env->ReleaseFloatArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setSliceBlobLong
+        (JNIEnv *env, jclass, jlong tensor_handle, jint d, jint s, jint e, jlongArray array) {
+    auto data = env->GetLongArrayElements(array, nullptr);
+    safe_run(env,
+             set_slice_blob<long>,
+             cast<Tensor>(tensor_handle), d, s, e, data);
+    env->ReleaseLongArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setSliceBlobInt
+        (JNIEnv *env, jclass, jlong tensor_handle, jint d, jint s, jint e, jintArray array) {
+    auto data = env->GetIntArrayElements(array, nullptr);
+    safe_run(env,
+             set_slice_blob<int>,
+             cast<Tensor>(tensor_handle), d, s, e, data);
+    env->ReleaseIntArrayElements(array, data, JNI_ABORT);
+}
+
+

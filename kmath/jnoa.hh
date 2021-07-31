@@ -98,11 +98,6 @@ namespace jnoa {
         }
     }
 
-    template<typename Optim, typename OptimOptions, typename... Options>
-    Optim get_optim(JitModule &module, Options &&... opts) {
-        return Optim{parameters(module.jit_module, false), OptimOptions(std::forward<Options>(opts)...)};
-    }
-
     template<typename Runner, typename... Args>
     void safe_run(JNIEnv *env, const Runner &runner, Args &&... args) {
         const auto noa_exception = env->FindClass("space/kscience/kmath/noa/NoaException");
@@ -111,6 +106,11 @@ namespace jnoa {
         } catch (const std::exception &e) {
             env->ThrowNew(noa_exception, e.what());
         }
+    }
+
+    template<typename Optim, typename OptimOptions, typename... Options>
+    Optim get_optim(JitModule &module, Options &&... opts) {
+        return Optim{parameters(module.jit_module, false), OptimOptions(std::forward<Options>(opts)...)};
     }
 
     inline int device_to_int(const Tensor &tensor) {
@@ -179,6 +179,15 @@ namespace jnoa {
         const int n = tensor.numel();
         for(int i = 0; i < n; i++)
             data[i] = ptr[i];
+    };
+
+    template<typename Dtype>
+    inline const auto set_slice_blob = [](Tensor &tensor, int d, int s, int e, Dtype *data) {
+        tensor.slice(d,s,e) = torch::from_blob(data, tensor.slice(d,s,e).sizes(), dtype<Dtype>()).to(
+                dtype<Dtype>()
+                .layout(torch::kStrided)
+                .device(tensor.device()),
+                false, true);
     };
 
 
