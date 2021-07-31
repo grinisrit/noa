@@ -69,46 +69,54 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_emptyTensor
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobDouble
-        (JNIEnv *env, jclass, jdoubleArray data, jintArray shape, jint device) {
+        (JNIEnv *env, jclass, jdoubleArray array, jintArray shape, jint device) {
+    auto data = env->GetDoubleArrayElements(array, nullptr);
     const auto res =
             safe_run<Tensor>(env,
                              from_blob<double>,
-                             env->GetDoubleArrayElements(data, nullptr),
+                             data,
                              to_shape(env, shape),
                              int_to_device(device));
+    env->ReleaseDoubleArrayElements(array, data, JNI_ABORT);
     return res.has_value() ? (long) new Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobFloat
-        (JNIEnv *env, jclass, jfloatArray data, jintArray shape, jint device) {
+        (JNIEnv *env, jclass, jfloatArray array, jintArray shape, jint device) {
+    auto data = env->GetFloatArrayElements(array, nullptr);
     const auto res =
             safe_run<Tensor>(env,
                              from_blob<float>,
-                             env->GetFloatArrayElements(data, nullptr),
+                             data,
                              to_shape(env, shape),
                              int_to_device(device));
+    env->ReleaseFloatArrayElements(array, data, JNI_ABORT);
     return res.has_value() ? (long) new Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobLong
-        (JNIEnv *env, jclass, jlongArray data, jintArray shape, jint device) {
+        (JNIEnv *env, jclass, jlongArray array, jintArray shape, jint device) {
+    auto data = env->GetLongArrayElements(array, nullptr);
     const auto res =
             safe_run<Tensor>(env,
                              from_blob<long>,
-                             env->GetLongArrayElements(data, nullptr),
+                             data,
                              to_shape(env, shape),
                              int_to_device(device));
+    env->ReleaseLongArrayElements(array, data, JNI_ABORT);
     return res.has_value() ? (long) new Tensor(res.value()) : 0L;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_fromBlobInt
-        (JNIEnv *env, jclass, jintArray data, jintArray shape, jint device) {
+        (JNIEnv *env, jclass, jintArray array, jintArray shape, jint device) {
+    auto data = env->GetIntArrayElements(array, nullptr);
     const auto res =
             safe_run<Tensor>(env,
                              from_blob<int>,
-                             env->GetIntArrayElements(data, nullptr),
+                             data,
                              to_shape(env, shape),
                              int_to_device(device));
+    env->ReleaseIntArrayElements(array, data, JNI_ABORT);
     return res.has_value() ? (long) new Tensor(res.value()) : 0L;
 }
 
@@ -260,78 +268,82 @@ JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getIndex
 
 JNIEXPORT jdouble JNICALL Java_space_kscience_kmath_noa_JNoa_getDouble
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     const auto res =
             safe_run<double>(env,
                              getter<double>,
-                             cast<Tensor>(tensor_handle),
-                             env->GetIntArrayElements(index, nullptr));
+                             cast<Tensor>(tensor_handle), i);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
     return res.has_value() ? res.value() : 0.;
 }
 
 JNIEXPORT jfloat JNICALL Java_space_kscience_kmath_noa_JNoa_getFloat
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     const auto res =
             safe_run<float>(env,
                             getter<float>,
-                            cast<Tensor>(tensor_handle),
-                            env->GetIntArrayElements(index, nullptr));
+                            cast<Tensor>(tensor_handle), i);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
     return res.has_value() ? res.value() : 0.f;
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_getLong
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     const auto res =
             safe_run<long>(env,
                            getter<long>,
-                           cast<Tensor>(tensor_handle),
-                           env->GetIntArrayElements(index, nullptr));
+                           cast<Tensor>(tensor_handle), i);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
     return res.has_value() ? res.value() : 0L;
 }
 
 JNIEXPORT jint JNICALL Java_space_kscience_kmath_noa_JNoa_getInt
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     const auto res =
             safe_run<int>(env,
                           getter<int>,
-                          cast<Tensor>(tensor_handle),
-                          env->GetIntArrayElements(index, nullptr));
+                          cast<Tensor>(tensor_handle), i);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
     return res.has_value() ? res.value() : 0;
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setDouble
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jdouble value) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     safe_run(env,
              setter<double>,
-             cast<Tensor>(tensor_handle),
-             env->GetIntArrayElements(index, nullptr),
-             value);
+             cast<Tensor>(tensor_handle), i, value);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setFloat
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jfloat value) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     safe_run(env,
              setter<float>,
-             cast<Tensor>(tensor_handle),
-             env->GetIntArrayElements(index, nullptr),
-             value);
+             cast<Tensor>(tensor_handle), i, value);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setLong
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jlong value) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     safe_run(env,
              setter<long>,
-             cast<Tensor>(tensor_handle),
-             env->GetIntArrayElements(index, nullptr),
-             value);
+             cast<Tensor>(tensor_handle), i, value);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setInt
         (JNIEnv *env, jclass, jlong tensor_handle, jintArray index, jint value) {
+    auto i = env->GetIntArrayElements(index, nullptr);
     safe_run(env,
              setter<int>,
-             cast<Tensor>(tensor_handle),
-             env->GetIntArrayElements(index, nullptr),
-             value);
+             cast<Tensor>(tensor_handle), i, value);
+    env->ReleaseIntArrayElements(index, i, JNI_ABORT);
 }
 
 JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_randDouble
@@ -1313,4 +1325,113 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_saveJitModule
              },
              cast<JitModule>(jit_module_handle),
              to_string(env, jpath));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_assignBlobDouble
+        (JNIEnv *env, jclass, jlong tensor_handle, jdoubleArray array) {
+    auto data = env->GetDoubleArrayElements(array, nullptr);
+    safe_run(env,
+             assign_blob<double>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseDoubleArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_assignBlobFloat
+        (JNIEnv *env, jclass, jlong tensor_handle, jfloatArray array) {
+    auto data = env->GetFloatArrayElements(array, nullptr);
+    safe_run(env,
+             assign_blob<float>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseFloatArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_assignBlobLong
+        (JNIEnv *env, jclass, jlong tensor_handle, jlongArray array) {
+    auto data = env->GetLongArrayElements(array, nullptr);
+    safe_run(env,
+             assign_blob<long>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseLongArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_assignBlobInt
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray array) {
+    auto data = env->GetIntArrayElements(array, nullptr);
+    safe_run(env,
+             assign_blob<int>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseIntArrayElements(array, data, JNI_ABORT);
+
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setBlobDouble
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jdoubleArray array) {
+    auto data = env->GetDoubleArrayElements(array, nullptr);
+    safe_run(env,
+             set_blob<double>,
+             cast<Tensor>(tensor_handle), i, data);
+    env->ReleaseDoubleArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setBlobFloat
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jfloatArray array) {
+    auto data = env->GetFloatArrayElements(array, nullptr);
+    safe_run(env,
+             set_blob<float>,
+             cast<Tensor>(tensor_handle), i, data);
+    env->ReleaseFloatArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setBlobLong
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jlongArray array) {
+    auto data = env->GetLongArrayElements(array, nullptr);
+    safe_run(env,
+             set_blob<long>,
+             cast<Tensor>(tensor_handle), i, data);
+    env->ReleaseLongArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_setBlobInt
+        (JNIEnv *env, jclass, jlong tensor_handle, jint i, jintArray array) {
+    auto data = env->GetIntArrayElements(array, nullptr);
+    safe_run(env,
+             set_blob<int>,
+             cast<Tensor>(tensor_handle), i, data);
+    env->ReleaseIntArrayElements(array, data, JNI_ABORT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_getBlobDouble
+        (JNIEnv *env, jclass, jlong tensor_handle, jdoubleArray array) {
+    auto data = env->GetDoubleArrayElements(array, nullptr);
+    safe_run(env,
+             get_blob<double>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseDoubleArrayElements(array, data, JNI_COMMIT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_getBlobFloat
+        (JNIEnv *env, jclass, jlong tensor_handle, jfloatArray array) {
+    auto data = env->GetFloatArrayElements(array, nullptr);
+    safe_run(env,
+             get_blob<float>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseFloatArrayElements(array, data, JNI_COMMIT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_getBlobLong
+        (JNIEnv *env, jclass, jlong tensor_handle, jlongArray array) {
+    auto data = env->GetLongArrayElements(array, nullptr);
+    safe_run(env,
+             get_blob<long>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseLongArrayElements(array, data, JNI_COMMIT);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_getBlobInt
+        (JNIEnv *env, jclass, jlong tensor_handle, jintArray array) {
+    auto data = env->GetIntArrayElements(array, nullptr);
+    safe_run(env,
+             get_blob<int>,
+             cast<Tensor>(tensor_handle), data);
+    env->ReleaseIntArrayElements(array, data, JNI_COMMIT);
 }

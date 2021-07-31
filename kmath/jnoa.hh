@@ -78,8 +78,8 @@ namespace jnoa {
     }
 
     template<typename Target, typename Handle>
-    inline void dispose(const Handle &tensor_handle) {
-        delete static_cast<Target *>((VoidHandle) tensor_handle);
+    inline void dispose(const Handle &handle) {
+        delete static_cast<Target *>((VoidHandle) handle);
     }
 
     template<typename Dtype>
@@ -153,6 +153,34 @@ namespace jnoa {
                         .device(device),
                 false, true);
     };
+
+    template<typename Dtype>
+    inline const auto assign_blob = [](Tensor &tensor, Dtype *data) {
+        tensor = torch::from_blob(data, tensor.sizes(), dtype<Dtype>()).to(
+                dtype<Dtype>()
+                .layout(torch::kStrided)
+                .device(tensor.device()),
+                false, true);
+    };
+
+    template<typename Dtype>
+    inline const auto set_blob = [](Tensor &tensor, int i, Dtype *data) {
+        tensor[i] = torch::from_blob(data, tensor[i].sizes(), dtype<Dtype>()).to(
+                dtype<Dtype>()
+                .layout(torch::kStrided)
+                .device(tensor.device()),
+                false, true);
+    };
+
+    template<typename Dtype>
+    inline const auto get_blob = [](const Tensor &tensor, Dtype *data) {
+        const auto cpu_tensor = tensor.to(torch::device(torch::kCPU), false, false);
+        const Dtype *ptr = cpu_tensor.data_ptr<Dtype>();
+        const int n = tensor.numel();
+        for(int i = 0; i < n; i++)
+            data[i] = ptr[i];
+    };
+
 
     inline std::string tensor_to_string(const Tensor &tensor) {
         std::stringstream bufrep;
