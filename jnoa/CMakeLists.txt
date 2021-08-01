@@ -14,3 +14,4 @@ target_include_directories(jnoa PRIVATE ${JNI_INCLUDE_DIRS})
 # Link libraries
 target_link_libraries(jnoa PRIVATE ${PROJECT_NAME} )
 target_compile_options(jnoa PRIVATE -Wall -Wextra -Wpedantic -O3 -fPIC)
+target_compile_definitions(jnoa PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
