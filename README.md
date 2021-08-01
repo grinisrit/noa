@@ -58,9 +58,13 @@ dedicated to sampling from higher-dimensional probability distributions.
 * [PMS](docs/pms) provides a framework for solving inverse problems
 in the passage of particles through matter simulations. 
 
-## Contributions and Support
+## Acknowledgments
 
 We welcome contributions to the project and would love to hear about any feature requests.
+
+The JNI wrapper is being developed in collaboration with 
+[KMath contributors](https://github.com/mipt-npm/kmath/graphs/contributors).
+
 For commercial support or consultancy services contact [GrinisRIT](https://www.grinisrit.com).
 
 (c) 2021 Roland Grinis, GrinisRIT ltd.
