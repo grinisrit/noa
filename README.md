@@ -1,6 +1,7 @@
-# NOA: Bayesian Computation Algorithms
+# NOA: Nonlinear Optimisation Algorithms
 
-We aim to make it easier to integrate Bayesian computation algorithms with deep learning and larger simulation frameworks. 
+We aim to make it easier to integrate nonlinear optimisation
+algorithms with on-line learning, bayesian computation and large simulation frameworks. 
 Our solution is suitable for both research and applications in performance demanding systems such as encountered in streaming analytics, game development and high frequency trading.
 
 ## Installation 
@@ -51,9 +52,11 @@ you should point the `java.library.path` for the `JVM` to load it.
 
 ## Applications
 
-`NOA` offers several advanced applications for Bayesian computation. Please refer to the documentation and usage examples for each component to find out more:
-* [GHMC](docs/ghmc) the core component focused on the Geometric HMC algorithm dedicated to sampling from higher-dimensional probability distributions. The rest of the library builds on top of it.
-* [PMS](docs/pms) provides a framework for simulating the passage of particles through matter. 
+`NOA` offers several advanced applications for optimisation. Please refer to the documentation and usage examples for each component to find out more:
+* [GHMC](docs/ghmc) focus on Bayesian optimisation with the Geometric HMC algorithm 
+dedicated to sampling from higher-dimensional probability distributions. 
+* [PMS](docs/pms) provides a framework for solving inverse problems
+in the passage of particles through matter simulations. 
 
 ## Contributions and Support
 

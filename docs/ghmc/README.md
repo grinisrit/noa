@@ -1,10 +1,17 @@
 # Geometric Hamiltonian Monte-Carlo (GHMC)
 
-The library implements Hamiltonian Monte-Carlo ([HMC](https://www.sciencedirect.com/science/article/abs/pii/037026938791197X)) schemes over [LibTorch](https://pytorch.org/cppdocs/). The forcus is on high-dimensional problems. 
+The library implements Hamiltonian Monte-Carlo 
+([HMC](https://www.sciencedirect.com/science/article/abs/pii/037026938791197X)) 
+schemes over [LibTorch](https://pytorch.org/cppdocs/). 
+The focus is on high-dimensional problems. 
 
-Currently, we have implemented the Explicit [RMHMC](https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00765.x) scheme developed by [A.D.Cobb et al.](https://arxiv.org/abs/1910.06243), and initially released in the [hamiltorch](https://github.com/AdamCobb/hamiltorch) package.
+Currently, we have implemented the explicit 
+[RMHMC](https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00765.x) 
+scheme developed by [A.D.Cobb et al.](https://arxiv.org/abs/1910.06243). 
+A standard HMC algorithm is also available.
 
-In the near future, our research focus on enhancing this scheme with [NUTS](https://jmlr.org/papers/v15/hoffman14a.html) type algorithms. 
+In the near future, our research focus on enhancing this scheme with 
+[NUTS](https://jmlr.org/papers/v15/hoffman14a.html) type algorithms. 
 
 ## Usage 
  
@@ -22,5 +29,10 @@ It is also possible to rely on [TorchScript](https://pytorch.org/tutorials/advan
 which is in fact the recommended way to work with deep learning models. 
 
 :warning: The library needs further numerical testing before release. 
+
+## Contributions
+
+Implementations over [PyTorch](https://pytorch.org) are also available in the 
+[hamiltorch](https://github.com/AdamCobb/hamiltorch) package.
 
 (c) 2021 Roland Grinis, GrinisRIT ltd.
