@@ -12,10 +12,10 @@ has been recorded at the [QUARKS-2021](https://www.youtube.com/channel/UCXdL4IpB
 
 Physics model configuration files are available from 
 [noa-pms-models](https://github.com/grinisrit/noa-pms-models). 
-Currently, we support only Muons and Taus but we plan to cover 
-a wide range of particles in the near future. 
+Currently, we support only Muons and Taus. In the near future, we plan to cover 
+a wide range of particles. 
 
-## Contributions
+## Acknowledgements
 
 The semi-analytical BMC algorithm for Muons and Taus propagation relies on 
 [pumas](https://github.com/niess/pumas) version `1.0`.

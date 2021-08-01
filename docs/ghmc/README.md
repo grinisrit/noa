@@ -30,9 +30,10 @@ which is in fact the recommended way to work with deep learning models.
 
 :warning: The library needs further numerical testing before release. 
 
-## Contributions
+## Acknowledgements
 
-Implementations over [PyTorch](https://pytorch.org) are also available in the 
+Implementations of the HMC algorithms above over [PyTorch](https://pytorch.org) 
+are also available in the 
 [hamiltorch](https://github.com/AdamCobb/hamiltorch) package.
 
 (c) 2021 Roland Grinis, GrinisRIT ltd.
