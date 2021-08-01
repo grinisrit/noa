@@ -45,8 +45,8 @@ target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 `NOA` is exposed within the `kotlin` library
 [KMath](https://github.com/mipt-npm/kmath) as a dedicated module
 [kmath-noa](https://github.com/mipt-npm/kmath/tree/feature/noa/kmath-noa).
-To build the [JNI wrapper](kmath) you need to add `-DBUILD_NOA_KMATH=ON`. 
-This will produce the shared library `jnoa` inside the folder `kmath` to which
+To build the [JNI wrapper](jnoa) you need to add `-DBUILD_JNOA=ON`. 
+This will produce the shared library `jnoa` to which
 you should point the `java.library.path` for the `JVM` to load it.
 
 ## Applications

@@ -18,7 +18,7 @@ option(INSTALL_NOA "Install NOA to GNU locations" ON)
 option(BUILD_NOA_TESTS "Build and run tests " ON)
 option(BUILD_NOA_BENCHMARKS "Build and run benchmarks " OFF)
 option(BUILD_NOA_CUDA "Build CUDA support" OFF)
-option(BUILD_NOA_KMATH "Build KMath bindings" OFF)
+option(BUILD_JNOA "Build JNI bindings" OFF)
 
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -64,8 +64,8 @@ if (BUILD_NOA_BENCHMARKS)
     add_subdirectory(benchmark)
 endif ()
 
-if (BUILD_NOA_KMATH)
-    add_subdirectory(kmath)
+if (BUILD_JNOA)
+    add_subdirectory(jnoa)
 endif ()
 
 
