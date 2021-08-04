@@ -6,15 +6,16 @@
 include(fetch-gflags)
 
 # Find OpenMP
-include(conda-omp)
+find_package(OpenMP QUIET)
 
 # Fetch materials
 include(noa-pms-models)
 
 # Main executables
-add_executable(load_pms_model load-pms-model.cc)
-add_dependencies(load_pms_model pms_models)
+add_executable(load_muon_model load-muon-model.cc)
+add_dependencies(load_muon_model pms_models)
 
 # Link libraries
-target_link_libraries(load_pms_model PRIVATE ${PROJECT_NAME} gflags openmp)
-target_compile_options(load_pms_model PRIVATE -Wall -Wextra -Wpedantic -O3)
+target_include_directories(load_muon_model PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
+target_link_libraries(load_muon_model PRIVATE ${PROJECT_NAME} gflags ${OpenMP_CXX_LIBRARIES})
+target_compile_options(load_muon_model PRIVATE -Wall -Wextra -Wpedantic -O3 ${OpenMP_CXX_FLAGS})

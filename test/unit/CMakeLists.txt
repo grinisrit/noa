@@ -9,6 +9,9 @@ include(fetch-gtest)
 # Test data
 include(noa-test-data)
 
+# Find OpenMP
+find_package(OpenMP QUIET)
+
 # Source files
 set(NOA_TEST_SRC
         noa-test-suite.cc
@@ -29,12 +32,12 @@ endif ()
 add_dependencies(noa_test_suite test_data)
 
 # Extra include directories
-target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test)
+target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test ${OpenMP_CXX_INCLUDE_DIRS})
 
 # Link libraries
-target_link_libraries(noa_test_suite PRIVATE gtest ${PROJECT_NAME})
+target_link_libraries(noa_test_suite PRIVATE gtest ${PROJECT_NAME} ${OpenMP_CXX_LIBRARIES})
 target_compile_options(noa_test_suite
-        PRIVATE -Wall -Wextra -Wpedantic -O3
+        PRIVATE -Wall -Wextra -O3 ${OpenMP_CXX_FLAGS}
         $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
 
 
