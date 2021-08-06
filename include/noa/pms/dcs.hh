@@ -36,47 +36,46 @@
 
 namespace noa::pms::dcs {
 
-    template<typename Dtype, typename DCSFunc>
+    template<typename DCSFunc>
     inline auto vmap(const DCSFunc &dcs_func) {
         return [&dcs_func](const Calculation &result,
                            const Energies &kinetic_energies,
                            const Energies &recoil_energies,
-                           const AtomicElement <Dtype> &element,
-                           const Dtype &mass) {
-            const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
-            utils::vmapi<Dtype>(
+                           const AtomicElement &element,
+                           const AtomicMass &mass) {
+            const Scalar *recoil_energy = recoil_energies.data_ptr<Scalar>();
+            utils::vmapi<Scalar>(
                     kinetic_energies,
                     [&](const int64_t i, const auto &k) { return dcs_func(k, recoil_energy[i], element, mass); },
                     result);
         };
     }
 
-    template<typename Dtype, typename DCSFunc>
+    template<typename DCSFunc>
     inline auto pvmap(const DCSFunc &dcs_func) {
         return [&dcs_func](const Calculation &result,
                            const Energies &kinetic_energies,
                            const Energies &recoil_energies,
-                           const AtomicElement <Dtype> &element,
-                           const Dtype &mass) {
-            const Dtype *recoil_energy = recoil_energies.data_ptr<Dtype>();
-            utils::pvmapi<Dtype>(
+                           const AtomicElement &element,
+                           const AtomicMass &mass) {
+            const Scalar *recoil_energy = recoil_energies.data_ptr<Scalar>();
+            utils::pvmapi<Scalar>(
                     kinetic_energies,
                     [&](const int64_t i, const auto &k) { return dcs_func(k, recoil_energy[i], element, mass); },
                     result);
         };
     }
 
-
-    template<typename Dtype, typename DCSFunc, typename EnergyIntegrand>
+    template<typename DCSFunc, typename EnergyIntegrand>
     inline auto recoil_integral(const DCSFunc &dcs_func, const EnergyIntegrand &integrand) {
-        return [&dcs_func, &integrand](const Dtype &kinetic_energy,
-                                       const Dtype &xlow,
-                                       const AtomicElement <Dtype> &element,
-                                       const Dtype &mass,
+        return [&dcs_func, &integrand](const Scalar &kinetic_energy,
+                                       const Scalar &xlow,
+                                       const AtomicElement &element,
+                                       const AtomicMass &mass,
                                        const Index min_points) {
-            return utils::numerics::quadrature6<Dtype>(
+            return utils::numerics::quadrature6<Scalar>(
                     log(kinetic_energy * xlow), log(kinetic_energy),
-                    [&](const Dtype &t) {
+                    [&](const Scalar &t) {
                         const Scalar q = exp(t);
                         return integrand(dcs_func(kinetic_energy, q, element, mass), q);
                     },
@@ -85,27 +84,25 @@ namespace noa::pms::dcs {
         };
     }
 
-    template<typename Dtype>
-    inline const auto del_integrand = [](const Dtype &dcs_calc, const Dtype &recoil_energy) {
+    inline const auto del_integrand = [](const Scalar &dcs_calc, const Scalar &recoil_energy) {
         return dcs_calc * recoil_energy;
     };
 
-    template<typename Dtype>
-    inline const auto cel_integrand = [](const Dtype &dcs_calc, const Dtype &recoil_energy) {
+    inline const auto cel_integrand = [](const Scalar &dcs_calc, const Scalar &recoil_energy) {
         return dcs_calc * recoil_energy * recoil_energy;
     };
 
-    template<typename Dtype, typename CSIntegral>
+    template<typename CSIntegral>
     inline auto vmap_integral(const CSIntegral &cs_integral) {
         return [&cs_integral](const Calculation &result,
                               const Energies &kinetic_energies,
                               const EnergyTransfer &xlow,
-                              const AtomicElement <Dtype> &element,
+                              const AtomicElement &element,
                               const ParticleMass &mass,
                               const Index min_points) {
-            utils::vmap<Dtype>(
+            utils::vmap<Scalar>(
                     kinetic_energies,
-                    [&](const Dtype &k) {
+                    [&](const Scalar &k) {
                         return cs_integral(k, xlow, element, mass, min_points);
                     },
                     result);
@@ -122,7 +119,7 @@ namespace noa::pms::dcs {
         inline const auto bremsstrahlung = [](
                 const Energy &kinetic_energy,
                 const Energy &recoil_energy,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass) {
             const Index Z = element.Z;
             const Scalar A = element.A;
@@ -167,7 +164,7 @@ namespace noa::pms::dcs {
          */
         inline const auto pair_production = [](const Energy &kinetic_energy,
                                                const Energy &recoil_energy,
-                                               const AtomicElement <Scalar> &element,
+                                               const AtomicElement &element,
                                                const ParticleMass &mass) {
             const Index Z = element.Z;
             const Scalar A = element.A;
@@ -406,7 +403,7 @@ namespace noa::pms::dcs {
          */
         inline const auto photonuclear = [](const Energy &kinetic_energy,
                                             const Energy &recoil_energy,
-                                            const AtomicElement <Scalar> &element,
+                                            const AtomicElement &element,
                                             const ParticleMass &mass) {
             if (dcs_photonuclear_check(kinetic_energy, recoil_energy))
                 return 0.;
@@ -457,7 +454,7 @@ namespace noa::pms::dcs {
          */
         inline const auto ionisation = [](const Energy &kinetic_energy,
                                           const Energy &recoil_energy,
-                                          const AtomicElement <Scalar> &element,
+                                          const AtomicElement &element,
                                           const ParticleMass &mass) {
             const Scalar A = element.A;
             const Index Z = element.Z;
@@ -525,7 +522,7 @@ namespace noa::pms::dcs {
         inline Scalar analytic_ionisation_recoil_integral(
                 const Energy &kinetic_energy,
                 const EnergyTransfer &xlow,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass,
                 const CloseInteractionsTerm &interaction_term
         ) {
@@ -557,7 +554,7 @@ namespace noa::pms::dcs {
          */
         inline Scalar coulomb_frame_parameters(Scalar *fCM,
                                                const Energy &kinetic_energy,
-                                               const AtomicElement <Scalar> &element,
+                                               const AtomicElement &element,
                                                const ParticleMass &mass) {
             Scalar kinetic0;
             const Scalar Ma = element.A * ATOMIC_MASS_ENERGY;
@@ -596,7 +593,7 @@ namespace noa::pms::dcs {
          */
         inline Scalar coulomb_wentzel_path(const Scalar &screening,
                                            const Energy &kinetic_energy,
-                                           const AtomicElement <Scalar> &element,
+                                           const AtomicElement &element,
                                            const ParticleMass &mass) {
             const Scalar d = kinetic_energy * (kinetic_energy + 2. * mass) /
                              (element.Z * (kinetic_energy + mass));
@@ -611,7 +608,7 @@ namespace noa::pms::dcs {
          */
         inline Scalar coulomb_screening_parameters(Scalar *pscreen,
                                                    const Energy &kinetic_energy,
-                                                   const AtomicElement <Scalar> &element,
+                                                   const AtomicElement &element,
                                                    const ParticleMass &mass) {
             // Nuclear screening
             const Scalar third = 1. / 3;
@@ -676,7 +673,7 @@ namespace noa::pms::dcs {
                         const FSpins &fspin,
                         const InvLambdas &invlambda,
                         const Energies &kinetic_energies,
-                        const AtomicElement <Scalar> &element,
+                        const AtomicElement &element,
                         const ParticleMass &mass) {
                     const Index nkin = kinetic_energies.numel();
                     auto *pK = kinetic_energies.data_ptr<Scalar>();
@@ -964,7 +961,7 @@ namespace noa::pms::dcs {
          */
         inline Scalar transverse_transport_ionisation(
                 const Energy &kinetic_energy,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass) {
             // Soft close interactions, restricted to X_FRACTION.
             const Scalar momentum2 = kinetic_energy * (kinetic_energy + 2. * mass);
@@ -996,7 +993,7 @@ namespace noa::pms::dcs {
          */
         inline Scalar transverse_transport_photonuclear(
                 const Energy &kinetic_energy,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass) {
             // Integration over the kinetic_energy transfer, q, done with a log sampling.
             const Scalar E = kinetic_energy + mass;
@@ -1041,7 +1038,7 @@ namespace noa::pms::dcs {
         inline const auto soft_scattering =
                 [](const Calculation &ms1,
                    const Energies &kinetic_energies,
-                   const AtomicElement <Scalar> &element,
+                   const AtomicElement &element,
                    const ParticleMass &mass) {
                     utils::vmap<Scalar>(
                             kinetic_energies,
@@ -1064,7 +1061,7 @@ namespace noa::pms::dcs {
                 const Energies &kinetic_energies,
                 const EnergyTransfer &xlow,
                 const EnergyTransfer &model_max,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass) {
             const Index nkin = kinetic_energies.numel();
             auto *pK = kinetic_energies.data_ptr<Scalar>();
@@ -1165,7 +1162,7 @@ namespace noa::pms::dcs {
                 const Calculation &Xt,
                 const Energies &kinetic_energies,
                 const EnergyTransfer &xlow,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass,
                 const Index th_i) {
             const Index n = kinetic_energies.numel();
@@ -1208,8 +1205,7 @@ namespace noa::pms::dcs {
         inline void compute_cel_grammage_integral(
                 const Calculation &result,
                 const Tabulation &table_dE,
-                const Energies &kinetic_energies)
-        {
+                const Energies &kinetic_energies) {
             const Index nkin = kinetic_energies.numel();
             const auto *kinetic = kinetic_energies.data_ptr<Scalar>();
             const auto *dEdX = table_dE.data_ptr<Scalar>();
@@ -1219,8 +1215,7 @@ namespace noa::pms::dcs {
 
             Scalar y0 = 1. / dEdX[0];
             table[0] = kinetic[0] * y0;
-            for (Index i = 1; i < nkin; i++)
-            {
+            for (Index i = 1; i < nkin; i++) {
                 const Scalar y1 = 1. / dEdX[i];
                 table[i] = table[i - 1] +
                            0.5 * (kinetic[i] - kinetic[i - 1]) * (y0 + y1);
@@ -1235,15 +1230,13 @@ namespace noa::pms::dcs {
          */
         inline MomentumIntegral compute_momentum_integral(
                 const Energy &kinetic_energy,
-                const ParticleMass &mass)
-        {
+                const ParticleMass &mass) {
             // Compute the integral of 1/momemtum for the lowest energy bin using trapezes.
             const Index n = 101;
             const Scalar dK = kinetic_energy / (n - 1);
             Scalar Ki = dK;
             Scalar I0 = 0.5 / sqrt(Ki * (Ki + 2. * mass));
-            for (Index i = 2; i < n - 1; i++)
-            {
+            for (Index i = 2; i < n - 1; i++) {
                 Ki += dK;
                 const Scalar pi = sqrt(Ki * (Ki + 2. * mass));
                 I0 += 1. / pi;
@@ -1264,8 +1257,7 @@ namespace noa::pms::dcs {
                 const Tabulation &table_X,
                 const Energies &kinetic_energies,
                 const ParticleMass &mass,
-                const MomentumIntegral &I0)
-        {
+                const MomentumIntegral &I0) {
             // Compute the cumulative path integrals .
             const Index nkin = kinetic_energies.numel();
             const auto *pK = kinetic_energies.data_ptr<Scalar>();
@@ -1274,8 +1266,7 @@ namespace noa::pms::dcs {
 
             T[0] = I0 * X[0] * mass;
 
-            for (Index i = 1; i < nkin; i++)
-            {
+            for (Index i = 1; i < nkin; i++) {
                 const Scalar p0 =
                         sqrt(pK[i - 1] * (pK[i - 1] + 2. * mass));
                 const Scalar p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
@@ -1291,16 +1282,14 @@ namespace noa::pms::dcs {
          *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8311
          */
         inline void compute_kinetic_integral(const Calculation &result,
-                                             const Energies &kinetic_energies)
-        {
+                                             const Energies &kinetic_energies) {
             const Index nkin = kinetic_energies.numel();
             const auto *pK = kinetic_energies.data_ptr<Scalar>();
             auto *table = result.data_ptr<Scalar>();
 
             Scalar value = 0.5 * pK[0] * table[0];
 
-            for (Index i = 1; i < nkin; i++)
-            {
+            for (Index i = 1; i < nkin; i++) {
                 const Scalar dv = 0.5 * (pK[i] - pK[i - 1]) * (table[i - 1] + table[i]);
                 table[i - 1] = value;
                 value += dv;
@@ -1318,8 +1307,7 @@ namespace noa::pms::dcs {
                 const Tabulation &table_T,
                 const Tabulation &table_X,
                 const ParticleMass &mass,
-                const LarmorFactor &larmor)
-        {
+                const LarmorFactor &larmor) {
             const Index imax = table_T.numel() - 1;
             if (imax == 0)
                 return;
@@ -1337,15 +1325,13 @@ namespace noa::pms::dcs {
 
             // Compute the deflection starting from max energy down to 0
             Index i, j;
-            for (i = imax; i >= 1; i--)
-            {
+            for (i = imax; i >= 1; i--) {
                 Scalar dX0 = 0.5 * (X0[i] - X0[i - 1]);
                 Scalar p1 = (T[imax] - T[i - 1]) * factor;
                 Scalar p2 = (T[imax] - T[i]) * factor;
 
                 Scalar f1 = 1., f2 = 1.;
-                for (j = 0; j < NLAR; j++)
-                {
+                for (j = 0; j < NLAR; j++) {
                     dx[j] = dX0 * (f1 + f2);
                     x[j] += dx[j];
                     f1 *= p1;
@@ -1356,8 +1342,7 @@ namespace noa::pms::dcs {
             }
 
             // Extrapolate the end points
-            for (j = 0; j < NLAR; j++)
-            {
+            for (j = 0; j < NLAR; j++) {
                 Scalar hx = X0[0] / (X0[1] - X0[0]);
                 Li[j] = x[j] + hx * dx[j];
             }
@@ -1366,21 +1351,21 @@ namespace noa::pms::dcs {
     } // namespace noa::pms::dcs::pumas
 
     template<>
-    inline auto recoil_integral<Scalar>(
-            const decltype(pumas::ionisation) &dcs_func, const decltype(del_integrand<Scalar>) &integrand) {
+    inline auto recoil_integral(
+            const decltype(pumas::ionisation) &dcs_func, const decltype(del_integrand) &integrand) {
         return [&dcs_func, &integrand](const Scalar &kinetic_energy,
                                        const Scalar &xlow,
-                                       const AtomicElement <Scalar> &element,
-                                       const Scalar &mass,
+                                       const AtomicElement &element,
+                                       const AtomicMass &mass,
                                        const Index min_points) {
             const Scalar m1 = mass - ELECTRON_MASS;
             return (kinetic_energy <= 0.5 * m1 * m1 / ELECTRON_MASS) ?
                    pumas::analytic_ionisation_recoil_integral(
                            kinetic_energy, xlow, element, mass, pumas::analytic_del_ionisation_interactions) :
-                   recoil_integral<Scalar>(
+                   recoil_integral(
                            [&dcs_func](const Scalar &k,
                                        const Scalar &q,
-                                       const AtomicElement <Scalar> &el,
+                                       const AtomicElement &el,
                                        const ParticleMass &m) {
                                return dcs_func(k, q, el, m);
                            },
@@ -1390,21 +1375,21 @@ namespace noa::pms::dcs {
     }
 
     template<>
-    inline auto recoil_integral<Scalar>(
-            const decltype(pumas::ionisation) &dcs_func, const decltype(cel_integrand<Scalar>) &integrand) {
+    inline auto recoil_integral(
+            const decltype(pumas::ionisation) &dcs_func, const decltype(cel_integrand) &integrand) {
         return [&dcs_func, &integrand](const Scalar &kinetic_energy,
                                        const Scalar &xlow,
-                                       const AtomicElement <Scalar> &element,
-                                       const Scalar &mass,
+                                       const AtomicElement &element,
+                                       const AtomicMass &mass,
                                        const Index min_points) {
             const Scalar m1 = mass - ELECTRON_MASS;
             return (kinetic_energy <= 0.5 * m1 * m1 / ELECTRON_MASS) ?
                    pumas::analytic_ionisation_recoil_integral(
                            kinetic_energy, xlow, element, mass, pumas::analytic_cel_ionisation_interactions) :
-                   recoil_integral<Scalar>(
+                   recoil_integral(
                            [&dcs_func](const Scalar &k,
                                        const Scalar &q,
-                                       const AtomicElement <Scalar> &el,
+                                       const AtomicElement &el,
                                        const ParticleMass &m) {
                                return dcs_func(k, q, el, m);
                            },

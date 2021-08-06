@@ -14,7 +14,7 @@ DEFINE_string(materials, "noa-pms-models", "Path to the PMS materials data");
 
 auto main(int argc, char **argv) -> int {
 
-    gflags::SetUsageMessage("Functional tests for PMS component");
+    gflags::SetUsageMessage("Functional tests for Muon PMS component");
 
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 

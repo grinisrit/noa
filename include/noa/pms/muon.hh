@@ -77,9 +77,9 @@ namespace noa::pms {
     };
 
 
-    class MuonPhysics : public Model<Scalar, MuonPhysics> {
+    class MuonPhysics : public Model<MuonPhysics> {
 
-        friend class Model<Scalar, MuonPhysics>;
+        friend class Model<MuonPhysics>;
 
         MaterialsRelativeElectronicDensity material_ZoA;
         MaterialsMeanExcitationEnergy material_I;
@@ -115,13 +115,13 @@ namespace noa::pms {
             return torch::dtype(c10::CppTypeToScalarType<Scalar>{}).layout(torch::kStrided);
         }
 
-        inline AtomicElement<Scalar> process_element(const AtomicElement<Scalar> &element) const {
-            return AtomicElement<Scalar>{element.A, 1E-6 * dcs::pumas::ENERGY_SCALE * element.I, element.Z};
+        inline AtomicElement process_element(const AtomicElement &element) const {
+            return AtomicElement{element.A, 1E-6 * dcs::pumas::ENERGY_SCALE * element.I, element.Z};
         }
 
-        inline Material<Scalar> process_material(
-                const Material<Scalar> &material) const {
-            return Material<Scalar>{
+        inline Material process_material(
+                const Material &material) const {
+            return Material{
                     material.element_ids,
                     material.fractions.to(tensor_ops()),
                     dcs::pumas::DENSITY_SCALE * material.density};
@@ -214,26 +214,26 @@ namespace noa::pms {
         inline void compute_recoil_energy_integrals(
                 const Tabulation &result,
                 const EnergyIntegrand &integrand,
-                const AtomicElement<Scalar> &element) {
+                const AtomicElement &element) {
 
-            dcs::vmap_integral<Scalar>(
-                    dcs::recoil_integral<Scalar>(dcs::pumas::bremsstrahlung, integrand))
+            dcs::vmap_integral(
+                    dcs::recoil_integral(dcs::pumas::bremsstrahlung, integrand))
                     (result[0], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
-            dcs::vmap_integral<Scalar>(
-                    dcs::recoil_integral<Scalar>(dcs::pumas::pair_production, integrand))
+            dcs::vmap_integral(
+                    dcs::recoil_integral(dcs::pumas::pair_production, integrand))
                     (result[1], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
-            dcs::vmap_integral<Scalar>(
-                    dcs::recoil_integral<Scalar>(dcs::pumas::photonuclear, integrand))
+            dcs::vmap_integral(
+                    dcs::recoil_integral(dcs::pumas::photonuclear, integrand))
                     (result[2], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
-            dcs::vmap_integral<Scalar>(
-                    dcs::recoil_integral<Scalar>(dcs::pumas::ionisation, integrand))
+            dcs::vmap_integral(
+                    dcs::recoil_integral(dcs::pumas::ionisation, integrand))
                     (result[3], table_K, dcs::pumas::X_FRACTION, element, MUON_MASS, 180);
         }
 
         inline void compute_dcs_model(
                 const Tabulation &result,
                 const TableK &high_kinetic_energies,
-                const AtomicElement<Scalar> &element) {
+                const AtomicElement &element) {
             dcs_model_fit(dcs::pumas::bremsstrahlung,
                           result[0], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
                           element, MUON_MASS);
@@ -245,7 +245,7 @@ namespace noa::pms {
                           element, MUON_MASS);
         }
 
-        inline void compute_coulomb_data(const AtomicElement<Scalar> &element, const ElementId iel) {
+        inline void compute_coulomb_data(const AtomicElement &element, const ElementId iel) {
 
             const auto &screen = coulomb_workspace.screening[iel];
             const auto &fspin = coulomb_workspace.fspin[iel];
@@ -278,8 +278,8 @@ namespace noa::pms {
 #pragma omp parallel for
             for (Index iel = 0; iel < nel; iel++) {
                 const auto &element = get_element(iel);
-                compute_recoil_energy_integrals(table_CSn[iel], dcs::del_integrand<Scalar>, element);
-                compute_recoil_energy_integrals(cel_table[iel], dcs::cel_integrand<Scalar>, element);
+                compute_recoil_energy_integrals(table_CSn[iel], dcs::del_integrand, element);
+                compute_recoil_energy_integrals(cel_table[iel], dcs::cel_integrand, element);
                 compute_dcs_model(dcs_data[iel], model_K, element);
                 compute_coulomb_data(element, iel);
             }
@@ -371,7 +371,7 @@ namespace noa::pms {
 
         inline void compute_del_thresholds(
                 const Tabulation &result,
-                const AtomicElement<Scalar> &element,
+                const AtomicElement &element,
                 const ThresholdIndex th_i) {
             dcs::pumas::compute_threshold(dcs::pumas::bremsstrahlung, result[0], table_K,
                                           dcs::pumas::X_FRACTION, element, MUON_MASS, th_i);

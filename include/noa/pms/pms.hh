@@ -42,11 +42,10 @@ namespace noa::pms {
     using ElementIdsList = torch::Tensor;
     using ElementsFractions = torch::Tensor;
 
-    template<typename Dtype>
     struct Material {
         ElementIdsList element_ids;
         ElementsFractions fractions;
-        Dtype density; // Reference density
+        MaterialDensity density;
     };
 
     using MaterialId = Index;
@@ -54,10 +53,10 @@ namespace noa::pms {
     using MaterialNames = std::vector<mdf::MaterialName>;
 
 
-    template<typename Dtype, typename Physics>
+    template<typename Physics>
     class Model {
-        using Elements = std::vector<AtomicElement<Dtype>>;
-        using Materials = std::vector<Material<Dtype>>;
+        using Elements = std::vector<AtomicElement>;
+        using Materials = std::vector<Material>;
 
         Elements elements;
         ElementIds element_id;
@@ -69,31 +68,31 @@ namespace noa::pms {
 
         // TODO: Composite materials
 
-        inline AtomicElement<Dtype> process_element_(const AtomicElement<Dtype> &element) {
+        inline AtomicElement process_element_(const AtomicElement &element) {
             return static_cast<Physics *>(this)->process_element(element);
         }
 
-        inline Material<Dtype> process_material_(
-                const Dtype &density,
+        inline Material process_material_(
+                const MaterialDensity &density,
                 const mdf::MaterialComponents &components) {
             const Index n = components.size();
             const auto element_ids = torch::zeros(n, torch::kInt32);
-            const auto fractions = torch::zeros(n, torch::dtype(c10::CppTypeToScalarType<Dtype>{}));
+            const auto fractions = torch::zeros(n, torch::dtype(c10::CppTypeToScalarType<Scalar>{}));
             Index iel = 0;
             for (const auto &[el, frac] : components) {
                 element_ids[iel] = get_element_id(el);
                 fractions[iel++] = frac;
             }
             return static_cast<Physics *>(this)->process_material(
-                    Material<Dtype>{element_ids, fractions, density});
+                    Material{element_ids, fractions, density});
         }
 
     public:
-        inline const AtomicElement<Dtype> &get_element(const ElementId id) const {
+        inline const AtomicElement &get_element(const ElementId id) const {
             return elements.at(id);
         }
 
-        inline const AtomicElement<Dtype> &get_element(const mdf::ElementName &name) const {
+        inline const AtomicElement &get_element(const mdf::ElementName &name) const {
             return elements.at(element_id.at(name));
         }
 
@@ -109,11 +108,11 @@ namespace noa::pms {
             return elements.size();
         }
 
-        inline const Material<Dtype> &get_material(const MaterialId id) const {
+        inline const Material &get_material(const MaterialId id) const {
             return materials.at(id);
         }
 
-        inline const Material<Dtype> &get_material(const mdf::MaterialName &name) const {
+        inline const Material &get_material(const mdf::MaterialName &name) const {
             return materials.at(material_id.at(name));
         }
 
@@ -155,6 +154,12 @@ namespace noa::pms {
                 id++;
             }
         }
+    };
+
+    template<typename InitialFlux>
+    class Transport {
+        InitialFlux initial_flux;
+
     };
 
 } //namespace noa::pms

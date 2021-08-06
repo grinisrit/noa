@@ -32,7 +32,7 @@ struct DCSBenchmark : benchmark::Fixture {
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
-            dcs::vmap<Scalar>(dcs_func)(
+            dcs::vmap(dcs_func)(
                     result, kinetic_energies, recoil_energies, element, mu);
     }
 
@@ -44,7 +44,7 @@ struct DCSBenchmark : benchmark::Fixture {
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
-            dcs::vmap<Scalar>(dcs_func)(
+            dcs::vmap(dcs_func)(
                     result, kinetic_energies, recoil_energies, element, mu);
     }
 
@@ -56,7 +56,7 @@ struct DCSBenchmark : benchmark::Fixture {
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
-            dcs::pvmap<Scalar>(dcs_func)(
+            dcs::pvmap(dcs_func)(
                     result, kinetic_energies, recoil_energies, element, mu);
     }
 
@@ -69,7 +69,7 @@ struct DCSBenchmark : benchmark::Fixture {
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
-            dcs::recoil_integral<Scalar>(dcs_func, integrand)(
+            dcs::recoil_integral(dcs_func, integrand)(
                     k, xlow, element, mu, 180);
     }
 
@@ -84,8 +84,8 @@ struct DCSBenchmark : benchmark::Fixture {
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
-            dcs::vmap_integral<Scalar>(
-                    dcs::recoil_integral<Scalar>(dcs_func, integrand))(
+            dcs::vmap_integral(
+                    dcs::recoil_integral(dcs_func, integrand))(
                     r, k, xlow, element, mu, 180);
     }
 

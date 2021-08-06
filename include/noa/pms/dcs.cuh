@@ -39,7 +39,7 @@ namespace noa::pms::dcs {
         __device__ __forceinline__ Scalar bremsstrahlung(
                 const Energy &kinetic_energy,
                 const Energy &recoil_energy,
-                const AtomicElement <Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass) {
             const Index Z = element.Z;
             const Scalar A = element.A;

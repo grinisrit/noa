@@ -39,7 +39,7 @@ namespace noa::pms::dcs {
                 const Calculation &result,
                 const Energies &kinetic_energies,
                 const Energies &recoil_energies,
-                const AtomicElement<Scalar> &element,
+                const AtomicElement &element,
                 const ParticleMass &mass);
 
     } // namespace noa::pms::dcs::pumas::cuda

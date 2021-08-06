@@ -53,7 +53,7 @@ namespace noa::pms::mdf {
     using CompositeName = std::string;
     using Composite = std::unordered_map<MaterialName, ComponentFraction>;
 
-    using Elements = std::unordered_map<ElementName, AtomicElement < Scalar>>;
+    using Elements = std::unordered_map<ElementName, AtomicElement>;
     using Materials = std::unordered_map<MaterialName, Material>;
     using Composites = std::unordered_map<CompositeName, Composite>;
 
@@ -173,9 +173,9 @@ namespace noa::pms::mdf {
         for (const auto &xnode : element_xnodes) {
             const auto node = xnode.node();
             elements.emplace(node.attribute("name").value(),
-                             AtomicElement<Scalar>{node.attribute("A").as_double(),
-                                                   node.attribute("I").as_double(),
-                                                   node.attribute("Z").as_int()});
+                             AtomicElement{node.attribute("A").as_double(),
+                                           node.attribute("I").as_double(),
+                                           node.attribute("Z").as_int()});
         }
 
         const auto material_xnodes =

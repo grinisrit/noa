@@ -37,11 +37,13 @@ namespace noa::pms {
     using ParticleMass = Scalar;
     using DecayLength = Scalar;
     using AtomicNumber = Index;
-
-    template<typename Dtype>
+    using AtomicMass = Scalar;
+    using MeanExcitation = Scalar;
+    using MaterialDensity = Scalar;
+    
     struct AtomicElement {
-        Dtype A; // Atomic mass
-        Dtype I; // Mean Excitation
+        AtomicMass A; 
+        MeanExcitation I; 
         AtomicNumber Z;
     };
 
@@ -73,8 +75,8 @@ namespace noa::pms {
     constexpr LarmorFactor LARMOR_FACTOR = 0.299792458; // m^-1 GeV/c T^-1.
 
     // Common elements:
-    constexpr AtomicElement<Scalar> STANDARD_ROCK =
-            AtomicElement<Scalar>{
+    constexpr AtomicElement STANDARD_ROCK =
+            AtomicElement{
                     22.,       // g/mol
                     0.1364E-6, // GeV
                     11};
