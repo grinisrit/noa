@@ -1,5 +1,4 @@
 #include <noa/pms/kernels.cuh>
-#include <noa/pms/constants.hh>
 
 #include <torch/extension.h>
 

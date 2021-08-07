@@ -1,5 +1,3 @@
-#include <noa/utils/common.hh>
-#include <noa/pms/constants.hh>
 #include <noa/pms/dcs.hh>
 
 #include <torch/extension.h>
@@ -9,28 +7,28 @@ using namespace noa::utils;
 
 inline Tensor bremsstrahlung(Tensor kinetic_energies, Tensor recoil_energies) {
     const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap<Scalar>(dcs::pumas::bremsstrahlung)(
+    dcs::vmap(dcs::pumas::bremsstrahlung)(
             result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
     return result;
 }
 
 inline Tensor pair_production(Tensor kinetic_energies, Tensor recoil_energies) {
     const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap<Scalar>(dcs::pumas::pair_production)(
+    dcs::vmap(dcs::pumas::pair_production)(
             result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
     return result;
 }
 
 inline Tensor photonuclear(Tensor kinetic_energies, Tensor recoil_energies) {
     const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap<Scalar>(dcs::pumas::photonuclear)(
+    dcs::vmap(dcs::pumas::photonuclear)(
             result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
     return result;
 }
 
 inline Tensor ionisation(Tensor kinetic_energies, Tensor recoil_energies) {
     const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap<Scalar>(dcs::pumas::ionisation)(
+    dcs::vmap(dcs::pumas::ionisation)(
             result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
     return result;
 }
