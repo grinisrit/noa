@@ -156,10 +156,5 @@ namespace noa::pms {
         }
     };
 
-    template<typename InitialFlux>
-    class Transport {
-        InitialFlux initial_flux;
-
-    };
 
 } //namespace noa::pms
