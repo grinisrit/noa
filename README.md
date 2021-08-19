@@ -1,8 +1,7 @@
 # NOA: Nonlinear Optimisation Algorithms
 
-We aim to make it easier to integrate nonlinear optimisation
-algorithms with on-line learning, bayesian computation and 
-large simulation frameworks. 
+We aim to make it easier to integrate optimisation with on-line learning, bayesian computation and 
+large simulation frameworks through dedicated differentiable algorithms. 
 Our solution is suitable for both research 
 and applications in performance demanding systems 
 such as encountered in streaming analytics, game development 
