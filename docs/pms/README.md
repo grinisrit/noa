@@ -23,4 +23,4 @@ The semi-analytical BMC algorithm for Muons and Taus propagation relies on
 To load the MDF settings we rely on 
 [pugixml](https://github.com/zeux/pugixml)  version `1.11` provided.
 
-(c) 2021 Roland Grinis, GrinisRIT ltd.
+(c) 2021 GrinisRIT ltd. and contributors

@@ -87,4 +87,4 @@ The JNI wrapper is being developed in collaboration with
 For commercial support or consultancy services 
 contact [GrinisRIT](https://www.grinisrit.com).
 
-(c) 2021 Roland Grinis, GrinisRIT ltd.
+(c) 2021 GrinisRIT ltd. and contributors

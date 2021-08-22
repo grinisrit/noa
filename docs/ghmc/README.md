@@ -36,4 +36,4 @@ Implementations of the HMC algorithms above over [PyTorch](https://pytorch.org)
 are also available in the 
 [hamiltorch](https://github.com/AdamCobb/hamiltorch) package.
 
-(c) 2021 Roland Grinis, GrinisRIT ltd.
+(c) 2021 GrinisRIT ltd. and contributors
