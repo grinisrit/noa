@@ -78,6 +78,17 @@ in the passage of particles through matter simulations.
 
 ## Acknowledgments
 
+When referring to this library in scientific work please cite:
+
+```
+@article{grinis2021diffprog,
+  title={Differentiable programming for particle physics simulations},
+  author={Roland Grinis},
+  journal={preprint arXiv:2108.10245},
+  year={2021}
+}
+```
+
 We welcome contributions to the project 
 and would love to hear about any feature requests.
 
