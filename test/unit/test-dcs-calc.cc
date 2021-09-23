@@ -1,7 +1,7 @@
 #include "test-data.hh"
 
 #include <noa/pms/dcs.hh>
-#include <noa/pms/constants.hh>
+#include <noa/pms/physics.hh>
 #include <noa/utils/common.hh>
 
 #include <gtest/gtest.h>

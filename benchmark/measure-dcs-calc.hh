@@ -2,7 +2,7 @@
 
 #include "../test/test-data.hh"
 
-#include <noa/pms/constants.hh>
+#include <noa/pms/physics.hh>
 #include <noa/pms/dcs.hh>
 
 #include <benchmark/benchmark.h>

@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "noa/pms/constants.hh"
+#include "noa/pms/physics.hh"
 
 #include <torch/types.h>
 
