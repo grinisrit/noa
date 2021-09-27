@@ -1018,19 +1018,19 @@ namespace noa::pms::dcs {
          *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9007
          */
         template<typename DCSFunc>
-        inline void dcs_model_fit(
+        inline std::tuple<Calculation, Calculation> polynomial_model_create(
                 const DCSFunc &dcs_func,
                 const Calculation &coeff,
                 const Energies &kinetic_energies,
                 const EnergyTransfer &xlow,
                 const EnergyTransfer &model_max,
                 const AtomicElement &element,
-                const ParticleMass &mass) {
+                const ParticleMass &mass,
+                Index m) {
             const Index nkin = kinetic_energies.numel();
             auto *pK = kinetic_energies.data_ptr<Scalar>();
             auto *c = coeff.data_ptr<Scalar>();
 
-            const Index m = (Index) (100. * log10(model_max / xlow)) + 1;
             const Index n = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + 1;
             const Index qj = DCS_MODEL_ORDER_P + 1;
 
@@ -1053,10 +1053,10 @@ namespace noa::pms::dcs {
 
                 for (Index i = 0; i < m; i++) {
                     Scalar lxi = x0 + i * dx;
-                    const Scalar nu = exp(lxi);
+                    const Scalar tau = exp(lxi);
 
                     const Scalar y = std::max(
-                            dcs_func(k, k * nu, element, mass) *
+                            dcs_func(k, k * tau, element, mass) *
                             k / (k + mass),
                             0.);
 
@@ -1064,7 +1064,7 @@ namespace noa::pms::dcs {
                         if (first) {
                             first = false;
                             i0 = i;
-                            xi0 = nu;
+                            xi0 = tau;
                         } else
                             i1 = i;
                         pw[i + ik] = 1.;
@@ -1077,7 +1077,7 @@ namespace noa::pms::dcs {
                         xi *= lxi;
                     }
 
-                    Scalar qlxi = log(1. - nu);
+                    Scalar qlxi = log(1. - tau);
                     xi = qlxi;
                     for (Index j = 0; j < DCS_MODEL_ORDER_Q; j++) {
                         pA[j + qj + row] = xi;
@@ -1105,6 +1105,23 @@ namespace noa::pms::dcs {
             A *= w.view({nkin, m, 1});
             b *= w;
 
+            return std::make_tuple(A, b);
+        }
+
+        template<typename DCSFunc>
+        inline void polynomial_model_fit(
+                const DCSFunc &dcs_func,
+                const Calculation &coeff,
+                const Energies &kinetic_energies,
+                const EnergyTransfer &xlow,
+                const EnergyTransfer &model_max,
+                const AtomicElement &element,
+                const ParticleMass &mass) {
+            const Index m = (Index) (100. * log10(model_max / xlow)) + 1;
+            const auto[A, b] = polynomial_model_create(
+                    dcs_func, coeff, kinetic_energies, xlow, model_max, element, mass, m);
+            const auto nkin = kinetic_energies.numel();
+            const Index n = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + 1;
             const auto &[U, S, V] = torch::svd(A);
             coeff.slice(1, 0, n) = V.matmul(
                             (torch::where(S != 0., 1 / S,

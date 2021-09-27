@@ -234,13 +234,13 @@ namespace noa::pms {
                 const Tabulation &result,
                 const TableK &high_kinetic_energies,
                 const AtomicElement &element) {
-            dcs_model_fit(dcs::pumas::bremsstrahlung,
+            polynomial_model_fit(dcs::pumas::bremsstrahlung,
                           result[0], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
                           element, MUON_MASS);
-            dcs_model_fit(dcs::pumas::pair_production,
+            polynomial_model_fit(dcs::pumas::pair_production,
                           result[1], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
                           element, MUON_MASS);
-            dcs_model_fit(dcs::pumas::photonuclear,
+            polynomial_model_fit(dcs::pumas::photonuclear,
                           result[2], high_kinetic_energies, dcs::pumas::X_FRACTION, dcs::pumas::DCS_MODEL_MAX_FRACTION,
                           element, MUON_MASS);
         }
