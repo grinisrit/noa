@@ -78,7 +78,7 @@ in the passage of particles through matter simulations.
 
 ## Acknowledgments
 
-When referring to this library in scientific work please cite:
+When referring to this library in scientific work please cite the [preprint](https://arxiv.org/abs/2108.10245):
 
 ```
 @article{grinis2021diffprog,
