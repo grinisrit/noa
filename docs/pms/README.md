@@ -14,8 +14,9 @@ has been recorded at the
 [QUARKS-2021](https://www.youtube.com/channel/UCXdL4IpBP3LqmUO2EqNCYxA) 
 conference.
 
-The component `noa::pms::leptons` implement the creation of material's physics models 
-for leptons (essentially muons as of now) from configuration files available at
+The component `noa::pms::leptons` implements the creation 
+of material's physics models for leptons 
+(essentially muons as of now) from configuration files available at
 [noa-pms-models](https://github.com/grinisrit/noa-pms-models). 
 The computational physics algorithms are based on 
 [pumas v1.0](https://github.com/niess/pumas/releases/tag/v1.0). 
