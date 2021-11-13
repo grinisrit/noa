@@ -13,7 +13,11 @@ Currently, we support only `GNU`, and `CUDA` for GPU
 (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
 A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
-drop the `include/noa` folder into your project.
+drop the `include/noa` folder into your project. 
+Make sure to fetch the repository with all the submodules:
+```
+$ git clone --recurse-submodules https://github.com/grinisrit/noa.git
+```
 
 ### CMake project
 The core of the library depends on 
