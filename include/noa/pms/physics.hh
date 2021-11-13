@@ -40,10 +40,10 @@ namespace noa::pms {
     using AtomicMass = Scalar;
     using MeanExcitation = Scalar;
     using MaterialDensity = Scalar;
-    
+
     struct AtomicElement {
-        AtomicMass A; 
-        MeanExcitation I; 
+        AtomicMass A;
+        MeanExcitation I;
         AtomicNumber Z;
     };
 
@@ -123,13 +123,14 @@ namespace noa::pms {
         using SoftScatter = torch::Tensor; // Soft scattering terms per element
 
         /*
-*  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-*  GNU Lesser General Public License version 3
-*  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
-*/
+        *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+        *  GNU Lesser General Public License version 3
+        *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
+        */
 #ifdef __NVCC__
         __device__ __forceinline__
 #else
+
         inline
 #endif
         Scalar _bremsstrahlung_(
