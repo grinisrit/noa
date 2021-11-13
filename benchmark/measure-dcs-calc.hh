@@ -2,12 +2,12 @@
 
 #include "../test/test-data.hh"
 
-#include <noa/pms/physics.hh>
-#include <noa/pms/dcs.hh>
+#include <noa/pms/leptons/physics.hh>
+#include <noa/pms/leptons/dcs.hh>
 
 #include <benchmark/benchmark.h>
 
-using namespace noa::pms;
+using namespace noa::pms::leptons;
 
 struct DCSBenchmark : benchmark::Fixture {
     DCSBenchmark() {
@@ -65,7 +65,7 @@ struct DCSBenchmark : benchmark::Fixture {
                                                    const DCSFunc &dcs_func,
                                                    const EnergyIntegrand &integrand) {
         const auto k = DCSData::get_kinetic_energies()[65].item<Scalar>();
-        const auto xlow = dcs::pumas::X_FRACTION;
+        const auto xlow = dcs::X_FRACTION;
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)
@@ -80,7 +80,7 @@ struct DCSBenchmark : benchmark::Fixture {
                                                        const EnergyIntegrand &integrand) {
         const auto r = torch::zeros_like(DCSData::get_kinetic_energies());
         const auto k = DCSData::get_kinetic_energies();
-        const auto xlow = dcs::pumas::X_FRACTION;
+        const auto xlow = dcs::X_FRACTION;
         const auto element = STANDARD_ROCK;
         const auto mu = MUON_MASS;
         for (auto _ : state)

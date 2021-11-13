@@ -14,22 +14,22 @@ has been recorded at the
 [QUARKS-2021](https://www.youtube.com/channel/UCXdL4IpBP3LqmUO2EqNCYxA) 
 conference.
 
-This component implement the creation of materials models 
-for Muons and Taus from configuration files available at
+The component `noa::pms::leptons` implement the creation of material's physics models 
+for leptons (essentially muons as of now) from configuration files available at
 [noa-pms-models](https://github.com/grinisrit/noa-pms-models). 
-The physics computational algorithms are based on 
+The computational physics algorithms are based on 
 [pumas v1.0](https://github.com/niess/pumas/releases/tag/v1.0). 
 Examples can be found within the 
 [functional tests](../../test/pms), 
 the [benchmarks](../../benchmark) 
-measuring `CPU/OpenMP` vs `CUDA` performance,
+measuring `CPU/OpenMP` vs `CUDA` performance
 and a [notebook](muon_dcs_calc.ipynb) 
 documenting differential cross-sections calculations.
 However, no transport functionality is available yet.
 
-We are actively developing a whole frontend for 
+In `noa::pms::pumas` however, we are actively developing a whole frontend for 
 [pumas v1.1](https://github.com/niess/pumas/releases/tag/v1.1)
-which will also contain the sensitivity analysis functionality. 
+which will also contain sensitivity analysis functionality. 
 
 In the near future, we plan to cover 
 a wide range of particles. 

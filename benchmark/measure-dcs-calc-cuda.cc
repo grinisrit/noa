@@ -1,11 +1,11 @@
 #include "measure-dcs-calc.hh"
 
-#include <noa/pms/kernels.hh>
-#include <noa/pms/physics.hh>
+#include <noa/pms/leptons/kernels.hh>
+#include <noa/pms/leptons/physics.hh>
 #include <benchmark/benchmark.h>
 
-using namespace noa::pms;
-using namespace noa::pms::dcs::pumas;
+using namespace noa::pms::leptons;
+using namespace noa::pms::leptons::dcs;
 
 BENCHMARK_F(DCSBenchmark, BremsstrahlungVectorisedCUDA)
 (benchmark::State &state) {

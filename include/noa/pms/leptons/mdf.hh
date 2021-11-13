@@ -1,4 +1,4 @@
-/*
+/**
  * BSD 2-Clause License
  *
  * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd. (roland.grinis@grinisrit.com)
@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "noa/pms/physics.hh"
+#include "noa/pms/leptons/physics.hh"
 #include "noa/utils/common.hh"
 #include "noa/utils/xml.hh"
 
@@ -37,7 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace noa::pms::mdf {
+namespace noa::pms::leptons::mdf {
 
     using MDFFilePath = utils::Path;
     using DEDXFolderPath = utils::Path;
@@ -61,7 +61,7 @@ namespace noa::pms::mdf {
     using ParticleName = std::string;
 
     struct DEDXMaterialCoefficients {
-        MaterialDensityEffect <Scalar> density_effect;
+        MaterialDensityEffect<Scalar> density_effect;
         Scalar ZoA, I;
     };
     struct DEDXTable {
@@ -87,7 +87,7 @@ namespace noa::pms::mdf {
 
     inline void print_elements(const Elements &elements) {
         std::cout << "Elements:\n";
-        for (const auto &[name, element] : elements) {
+        for (const auto &[name, element]: elements) {
             std::cout << " " << name << " <Z=" << element.Z
                       << ", A=" << element.A << ", I=" << element.I
                       << ">\n";
@@ -96,20 +96,20 @@ namespace noa::pms::mdf {
 
     inline void print_materials(const Materials &materials) {
         std::cout << "Materials:\n";
-        for (const auto &[name, material] : materials) {
+        for (const auto &[name, material]: materials) {
             const auto &[file, density, comps] = material;
             std::cout << " " << name << "\n"
                       << "  dedx file: " << file << "\n"
                       << "  density: " << density << "\n"
                       << "  components:\n";
-            for (const auto &[element, fraction] : comps)
+            for (const auto &[element, fraction]: comps)
                 std::cout << "   " << element << ": " << fraction
                           << "\n";
         }
     }
 
     inline void print_dedx_headers(const MaterialsDEDXData &materials_dedx_data) {
-        for (const auto &[material, dedx_data] : materials_dedx_data) {
+        for (const auto &[material, dedx_data]: materials_dedx_data) {
             std::cout << material << " density effect:\n "
                       << std::get<ParticleName>(dedx_data) << " = "
                       << std::get<ParticleMass>(dedx_data) << " MeV\n";
@@ -130,7 +130,7 @@ namespace noa::pms::mdf {
         const auto comp_xnodes = node.select_nodes("component[@name][@fraction]");
         auto comps = MDFComponents{};
         Scalar tot = 0.0;
-        for (const auto &xnode : comp_xnodes) {
+        for (const auto &xnode: comp_xnodes) {
             const auto node = xnode.node();
             const auto name = node.attribute("name").value();
             const Scalar frac = node.attribute("fraction").as_double();
@@ -170,7 +170,7 @@ namespace noa::pms::mdf {
             return std::nullopt;
         }
         auto elements = Elements{};
-        for (const auto &xnode : element_xnodes) {
+        for (const auto &xnode: element_xnodes) {
             const auto node = xnode.node();
             elements.emplace(node.attribute("name").value(),
                              AtomicElement{node.attribute("A").as_double(),
@@ -186,7 +186,7 @@ namespace noa::pms::mdf {
             return std::nullopt;
         }
         auto materials = Materials{};
-        for (const auto &xnode : material_xnodes) {
+        for (const auto &xnode: material_xnodes) {
             const auto node = xnode.node();
             const auto name = node.attribute("name").value();
             const auto comps = get_mdf_components<MaterialComponents>(
@@ -202,7 +202,7 @@ namespace noa::pms::mdf {
 
         const auto composite_xnodes = rnode.select_nodes("composite[@name]");
         auto composites = Composites{};
-        for (const auto &xnode : composite_xnodes) {
+        for (const auto &xnode: composite_xnodes) {
             const auto node = xnode.node();
             const auto name = node.attribute("name").value();
             const auto comps =
@@ -330,7 +330,7 @@ namespace noa::pms::mdf {
             const Elements &elements) {
         const auto &coefs = std::get<DEDXMaterialCoefficients>(dedx_data);
         Scalar ZoA = 0.0;
-        for (const auto &[elmt, frac] : std::get<MaterialComponents>(material))
+        for (const auto &[elmt, frac]: std::get<MaterialComponents>(material))
             ZoA += frac * elements.at(elmt).Z / elements.at(elmt).A;
         if ((std::abs(ZoA - coefs.ZoA) > utils::TOLERANCE)) {
             std::cerr << "<Z/A> inconsistent in " << std::get<ParticleName>(dedx_data) << " / "
@@ -346,7 +346,7 @@ namespace noa::pms::mdf {
         const auto &elements = std::get<mdf::Elements>(mdf_settings);
         const auto &materials = std::get<mdf::Materials>(mdf_settings);
         auto materials_data = MaterialsDEDXData{};
-        for (const auto &[name, material] : materials) {
+        for (const auto &[name, material]: materials) {
 
             const auto dedx_data = parse_dedx_file(
                     dedx_path / std::get<DEDXFilePath>(material), dedx_path.filename());
@@ -375,7 +375,7 @@ namespace noa::pms::mdf {
     }
 
     inline utils::Status check_particle_mass(const ParticleMass &particle_mass, const MaterialsDEDXData &dedx_data) {
-        for (const auto &[material, data] : dedx_data)
+        for (const auto &[material, data]: dedx_data)
             if (std::abs(std::get<ParticleMass>(data) - particle_mass) > utils::TOLERANCE) {
                 std::cerr << "Inconsistent particle mass in dedx data for "
                           << material << ": expected " << particle_mass << ", found " << std::get<ParticleMass>(data)
@@ -385,4 +385,4 @@ namespace noa::pms::mdf {
         return true;
     }
 
-} // namespace noa::pms::mdf
+} // namespace noa::pms::leptons::mdf

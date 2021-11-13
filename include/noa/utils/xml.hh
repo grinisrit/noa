@@ -1,4 +1,4 @@
-/*
+/**
  * BSD 2-Clause License
  *
  * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd. (roland.grinis@grinisrit.com)
@@ -28,11 +28,11 @@
 
 #pragma once
 
-#include "noa/utils/_pugixml/pugixml.hpp"
+#include "noa/utils/_pugixml/_pugixml.hh"
 
 namespace noa::utils::xml
 {
-    using Document = pugi::xml_document;
-    using Node = pugi::xml_node;
+    using Document = _pugixml::pugi::xml_document;
+    using Node = _pugixml::pugi::xml_node;
 
 } // namespace noa::utils::xml

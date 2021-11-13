@@ -1,4 +1,4 @@
-/*
+/**
  * BSD 2-Clause License
  *
  * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd. (roland.grinis@grinisrit.com)
@@ -28,19 +28,8 @@
 
 #pragma once
 
-#include "noa/pms/physics.hh"
+namespace noa::utils::_pugixml {
 
-#include <torch/types.h>
+#include "noa/utils/_pugixml/pugixml.hpp"
 
-namespace noa::pms::dcs {
-    namespace pumas::cuda {
-
-        void vmap_bremsstrahlung(
-                const Calculation &result,
-                const Energies &kinetic_energies,
-                const Energies &recoil_energies,
-                const AtomicElement &element,
-                const ParticleMass &mass);
-
-    } // namespace noa::pms::dcs::pumas::cuda
-} // namespace noa::pms::dcs
+}

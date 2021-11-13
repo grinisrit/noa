@@ -1,12 +1,12 @@
 #include "test-data.hh"
 
-#include <noa/pms/dcs.hh>
-#include <noa/pms/physics.hh>
+#include <noa/pms/leptons/dcs.hh>
+#include <noa/pms/leptons/physics.hh>
 #include <noa/utils/common.hh>
 
 #include <gtest/gtest.h>
 
-using namespace noa::pms;
+using namespace noa::pms::leptons;
 using namespace noa::utils;
 
 TEST(DCS, Bremsstrahlung) {
@@ -14,7 +14,7 @@ TEST(DCS, Bremsstrahlung) {
     const auto recoil_energies = DCSData::get_recoil_energies();
     const auto pumas_brems = DCSData::get_pumas_brems();
     const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap(dcs::pumas::bremsstrahlung)(
+    dcs::vmap(dcs::bremsstrahlung)(
             result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
     ASSERT_TRUE(relative_error(result, pumas_brems).item<Scalar>() < 1E-11);
 }
@@ -22,26 +22,26 @@ TEST(DCS, Bremsstrahlung) {
 TEST(DCS, DELBremsstrahlung) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::bremsstrahlung, dcs::del_integrand))(
+            dcs::recoil_integral(dcs::bremsstrahlung, dcs::del_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_brems_del()).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, CELBremsstrahlung) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::bremsstrahlung, dcs::cel_integrand))(
+            dcs::recoil_integral(dcs::bremsstrahlung, dcs::cel_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_brems_cel()).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, PairProduction) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
-    dcs::vmap(dcs::pumas::pair_production)(
+    dcs::vmap(dcs::pair_production)(
             result,
             DCSData::get_kinetic_energies(),
             DCSData::get_recoil_energies(),
@@ -53,26 +53,26 @@ TEST(DCS, PairProduction) {
 TEST(DCS, DELPairProduction) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::pair_production, dcs::del_integrand))(
+            dcs::recoil_integral(dcs::pair_production, dcs::del_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_pprod_del()).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, CELPairProduction) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::pair_production, dcs::cel_integrand))(
+            dcs::recoil_integral(dcs::pair_production, dcs::cel_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_pprod_cel()).item<Scalar>() < 1E-7);
 }
 
 TEST(DCS, Photonuclear) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
-    dcs::vmap(dcs::pumas::photonuclear)(
+    dcs::vmap(dcs::photonuclear)(
             result,
             DCSData::get_kinetic_energies(),
             DCSData::get_recoil_energies(),
@@ -83,27 +83,27 @@ TEST(DCS, Photonuclear) {
 TEST(DCS, DELPhotonuclear) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::photonuclear, dcs::del_integrand))(
+            dcs::recoil_integral(dcs::photonuclear, dcs::del_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_photo_del()).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, CELPhotonuclear) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::photonuclear, dcs::cel_integrand))(
+            dcs::recoil_integral(dcs::photonuclear, dcs::cel_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_photo_cel()).item<Scalar>() < 1E-9);
 }
 
 
 TEST(DCS, Ionisation) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
-    dcs::vmap(dcs::pumas::ionisation)(
+    dcs::vmap(dcs::ionisation)(
             result,
             DCSData::get_kinetic_energies(),
             DCSData::get_recoil_energies(),
@@ -114,20 +114,20 @@ TEST(DCS, Ionisation) {
 TEST(DCS, DELIonisation) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::ionisation, dcs::del_integrand))(
+            dcs::recoil_integral(dcs::ionisation, dcs::del_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion_del()).item<Scalar>() < 1E-9);
 }
 
 TEST(DCS, CELIonisation) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
     dcs::vmap_integral(
-            dcs::recoil_integral(dcs::pumas::ionisation, dcs::cel_integrand))(
+            dcs::recoil_integral(dcs::ionisation, dcs::cel_integrand))(
             result,
             DCSData::get_kinetic_energies(),
-            dcs::pumas::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
+            dcs::X_FRACTION, STANDARD_ROCK, MUON_MASS, 180);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_ion_cel()).item<Scalar>() < 1E-9);
 }
 
@@ -139,7 +139,7 @@ TEST(DCS, CoulombHardScattering) {
     auto fspin = torch::zeros_like(kinetic_energies);
     auto invlambda = torch::zeros_like(kinetic_energies);
 
-    dcs::pumas::coulomb_data(
+    dcs::coulomb_data(
             fCM, screen, fspin, invlambda,
             DCSData::get_kinetic_energies(), STANDARD_ROCK, MUON_MASS);
 
@@ -149,7 +149,7 @@ TEST(DCS, CoulombHardScattering) {
     ASSERT_TRUE(mean_error(invlambda, DCSData::get_pumas_invlambda()).item<Scalar>() < 1E-10);
 
     auto G = torch::zeros_like(fCM);
-    dcs::pumas::coulomb_transport(
+    dcs::coulomb_transport(
             G, screen, fspin, torch::tensor(1.0, torch::dtype(torch::kDouble)));
     ASSERT_TRUE(relative_error(G.view_as(DCSData::get_pumas_transport()),
                                DCSData::get_pumas_transport())
@@ -164,7 +164,7 @@ TEST(DCS, CoulombHardScattering) {
     const auto lb_h = torch::zeros_like(DCSData::get_kinetic_energies());
     const auto mu0 = torch::zeros_like(DCSData::get_kinetic_energies());
 
-    dcs::pumas::hard_scattering(
+    dcs::hard_scattering(
             mu0, lb_h, G, fCM, screen, invlambda, fspin);
 
     ASSERT_TRUE(relative_error(mu0, DCSData::get_pumas_mu0()).item<Scalar>() < 1E-11);
@@ -173,6 +173,6 @@ TEST(DCS, CoulombHardScattering) {
 
 TEST(DCS, CoulombSoftScattering) {
     const auto result = torch::zeros_like(DCSData::get_kinetic_energies());
-    dcs::pumas::soft_scattering(result, DCSData::get_kinetic_energies(), STANDARD_ROCK, MUON_MASS);
+    dcs::soft_scattering(result, DCSData::get_kinetic_energies(), STANDARD_ROCK, MUON_MASS);
     ASSERT_TRUE(relative_error(result, DCSData::get_pumas_soft_scatter()).item<Scalar>() < 1E-12);
 }

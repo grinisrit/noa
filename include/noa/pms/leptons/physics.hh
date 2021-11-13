@@ -1,4 +1,4 @@
-/*
+/**
  * BSD 2-Clause License
  *
  * Copyright (c) 2021, Roland Grinis, GrinisRIT ltd. (roland.grinis@grinisrit.com)
@@ -30,7 +30,7 @@
 
 #include <torch/types.h>
 
-namespace noa::pms {
+namespace noa::pms::leptons {
     using Scalar = double_t;
     using Index = int32_t;
     using UniversalConst = Scalar;
@@ -81,7 +81,7 @@ namespace noa::pms {
                     0.1364E-6, // GeV
                     11};
 
-    namespace dcs::pumas {
+    namespace dcs {
 
         constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
         constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
@@ -123,10 +123,10 @@ namespace noa::pms {
         using SoftScatter = torch::Tensor; // Soft scattering terms per element
 
         /*
-        *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-        *  GNU Lesser General Public License version 3
-        *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
-        */
+         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
+         *  GNU Lesser General Public License version 3
+         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
+         */
 #ifdef __NVCC__
         __device__ __forceinline__
 #else
@@ -174,6 +174,6 @@ namespace noa::pms {
             return (dcs < 0.) ? 0. : dcs * 1E+03 * AVOGADRO_NUMBER / A;
         }
 
-    } // namespace noa::pms::dcs::pumas
+    } // namespace noa::pms::leptons::dcs
 
-} // namespace noa::pms
+} // namespace noa::pms::leptons
