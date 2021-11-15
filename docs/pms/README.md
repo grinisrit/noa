@@ -1,7 +1,8 @@
 # Passage of Particles through Matter Simulations (PMS) 
 
-This library implements the adjoint sensitivity methods over backward Monte-Carlo schemes.
-The primary focus is on particle physics simulations.
+This library implements the adjoint sensitivity methods 
+over Backward Monte-Carlo schemes.
+The primary focus is on Particle Physics simulations.
 
 :warning: This component is under active development.
 
