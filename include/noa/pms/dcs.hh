@@ -28,13 +28,13 @@
 
 #pragma once
 
-#include "noa/pms/leptons/physics.hh"
+#include "noa/pms/physics.hh"
 #include "noa/utils/common.hh"
 #include "noa/utils/numerics.hh"
 
 #include <torch/types.h>
 
-namespace noa::pms::leptons::dcs {
+namespace noa::pms::dcs {
 
     template<typename DCSFunc>
     inline auto vmap(const DCSFunc &dcs_func) {
@@ -1375,4 +1375,4 @@ namespace noa::pms::leptons::dcs {
         };
     }
 
-} // namespace noa::pms::leptons::dcs
+} // namespace noa::pms::dcs

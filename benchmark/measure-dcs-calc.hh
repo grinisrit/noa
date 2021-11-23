@@ -2,12 +2,12 @@
 
 #include "../test/test-data.hh"
 
-#include <noa/pms/leptons/physics.hh>
-#include <noa/pms/leptons/dcs.hh>
+#include <noa/pms/physics.hh>
+#include <noa/pms/dcs.hh>
 
 #include <benchmark/benchmark.h>
 
-using namespace noa::pms::leptons;
+using namespace noa::pms;
 
 struct DCSBenchmark : benchmark::Fixture {
     DCSBenchmark() {

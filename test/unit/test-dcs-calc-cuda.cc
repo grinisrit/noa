@@ -1,13 +1,13 @@
 #include "test-data.hh"
 
-#include <noa/pms/leptons/kernels.hh>
-#include <noa/pms/leptons/physics.hh>
+#include <noa/pms/kernels.hh>
+#include <noa/pms/physics.hh>
 #include <noa/utils/common.hh>
 
 #include <gtest/gtest.h>
 
 using namespace noa::utils;
-using namespace noa::pms::leptons;
+using namespace noa::pms;
 
 TEST(DCS, BremsstrahlungCUDA) {
     const auto kinetic_energies = DCSData::get_kinetic_energies().to(torch::kCUDA);

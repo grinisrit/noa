@@ -27,11 +27,6 @@ the [benchmarks](../../benchmark)
 measuring `CPU/OpenMP` vs `CUDA` performance
 and a [notebook](muon_dcs_calc.ipynb) 
 documenting differential cross-sections calculations.
-However, no transport functionality is available yet.
-
-In `noa::pms::pumas` however, we are actively developing a whole frontend for 
-[pumas v1.1](https://github.com/niess/pumas/releases/tag/v1.1)
-which will also contain sensitivity analysis functionality. 
 
 In the near future, we plan to cover 
 a wide range of particles. 

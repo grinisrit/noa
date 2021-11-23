@@ -28,13 +28,13 @@
 
 #pragma once
 
-#include "noa/pms/leptons/mdf.hh"
-#include "noa/pms/leptons/physics.hh"
-#include "noa/pms/leptons/dcs.hh"
+#include "noa/pms/mdf.hh"
+#include "noa/pms/physics.hh"
+#include "noa/pms/dcs.hh"
 
 #include <torch/torch.h>
 
-namespace noa::pms::leptons {
+namespace noa::pms {
 
     using namespace torch::indexing;
 
@@ -614,4 +614,4 @@ namespace noa::pms::leptons {
     };
 
 
-} //namespace noa::pms::leptons
+} //namespace noa::pms

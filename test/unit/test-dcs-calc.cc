@@ -1,12 +1,12 @@
 #include "test-data.hh"
 
-#include <noa/pms/leptons/dcs.hh>
-#include <noa/pms/leptons/physics.hh>
+#include <noa/pms/dcs.hh>
+#include <noa/pms/physics.hh>
 #include <noa/utils/common.hh>
 
 #include <gtest/gtest.h>
 
-using namespace noa::pms::leptons;
+using namespace noa::pms;
 using namespace noa::utils;
 
 TEST(DCS, Bremsstrahlung) {

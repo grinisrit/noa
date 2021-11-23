@@ -1,10 +1,10 @@
 #include "measure-dcs-calc.hh"
 
-#include <noa/pms/leptons/dcs.hh>
+#include <noa/pms/dcs.hh>
 
 #include <benchmark/benchmark.h>
 
-using namespace noa::pms::leptons;
+using namespace noa::pms;
 
 
 BENCHMARK_F(DCSBenchmark, Bremsstrahlung)

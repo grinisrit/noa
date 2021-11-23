@@ -1,11 +1,11 @@
-#include <noa/pms/leptons/model.hh>
+#include <noa/pms/model.hh>
 
 #include <iostream>
 #include <chrono>
 #include <gflags/gflags.h>
 
 using namespace std::chrono;
-using namespace noa::pms::leptons;
+using namespace noa::pms;
 
 
 DEFINE_string(materials, "noa-pms-models", "Path to the PMS materials data");

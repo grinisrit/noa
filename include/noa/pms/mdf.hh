@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "noa/pms/leptons/physics.hh"
+#include "noa/pms/physics.hh"
 #include "noa/utils/common.hh"
 #include "noa/utils/xml.hh"
 
@@ -37,7 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace noa::pms::leptons::mdf {
+namespace noa::pms::mdf {
 
     using MDFFilePath = utils::Path;
     using DEDXFolderPath = utils::Path;
@@ -385,4 +385,4 @@ namespace noa::pms::leptons::mdf {
         return true;
     }
 
-} // namespace noa::pms::leptons::mdf
+} // namespace noa::pms::mdf

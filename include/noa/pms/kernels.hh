@@ -28,11 +28,11 @@
 
 #pragma once
 
-#include "noa/pms/leptons/physics.hh"
+#include "noa/pms/physics.hh"
 
 #include <torch/types.h>
 
-namespace noa::pms::leptons::dcs {
+namespace noa::pms::dcs {
     namespace cuda {
 
         void vmap_bremsstrahlung(
@@ -42,5 +42,5 @@ namespace noa::pms::leptons::dcs {
                 const AtomicElement &element,
                 const ParticleMass &mass);
 
-    } // namespace noa::pms::leptons::dcs::cuda
-} // namespace noa::pms::leptons::dcs
+    } // namespace noa::pms::dcs::cuda
+} // namespace noa::pms::dcs

@@ -30,7 +30,7 @@
 
 #include <torch/types.h>
 
-namespace noa::pms::leptons {
+namespace noa::pms {
     using Scalar = double_t;
     using Index = int32_t;
     using UniversalConst = Scalar;
@@ -174,6 +174,6 @@ namespace noa::pms::leptons {
             return (dcs < 0.) ? 0. : dcs * 1E+03 * AVOGADRO_NUMBER / A;
         }
 
-    } // namespace noa::pms::leptons::dcs
+    } // namespace noa::pms::dcs
 
-} // namespace noa::pms::leptons
+} // namespace noa::pms
