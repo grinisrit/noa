@@ -1,8 +1,8 @@
-#include <noa/pms/leptons/dcs.hh>
+#include <noa/pms/dcs.hh>
 
 #include <torch/extension.h>
 
-using namespace noa::pms::leptons;
+using namespace noa::pms;
 using namespace noa::utils;
 
 inline Tensor bremsstrahlung(Tensor kinetic_energies, Tensor recoil_energies) {
