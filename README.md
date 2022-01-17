@@ -70,11 +70,13 @@ you should point the `java.library.path` for the `JVM` to load it.
 `NOA` offers several advanced applications for optimisation. 
 Please refer to the documentation and usage examples 
 for each component to find out more:
-* [GHMC](docs/ghmc) focus on Bayesian optimisation 
+* [GHMC](docs/ghmc) focuses on Bayesian computation 
 with the Geometric HMC algorithms dedicated to sampling 
 from higher-dimensional probability distributions. 
 * [PMS](docs/pms) provides a framework for solving inverse problems
 in the passage of particles through matter simulations. 
+* [CFD](docs/cfd) implements adjoint sensitivity models for a variety 
+problems arising in computational fluid dynamics
 
 ## Acknowledgments
 
