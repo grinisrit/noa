@@ -78,13 +78,14 @@ in the passage of particles through matter simulations.
 
 ## Acknowledgments
 
-When referring to this library in scientific work please cite the [preprint](https://arxiv.org/abs/2108.10245):
+When referring to this library in scientific work please cite 
+[arXiv](https://arxiv.org/abs/2108.10245):
 
 ```
 @article{grinis2021diffprog,
   title={Differentiable programming for particle physics simulations},
   author={Roland Grinis},
-  journal={preprint arXiv:2108.10245},
+  journal={preprint arXiv:2108.10245 to appear in JETP},
   year={2021}
 }
 ```
@@ -98,4 +99,4 @@ The JNI wrapper is being developed in collaboration with
 For commercial support or consultancy services 
 contact [GrinisRIT](https://www.grinisrit.com).
 
-(c) 2021 GrinisRIT ltd. and contributors
+(c) 2022 GrinisRIT ltd. and contributors

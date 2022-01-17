@@ -24,8 +24,10 @@ those topics has been given at
 Basic usage examples can be found in [functional tests](../../test/ghmc). The log density function, that we sample from, should be compatible with `torch::autograd`. 
 It must be built out of instances of `torch::autograd::Function` or `torch::nn::Module` richly available from the PyTorch `C++` API. 
 
-The user can provide custom extensions if needed, see [tutorial](https://pytorch.org/tutorials/advanced/cpp_autograd.html).
-It is also possible to rely on [TorchScript](https://pytorch.org/tutorials/advanced/cpp_export.html), 
+The user can provide custom extensions if needed, 
+see [tutorial](https://pytorch.org/tutorials/advanced/cpp_autograd.html).
+It is also possible to rely on 
+[TorchScript](https://pytorch.org/tutorials/advanced/cpp_export.html), 
 which is in fact the recommended way to work with deep learning models. 
 
 :warning: The library needs further numerical testing before release. 
@@ -36,4 +38,4 @@ Implementations of the HMC algorithms above over [PyTorch](https://pytorch.org)
 are also available in the 
 [hamiltorch](https://github.com/AdamCobb/hamiltorch) package.
 
-(c) 2021 GrinisRIT ltd. and contributors
+(c) 2022 GrinisRIT ltd. and contributors

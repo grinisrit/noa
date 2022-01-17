@@ -8,3 +8,6 @@ dependencies:
   - pytorch==1.9.0
   - cpuonly # CPU only version for LibTorch
   - seaborn
+  - pip:
+    - pythreejs
+    - pyvista
