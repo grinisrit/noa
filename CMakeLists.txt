@@ -34,11 +34,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(check-torch)
 
 # Set up CUDA if available
-if(BUILD_NOA_CUDA)
+if (BUILD_NOA_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-endif()
+endif ()
 
 # NOA library  
 add_library(${PROJECT_NAME} INTERFACE)
@@ -48,8 +48,11 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 # Header-only library
 target_include_directories(
         ${PROJECT_NAME}
-        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+        INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/noa/3rdparty>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/noa/3rdparty>)
 
 # Interface LibTorch
 target_link_libraries(${PROJECT_NAME} INTERFACE torch)

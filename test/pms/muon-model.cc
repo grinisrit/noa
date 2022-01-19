@@ -1,12 +1,9 @@
 
-
 #include <iostream>
 #include <chrono>
 #include <gflags/gflags.h>
 
 using namespace std::chrono;
-
-
 
 DEFINE_string(materials, "pumas-materials", "Path to PUMAS materials data");
 
