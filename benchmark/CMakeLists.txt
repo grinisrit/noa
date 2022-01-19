@@ -31,6 +31,6 @@ target_include_directories(measure_dcs_calc PRIVATE ${NOA_ROOT_DIR}/test ${OpenM
 # Link libraries
 target_link_libraries(measure_dcs_calc PRIVATE benchmark_main ${PROJECT_NAME} ${OpenMP_CXX_LIBRARIES})
 target_compile_options(measure_dcs_calc
-        PRIVATE
-        -Wall -Wextra -O3 ${OpenMP_CXX_FLAGS}
+        PRIVATE -O3
+        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra ${OpenMP_CXX_FLAGS}>
         $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
