@@ -45,22 +45,16 @@ civil engineering and nuclear security to mention a few.
 
 A differentiable model for muon transport is in 
 [preparation](muography.ipynb).
-The computational physics algorithms are based on 
-[pumas v1.0](https://github.com/niess/pumas/releases/tag/v1.0). 
-We [document](muon_dcs_calc.ipynb) the main energy loss differential cross-sections 
-calculations.
 
 ## Usage
 
 :warning: This component is under active development.
 
-The component `noa::pms::leptons` implements the creatiotraineen
-of material's physics models for leptons
-(essentially muons as of now) from configuration files available at
-[noa-pms-models](https://github.com/grinisrit/noa-pms-models).
-Examples can be found within the
-[functional tests](../../test/pms) and
-the [benchmarks](../../benchmark)
+The component `noa::pms::leptons` implements
+energy loss and Coulomb scattering differential cross-sections 
+calculations (currently for muons and taus).
+Some [examples](muon_dcs_calc.ipynb) are available as well as
+[benchmarks](../../benchmark)
 measuring `CPU/OpenMP` vs `CUDA` performance.
 
 In the near future, we plan to cover
@@ -70,8 +64,5 @@ a wide range of particles.
 
 The semi-analytical BMC algorithm for Muons and Taus propagation relies on 
 [pumas](https://github.com/niess/pumas).
-
-To load the MDF settings we rely on 
-[pugixml](https://github.com/zeux/pugixml)  version `1.11` provided.
 
 (c) 2022 GrinisRIT ltd. and contributors

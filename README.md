@@ -76,12 +76,11 @@ from higher-dimensional probability distributions.
 * [PMS](docs/pms) provides a framework for solving inverse problems
 in the passage of particles through matter simulations. 
 * [CFD](docs/cfd) implements adjoint sensitivity models for a variety 
-problems arising in computational fluid dynamics
+problems arising in computational fluid dynamics.
 
 ## Acknowledgments
 
-When referring to this library in scientific work please cite 
-[arXiv](https://arxiv.org/abs/2108.10245):
+When referring to this library in scientific work please cite
 
 ```
 @article{grinis2021diffprog,

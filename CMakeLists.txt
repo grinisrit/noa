@@ -94,7 +94,7 @@ if (INSTALL_NOA)
 
     install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
             ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-            ${PROJECT_SOURCE_DIR}/cmake/noa-pms-models.cmake
+            ${PROJECT_SOURCE_DIR}/cmake/pumas-materials.cmake
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noa

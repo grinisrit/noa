@@ -47,16 +47,10 @@ namespace noa::pms {
         AtomicNumber Z;
     };
 
-    using MaterialDensity = Scalar;
+
     using Energy = Scalar;
     using EnergyTransfer = Scalar; // Relative energy transfer
-    using ComponentFraction = Scalar;
     using LarmorFactor = Scalar;
-
-    template<typename Dtype>
-    struct MaterialDensityEffect {
-        Dtype a, k, x0, x1, Cbar, delta0; // Sternheimer coefficients
-    };
 
     using Energies = torch::Tensor;
     using Calculation = torch::Tensor; // Receiver tensor for calculations
@@ -83,20 +77,13 @@ namespace noa::pms {
 
     namespace dcs {
 
-        constexpr Scalar ENERGY_SCALE = 1E-3; // from MeV to GeV
-        constexpr Scalar DENSITY_SCALE = 1E+3; // from g/cm^3 to kg/m^3
-        constexpr Scalar DEDX_SCALE = 1E-4; // from MeV cm^2/g to GeV m^2/kg
-
         // Default relative switch between continuous and discrete energy loss
         constexpr EnergyTransfer X_FRACTION = 5E-02;
-        // Maximum allowed energy transfer for using DCS models
-        constexpr EnergyTransfer DCS_MODEL_MAX_FRACTION = 0.95;
 
         constexpr Energy KIN_CUTOFF = 1E-9;           // GeV, energy cutoff used in relativistic kinematics
         constexpr Scalar EHS_PATH_MAX = 1E+9;         // kg/m^2, max inverse path length for Elastic Hard Scattering (EHS) events
         constexpr Scalar EHS_OVER_MSC = 1E-4;         // EHS to 1st transport multiple scattering interaction length path ratio
         constexpr Scalar MAX_SOFT_ANGLE = 1E+00;      // degrees, max deflection angle for a soft scattering event
-        constexpr Energy DCS_MODEL_MIN_KINETIC = 10.; // GeV, Minimum kinetic energy for using the DCS model
 
         inline const Scalar MAX_MU0 =
                 0.5 * (1. - cos(MAX_SOFT_ANGLE * M_PI / 180.)); // Max deflection angle for hard scattering
@@ -122,11 +109,7 @@ namespace noa::pms {
         using TransportCoefs = torch::Tensor;
         using SoftScatter = torch::Tensor; // Soft scattering terms per element
 
-        /*
-         *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-         *  GNU Lesser General Public License version 3
-         *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9155
-         */
+
 #ifdef __NVCC__
         __device__ __forceinline__
 #else

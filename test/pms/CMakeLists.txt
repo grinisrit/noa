@@ -9,11 +9,11 @@ include(fetch-gflags)
 find_package(OpenMP QUIET)
 
 # Fetch materials
-include(noa-pms-models)
+include(pumas-materials)
 
 # Main executables
 add_executable(muon_model muon-model.cc)
-add_dependencies(muon_model pms_models)
+add_dependencies(muon_model pumas_materials)
 
 # Link libraries
 target_include_directories(muon_model PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})

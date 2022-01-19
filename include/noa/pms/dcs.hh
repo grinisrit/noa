@@ -118,11 +118,7 @@ namespace noa::pms::dcs {
         return _bremsstrahlung_(kinetic_energy, recoil_energy, element, mass);
     };
 
-    /**
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9221
-     */
+
     inline const auto pair_production = [](const Energy &kinetic_energy,
                                            const Energy &recoil_energy,
                                            const AtomicElement &element,
@@ -239,11 +235,7 @@ namespace noa::pms::dcs {
         return (dcs < 0.) ? 0. : dcs * 1E+03 * AVOGADRO_NUMBER * (mass + kinetic_energy) / A;
     };
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9371
-     */
+
     inline Scalar dcs_photonuclear_f2_allm(const Scalar x, const Scalar Q2) {
         const Scalar m02 = 0.31985;
         const Scalar mP2 = 49.457;
@@ -292,11 +284,7 @@ namespace noa::pms::dcs {
         return Q2 / (Q2 + m02) * (F2P + F2R);
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9433
-     */
+
     inline Scalar dcs_photonuclear_f2a_drss(const Scalar x, const Scalar F2p, const Scalar A) {
         Scalar a = 1.0;
         if (x < 0.0014)
@@ -308,11 +296,7 @@ namespace noa::pms::dcs {
                 (2.0 + x * (-1.85 + x * (2.45 + x * (-2.35 + x)))) * F2p);
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9453
-     */
+
     inline Scalar dcs_photonuclear_r_whitlow(const Scalar x, const Scalar Q2) {
         Scalar q2 = Q2;
         if (Q2 < 0.3)
@@ -325,11 +309,6 @@ namespace noa::pms::dcs {
                 0.3534 / (0.09 + q2 * q2));
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9478
-     */
 
     inline Scalar
     dcs_photonuclear_d2(const Scalar A, const Scalar mass, const Scalar kinetic_energy, const Scalar recoil_energy,
@@ -357,11 +336,7 @@ namespace noa::pms::dcs {
         return (recoil_energy < 1.) || (recoil_energy < 2E-03 * kinetic_energy);
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9515
-     */
+
     inline const auto photonuclear = [](const Energy &kinetic_energy,
                                         const Energy &recoil_energy,
                                         const AtomicElement &element,
@@ -408,11 +383,6 @@ namespace noa::pms::dcs {
     };
 
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9620
-     */
     inline const auto ionisation = [](const Energy &kinetic_energy,
                                       const Energy &recoil_energy,
                                       const AtomicElement &element,
@@ -474,11 +444,6 @@ namespace noa::pms::dcs {
     };
 
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9669
-     */
     template<typename CloseInteractionsTerm>
     inline Scalar analytic_ionisation_recoil_integral(
             const Energy &kinetic_energy,
@@ -508,11 +473,7 @@ namespace noa::pms::dcs {
                 interaction_term(0.5 / P2, -1. / Wmax, E * E / P2, Wmax, Wmin));
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6054
-     */
+
     inline Scalar coulomb_frame_parameters(Scalar *fCM,
                                            const Energy &kinetic_energy,
                                            const AtomicElement &element,
@@ -537,21 +498,13 @@ namespace noa::pms::dcs {
         return kinetic0;
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6038
-     */
+
     inline Scalar coulomb_spin_factor(const Energy &kinetic_energy, const ParticleMass &mass) {
         const Scalar e = kinetic_energy + mass;
         return kinetic_energy * (e + mass) / (e * e);
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5992
-     */
+
     inline Scalar coulomb_wentzel_path(const Scalar &screening,
                                        const Energy &kinetic_energy,
                                        const AtomicElement &element,
@@ -562,11 +515,6 @@ namespace noa::pms::dcs {
     }
 
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L5934
-     */
     inline Scalar coulomb_screening_parameters(Scalar *pscreen,
                                                const Energy &kinetic_energy,
                                                const AtomicElement &element,
@@ -651,11 +599,6 @@ namespace noa::pms::dcs {
                 }
             };
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6160
-     */
     inline void coulomb_transport_coefficients(
             Scalar *pcoefs,
             const Scalar *pscreen,
@@ -727,11 +670,7 @@ namespace noa::pms::dcs {
                             pmu[(nmu) ? 0 : i]);
             };
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6109
-     */
+
     inline Scalar coulomb_restricted_cs(
             const Scalar &mu,
             const Scalar &fspin,
@@ -790,11 +729,6 @@ namespace noa::pms::dcs {
         return cs_tot - cs_h;
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8472
-     */
     inline void coulomb_hard_scattering(Scalar &mu0, Scalar &lb_h,
                                         const Scalar *G, const Scalar *fCM,
                                         Scalar *screen,
@@ -915,11 +849,6 @@ namespace noa::pms::dcs {
                             nel, nkin);
             };
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6223
-     */
     inline Scalar transverse_transport_ionisation(
             const Energy &kinetic_energy,
             const AtomicElement &element,
@@ -947,11 +876,6 @@ namespace noa::pms::dcs {
                 a2 * log(mu3 / mu2));
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L6262
-     */
     inline Scalar transverse_transport_photonuclear(
             const Energy &kinetic_energy,
             const AtomicElement &element,
@@ -991,11 +915,6 @@ namespace noa::pms::dcs {
                 100);
     }
 
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8730
-     */
     inline const auto soft_scattering =
             [](const Calculation &ms1,
                const Energies &kinetic_energies,
@@ -1009,322 +928,6 @@ namespace noa::pms::dcs {
                         },
                         ms1);
             };
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L9007
-     */
-    template<typename DCSFunc>
-    inline std::tuple<Calculation, Calculation> polynomial_model_create(
-            const DCSFunc &dcs_func,
-            const Calculation &coeff,
-            const Energies &kinetic_energies,
-            const EnergyTransfer &xlow,
-            const EnergyTransfer &model_max,
-            const AtomicElement &element,
-            const ParticleMass &mass,
-            Index m) {
-        const Index nkin = kinetic_energies.numel();
-        auto *pK = kinetic_energies.data_ptr<Scalar>();
-        auto *c = coeff.data_ptr<Scalar>();
-
-        const Index n = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + 1;
-        const Index qj = DCS_MODEL_ORDER_P + 1;
-
-        auto A = torch::zeros({nkin, m, n}, kinetic_energies.options());
-        auto *pA = A.data_ptr<Scalar>();
-        auto b = torch::zeros({nkin, m}, kinetic_energies.options());
-        auto *pb = b.data_ptr<Scalar>();
-        const auto w = torch::zeros_like(b);
-        auto *pw = w.data_ptr<Scalar>();
-
-        const Scalar x0 = log(xlow);
-        const Scalar dx = log(model_max / xlow) / (m - 1);
-
-        for (Index ikin = 0; ikin < nkin; ikin++) {
-            const Scalar k = pK[ikin];
-            Scalar xi0 = 0.;
-            Index i0 = 0, i1 = 0;
-            Index ik = ikin * m;
-            bool first = true;
-
-            for (Index i = 0; i < m; i++) {
-                Scalar lxi = x0 + i * dx;
-                const Scalar tau = exp(lxi);
-
-                const Scalar y = std::max(
-                        dcs_func(k, k * tau, element, mass) *
-                        k / (k + mass),
-                        0.);
-
-                if (y > 0.) {
-                    if (first) {
-                        first = false;
-                        i0 = i;
-                        xi0 = tau;
-                    } else
-                        i1 = i;
-                    pw[i + ik] = 1.;
-                }
-
-                Scalar xi = 1.;
-                const Index row = n * (i + ikin * m);
-                for (Index j = 0; j < DCS_MODEL_ORDER_P + 1; j++) {
-                    pA[j + row] = xi;
-                    xi *= lxi;
-                }
-
-                Scalar qlxi = log(1. - tau);
-                xi = qlxi;
-                for (Index j = 0; j < DCS_MODEL_ORDER_Q; j++) {
-                    pA[j + qj + row] = xi;
-                    xi *= qlxi;
-                }
-
-                pb[i + ik] = (y > 0.) ? log(y) : 0.;
-            }
-
-            //Add the tabulated values in linear scale.
-            const Scalar dnu = (1. - xi0) / DCS_SAMPLING_N;
-            Scalar snu = xi0;
-            for (Index i = 0; i < DCS_SAMPLING_N; i++) {
-                c[i + n + ikin * NDM] =
-                        dcs_func(k, k * snu, element, mass) *
-                        k / (k + mass);
-                snu += dnu;
-            }
-
-            // Constrain the end points.
-            pw[i0 + ik] *= 1E+6;
-            pw[i1 + ik] *= 1E+6;
-        }
-
-        A *= w.view({nkin, m, 1});
-        b *= w;
-
-        return std::make_tuple(A, b);
-    }
-
-    template<typename DCSFunc>
-    inline void polynomial_model_fit(
-            const DCSFunc &dcs_func,
-            const Calculation &coeff,
-            const Energies &kinetic_energies,
-            const EnergyTransfer &xlow,
-            const EnergyTransfer &model_max,
-            const AtomicElement &element,
-            const ParticleMass &mass) {
-        const Index m = (Index) (100. * log10(model_max / xlow)) + 1;
-        const auto[A, b] = polynomial_model_create(
-                dcs_func, coeff, kinetic_energies, xlow, model_max, element, mass, m);
-        const auto nkin = kinetic_energies.numel();
-        const Index n = DCS_MODEL_ORDER_P + DCS_MODEL_ORDER_Q + 1;
-        const auto &[U, S, V] = torch::svd(A);
-        coeff.slice(1, 0, n) = V.matmul(
-                        (torch::where(S != 0., 1 / S,
-                                      torch::tensor(0., torch::dtype(torch::kDouble)))
-                                 .view({nkin, n, 1}) *
-                         (U.transpose(1, 2).matmul(b.view({nkin, m, 1})))))
-                .view({nkin, n});
-    }
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8886
-     */
-    template<typename DCSFunc>
-    inline void compute_threshold(
-            const DCSFunc &dcs_func,
-            const Calculation &Xt,
-            const Energies &kinetic_energies,
-            const EnergyTransfer &xlow,
-            const AtomicElement &element,
-            const ParticleMass &mass,
-            const Index th_i) {
-        const Index n = kinetic_energies.numel();
-        auto *pXt = Xt.data_ptr<Scalar>();
-        auto *pK = kinetic_energies.data_ptr<Scalar>();
-        for (Index i = th_i; i < n; i++) {
-            Scalar x = xlow;
-            while ((x < 1.) && (dcs_func(pK[i], pK[i] * x, element, mass) <= 0.))
-                x *= 2;
-            if (x >= 1.)
-                x = 1.;
-            else if (x > xlow) {
-                const Scalar eps = 1E-02 * xlow;
-                Scalar x0 = 0.5 * x;
-                Scalar dcs = 0.;
-                for (;;) {
-                    if (dcs == 0.)
-                        x0 += 0.5 * (x - x0);
-                    else {
-                        const Scalar dx =
-                                x - x0;
-                        x = x0;
-                        x0 -= 0.5 * dx;
-                    }
-                    if ((x - x0) <= eps)
-                        break;
-                    dcs = dcs_func(pK[i], pK[i] * x0, element, mass);
-                }
-            }
-            pXt[i] = x;
-        }
-    }
-
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8392
-     */
-    inline void compute_cel_grammage_integral(
-            const Calculation &result,
-            const Tabulation &table_dE,
-            const Energies &kinetic_energies) {
-        const Index nkin = kinetic_energies.numel();
-        const auto *kinetic = kinetic_energies.data_ptr<Scalar>();
-        const auto *dEdX = table_dE.data_ptr<Scalar>();
-        auto *table = result.data_ptr<Scalar>();
-
-        // Compute the cumulative integral.
-
-        Scalar y0 = 1. / dEdX[0];
-        table[0] = kinetic[0] * y0;
-        for (Index i = 1; i < nkin; i++) {
-            const Scalar y1 = 1. / dEdX[i];
-            table[i] = table[i - 1] +
-                       0.5 * (kinetic[i] - kinetic[i - 1]) * (y0 + y1);
-            y0 = y1;
-        }
-    }
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8334
-     */
-    inline MomentumIntegral compute_momentum_integral(
-            const Energy &kinetic_energy,
-            const ParticleMass &mass) {
-        // Compute the integral of 1/momemtum for the lowest energy bin using trapezes.
-        const Index n = 101;
-        const Scalar dK = kinetic_energy / (n - 1);
-        Scalar Ki = dK;
-        Scalar I0 = 0.5 / sqrt(Ki * (Ki + 2. * mass));
-        for (Index i = 2; i < n - 1; i++) {
-            Ki += dK;
-            const Scalar pi = sqrt(Ki * (Ki + 2. * mass));
-            I0 += 1. / pi;
-        }
-        Ki += dK;
-        I0 += 0.5 / sqrt(Ki * (Ki + 2. * mass));
-        I0 /= n - 1;
-        return I0;
-    }
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8334
-     */
-    inline void compute_time_integral(
-            const Calculation &result,
-            const Tabulation &table_X,
-            const Energies &kinetic_energies,
-            const ParticleMass &mass,
-            const MomentumIntegral &I0) {
-        // Compute the cumulative path integrals .
-        const Index nkin = kinetic_energies.numel();
-        const auto *pK = kinetic_energies.data_ptr<Scalar>();
-        auto *T = result.data_ptr<Scalar>();
-        const auto *X = table_X.data_ptr<Scalar>();
-
-        T[0] = I0 * X[0] * mass;
-
-        for (Index i = 1; i < nkin; i++) {
-            const Scalar p0 =
-                    sqrt(pK[i - 1] * (pK[i - 1] + 2. * mass));
-            const Scalar p1 = sqrt(pK[i] * (pK[i] + 2. * mass));
-            const Scalar psi = 1. / p0 + 1. / p1;
-            const Scalar dy = 0.5 * (X[i] - X[i - 1]) * psi;
-            T[i] = T[i - 1] + dy * mass;
-        }
-    }
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8311
-     */
-    inline void compute_kinetic_integral(const Calculation &result,
-                                         const Energies &kinetic_energies) {
-        const Index nkin = kinetic_energies.numel();
-        const auto *pK = kinetic_energies.data_ptr<Scalar>();
-        auto *table = result.data_ptr<Scalar>();
-
-        Scalar value = 0.5 * pK[0] * table[0];
-
-        for (Index i = 1; i < nkin; i++) {
-            const Scalar dv = 0.5 * (pK[i] - pK[i - 1]) * (table[i - 1] + table[i]);
-            table[i - 1] = value;
-            value += dv;
-        }
-        table[nkin - 1] = value;
-    }
-
-    /*
-     *  Following closely the implementation by Valentin NIESS (niess@in2p3.fr)
-     *  GNU Lesser General Public License version 3
-     *  https://github.com/niess/pumas/blob/d04dce6388bc0928e7bd6912d5b364df4afa1089/src/pumas.c#L8420
-     */
-    inline void compute_csda_magnetic_transport(
-            const Calculation &table_Li,
-            const Tabulation &table_T,
-            const Tabulation &table_X,
-            const ParticleMass &mass,
-            const LarmorFactor &larmor) {
-        const Index imax = table_T.numel() - 1;
-        if (imax == 0)
-            return;
-
-        const auto *X0 = table_X.data_ptr<Scalar>();
-        const auto *T = table_T.data_ptr<Scalar>();
-
-        std::array<Scalar, NLAR> x{}, dx{};
-
-        auto *Li = table_Li.data_ptr<Scalar>();
-
-        // The magnetic phase shift is proportional to the proper time integral.
-        // We refer to this table.
-        const Scalar factor = larmor / mass;
-
-        // Compute the deflection starting from max energy down to 0
-        Index i, j;
-        for (i = imax; i >= 1; i--) {
-            Scalar dX0 = 0.5 * (X0[i] - X0[i - 1]);
-            Scalar p1 = (T[imax] - T[i - 1]) * factor;
-            Scalar p2 = (T[imax] - T[i]) * factor;
-
-            Scalar f1 = 1., f2 = 1.;
-            for (j = 0; j < NLAR; j++) {
-                dx[j] = dX0 * (f1 + f2);
-                x[j] += dx[j];
-                f1 *= p1;
-                f2 *= p2;
-
-                Li[j + i * NLAR] = x[j];
-            }
-        }
-
-        // Extrapolate the end points
-        for (j = 0; j < NLAR; j++) {
-            Scalar hx = X0[0] / (X0[1] - X0[0]);
-            Li[j] = x[j] + hx * dx[j];
-        }
-    }
 
 
     template<>
