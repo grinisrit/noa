@@ -13,7 +13,7 @@ Currently, we support only `GNU`, and `CUDA` for GPU
 (check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
 A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
-drop the `include/noa` folder into your project.
+drop the `src/noa` folder into your project.
 
 :warning: However, you need to make sure that third-party libraries in
 `noa/3rdparty` are also on the include-path.
@@ -27,8 +27,7 @@ which require separable compilation.
 ### CMake project
 The core of the library depends on 
 [LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) 
-(which is also distributed via `pip` and `conda`) 
-tested with version `1.9.0`. 
+(which is also distributed via `pip` and `conda`).
 For additional configuration needed by some applications
 please refer to the documentation [below](#applications).
 
