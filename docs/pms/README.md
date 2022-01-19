@@ -50,19 +50,20 @@ A differentiable model for muon transport is in
 
 :warning: This component is under active development.
 
-The component `noa::pms::leptons` implements
-energy loss and Coulomb scattering differential cross-sections 
-calculations (currently for muons and taus).
+The component implements energy loss and 
+Coulomb scattering differential cross-sections 
+calculations currently for Muons and Taus.
 Some [examples](muon_dcs_calc.ipynb) are available as well as
 [benchmarks](../../benchmark)
 measuring `CPU/OpenMP` vs `CUDA` performance.
 
-In the near future, we plan to cover
-a wide range of particles.
+We also provide bindings to 
+[PUMAS v1.1](https://github.com/niess/pumas). 
+Usage examples can be found in
+[functional tests](../../test/pms).
 
-## Acknowledgements
+In the future, we plan to cover
+a wider range of particles.
 
-The semi-analytical BMC algorithm for Muons and Taus propagation relies on 
-[pumas](https://github.com/niess/pumas).
 
 (c) 2022 GrinisRIT ltd. and contributors
