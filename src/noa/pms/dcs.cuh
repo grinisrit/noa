@@ -28,19 +28,19 @@
 
 #pragma once
 
+#include "noa/pms/dcs.hh"
 #include "noa/pms/physics.hh"
+#include "noa/utils/common.cuh"
 
-#include <torch/types.h>
-
-namespace noa::pms::dcs {
-    namespace cuda {
-
-        void vmap_bremsstrahlung(
-                const Calculation &result,
-                const Energies &kinetic_energies,
-                const Energies &recoil_energies,
-                const AtomicElement &element,
-                const ParticleMass &mass);
-
-    } // namespace noa::pms::dcs::cuda
-} // namespace noa::pms::dcs
+void noa::pms::dcs::cuda::vmap_bremsstrahlung(
+        const Calculation &result,
+        const Energies &kinetic_energies,
+        const Energies &recoil_energies,
+        const AtomicElement &element,
+        const ParticleMass &mass) {
+    const Scalar *pq = recoil_energies.data_ptr<Scalar>();
+    const auto brems = [pq, element, mass] __device__(const Index i, const Scalar &k) {
+        return _bremsstrahlung_(k, pq[i], element, mass);
+    };
+    utils::cuda::vmapi<Scalar>(kinetic_energies, brems, result);
+}

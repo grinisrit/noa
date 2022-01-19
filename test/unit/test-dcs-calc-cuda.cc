@@ -1,6 +1,6 @@
 #include "test-data.hh"
 
-#include <noa/pms/kernels.hh>
+#include <noa/pms/dcs.hh>
 #include <noa/pms/physics.hh>
 #include <noa/utils/common.hh>
 

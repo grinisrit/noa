@@ -36,6 +36,7 @@
 
 namespace noa::pms::dcs {
 
+
     template<typename DCSFunc>
     inline auto vmap(const DCSFunc &dcs_func) {
         return [&dcs_func](const Calculation &result,
@@ -109,6 +110,7 @@ namespace noa::pms::dcs {
         };
     }
 
+#ifndef __NVCC__
 
     inline const auto bremsstrahlung = [](
             const Energy &kinetic_energy,
@@ -118,6 +120,7 @@ namespace noa::pms::dcs {
         return _bremsstrahlung_(kinetic_energy, recoil_energy, element, mass);
     };
 
+#endif
 
     inline const auto pair_production = [](const Energy &kinetic_energy,
                                            const Energy &recoil_energy,
@@ -417,7 +420,7 @@ namespace noa::pms::dcs {
                     (log(4. * E * (E - recoil_energy) / (mass * mass)) -
                      L1);
         }
-        return (Scalar)(cs * (1. + Delta));
+        return (Scalar) (cs * (1. + Delta));
     };
 
     // Close interactions for Q >> atomic binding energies.
@@ -977,5 +980,17 @@ namespace noa::pms::dcs {
                            kinetic_energy, xlow, element, mass, min_points);
         };
     }
+
+
+    namespace cuda {
+
+        void vmap_bremsstrahlung(
+                const Calculation &result,
+                const Energies &kinetic_energies,
+                const Energies &recoil_energies,
+                const AtomicElement &element,
+                const ParticleMass &mass);
+
+    } // namespace noa::pms::dcs::cuda
 
 } // namespace noa::pms::dcs
