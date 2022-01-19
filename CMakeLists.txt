@@ -11,7 +11,7 @@ project(NOA
         DESCRIPTION
         "Differentiable Programming Algorithms in Modern C++"
         HOMEPAGE_URL https://github.com/grinisrit/noa
-        LANGUAGES CXX)
+        LANGUAGES C CXX)
 
 # User options
 option(INSTALL_NOA "Install NOA to GNU locations" ON)
@@ -49,8 +49,8 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories(
         ${PROJECT_NAME}
         INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/noa/3rdparty>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/noa/3rdparty>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/noa/3rdparty>)
 
@@ -100,7 +100,7 @@ if (INSTALL_NOA)
             ${PROJECT_SOURCE_DIR}/cmake/pumas-materials.cmake
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noa
+    install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/noa
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 endif ()

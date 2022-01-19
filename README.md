@@ -15,6 +15,15 @@ A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
 drop the `include/noa` folder into your project.
 
+:warning: However, you need to make sure that third-party libraries in
+`noa/3rdparty` are also on the include-path.
+
+:warning: Moreover, beyond `C++17` source code, the project contains:
+* `C` sources in `noa/kernels.h` 
+* `CUDA` sources in `noa/kernels.cuh`
+
+which require separable compilation.
+
 ### CMake project
 The core of the library depends on 
 [LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) 
@@ -43,7 +52,8 @@ $ ctest -V
 To build benchmarks specify `-DBUILD_NOA_BENCHMARKS=ON`. 
 To enable parallel execution for some algorithms you should link against `OpenMP`.
 To build `CUDA` tests add `-DBUILD_NOA_CUDA=ON` 
-and  `-DCMAKE_CUDA_ARCHITECTURES=75` (or the GPU architecture of your choice).
+and the  GPU architecture of your choice,
+e.g. `-DCMAKE_CUDA_ARCHITECTURES=75`.
 
 Finally, once `NOA` is installed, 
 you can link against it in your own `CMakeLists.txt` file.
