@@ -19,7 +19,7 @@ drop the `src/noa` folder into your project.
 `noa/3rdparty` are also on the include-path.
 
 :warning: Moreover, beyond `C++17` source code, the project contains:
-* `C` sources in `noa/kernels.h` 
+* `C99` sources in `noa/kernels.h` 
 * `CUDA` sources in `noa/kernels.cuh`
 
 which require separable compilation.
