@@ -16,20 +16,20 @@ find_package(OpenMP QUIET)
 set(NOA_TEST_SRC
         noa-test-suite.cc
         test-ghmc-sampler.cc
-        test-dcs-calc.cc)
+        test-dcs-calc.cc
+        test-tnl.cc)
 
 # Main test executables
 if (BUILD_NOA_CUDA)
-    add_executable(noa_test_suite
-            ${NOA_TEST_SRC}
-            test-ghmc-sampler-cuda.cc
-            test-dcs-calc-cuda.cc
-            ${NOA_ROOT_DIR}/test/kernels.cu)
-    set_target_properties(noa_test_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    set(NOA_TEST_SRC_CUDA
+            "test-ghmc-sampler-cuda.cc;test-dcs-calc-cuda.cc;test-tnl.cu;${NOA_ROOT_DIR}/test/kernels.cu")
 else ()
-    add_executable(noa_test_suite ${NOA_TEST_SRC})
+    set(NOA_TEST_SRC_CUDA "")
 endif ()
+
+add_executable(noa_test_suite ${NOA_TEST_SRC} ${NOA_TEST_SRC_CUDA})
 add_dependencies(noa_test_suite test_data)
+set_target_properties(noa_test_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Extra include directories
 target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test ${OpenMP_CXX_INCLUDE_DIRS})
@@ -38,8 +38,8 @@ target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test ${OpenMP_
 target_link_libraries(noa_test_suite PRIVATE gtest ${PROJECT_NAME} ${OpenMP_CXX_LIBRARIES})
 target_compile_options(noa_test_suite
         PRIVATE -O3
-        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Wpedantic ${OpenMP_CXX_FLAGS}>
-        $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+        $<$<COMPILE_LANGUAGE:CXX>: ${W_FLAGS} ${OpenMP_CXX_FLAGS}>
+        $<$<COMPILE_LANGUAGE:CUDA>:${MCXX_CUDA}>)
 
 
 # Set up test

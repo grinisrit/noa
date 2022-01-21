@@ -13,13 +13,14 @@ include(pumas-materials)
 
 # Main executables
 add_executable(muon_model
-        muon-model.cc
-        ${NOA_ROOT_DIR}/test/kernels.c)
+        muon-model.cc)
 add_dependencies(muon_model pumas_materials)
+set_target_properties(muon_model PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Link libraries
 target_include_directories(muon_model PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
 target_link_libraries(muon_model PRIVATE ${PROJECT_NAME} gflags ${OpenMP_CXX_LIBRARIES})
 target_compile_options(muon_model PRIVATE
         PRIVATE -O3
-        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Wpedantic ${OpenMP_CXX_FLAGS}>)
+        $<$<COMPILE_LANGUAGE:CXX>:${W_FLAGS} ${OpenMP_CXX_FLAGS}>
+        $<$<COMPILE_LANGUAGE:CUDA>:${MCXX_CUDA}>)

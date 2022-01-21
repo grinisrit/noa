@@ -28,4 +28,4 @@
 
 #pragma once
 
-#include "noa/pms/kernels.cuh"
+#include "noa/pms/dcs.cuh"

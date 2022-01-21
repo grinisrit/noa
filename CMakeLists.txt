@@ -23,6 +23,15 @@ option(BUILD_JNOA "Build JNI bindings" OFF)
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
 
+# Warning flags
+set(W_FLAGS "-Wall;-Wextra;-Wpedantic")
+
+# Native optimisations
+set(NA_OPT_FLAGS "-march=native;-mtune=native")
+
+# CUDA modern C++ extensions
+set(MCXX_CUDA "--expt-relaxed-constexpr;--expt-extended-lambda")
+
 # Cache path to root directory
 set(NOA_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 

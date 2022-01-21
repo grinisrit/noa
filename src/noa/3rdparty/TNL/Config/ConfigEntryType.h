@@ -14,15 +14,15 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-#include <mpark/variant.hpp>   // backport of std::variant from C++17
+#include <variant>   // backport of std::variant from C++17
 
 namespace TNL {
 namespace Config {
 
-using mpark::variant;
-using mpark::get;
-using mpark::monostate;
-using mpark::holds_alternative;
+using std::variant;
+using std::get;
+using std::monostate;
+using std::holds_alternative;
 
 // aliases for integer types
 using UnsignedInteger = std::size_t;
