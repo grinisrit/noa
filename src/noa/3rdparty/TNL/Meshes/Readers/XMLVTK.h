@@ -10,19 +10,16 @@
 
 #include <map>
 #include <set>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <TNL/Meshes/Readers/MeshReader.h>
 #include <TNL/base64.h>
 #include <TNL/Endianness.h>
 
-#ifdef HAVE_ZLIB
-   #include <TNL/zlib_compression.h>
-#endif
+#include <TNL/zlib_compression.h>
 
-#ifdef HAVE_TINYXML2
-   #include <tinyxml2.h>
-#endif
+#include <_tinyxml2/tinyxml2.hh>
+
 
 namespace TNL {
 namespace Meshes {
@@ -321,7 +318,7 @@ public:
 #ifdef HAVE_TINYXML2
       using namespace tinyxml2;
 
-      namespace fs = std::experimental::filesystem;
+      namespace fs = std::filesystem;
       if( ! fs::exists( fileName ) )
          throw MeshReaderError( "XMLVTK", "file '" + fileName + "' does not exist" );
       if( fs::is_directory( fileName ) )

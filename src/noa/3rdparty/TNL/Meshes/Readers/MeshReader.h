@@ -10,7 +10,7 @@
 
 #include <string>
 #include <vector>
-#include <mpark/variant.hpp>   // backport of std::variant from C++17
+#include <variant>
 
 #include <TNL/Meshes/MeshBuilder.h>
 #include <TNL/Meshes/VTKTraits.h>
@@ -32,7 +32,7 @@ struct MeshReaderError
 class MeshReader
 {
 public:
-   using VariantVector = mpark::variant< std::vector< std::int8_t >,
+   using VariantVector = std::variant< std::vector< std::int8_t >,
                                          std::vector< std::uint8_t >,
                                          std::vector< std::int16_t >,
                                          std::vector< std::uint16_t >,
@@ -190,7 +190,7 @@ public:
       // assign faces
       visit( [this, &meshBuilder](auto&& connectivity) {
                // let's just assume that the connectivity and offsets arrays have the same type...
-               using mpark::get;
+               using std::get;
                const auto& offsets = get< std::decay_t<decltype(connectivity)> >( faceOffsetsArray );
 
                // Set corners counts
@@ -219,7 +219,7 @@ public:
       // assign cells
       visit( [this, &meshBuilder](auto&& connectivity) {
                // let's just assume that the connectivity and offsets arrays have the same type...
-               using mpark::get;
+               using std::get;
                const auto& offsets = get< std::decay_t<decltype(connectivity)> >( cellOffsetsArray );
 
                // Set corners counts

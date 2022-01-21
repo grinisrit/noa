@@ -15,9 +15,8 @@
 #include <TNL/Endianness.h>
 #include <TNL/base64.h>
 #include <stdexcept>
-#ifdef HAVE_ZLIB
-   #include <TNL/zlib_compression.h>
-#endif
+#include <TNL/zlib_compression.h>
+
 
 namespace TNL {
 namespace Meshes {

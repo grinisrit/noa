@@ -16,9 +16,8 @@
 #include <TNL/Meshes/Writers/detail/VTUPolyhedralFacesWriter.h>
 #include <TNL/Endianness.h>
 #include <TNL/base64.h>
-#ifdef HAVE_ZLIB
-   #include <TNL/zlib_compression.h>
-#endif
+#include <TNL/zlib_compression.h>
+
 
 namespace TNL {
 namespace Meshes {

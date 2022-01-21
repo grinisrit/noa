@@ -12,7 +12,7 @@
 #include <tuple>
 #include <map>
 #include <fstream>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <TNL/Timer.h>
 #include <TNL/Devices/Cuda.h>
@@ -164,7 +164,7 @@ inline void writeMapAsJson( const std::map< std::string, std::string >& data,
                             std::string filename,
                             std::string newExtension = "" )
 {
-   namespace fs = std::experimental::filesystem;
+   namespace fs = std::filesystem;
 
    if( newExtension != "" ) {
       const fs::path oldPath = filename;

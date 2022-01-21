@@ -10,6 +10,9 @@
 #include <cstdint>  // std::uint64_t
 
 #include <zlib.h>
+#ifndef HAVE_ZLIB
+#define HAVE_ZLIB
+#endif
 
 #include <TNL/base64.h>
 

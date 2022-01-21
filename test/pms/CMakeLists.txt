@@ -8,6 +8,9 @@ include(fetch-gflags)
 # Find OpenMP
 find_package(OpenMP QUIET)
 
+# Find ZLIB
+find_package(ZLIB)
+
 # Fetch materials
 include(pumas-materials)
 
@@ -19,7 +22,7 @@ set_target_properties(muon_model PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Link libraries
 target_include_directories(muon_model PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
-target_link_libraries(muon_model PRIVATE ${PROJECT_NAME} gflags ${OpenMP_CXX_LIBRARIES})
+target_link_libraries(muon_model PRIVATE ${PROJECT_NAME} gflags ${OpenMP_CXX_LIBRARIES} ZLIB::ZLIB)
 target_compile_options(muon_model PRIVATE
         PRIVATE -O3
         $<$<COMPILE_LANGUAGE:CXX>:${W_FLAGS} ${OpenMP_CXX_FLAGS}>

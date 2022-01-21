@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <TNL/Meshes/Writers/PVTUWriter.h>
 
@@ -105,7 +105,7 @@ std::string
 PVTUWriter< Mesh >::addPiece( const std::string& mainFileName,
                               const unsigned subdomainIndex )
 {
-   namespace fs = std::experimental::filesystem;
+   namespace fs = std::filesystem;
 
    // get the basename of the main file (filename without extension)
    const fs::path mainPath = mainFileName;
