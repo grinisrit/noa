@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -117,4 +117,4 @@ class ChunkedEllpackSegmentView< Index, RowMajorOrder >
 
       } //namespace Segments
    } //namespace Algorithms
-} //namespace TNL
+} //namespace noaTNL

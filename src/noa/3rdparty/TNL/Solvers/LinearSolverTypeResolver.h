@@ -12,19 +12,19 @@
 #include <string>
 #include <memory>
 
-#include <TNL/Solvers/Linear/Jacobi.h>
-#include <TNL/Solvers/Linear/SOR.h>
-#include <TNL/Solvers/Linear/CG.h>
-#include <TNL/Solvers/Linear/BICGStab.h>
-#include <TNL/Solvers/Linear/BICGStabL.h>
-#include <TNL/Solvers/Linear/GMRES.h>
-#include <TNL/Solvers/Linear/TFQMR.h>
-#include <TNL/Solvers/Linear/UmfpackWrapper.h>
-#include <TNL/Solvers/Linear/Preconditioners/Diagonal.h>
-#include <TNL/Solvers/Linear/Preconditioners/ILU0.h>
-#include <TNL/Solvers/Linear/Preconditioners/ILUT.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Jacobi.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/SOR.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/CG.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/BICGStab.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/BICGStabL.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/GMRES.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/TFQMR.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/UmfpackWrapper.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Preconditioners/Diagonal.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Preconditioners/ILU0.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Preconditioners/ILUT.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
 
 /**
@@ -70,13 +70,13 @@ getPreconditionerOptions()
  *
  * \tparam MatrixType is a type of matrix defining the system of linear equations.
  * \param name of the linear solver. The name can be one of the following:
- *    1. `jacobi`    - for the Jacobi solver - \ref TNL::Solvers::Linear::Jacobi.
- *    2. `sor`       - for SOR solver        - \ref TNL::Solvers::Linear::SOR.
- *    3. `cg`        - for CG solver         - \ref TNL::Solvers::Linear::CG.
- *    4. `bicgstab`  - for BICGStab solver   - \ref TNL::Solvers::Linear::BICGStab.
- *    5. `bicgstabl` - for BICGStabL solver  - \ref TNL::Solvers::Linear::BICGStabL.
- *    6. `gmres`     - for GMRES solver      - \ref TNL::Solvers::Linear::GMRES.
- *    7. `tfqmr`     - for TFQMR solver      - \ref TNL::Solvers::Linear::TFQMR.
+ *    1. `jacobi`    - for the Jacobi solver - \ref noaTNL::Solvers::Linear::Jacobi.
+ *    2. `sor`       - for SOR solver        - \ref noaTNL::Solvers::Linear::SOR.
+ *    3. `cg`        - for CG solver         - \ref noaTNL::Solvers::Linear::CG.
+ *    4. `bicgstab`  - for BICGStab solver   - \ref noaTNL::Solvers::Linear::BICGStab.
+ *    5. `bicgstabl` - for BICGStabL solver  - \ref noaTNL::Solvers::Linear::BICGStabL.
+ *    6. `gmres`     - for GMRES solver      - \ref noaTNL::Solvers::Linear::GMRES.
+ *    7. `tfqmr`     - for TFQMR solver      - \ref noaTNL::Solvers::Linear::TFQMR.
  * \return shared pointer with given linear solver.
  *
  * The following example shows how to use this function:
@@ -128,9 +128,9 @@ getLinearSolver( std::string name )
  * \tparam MatrixType is a type of matrix defining the system of linear equations.
  * \param name of the linear preconditioner. The name can be one of the following:
  *    1. `none`     - for none preconditioner
- *    2. `diagonal` - for diagonal/Jacobi preconditioner         - \ref TNL::Solvers::Linear::Preconditioners::Diagonal
- *    3. `ilu0`     - for ILU(0) preconditioner                  - \ref TNL::Solvers::Linear::Preconditioners::ILU0
- *    4. `ilut`     - for ILU with thresholding preconditioner   - \ref TNL::Solvers::Linear::Preconditioners::ILUT
+ *    2. `diagonal` - for diagonal/Jacobi preconditioner         - \ref noaTNL::Solvers::Linear::Preconditioners::Diagonal
+ *    3. `ilu0`     - for ILU(0) preconditioner                  - \ref noaTNL::Solvers::Linear::Preconditioners::ILU0
+ *    4. `ilut`     - for ILU with thresholding preconditioner   - \ref noaTNL::Solvers::Linear::Preconditioners::ILUT
  * \return shared pointer with given linear preconditioner.
  *
  * \includelineno Solvers/Linear/IterativeLinearSolverWithRuntimeTypesExample.cpp
@@ -166,4 +166,4 @@ getPreconditioner( std::string name )
 }
 
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

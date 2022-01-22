@@ -10,7 +10,7 @@
 
 #include <memory>
 
-namespace TNL {
+namespace noaTNL {
 
 /**
  * \brief Namespace for TNL allocators.
@@ -28,4 +28,4 @@ template< class T >
 using Host = std::allocator< T >;
 
 } // namespace Allocators
-} // namespace TNL
+} // namespace noaTNL

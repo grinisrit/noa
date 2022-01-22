@@ -10,11 +10,11 @@
 
 #include <utility>  // std::pair, std::forward
 
-#include <TNL/Functional.h>  // extension of STL functionals for reduction
-#include <TNL/Algorithms/detail/Reduction.h>
-#include <TNL/Containers/Expressions/TypeTraits.h>  // RemoveET
+#include <noa/3rdparty/TNL/Functional.h>  // extension of STL functionals for reduction
+#include <noa/3rdparty/TNL/Algorithms/detail/Reduction.h>
+#include <noa/3rdparty/TNL/Containers/Expressions/TypeTraits.h>  // RemoveET
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 /**
@@ -34,8 +34,8 @@ namespace Algorithms {
  * \tparam Fetch is a lambda function for fetching the input data.
  * \tparam Reduction is a lambda function performing the reduction.
  *
- * \e Device can be on of the following \ref TNL::Devices::Sequential,
- * \ref TNL::Devices::Host and \ref TNL::Devices::Cuda.
+ * \e Device can be on of the following \ref noaTNL::Devices::Sequential,
+ * \ref noaTNL::Devices::Host and \ref noaTNL::Devices::Cuda.
  *
  * \param begin defines range [begin, end) of indexes which will be used for the reduction.
  * \param end defines range [begin, end) of indexes which will be used for the reduction.
@@ -92,12 +92,12 @@ Result reduce( const Index begin,
  * \tparam Fetch is a lambda function for fetching the input data.
  * \tparam Reduction is a functional performing the reduction.
  *
- * \e Device can be on of the following \ref TNL::Devices::Sequential,
- * \ref TNL::Devices::Host and \ref TNL::Devices::Cuda.
+ * \e Device can be on of the following \ref noaTNL::Devices::Sequential,
+ * \ref noaTNL::Devices::Host and \ref noaTNL::Devices::Cuda.
  *
- * \e Reduction can be one of the following \ref TNL::Plus, \ref TNL::Multiplies,
- * \ref TNL::Min, \ref TNL::Max, \ref TNL::LogicalAnd, \ref TNL::LogicalOr,
- * \ref TNL::BitAnd or \ref TNL::BitOr. \ref TNL::Plus is used by default.
+ * \e Reduction can be one of the following \ref noaTNL::Plus, \ref noaTNL::Multiplies,
+ * \ref noaTNL::Min, \ref noaTNL::Max, \ref noaTNL::LogicalAnd, \ref noaTNL::LogicalOr,
+ * \ref noaTNL::BitAnd or \ref noaTNL::BitOr. \ref noaTNL::Plus is used by default.
  *
  * \param begin defines range [begin, end) of indexes which will be used for the reduction.
  * \param end defines range [begin, end) of indexes which will be used for the reduction.
@@ -122,11 +122,11 @@ Result reduce( const Index begin,
 template< typename Device,
           typename Index,
           typename Fetch,
-          typename Reduction = TNL::Plus >
+          typename Reduction = noaTNL::Plus >
 auto reduce( const Index begin,
              const Index end,
              Fetch&& fetch,
-             Reduction&& reduction = TNL::Plus{} )
+             Reduction&& reduction = noaTNL::Plus{} )
 {
    using Result = Containers::Expressions::RemoveET< decltype( reduction( fetch(0), fetch(0) ) ) >;
    return reduce< Device >( begin,
@@ -174,9 +174,9 @@ auto reduce( const Array& array,
 /**
  * \brief Variant of \ref reduce for arrays, views and compatible objects.
  *
- * \e Reduction can be one of the following \ref TNL::Plus, \ref TNL::Multiplies,
- * \ref TNL::Min, \ref TNL::Max, \ref TNL::LogicalAnd, \ref TNL::LogicalOr,
- * \ref TNL::BitAnd or \ref TNL::BitOr. \ref TNL::Plus is used by default.
+ * \e Reduction can be one of the following \ref noaTNL::Plus, \ref noaTNL::Multiplies,
+ * \ref noaTNL::Min, \ref noaTNL::Max, \ref noaTNL::LogicalAnd, \ref noaTNL::LogicalOr,
+ * \ref noaTNL::BitAnd or \ref noaTNL::BitOr. \ref noaTNL::Plus is used by default.
  *
  * The referenced \ref reduce function is called with:
  *
@@ -197,9 +197,9 @@ auto reduce( const Array& array,
  */
 template< typename Array,
           typename Device = typename Array::DeviceType,
-          typename Reduction = TNL::Plus >
+          typename Reduction = noaTNL::Plus >
 auto reduce( const Array& array,
-             Reduction&& reduction = TNL::Plus{} )
+             Reduction&& reduction = noaTNL::Plus{} )
 {
    using Result = Containers::Expressions::RemoveET< decltype( reduction( array(0), array(0) ) ) >;
    return reduce< Array, Device >( array,
@@ -220,8 +220,8 @@ auto reduce( const Array& array,
  * \tparam Reduction is a lambda function performing the reduction.
  * \tparam Fetch is a lambda function for fetching the input data.
  *
- * \e Device can be on of the following \ref TNL::Devices::Sequential,
- * \ref TNL::Devices::Host and \ref TNL::Devices::Cuda.
+ * \e Device can be on of the following \ref noaTNL::Devices::Sequential,
+ * \ref noaTNL::Devices::Host and \ref noaTNL::Devices::Cuda.
  *
  * \param begin defines range [begin, end) of indexes which will be used for the reduction.
  * \param end defines range [begin, end) of indexes which will be used for the reduction.
@@ -281,10 +281,10 @@ reduceWithArgument( const Index begin,
  * \tparam Reduction is a functional performing the reduction.
  * \tparam Fetch is a lambda function for fetching the input data.
  *
- * \e Device can be on of the following \ref TNL::Devices::Sequential,
- * \ref TNL::Devices::Host and \ref TNL::Devices::Cuda.
+ * \e Device can be on of the following \ref noaTNL::Devices::Sequential,
+ * \ref noaTNL::Devices::Host and \ref noaTNL::Devices::Cuda.
  *
- * \e Reduction can be one of \ref TNL::MinWithArg, \ref TNL::MaxWithArg.
+ * \e Reduction can be one of \ref noaTNL::MinWithArg, \ref noaTNL::MaxWithArg.
  *
  * \param begin defines range [begin, end) of indexes which will be used for the reduction.
  * \param end defines range [begin, end) of indexes which will be used for the reduction.
@@ -372,7 +372,7 @@ auto reduceWithArgument( const Array& array,
 /**
  * \brief Variant of \ref reduceWithArgument for arrays, views and compatible objects.
  *
- * \e Reduction can be one of \ref TNL::MinWithArg, \ref TNL::MaxWithArg.
+ * \e Reduction can be one of \ref noaTNL::MinWithArg, \ref noaTNL::MaxWithArg.
  *
  * The referenced \ref reduceWithArgument function is called with:
  *
@@ -404,4 +404,4 @@ auto reduceWithArgument( const Array& array,
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -13,14 +13,14 @@
  * The algorithms should be incorporated into the Matrices::Dense class.
  */
 
-#include <TNL/Exceptions/CudaSupportMissing.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Math.h>
-#include <TNL/Cuda/DeviceInfo.h>
-#include <TNL/Cuda/SharedMemory.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/Cuda/DeviceInfo.h>
+#include <noa/3rdparty/TNL/Cuda/SharedMemory.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename DeviceType = Devices::Host >
@@ -62,7 +62,7 @@ public:
       if( n == 1 ) {
          if( beta != 0.0 ) {
             #ifdef HAVE_OPENMP
-            #pragma omp parallel for if( TNL::Devices::Host::isOMPEnabled() )
+            #pragma omp parallel for if( noaTNL::Devices::Host::isOMPEnabled() )
             #endif
             for( IndexType j = 0; j < m; j++ )
                y[ j ] = A[ j ] * alphax[ 0 ] + beta * y[ j ];
@@ -70,7 +70,7 @@ public:
          else {
             // the vector y might be uninitialized, and 0.0 * NaN = NaN
             #ifdef HAVE_OPENMP
-            #pragma omp parallel for if( TNL::Devices::Host::isOMPEnabled() )
+            #pragma omp parallel for if( noaTNL::Devices::Host::isOMPEnabled() )
             #endif
             for( IndexType j = 0; j < m; j++ )
                y[ j ] = A[ j ] * alphax[ 0 ];
@@ -83,7 +83,7 @@ public:
          const IndexType blocks = m / block_size;
 
          #ifdef HAVE_OPENMP
-         #pragma omp parallel if( TNL::Devices::Host::isOMPEnabled() && blocks >= 2 )
+         #pragma omp parallel if( noaTNL::Devices::Host::isOMPEnabled() && blocks >= 2 )
          #endif
          {
             RealType aux[ block_size ];
@@ -179,7 +179,7 @@ public:
 
       if( n == 1 ) {
          #ifdef HAVE_OPENMP
-         #pragma omp parallel for if( TNL::Devices::Host::isOMPEnabled() )
+         #pragma omp parallel for if( noaTNL::Devices::Host::isOMPEnabled() )
          #endif
          for( IndexType j = 0; j < m; j++ )
             C[ j ] = alpha * A[ j ] + beta * B[ j ];
@@ -191,7 +191,7 @@ public:
          const IndexType blocks = m / block_size;
 
          #ifdef HAVE_OPENMP
-         #pragma omp parallel if( TNL::Devices::Host::isOMPEnabled() && blocks >= 2 )
+         #pragma omp parallel if( noaTNL::Devices::Host::isOMPEnabled() && blocks >= 2 )
          #endif
          {
             #ifdef HAVE_OPENMP
@@ -416,4 +416,4 @@ public:
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Images//DicomSeriesInfo.h>
-#include <TNL/Images//DicomHeader.h>
+#include <noa/3rdparty/TNL/Images//DicomSeriesInfo.h>
+#include <noa/3rdparty/TNL/Images//DicomHeader.h>
 #include <stdio.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {   
 
 inline DicomSeriesInfo::DicomSeriesInfo( DicomHeader &dicomHeader)
@@ -174,4 +174,4 @@ inline const String& DicomSeriesInfo::getAcquisitionTime()
 }
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL

@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include <TNL/String.h>
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
 #ifdef HAVE_OPENMP
 #include <omp.h>
 #endif
 
-namespace TNL {
+namespace noaTNL {
 namespace Devices {
 
 class Host
@@ -118,4 +118,4 @@ public:
 };
 
 } // namespace Devices
-} // namespace TNL
+} // namespace noaTNL

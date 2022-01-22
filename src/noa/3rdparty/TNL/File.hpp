@@ -11,16 +11,16 @@
 #include <ios>
 #include <sstream>
 
-#include <TNL/File.h>
-#include <TNL/Assert.h>
-#include <TNL/Cuda/CheckDevice.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
-#include <TNL/Exceptions/FileSerializationError.h>
-#include <TNL/Exceptions/FileDeserializationError.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/File.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Cuda/CheckDevice.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Exceptions/FileSerializationError.h>
+#include <noa/3rdparty/TNL/Exceptions/FileDeserializationError.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 
 inline File::File( const String& fileName, std::ios_base::openmode mode )
 {
@@ -321,4 +321,4 @@ inline File& operator>>( File& file, std::string& str )
    return file;
 }
 
-} // namespace TNL
+} // namespace noaTNL

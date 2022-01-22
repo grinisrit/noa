@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Containers/VectorView.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRVectorKernel.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRVectorKernel.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -40,22 +40,22 @@ void reduceSegmentsCSRKernelVector(
     /***
      * We map one warp to each segment
      */
-    const Index segmentIdx =  TNL::Cuda::getGlobalThreadIdx( gridIdx ) / TNL::Cuda::getWarpSize() + first;
+    const Index segmentIdx =  noaTNL::Cuda::getGlobalThreadIdx( gridIdx ) / noaTNL::Cuda::getWarpSize() + first;
     if( segmentIdx >= last )
         return;
 
-    const int laneIdx = threadIdx.x & ( TNL::Cuda::getWarpSize() - 1 ); // & is cheaper than %
+    const int laneIdx = threadIdx.x & ( noaTNL::Cuda::getWarpSize() - 1 ); // & is cheaper than %
     TNL_ASSERT_LT( segmentIdx + 1, offsets.getSize(), "" );
     Index endIdx = offsets[ segmentIdx + 1 ];
 
     Index localIdx( laneIdx );
     Real aux = zero;
     bool compute( true );
-    for( Index globalIdx = offsets[ segmentIdx ] + localIdx; globalIdx < endIdx; globalIdx += TNL::Cuda::getWarpSize() )
+    for( Index globalIdx = offsets[ segmentIdx ] + localIdx; globalIdx < endIdx; globalIdx += noaTNL::Cuda::getWarpSize() )
     {
         TNL_ASSERT_LT( globalIdx, endIdx, "" );
         aux = reduce( aux, detail::FetchLambdaAdapter< Index, Fetch >::call( fetch, segmentIdx, localIdx, globalIdx, compute ) );
-        localIdx += TNL::Cuda::getWarpSize();
+        localIdx += noaTNL::Cuda::getWarpSize();
     }
 
    /****
@@ -109,7 +109,7 @@ getConstView() const -> ConstViewType
 
 template< typename Index,
           typename Device >
-TNL::String
+noaTNL::String
 CSRVectorKernel< Index, Device >::
 getKernelType()
 {
@@ -140,14 +140,14 @@ reduceSegments( const OffsetsView& offsets,
        return;
 
     const Index warpsCount = last - first;
-    const size_t threadsCount = warpsCount * TNL::Cuda::getWarpSize();
+    const size_t threadsCount = warpsCount * noaTNL::Cuda::getWarpSize();
     dim3 blocksCount, gridsCount, blockSize( 256 );
-    TNL::Cuda::setupThreads( blockSize, blocksCount, gridsCount, threadsCount );
+    noaTNL::Cuda::setupThreads( blockSize, blocksCount, gridsCount, threadsCount );
     dim3 gridIdx;
     for( gridIdx.x = 0; gridIdx.x < gridsCount.x; gridIdx.x ++ )
     {
         dim3 gridSize;
-        TNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, gridSize );
+        noaTNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, gridSize );
         reduceSegmentsCSRKernelVector< OffsetsView, IndexType, Fetch, Reduction, ResultKeeper, Real, Args... >
         <<< gridSize, blockSize >>>(
             gridIdx.x, offsets, first, last, fetch, reduction, keeper, zero, args... );
@@ -159,4 +159,4 @@ reduceSegments( const OffsetsView& offsets,
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

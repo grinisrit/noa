@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/DimensionTag.h>
+#include <noa/3rdparty/TNL/Meshes/DimensionTag.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -105,4 +105,4 @@ public:
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /**
@@ -94,4 +94,4 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

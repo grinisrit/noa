@@ -7,11 +7,11 @@
 #pragma once
 
 #include <iomanip>
-#include <TNL/Assert.h>
-#include <TNL/Matrices/MultidiagonalMatrixView.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrixView.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Real,
@@ -76,9 +76,9 @@ MultidiagonalMatrixView< Real, Device, Index, Organization >::
 getSerializationType()
 {
    return String( "Matrices::MultidiagonalMatrix< " ) +
-          TNL::getSerializationType< RealType >() + ", [any_device], " +
-          TNL::getSerializationType< IndexType >() + ", " +
-          TNL::getSerializationType( Organization ) + ", [any_allocator], [any_allocator] >";
+          noaTNL::getSerializationType< RealType >() + ", [any_device], " +
+          noaTNL::getSerializationType< IndexType >() + ", " +
+          noaTNL::getSerializationType( Organization ) + ", [any_allocator], [any_allocator] >";
 }
 
 template< typename Real,
@@ -513,7 +513,7 @@ forRows( IndexType begin, IndexType end, Function&& function )
       auto rowView = view.getRow( rowIdx );
       function( rowView );
    };
-   TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -530,7 +530,7 @@ forRows( IndexType begin, IndexType end, Function&& function ) const
       auto rowView = view.getRow( rowIdx );
       function( rowView );
    };
-   TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -855,4 +855,4 @@ getPaddingIndex() const
 
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

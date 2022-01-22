@@ -14,18 +14,18 @@
 #include <fstream>
 #include <filesystem>
 
-#include <TNL/Timer.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Solvers/IterativeSolverMonitor.h>
+#include <noa/3rdparty/TNL/Timer.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 
-#include <TNL/Devices/Host.h>
-#include <TNL/SystemInfo.h>
-#include <TNL/Cuda/DeviceInfo.h>
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/SystemInfo.h>
+#include <noa/3rdparty/TNL/Cuda/DeviceInfo.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Benchmarks {
 
 // returns a tuple of (loops, mean, stddev) where loops is the number of
@@ -34,7 +34,7 @@ namespace Benchmarks {
 template< typename Device,
           typename ComputeFunction,
           typename ResetFunction,
-          typename Monitor = TNL::Solvers::IterativeSolverMonitor< double, int > >
+          typename Monitor = noaTNL::Solvers::IterativeSolverMonitor< double, int > >
 std::tuple< int, double, double >
 timeFunction( ComputeFunction compute,
               ResetFunction reset,
@@ -110,8 +110,8 @@ inline std::map< std::string, std::string > getHardwareMetadata()
    int nproc = 1;
    // check if MPI was initialized (some benchmarks do not initialize MPI even when
    // they are built with HAVE_MPI and thus MPI::GetSize() cannot be used blindly)
-   if( TNL::MPI::Initialized() )
-      nproc = TNL::MPI::GetSize();
+   if( noaTNL::MPI::Initialized() )
+      nproc = noaTNL::MPI::GetSize();
 #endif
 
    std::map< std::string, std::string > metadata {
@@ -179,4 +179,4 @@ inline void writeMapAsJson( const std::map< std::string, std::string >& data,
 }
 
 } // namespace Benchmarks
-} // namespace TNL
+} // namespace noaTNL

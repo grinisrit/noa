@@ -8,12 +8,12 @@
 
 #include <limits>
 
-#include <TNL/Meshes/Writers/VTKWriter.h>
-#include <TNL/Meshes/Writers/detail/VTKOffsetsCountGetter.h>
-#include <TNL/Meshes/Writers/detail/VTKMeshEntitiesWriter.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTKWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/detail/VTKOffsetsCountGetter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/detail/VTKMeshEntitiesWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 
@@ -187,4 +187,4 @@ VTKWriter< Mesh >::writeHeader()
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/TypeTraits.h>
-#include <TNL/Meshes/Topologies/SubentityVertexMap.h>
-#include <TNL/Meshes/Topologies/Vertex.h>
+#include <noa/3rdparty/TNL/TypeTraits.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Vertex.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -42,4 +42,4 @@ struct IsDynamicTopology< Topology, 1 >
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

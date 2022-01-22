@@ -8,11 +8,11 @@
 
 #include <ostream>
 
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Matrices/MatrixRowViewIterator.h>
-#include <TNL/Matrices/details/SparseMatrixRowViewValueGetter.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.h>
+#include <noa/3rdparty/TNL/Matrices/details/SparseMatrixRowViewValueGetter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -275,6 +275,6 @@ template< typename SegmentView,
 std::ostream& operator<<( std::ostream& str, const SparseMatrixRowView< SegmentView, ValuesView, ColumnsIndexesView >& row );
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/SparseMatrixRowView.hpp>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.hpp>

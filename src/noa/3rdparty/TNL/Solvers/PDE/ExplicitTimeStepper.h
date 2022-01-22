@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Timer.h>
-#include <TNL/Logger.h>
-#include <TNL/Pointers/SharedPointer.h>
-#include <TNL/Solvers/IterativeSolverMonitor.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Timer.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -89,6 +89,6 @@ class ExplicitTimeStepper
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/PDE/ExplicitTimeStepper.hpp>
+#include <noa/3rdparty/TNL/Solvers/PDE/ExplicitTimeStepper.hpp>

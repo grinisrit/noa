@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Operators/fdm/FiniteDifferences.h>
-#include <TNL/Operators/fdm/ExactDifference.h>
-#include <TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/fdm/FiniteDifferences.h>
+#include <noa/3rdparty/TNL/Operators/fdm/ExactDifference.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -74,5 +74,5 @@ class ForwardFiniteDifference< Meshes::Grid< Dimension, MeshReal, MeshDevice, Me
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

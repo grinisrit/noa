@@ -11,10 +11,10 @@
 #include <type_traits>  // std::add_const_t
 #include <memory>  // std::shared_ptr
 
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Solvers/Linear/Utils/Traits.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Utils/Traits.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
       namespace Linear {
          namespace Preconditioners {
@@ -124,4 +124,4 @@ class Preconditioner
          } // namespace Preconditioners
       } // namespace Linear
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

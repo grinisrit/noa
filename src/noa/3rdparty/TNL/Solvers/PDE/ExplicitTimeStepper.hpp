@@ -8,7 +8,7 @@
 
 #include "ExplicitTimeStepper.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -206,4 +206,4 @@ writeEpilog( Logger& logger ) const
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

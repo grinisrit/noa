@@ -12,10 +12,10 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -181,6 +181,6 @@ class FiniteVolumeNonlinearOperator< Meshes::Grid< 3, MeshReal, Device, MeshInde
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 
 #include "FiniteVolumeNonlinearOperator_impl.h"

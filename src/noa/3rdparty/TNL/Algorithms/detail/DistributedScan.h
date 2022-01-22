@@ -10,10 +10,10 @@
 
 #include "Scan.h"
 
-#include <TNL/Containers/Array.h>
-#include <TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 namespace detail {
 
@@ -67,4 +67,4 @@ struct DistributedScan
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Solvers/PDE/PDESolver.h>
-#include <TNL/MPI/Utils.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/PDESolver.h>
+#include <noa/3rdparty/TNL/MPI/Utils.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -117,5 +117,5 @@ setTotalTimer( Timer& totalTimer )
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 

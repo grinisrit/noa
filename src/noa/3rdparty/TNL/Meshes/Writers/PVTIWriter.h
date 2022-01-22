@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Writers/VTIWriter.h>
-#include <TNL/Meshes/DistributedMeshes/DistributedGrid.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTIWriter.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGrid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 
@@ -114,6 +114,6 @@ protected:
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/Writers/PVTIWriter.hpp>
+#include <noa/3rdparty/TNL/Meshes/Writers/PVTIWriter.hpp>

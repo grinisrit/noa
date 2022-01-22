@@ -12,10 +12,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/DimensionTag.h>
-#include <TNL/Meshes/MeshDetails/initializer/EntityInitializer.h>
-#include <TNL/Meshes/MeshDetails/initializer/SubentitySeedsCreator.h>
-#include <TNL/Meshes/MeshDetails/initializer/EntitySeed.h>
+#include <noa/3rdparty/TNL/Meshes/DimensionTag.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/EntityInitializer.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/SubentitySeedsCreator.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/EntitySeed.h>
 
 /*
  * How this beast works:
@@ -51,7 +51,7 @@
  *     space is not wasted.
  */
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -367,4 +367,4 @@ class InitializerLayer< MeshConfig, DimensionTag< 0 > >
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -8,7 +8,7 @@
 
 #include <functions/SDFSchemeTest.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Functions {
       namespace Analytic {
 
@@ -70,5 +70,5 @@ Real SDFSchemeTest< function, 3, Real >::getValue( const Point& v,
 
       } // namespace Analytic
    } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

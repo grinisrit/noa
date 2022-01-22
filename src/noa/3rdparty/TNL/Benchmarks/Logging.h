@@ -17,7 +17,7 @@
 #include <string>
 #include <fstream>
 
-namespace TNL {
+namespace noaTNL {
 namespace Benchmarks {
 
 class LoggingRowElements
@@ -174,4 +174,4 @@ protected:
 };
 
 } // namespace Benchmarks
-} // namespace TNL
+} // namespace noaTNL

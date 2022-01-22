@@ -7,11 +7,11 @@
 #pragma once
 
 #include <sstream>
-#include <TNL/Assert.h>
-#include <TNL/Matrices/TridiagonalMatrix.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/TridiagonalMatrix.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Real,
@@ -72,8 +72,8 @@ TridiagonalMatrix< Real, Device, Index, Organization, RealAllocator >::
 getSerializationType()
 {
    return String( "Matrices::TridiagonalMatrix< " ) +
-          TNL::getSerializationType< RealType >() + ", [any_device], " +
-          TNL::getSerializationType< IndexType >() + ", " +
+          noaTNL::getSerializationType< RealType >() + ", [any_device], " +
+          noaTNL::getSerializationType< IndexType >() + ", " +
           ( Organization ? "true" : "false" ) + ", [any_allocator] >";
 }
 
@@ -821,4 +821,4 @@ getPaddingIndex() const
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

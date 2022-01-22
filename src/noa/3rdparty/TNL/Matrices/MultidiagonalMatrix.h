@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Matrices/Matrix.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Matrices/MultidiagonalMatrixRowView.h>
-#include <TNL/Algorithms/Segments/Ellpack.h>
-#include <TNL/Matrices/details/MultidiagonalMatrixIndexer.h>
-#include <TNL/Matrices/MultidiagonalMatrixView.h>
+#include <noa/3rdparty/TNL/Matrices/Matrix.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrixRowView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
+#include <noa/3rdparty/TNL/Matrices/details/MultidiagonalMatrixIndexer.h>
+#include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrixView.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -43,8 +43,8 @@ namespace Matrices {
  * are \f$\{-3,-1,0,1,3\}\f$. Advantage is that we do not store the column indexes
  * explicitly as it is in \ref SparseMatrix. This can reduce significantly the
  * memory requirements which also means better performance. See the following table
- * for the storage requirements comparison between \ref TNL::Matrices::MultidiagonalMatrix
- * and \ref TNL::Matrices::SparseMatrix.
+ * for the storage requirements comparison between \ref noaTNL::Matrices::MultidiagonalMatrix
+ * and \ref noaTNL::Matrices::SparseMatrix.
  *
  *  Real   | Index     |      SparseMatrix    | MultidiagonalMatrix | Ratio
  * --------|-----------|----------------------|---------------------|-------
@@ -865,7 +865,7 @@ class MultidiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::MultidiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::MultidiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forRows.cpp
@@ -891,7 +891,7 @@ class MultidiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::MultidiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::MultidiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forRows.cpp
@@ -915,7 +915,7 @@ class MultidiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::MultidiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::MultidiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forRows.cpp
@@ -939,7 +939,7 @@ class MultidiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::MultidiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::MultidiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forRows.cpp
@@ -1142,6 +1142,6 @@ class MultidiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/MultidiagonalMatrix.hpp>
+#include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrix.hpp>

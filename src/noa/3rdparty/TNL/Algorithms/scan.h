@@ -10,10 +10,10 @@
 
 #include <utility>  // std::forward
 
-#include <TNL/Algorithms/detail/Scan.h>
-#include <TNL/Functional.h>
+#include <noa/3rdparty/TNL/Algorithms/detail/Scan.h>
+#include <noa/3rdparty/TNL/Functional.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 /**
@@ -81,7 +81,7 @@ inclusiveScan( const InputArray& input,
 
 /**
  * \brief Overload of \ref inclusiveScan which uses a TNL functional
- *        object for reduction. \ref TNL::Plus is used by default.
+ *        object for reduction. \ref noaTNL::Plus is used by default.
  *
  * The [identity element](https://en.wikipedia.org/wiki/Identity_element) is
  * taken as `reduction.template getIdentity< typename OutputArray::ValueType >()`.
@@ -90,14 +90,14 @@ inclusiveScan( const InputArray& input,
  */
 template< typename InputArray,
           typename OutputArray,
-          typename Reduction = TNL::Plus >
+          typename Reduction = noaTNL::Plus >
 void
 inclusiveScan( const InputArray& input,
                OutputArray& output,
                typename InputArray::IndexType begin = 0,
                typename InputArray::IndexType end = 0,
                typename OutputArray::IndexType outputBegin = 0,
-               Reduction&& reduction = TNL::Plus{} )
+               Reduction&& reduction = noaTNL::Plus{} )
 {
    if( end == 0 )
       end = input.getSize();
@@ -170,7 +170,7 @@ exclusiveScan( const InputArray& input,
 
 /**
  * \brief Overload of \ref exclusiveScan which uses a TNL functional
- *        object for reduction. \ref TNL::Plus is used by default.
+ *        object for reduction. \ref noaTNL::Plus is used by default.
  *
  * The [identity element](https://en.wikipedia.org/wiki/Identity_element) is
  * taken as `reduction.template getIdentity< typename OutputArray::ValueType >()`.
@@ -179,14 +179,14 @@ exclusiveScan( const InputArray& input,
  */
 template< typename InputArray,
           typename OutputArray,
-          typename Reduction = TNL::Plus >
+          typename Reduction = noaTNL::Plus >
 void
 exclusiveScan( const InputArray& input,
                OutputArray& output,
                typename InputArray::IndexType begin = 0,
                typename InputArray::IndexType end = 0,
                typename OutputArray::IndexType outputBegin = 0,
-               Reduction&& reduction = TNL::Plus{} )
+               Reduction&& reduction = noaTNL::Plus{} )
 {
    if( end == 0 )
       end = input.getSize();
@@ -247,7 +247,7 @@ inplaceInclusiveScan( Array& array,
 
 /**
  * \brief Overload of \ref inplaceInclusiveScan which uses a TNL functional
- *        object for reduction. \ref TNL::Plus is used by default.
+ *        object for reduction. \ref noaTNL::Plus is used by default.
  *
  * The [identity element](https://en.wikipedia.org/wiki/Identity_element) is
  * taken as `reduction.template getIdentity< typename Array::ValueType >()`.
@@ -255,12 +255,12 @@ inplaceInclusiveScan( Array& array,
  * Note that when `end` equals 0 (the default), it is set to `array.getSize()`.
  */
 template< typename Array,
-          typename Reduction = TNL::Plus >
+          typename Reduction = noaTNL::Plus >
 void
 inplaceInclusiveScan( Array& array,
                       typename Array::IndexType begin = 0,
                       typename Array::IndexType end = 0,
-                      Reduction&& reduction = TNL::Plus{} )
+                      Reduction&& reduction = noaTNL::Plus{} )
 {
    if( end == 0 )
       end = array.getSize();
@@ -321,7 +321,7 @@ inplaceExclusiveScan( Array& array,
 
 /**
  * \brief Overload of \ref inplaceExclusiveScan which uses a TNL functional
- *        object for reduction. \ref TNL::Plus is used by default.
+ *        object for reduction. \ref noaTNL::Plus is used by default.
  *
  * The [identity element](https://en.wikipedia.org/wiki/Identity_element) is
  * taken as `reduction.template getIdentity< typename Array::ValueType >()`.
@@ -329,12 +329,12 @@ inplaceExclusiveScan( Array& array,
  * Note that when `end` equals 0 (the default), it is set to `array.getSize()`.
  */
 template< typename Array,
-          typename Reduction = TNL::Plus >
+          typename Reduction = noaTNL::Plus >
 void
 inplaceExclusiveScan( Array& array,
                       typename Array::IndexType begin = 0,
                       typename Array::IndexType end = 0,
-                      Reduction&& reduction = TNL::Plus{} )
+                      Reduction&& reduction = noaTNL::Plus{} )
 {
    if( end == 0 )
       end = array.getSize();
@@ -343,4 +343,4 @@ inplaceExclusiveScan( Array& array,
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

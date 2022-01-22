@@ -7,10 +7,10 @@
 #pragma once
 
 #include <math.h>
-#include <TNL/Algorithms/Segments/ElementsOrganization.h>
-#include <TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ElementsOrganization.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -44,7 +44,7 @@ class BiEllpackSegmentView
                             const IndexType offset,
                             const IndexType inStripIdx,
                             const GroupsWidthType& groupsWidth )
-      : segmentIdx( segmentIdx ), groupOffset( offset ), inStripIdx( inStripIdx ), segmentSize( TNL::sum( groupsWidth ) ), groupsWidth( groupsWidth ){};
+      : segmentIdx( segmentIdx ), groupOffset( offset ), inStripIdx( inStripIdx ), segmentSize( noaTNL::sum( groupsWidth ) ), groupsWidth( groupsWidth ){};
 
       __cuda_callable__
       IndexType getSize() const
@@ -65,7 +65,7 @@ class BiEllpackSegmentView
             offset += groupsWidth[ groupIdx++ ] * groupHeight;
             groupHeight /= 2;
          }
-         TNL_ASSERT_LE( groupIdx, TNL::log2( getWarpSize() - inStripIdx + 1 ), "Local index exceeds segment bounds." );
+         TNL_ASSERT_LE( groupIdx, noaTNL::log2( getWarpSize() - inStripIdx + 1 ), "Local index exceeds segment bounds." );
          if( Organization == RowMajorOrder )
          {
             //std::cerr << " offset = " << offset << " inStripIdx = " << inStripIdx << " localIdx = " << localIdx 
@@ -91,4 +91,4 @@ class BiEllpackSegmentView
 
       } //namespace Segments
    } //namespace Algorithms
-} //namespace TNL
+} //namespace noaTNL

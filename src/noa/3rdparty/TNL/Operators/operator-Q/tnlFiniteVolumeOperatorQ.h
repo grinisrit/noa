@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Containers/SharedVector.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Containers/SharedVector.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -334,6 +334,6 @@ class tnlFiniteVolumeOperatorQ< Meshes::Grid< 3,MeshReal, Device, MeshIndex >, R
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Operators/operator-Q/tnlFiniteVolumeOperatorQ_impl.h>
+#include <noa/3rdparty/TNL/Operators/operator-Q/tnlFiniteVolumeOperatorQ_impl.h>

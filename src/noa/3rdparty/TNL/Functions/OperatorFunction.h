@@ -7,11 +7,11 @@
 #pragma once
 
 #include <type_traits>
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Functions/MeshFunction.h>
-#include <TNL/Solvers/PDE/BoundaryConditionsSetter.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/BoundaryConditionsSetter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 /***
@@ -420,5 +420,5 @@ class OperatorFunction< Operator, Function, void, false, true >
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

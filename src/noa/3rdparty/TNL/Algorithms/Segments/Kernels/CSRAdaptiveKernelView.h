@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
-#include <TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelParameters.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelParameters.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -22,7 +22,7 @@ struct CSRAdaptiveKernelView
    using DeviceType = Device;
    using ViewType = CSRAdaptiveKernelView< Index, Device >;
    using ConstViewType = CSRAdaptiveKernelView< Index, Device >;
-   using BlocksType = TNL::Containers::Vector< detail::CSRAdaptiveKernelBlockDescriptor< Index >, Device, Index >;
+   using BlocksType = noaTNL::Containers::Vector< detail::CSRAdaptiveKernelBlockDescriptor< Index >, Device, Index >;
    using BlocksView = typename BlocksType::ViewType;
 
    static constexpr int MaxValueSizeLog = detail::CSRAdaptiveKernelParameters<>::MaxValueSizeLog;
@@ -37,7 +37,7 @@ struct CSRAdaptiveKernelView
 
    ConstViewType getConstView() const;
 
-   static TNL::String getKernelType();
+   static noaTNL::String getKernelType();
 
    template< typename OffsetsView,
              typename Fetch,
@@ -64,6 +64,6 @@ struct CSRAdaptiveKernelView
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernelView.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernelView.hpp>

@@ -11,15 +11,15 @@
 #include <memory>
 #include <filesystem>
 
-#include <TNL/Meshes/Readers/NetgenReader.h>
-#include <TNL/Meshes/Readers/VTKReader.h>
-#include <TNL/Meshes/Readers/VTUReader.h>
-#include <TNL/Meshes/Readers/VTIReader.h>
-#include <TNL/Meshes/Readers/PVTUReader.h>
-#include <TNL/Meshes/Readers/PVTIReader.h>
-#include <TNL/Meshes/Readers/FPMAReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/NetgenReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/VTKReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/VTUReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/VTIReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/PVTUReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/PVTIReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/FPMAReader.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Readers {
 
@@ -61,4 +61,4 @@ getMeshReader( const std::string& fileName,
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

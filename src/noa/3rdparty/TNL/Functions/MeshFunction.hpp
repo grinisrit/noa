@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Pointers/DevicePointer.h>
-#include <TNL/Functions/MeshFunction.h>
-#include <TNL/Functions/MeshFunctionEvaluator.h>
-#include <TNL/Functions/MeshFunctionNormGetter.h>
-#include <TNL/Functions/MeshFunctionIO.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Pointers/DevicePointer.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionEvaluator.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionNormGetter.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionIO.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 
 template< typename Mesh,
@@ -338,4 +338,4 @@ operator << ( std::ostream& str, const MeshFunction< Mesh, MeshEntityDimension, 
 }
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

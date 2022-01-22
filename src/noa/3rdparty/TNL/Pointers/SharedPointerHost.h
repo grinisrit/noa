@@ -10,14 +10,14 @@
 
 #include "SharedPointer.h"
 
-#include <TNL/Devices/Host.h>
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Pointers/SmartPointer.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Pointers/SmartPointer.h>
 
 #include <cstddef>   // std::nullptr_t
 #include <algorithm> // swap
 
-namespace TNL {
+namespace noaTNL {
 namespace Pointers {
 
 /**
@@ -453,4 +453,4 @@ class SharedPointer< Object, Devices::Host > : public SmartPointer
 };
 
 } // namespace Pointers
-} // namespace TNL
+} // namespace noaTNL

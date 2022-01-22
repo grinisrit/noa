@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< typename DestinationDevice >
@@ -197,8 +197,8 @@ struct MemoryOperations< Devices::Cuda >
 };
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/MemoryOperationsSequential.hpp>
-#include <TNL/Algorithms/MemoryOperationsHost.hpp>
-#include <TNL/Algorithms/MemoryOperationsCuda.hpp>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperationsSequential.hpp>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperationsHost.hpp>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperationsCuda.hpp>

@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Algorithms/Segments/ElementsOrganization.h>
-#include <TNL/Algorithms/Segments/SegmentViewIterator.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ElementsOrganization.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentViewIterator.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -18,8 +18,8 @@ namespace TNL {
  *
  * \tparam Index is type for indexing elements in related segments.
  *
- * See the template specializations \ref TNL::Algorithms::Segments::SegmentView< Index, ColumnMajorOrder >
- *  and \ref TNL::Algorithms::Segments::SegmentView< Index, RowMajorOrder > for column-major
+ * See the template specializations \ref noaTNL::Algorithms::Segments::SegmentView< Index, ColumnMajorOrder >
+ *  and \ref noaTNL::Algorithms::Segments::SegmentView< Index, RowMajorOrder > for column-major
  * and row-major elements organization respectively. They have equivalent interface.
  */
 template< typename Index,
@@ -256,4 +256,4 @@ class SegmentView< Index, RowMajorOrder >
 
       } //namespace Segments
    } //namespace Algorithms
-} //namespace TNL
+} //namespace noaTNL

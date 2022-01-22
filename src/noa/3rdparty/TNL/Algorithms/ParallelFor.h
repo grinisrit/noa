@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Cuda/CheckDevice.h>
-#include <TNL/Cuda/DeviceInfo.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
-#include <TNL/Math.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Cuda/CheckDevice.h>
+#include <noa/3rdparty/TNL/Cuda/DeviceInfo.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Math.h>
 
 /****
  * The implementation of ParallelFor is not meant to provide maximum performance
@@ -26,7 +26,7 @@
  * Implemented by: Jakub Klinkovsky
  */
 
-namespace TNL {
+namespace noaTNL {
 /**
  * \brief Namespace for fundamental TNL algorithms
  *
@@ -52,8 +52,8 @@ enum ParallelForMode { SynchronousMode, AsynchronousMode };
  * \brief Parallel for loop for one dimensional interval of indices.
  *
  * \tparam Device specifies the device where the for-loop will be executed.
- *    It can be \ref TNL::Devices::Host, \ref TNL::Devices::Cuda or
- *    \ref TNL::Devices::Sequential.
+ *    It can be \ref noaTNL::Devices::Host, \ref noaTNL::Devices::Cuda or
+ *    \ref noaTNL::Devices::Sequential.
  * \tparam Mode defines synchronous/asynchronous mode on parallel devices.
  */
 template< typename Device = Devices::Sequential,
@@ -94,8 +94,8 @@ struct ParallelFor
  * \brief Parallel for loop for two dimensional domain of indices.
  *
  * \tparam Device specifies the device where the for-loop will be executed.
- *    It can be \ref TNL::Devices::Host, \ref TNL::Devices::Cuda or
- *    \ref TNL::Devices::Sequential.
+ *    It can be \ref noaTNL::Devices::Host, \ref noaTNL::Devices::Cuda or
+ *    \ref noaTNL::Devices::Sequential.
  * \tparam Mode defines synchronous/asynchronous mode on parallel devices.
  */
 template< typename Device = Devices::Sequential,
@@ -147,8 +147,8 @@ struct ParallelFor2D
  * \brief Parallel for loop for three dimensional domain of indices.
  *
  * \tparam Device specifies the device where the for-loop will be executed.
- *    It can be \ref TNL::Devices::Host, \ref TNL::Devices::Cuda or
- *    \ref TNL::Devices::Sequential.
+ *    It can be \ref noaTNL::Devices::Host, \ref noaTNL::Devices::Cuda or
+ *    \ref noaTNL::Devices::Sequential.
  * \tparam Mode defines synchronous/asynchronous mode on parallel devices.
  */
 template< typename Device = Devices::Sequential,
@@ -354,14 +354,14 @@ struct ParallelFor< Devices::Cuda, Mode >
       if( end > start ) {
          dim3 blockSize( 256 );
          dim3 gridSize;
-         gridSize.x = TNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( end - start, blockSize.x ) );
+         gridSize.x = noaTNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( end - start, blockSize.x ) );
 
          if( (std::size_t) blockSize.x * gridSize.x >= (std::size_t) end - start )
             ParallelForKernel< false ><<< gridSize, blockSize >>>( start, end, f, args... );
          else {
             // decrease the grid size and align to the number of multiprocessors
             const int desGridSize = 32 * Cuda::DeviceInfo::getCudaMultiprocessors( Cuda::DeviceInfo::getActiveDevice() );
-            gridSize.x = TNL::min( desGridSize, Cuda::getNumberOfBlocks( end - start, blockSize.x ) );
+            gridSize.x = noaTNL::min( desGridSize, Cuda::getNumberOfBlocks( end - start, blockSize.x ) );
             ParallelForKernel< true ><<< gridSize, blockSize >>>( start, end, f, args... );
          }
 
@@ -392,20 +392,20 @@ struct ParallelFor2D< Devices::Cuda, Mode >
 
          dim3 blockSize;
          if( sizeX >= sizeY * sizeY ) {
-            blockSize.x = TNL::min( 256, sizeX );
+            blockSize.x = noaTNL::min( 256, sizeX );
             blockSize.y = 1;
          }
          else if( sizeY >= sizeX * sizeX ) {
             blockSize.x = 1;
-            blockSize.y = TNL::min( 256, sizeY );
+            blockSize.y = noaTNL::min( 256, sizeY );
          }
          else {
-            blockSize.x = TNL::min( 32, sizeX );
-            blockSize.y = TNL::min( 8, sizeY );
+            blockSize.x = noaTNL::min( 32, sizeX );
+            blockSize.y = noaTNL::min( 8, sizeY );
          }
          dim3 gridSize;
-         gridSize.x = TNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeX, blockSize.x ) );
-         gridSize.y = TNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeY, blockSize.y ) );
+         gridSize.x = noaTNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeX, blockSize.x ) );
+         gridSize.y = noaTNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeY, blockSize.y ) );
 
          dim3 gridCount;
          gridCount.x = roundUpDivision( sizeX, blockSize.x * gridSize.x );
@@ -452,45 +452,45 @@ struct ParallelFor3D< Devices::Cuda, Mode >
 
          dim3 blockSize;
          if( sizeX >= sizeY * sizeY * sizeZ * sizeZ ) {
-            blockSize.x = TNL::min( 256, sizeX );
+            blockSize.x = noaTNL::min( 256, sizeX );
             blockSize.y = 1;
             blockSize.z = 1;
          }
          else if( sizeY >= sizeX * sizeX * sizeZ * sizeZ ) {
             blockSize.x = 1;
-            blockSize.y = TNL::min( 256, sizeY );
+            blockSize.y = noaTNL::min( 256, sizeY );
             blockSize.z = 1;
          }
          else if( sizeZ >= sizeX * sizeX * sizeY * sizeY ) {
-            blockSize.x = TNL::min( 2, sizeX );
-            blockSize.y = TNL::min( 2, sizeY );
+            blockSize.x = noaTNL::min( 2, sizeX );
+            blockSize.y = noaTNL::min( 2, sizeY );
             // CUDA allows max 64 for blockSize.z
-            blockSize.z = TNL::min( 64, sizeZ );
+            blockSize.z = noaTNL::min( 64, sizeZ );
          }
          else if( sizeX >= sizeZ * sizeZ && sizeY >= sizeZ * sizeZ ) {
-            blockSize.x = TNL::min( 32, sizeX );
-            blockSize.y = TNL::min( 8, sizeY );
+            blockSize.x = noaTNL::min( 32, sizeX );
+            blockSize.y = noaTNL::min( 8, sizeY );
             blockSize.z = 1;
          }
          else if( sizeX >= sizeY * sizeY && sizeZ >= sizeY * sizeY ) {
-            blockSize.x = TNL::min( 32, sizeX );
+            blockSize.x = noaTNL::min( 32, sizeX );
             blockSize.y = 1;
-            blockSize.z = TNL::min( 8, sizeZ );
+            blockSize.z = noaTNL::min( 8, sizeZ );
          }
          else if( sizeY >= sizeX * sizeX && sizeZ >= sizeX * sizeX ) {
             blockSize.x = 1;
-            blockSize.y = TNL::min( 32, sizeY );
-            blockSize.z = TNL::min( 8, sizeZ );
+            blockSize.y = noaTNL::min( 32, sizeY );
+            blockSize.z = noaTNL::min( 8, sizeZ );
          }
          else {
-            blockSize.x = TNL::min( 16, sizeX );
-            blockSize.y = TNL::min( 4, sizeY );
-            blockSize.z = TNL::min( 4, sizeZ );
+            blockSize.x = noaTNL::min( 16, sizeX );
+            blockSize.y = noaTNL::min( 4, sizeY );
+            blockSize.z = noaTNL::min( 4, sizeZ );
          }
          dim3 gridSize;
-         gridSize.x = TNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeX, blockSize.x ) );
-         gridSize.y = TNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeY, blockSize.y ) );
-         gridSize.z = TNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeZ, blockSize.z ) );
+         gridSize.x = noaTNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeX, blockSize.x ) );
+         gridSize.y = noaTNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeY, blockSize.y ) );
+         gridSize.z = noaTNL::min( Cuda::getMaxGridSize(), Cuda::getNumberOfBlocks( sizeZ, blockSize.z ) );
 
          dim3 gridCount;
          gridCount.x = roundUpDivision( sizeX, blockSize.x * gridSize.x );
@@ -535,4 +535,4 @@ struct ParallelFor3D< Devices::Cuda, Mode >
 };
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

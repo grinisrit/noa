@@ -11,12 +11,12 @@
 #include <vector>
 #include <memory>
 
-#include <TNL/Config/ConfigEntry.h>
-#include <TNL/Config/ConfigEntryList.h>
-#include <TNL/Config/ConfigDelimiter.h>
-#include <TNL/Exceptions/ConfigError.h>
+#include <noa/3rdparty/TNL/Config/ConfigEntry.h>
+#include <noa/3rdparty/TNL/Config/ConfigEntryList.h>
+#include <noa/3rdparty/TNL/Config/ConfigDelimiter.h>
+#include <noa/3rdparty/TNL/Exceptions/ConfigError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Config {
 
 class ConfigDescription
@@ -198,4 +198,4 @@ protected:
 };
 
 } // namespace Config
-} // namespace TNL
+} // namespace noaTNL

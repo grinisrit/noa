@@ -12,11 +12,11 @@
 
 #pragma once
 
-#include <TNL/Meshes/Topologies/SubentityVertexMap.h>
-#include <TNL/Meshes/DimensionTag.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
+#include <noa/3rdparty/TNL/Meshes/DimensionTag.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -102,4 +102,4 @@ class ConfigValidator
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

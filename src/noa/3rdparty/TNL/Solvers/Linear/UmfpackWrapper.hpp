@@ -12,9 +12,9 @@
 
 #include "UmfpackWrapper.h"
 
-#include <TNL/Solvers/Linear/Utils/LinearResidueGetter.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Utils/LinearResidueGetter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 
@@ -99,6 +99,6 @@ finished:
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
 #endif

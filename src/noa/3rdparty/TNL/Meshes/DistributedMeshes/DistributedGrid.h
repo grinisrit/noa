@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Logger.h>
-#include <TNL/Meshes/DistributedMeshes/Directions.h>
-#include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/Directions.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -144,6 +144,6 @@ std::ostream& operator<<( std::ostream& str, const DistributedMesh< Grid< Dimens
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/DistributedMeshes/DistributedGrid.hpp>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGrid.hpp>

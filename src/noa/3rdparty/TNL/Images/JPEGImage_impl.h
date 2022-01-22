@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Images//JPEGImage.h>
+#include <noa/3rdparty/TNL/Images//JPEGImage.h>
 #include <setjmp.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {   
 
 #ifdef HAVE_JPEG_H
@@ -319,6 +319,6 @@ JPEGImage< Index >::
 }
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL
 
 

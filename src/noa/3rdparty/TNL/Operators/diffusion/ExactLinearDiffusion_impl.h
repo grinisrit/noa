@@ -12,7 +12,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename Function >
@@ -53,4 +53,4 @@ operator()( const Function& function,
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

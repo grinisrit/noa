@@ -7,9 +7,9 @@
 #pragma once
 
 #include <iostream>
-#include <TNL/Functions/VectorFieldGnuplotWriter.h>
+#include <noa/3rdparty/TNL/Functions/VectorFieldGnuplotWriter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 
 template< typename VectorField >
@@ -333,4 +333,4 @@ write( const VectorFieldType& vectorField,
 }
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

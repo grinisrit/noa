@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <iostream>
 
-namespace TNL {
+namespace noaTNL {
 namespace Debugging {
 
 class OutputRedirection
@@ -101,4 +101,4 @@ redirect_stdout_stderr(std::string stdout_fname, std::string stderr_fname, bool 
 }
 
 } // namespace Debugging
-} // namespace TNL
+} // namespace noaTNL

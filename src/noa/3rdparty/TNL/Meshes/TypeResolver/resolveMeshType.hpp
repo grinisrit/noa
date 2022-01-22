@@ -8,12 +8,12 @@
 
 #include <filesystem>
 
-#include <TNL/Meshes/TypeResolver/resolveMeshType.h>
-#include <TNL/Meshes/TypeResolver/GridTypeResolver.h>
-#include <TNL/Meshes/TypeResolver/MeshTypeResolver.h>
-#include <TNL/Meshes/Readers/getMeshReader.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveMeshType.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/GridTypeResolver.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/MeshTypeResolver.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/getMeshReader.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -112,4 +112,4 @@ loadMesh( Mesh< MeshConfig, Devices::Cuda >& mesh,
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -166,4 +166,4 @@ class BufferEntitiesHelper< MeshFunctionType, MaskPointer, 3, RealType, Device, 
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

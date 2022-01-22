@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Matrices/MatrixView.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Matrices/TridiagonalMatrixRowView.h>
-#include <TNL/Algorithms/Segments/Ellpack.h>
-#include <TNL/Matrices/details/TridiagonalMatrixIndexer.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixView.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Matrices/TridiagonalMatrixRowView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
+#include <noa/3rdparty/TNL/Matrices/details/TridiagonalMatrixIndexer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -591,7 +591,7 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::TridiagonalMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forRows.cpp
@@ -617,7 +617,7 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::TridiagonalMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forRows.cpp
@@ -641,7 +641,7 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::TridiagonalMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forRows.cpp
@@ -665,7 +665,7 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::TridiagonalMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forRows.cpp
@@ -684,7 +684,7 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::TridiagonalMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrixView::RowView.
        *
        * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
        * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
@@ -702,7 +702,7 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::TridiagonalMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrixView::RowView.
        *
        * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
        * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
@@ -840,6 +840,6 @@ class TridiagonalMatrixView : public MatrixView< Real, Device, Index >
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/TridiagonalMatrixView.hpp>
+#include <noa/3rdparty/TNL/Matrices/TridiagonalMatrixView.hpp>

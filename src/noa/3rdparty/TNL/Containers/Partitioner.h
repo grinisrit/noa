@@ -13,9 +13,9 @@
 #include "Subrange.h"
 #include "ByteArraySynchronizer.h"
 
-#include <TNL/Math.h>
+#include <noa/3rdparty/TNL/Math.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Index >
@@ -29,8 +29,8 @@ public:
       if( communicator != MPI_COMM_NULL ) {
          const int rank = MPI::GetRank( communicator );
          const int partitions = MPI::GetSize( communicator );
-         const Index begin = TNL::min( globalSize, rank * globalSize / partitions );
-         const Index end = TNL::min( globalSize, (rank + 1) * globalSize / partitions );
+         const Index begin = noaTNL::min( globalSize, rank * globalSize / partitions );
+         const Index end = noaTNL::min( globalSize, (rank + 1) * globalSize / partitions );
          return SubrangeType( begin, end );
       }
       else
@@ -137,4 +137,4 @@ public:
 };
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

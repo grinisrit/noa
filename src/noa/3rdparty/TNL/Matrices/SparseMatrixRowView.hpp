@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Matrices/SparseMatrixRowView.h>
-#include <TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.h>
+#include <noa/3rdparty/TNL/Assert.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename SegmentView,
@@ -226,4 +226,4 @@ std::ostream& operator<<( std::ostream& str, const SparseMatrixRowView< SegmentV
 
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

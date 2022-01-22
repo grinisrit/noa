@@ -10,9 +10,9 @@
 
 #include "DistributedArrayView.h"
 
-#include <TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Value,
@@ -476,4 +476,4 @@ forElements( IndexType begin, IndexType end, Function&& f ) const
 }
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

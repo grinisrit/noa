@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {   
 
@@ -23,10 +23,10 @@ template< int Dimension,
           typename Device,
           typename MeshIndex,
           typename Real >
-class MeshDependentTimeSteps< TNL::Meshes::Grid< Dimension, MeshReal, Device, MeshIndex >, Real >
+class MeshDependentTimeSteps< noaTNL::Meshes::Grid< Dimension, MeshReal, Device, MeshIndex >, Real >
 {
 public:
-   using MeshType = TNL::Meshes::Grid< Dimension, MeshReal, Device, MeshIndex >;
+   using MeshType = noaTNL::Meshes::Grid< Dimension, MeshReal, Device, MeshIndex >;
 
    bool setTimeStepOrder( const Real& timeStepOrder )
    {
@@ -55,10 +55,10 @@ protected:
 template< typename MeshConfig,
           typename Device,
           typename Real >
-class MeshDependentTimeSteps< TNL::Meshes::Mesh< MeshConfig, Device >, Real >
+class MeshDependentTimeSteps< noaTNL::Meshes::Mesh< MeshConfig, Device >, Real >
 {
 public:
-   using MeshType = TNL::Meshes::Mesh< MeshConfig >;
+   using MeshType = noaTNL::Meshes::Mesh< MeshConfig >;
 
    bool setTimeStepOrder( const Real& timeStepOrder )
    {
@@ -86,4 +86,4 @@ protected:
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

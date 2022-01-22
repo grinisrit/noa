@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Containers/VectorView.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -34,7 +34,7 @@ struct CSRScalarKernel
 
     ConstViewType getConstView() const;
 
-    static TNL::String getKernelType();
+    static noaTNL::String getKernelType();
 
     template< typename OffsetsView,
               typename Fetch,
@@ -54,6 +54,6 @@ struct CSRScalarKernel
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/Kernels/CSRScalarKernel.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.hpp>

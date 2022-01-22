@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -46,4 +46,4 @@ struct GeneralMatrix : MatrixType< false > {};
 struct SymmetricMatrix : MatrixType< true > {};
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

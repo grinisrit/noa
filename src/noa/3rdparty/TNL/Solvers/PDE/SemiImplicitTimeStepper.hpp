@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Math.h>
-#include <TNL/Solvers/PDE/SemiImplicitTimeStepper.h>
-#include <TNL/Solvers/LinearSolverTypeResolver.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/SemiImplicitTimeStepper.h>
+#include <noa/3rdparty/TNL/Solvers/LinearSolverTypeResolver.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -221,4 +221,4 @@ writeEpilog( Logger& logger ) const
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

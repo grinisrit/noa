@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/GridDetails/GridTraverser.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridTraverser.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /****
@@ -188,4 +188,4 @@ processAllEntities(
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

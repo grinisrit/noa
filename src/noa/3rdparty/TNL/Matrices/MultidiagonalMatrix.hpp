@@ -7,11 +7,11 @@
 #pragma once
 
 #include <sstream>
-#include <TNL/Assert.h>
-#include <TNL/Matrices/MultidiagonalMatrix.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrix.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Real,
@@ -1002,4 +1002,4 @@ getPaddingIndex() const
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

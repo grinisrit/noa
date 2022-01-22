@@ -14,9 +14,9 @@
 #include <sys/utsname.h>
 #include <sys/stat.h>
 
-#include <TNL/SystemInfo.h>
+#include <noa/3rdparty/TNL/SystemInfo.h>
 
-namespace TNL {
+namespace noaTNL {
 
 inline String
 SystemInfo::getHostname( void )
@@ -210,4 +210,4 @@ SystemInfo::parseCPUInfo( void )
    return info;
 }
 
-} // namespace TNL
+} // namespace noaTNL

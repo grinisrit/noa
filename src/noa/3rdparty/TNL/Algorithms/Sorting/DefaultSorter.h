@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Algorithms/Sorting/BitonicSort.h>
-#include <TNL/Algorithms/Sorting/BubbleSort.h>
-#include <TNL/Algorithms/Sorting/Quicksort.h>
-#include <TNL/Algorithms/Sorting/STLSort.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/BitonicSort.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/BubbleSort.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/Quicksort.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/STLSort.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -64,4 +64,4 @@ struct DefaultInplaceSorter< Devices::Cuda >
 
       } // namespace Sorting
    } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

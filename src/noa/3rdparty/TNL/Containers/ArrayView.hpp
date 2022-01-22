@@ -9,17 +9,17 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <TNL/TypeInfo.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/MemoryOperations.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
-#include <TNL/Containers/detail/ArrayIO.h>
-#include <TNL/Containers/detail/ArrayAssignment.h>
-#include <TNL/Allocators/Default.h>
+#include <noa/3rdparty/TNL/TypeInfo.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/Containers/detail/ArrayIO.h>
+#include <noa/3rdparty/TNL/Containers/detail/ArrayAssignment.h>
+#include <noa/3rdparty/TNL/Allocators/Default.h>
 
 #include "ArrayView.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 // explicit initialization by raw data pointer and size
@@ -125,8 +125,8 @@ void
 ArrayView< Value, Device, Index >::
 swap( ArrayView& array )
 {
-   TNL::swap( data, array.data );
-   TNL::swap( size, array.size );
+   noaTNL::swap( data, array.data );
+   noaTNL::swap( size, array.size );
 }
 
 template< typename Value,
@@ -467,4 +467,4 @@ File& operator>>( File&& file, ArrayView< Value, Device, Index > view )
 }
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

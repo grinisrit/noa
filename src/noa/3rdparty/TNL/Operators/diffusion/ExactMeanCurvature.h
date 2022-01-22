@@ -12,11 +12,11 @@
 
 #pragma once
 
-#include <TNL/Operators/diffusion/ExactNonlinearDiffusion.h>
-#include <TNL/Operators/ExactFunctionInverseOperator.h>
-#include <TNL/Operators/geometric/ExactGradientNorm.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/ExactNonlinearDiffusion.h>
+#include <noa/3rdparty/TNL/Operators/ExactFunctionInverseOperator.h>
+#include <noa/3rdparty/TNL/Operators/geometric/ExactGradientNorm.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< int Dimension,
@@ -84,5 +84,5 @@ class ExactMeanCurvature
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

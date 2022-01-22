@@ -8,11 +8,11 @@
 
 #include <type_traits>  // std::enable_if_t
 
-#include <TNL/Containers/ArrayView.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Containers/ArrayView.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 namespace detail {
@@ -75,4 +75,4 @@ struct VTUPolyhedralFacesWriter< Meshes::Grid< Dimension, MeshReal, Device, Mesh
 } // namespace detail
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

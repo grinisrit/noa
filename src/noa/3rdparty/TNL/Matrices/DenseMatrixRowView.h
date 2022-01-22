@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Matrices/MatrixRowViewIterator.h>
-#include <TNL/Matrices/DenseMatrixElement.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrixElement.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Matrices {
 
 /**
@@ -201,6 +201,6 @@ class DenseMatrixRowView
       ValuesViewType values;
 };
    } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/DenseMatrixRowView.hpp>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrixRowView.hpp>

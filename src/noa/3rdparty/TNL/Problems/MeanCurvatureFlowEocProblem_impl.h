@@ -12,7 +12,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -32,4 +32,4 @@ setup( const Config::ParameterContainer& parameters )
 }
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL

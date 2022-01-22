@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Algorithms/Segments/SegmentView.h>
-#include <TNL/Assert.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
+#include <noa/3rdparty/TNL/Assert.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -76,4 +76,4 @@ operator*() const -> const SegmentElementType
 
       } // namespace Segments
    } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

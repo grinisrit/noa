@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Allocators/Default.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Matrices/DenseMatrixRowView.h>
-#include <TNL/Matrices/MatrixView.h>
-#include <TNL/Matrices/MatrixType.h>
-#include <TNL/Algorithms/Segments/Ellpack.h>
+#include <noa/3rdparty/TNL/Allocators/Default.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrixRowView.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixView.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixType.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -26,8 +26,8 @@ namespace Matrices {
  * \tparam Device is a device where the matrix is allocated.
  * \tparam Index is a type for indexing of the matrix elements.
  * \tparam MatrixElementsOrganization tells the ordering of matrix elements in memory. It is either
- *         \ref TNL::Algorithms::Segments::RowMajorOrder
- *         or \ref TNL::Algorithms::Segments::ColumnMajorOrder.
+ *         \ref noaTNL::Algorithms::Segments::RowMajorOrder
+ *         or \ref noaTNL::Algorithms::Segments::ColumnMajorOrder.
  *
  * See \ref DenseMatrix.
  */
@@ -657,7 +657,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::DenseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixExample_forRows.cpp
@@ -683,7 +683,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixViewExample_forRows.cpp
@@ -707,7 +707,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixViewExample_forRows.cpp
@@ -731,7 +731,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixViewExample_forRows.cpp
@@ -751,7 +751,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -770,7 +770,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -931,6 +931,6 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/DenseMatrixView.hpp>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrixView.hpp>

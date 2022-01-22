@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/CSRView.h>
-#include <TNL/Algorithms/Segments/detail/CSR.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSRView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/CSR.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -56,9 +56,9 @@ CSRView< Device, Index, Kernel >::
 getSerializationType()
 {
    return "CSR< [any_device], " +
-      TNL::getSerializationType< IndexType >() + ", " +
+      noaTNL::getSerializationType< IndexType >() + ", " +
       // FIXME: the serialized data do not depend on the the kernel type so it should not be in the serialization type
-      TNL::getSerializationType< KernelType >() + " >";
+      noaTNL::getSerializationType< KernelType >() + " >";
 }
 
 template< typename Device,
@@ -200,7 +200,7 @@ forSegments( IndexType begin, IndexType end, Function&& function ) const
       auto segment = view.getSegmentView( segmentIdx );
       function( segment );
    };
-   TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Device,
@@ -245,8 +245,8 @@ void
 CSRView< Device, Index, Kernel >::
 reduceSegments( IndexType first, IndexType last, Fetch& fetch, const Reduction& reduction, ResultKeeper& keeper, const Real& zero ) const
 {
-   if( std::is_same< DeviceType, TNL::Devices::Host >::value )
-      TNL::Algorithms::Segments::CSRScalarKernel< IndexType, DeviceType >::reduceSegments( offsets, first, last, fetch, reduction, keeper, zero );
+   if( std::is_same< DeviceType, noaTNL::Devices::Host >::value )
+      noaTNL::Algorithms::Segments::CSRScalarKernel< IndexType, DeviceType >::reduceSegments( offsets, first, last, fetch, reduction, keeper, zero );
    else
       kernel.reduceSegments( offsets, first, last, fetch, reduction, keeper, zero );
 }
@@ -309,4 +309,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< CSRView, Fetch >
 
       } // namespace Segments
    }  // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

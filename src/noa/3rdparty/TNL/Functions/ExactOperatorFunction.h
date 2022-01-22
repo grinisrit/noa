@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 template< typename Operator,
@@ -48,5 +48,5 @@ class ExactOperatorFunction : public Domain< Operator::getDomainDimension(), Spa
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

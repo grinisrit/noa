@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Problems/Problem.h>
-#include <TNL/Problems/CommonData.h>
-#include <TNL/Pointers/SharedPointer.h>
-#include <TNL/Matrices/SparseMatrix.h>
-#include <TNL/Algorithms/Segments/SlicedEllpack.h>
-#include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
+#include <noa/3rdparty/TNL/Problems/Problem.h>
+#include <noa/3rdparty/TNL/Problems/CommonData.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrix.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SlicedEllpack.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -38,10 +38,10 @@ class PDEProblem : public Problem< Real, Device, Index >
       using DofVectorPointer = Pointers::SharedPointer< DofVectorType, DeviceType >;
       template< typename _Device, typename _Index, typename _IndexAlocator >
       using SegmentsType = Algorithms::Segments::SlicedEllpack< _Device, _Index, _IndexAlocator >;
-      using MatrixType = TNL::Matrices::SparseMatrix< Real,
+      using MatrixType = noaTNL::Matrices::SparseMatrix< Real,
                                                       Device,
                                                       Index,
-                                                      TNL::Matrices::GeneralMatrix,
+                                                      noaTNL::Matrices::GeneralMatrix,
                                                       SegmentsType
                                                     >;
       using CommonDataType = CommonData;
@@ -116,6 +116,6 @@ class PDEProblem : public Problem< Real, Device, Index >
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Problems/PDEProblem_impl.h>
+#include <noa/3rdparty/TNL/Problems/PDEProblem_impl.h>

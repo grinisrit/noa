@@ -7,7 +7,7 @@
 #pragma once
 
 #include "NonlinearDiffusion.h"
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
 /***
  * Authors:
@@ -16,7 +16,7 @@
  */
 
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename MeshReal,
@@ -200,4 +200,4 @@ setMatrixElements( const RealType& time,
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

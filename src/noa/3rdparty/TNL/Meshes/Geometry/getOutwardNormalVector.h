@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Geometry/getEntityCenter.h>
-#include <TNL/Meshes/Topologies/Edge.h>
+#include <noa/3rdparty/TNL/Meshes/Geometry/getEntityCenter.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Grid, typename Config >
@@ -155,4 +155,4 @@ getOutwardNormalVector( const Mesh< MeshConfig, Device > & mesh,
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

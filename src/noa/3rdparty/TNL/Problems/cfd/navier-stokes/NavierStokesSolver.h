@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/String.h>
-#include <TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
 
-namespace TNL {
+namespace noaTNL {
 
 template< typename AdvectionScheme,
           typename DiffusionScheme,
@@ -140,6 +140,6 @@ class NavierStokesSolver
 
 };
 
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/cfd/navier-stokes/NavierStokesSolver_impl.h>
+#include <noa/3rdparty/TNL/Solvers/cfd/navier-stokes/NavierStokesSolver_impl.h>

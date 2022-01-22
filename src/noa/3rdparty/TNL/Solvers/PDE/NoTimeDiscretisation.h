@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {   
 
@@ -32,5 +32,5 @@ class NoTimeDiscretisation
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 

@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Pointers/SharedPointer.h>
-#include <TNL/Functions/FunctionAdapter.h>
-#include <TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Functions/FunctionAdapter.h>
+#include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -197,4 +197,4 @@ protected:
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

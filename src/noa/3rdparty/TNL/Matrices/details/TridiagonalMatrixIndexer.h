@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
    namespace Matrices {
       namespace details {
 
@@ -27,7 +27,7 @@ class TridiagonalMatrixIndexer
 
       __cuda_callable__
       TridiagonalMatrixIndexer( const IndexType& rows, const IndexType& columns )
-      : rows( rows ), columns( columns ), nonemptyRows( TNL::min( rows, columns ) + ( rows > columns ) ) {};
+      : rows( rows ), columns( columns ), nonemptyRows( noaTNL::min( rows, columns ) + ( rows > columns ) ) {};
 
       __cuda_callable__
       TridiagonalMatrixIndexer( const TridiagonalMatrixIndexer& indexer )
@@ -77,4 +77,4 @@ class TridiagonalMatrixIndexer
 };
       } //namespace details
    } // namespace Materices
-} // namespace TNL
+} // namespace noaTNL

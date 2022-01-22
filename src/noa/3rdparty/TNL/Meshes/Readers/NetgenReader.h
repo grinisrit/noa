@@ -16,9 +16,9 @@
 #include <fstream>
 #include <sstream>
 
-#include <TNL/Meshes/Readers/MeshReader.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/MeshReader.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Readers {
 
@@ -156,4 +156,4 @@ public:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

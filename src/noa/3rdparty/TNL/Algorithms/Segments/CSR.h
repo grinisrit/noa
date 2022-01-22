@@ -8,28 +8,28 @@
 
 #include <type_traits>
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/Segments/CSRView.h>
-#include <TNL/Algorithms/Segments/SegmentView.h>
-#include <TNL/Algorithms/Segments/ElementsOrganization.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSRView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ElementsOrganization.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
 /**
  * \brief Data structure for CSR segments format.
  *
- * See \ref TNL::Algorithms::Segments for more details about segments.
+ * See \ref noaTNL::Algorithms::Segments for more details about segments.
  *
  * \tparam Device is type of device where the segments will be operating.
  * \tparam Index is type for indexing of the elements managed by the segments.
  * \tparam Kernel is type of kernel used for parallel operations with segments.
  *    It can be any of the following:
- *    \ref TNL::Containers::Segments::Kernels::CSRAdaptiveKernel,
- *    \ref TNL::Containers::Segments::Kernels::CSRHybridKernel,
- *    \ref TNL::Containers::Segments::Kernels::CSRScalarKernel,
- *    \ref TNL::Containers::Segments::Kernels::CSRVectorKernel
+ *    \ref noaTNL::Containers::Segments::Kernels::CSRAdaptiveKernel,
+ *    \ref noaTNL::Containers::Segments::Kernels::CSRHybridKernel,
+ *    \ref noaTNL::Containers::Segments::Kernels::CSRScalarKernel,
+ *    \ref noaTNL::Containers::Segments::Kernels::CSRVectorKernel
  *
  * \tparam IndexAllocator is allocator for supporting index containers.
  */
@@ -106,8 +106,8 @@ class CSR
        * The number of segments is given by the size of \e segmentsSizes. Particular elements
        * of this container define sizes of particular segments.
        *
-       * \tparam SizesContainer is a type of container for segments sizes.  It can be \ref TNL::Containers::Array or
-       *  \ref TNL::Containers::Vector for example.
+       * \tparam SizesContainer is a type of container for segments sizes.  It can be \ref noaTNL::Containers::Array or
+       *  \ref noaTNL::Containers::Vector for example.
        * \param sizes is an instance of the container with the segments sizes.
        *
        * See the following example:
@@ -186,8 +186,8 @@ class CSR
       /**
        * \brief Set sizes of particular segments.
        *
-       * \tparam SizesContainer is a container with segments sizes. It can be \ref TNL::Containers::Array or
-       *  \ref TNL::Containers::Vector for example.
+       * \tparam SizesContainer is a container with segments sizes. It can be \ref noaTNL::Containers::Array or
+       *  \ref noaTNL::Containers::Vector for example.
        *
        * \param segmentsSizes is an instance of the container with segments sizes.
        */
@@ -316,9 +316,9 @@ class CSR
       void forElements( IndexType begin, IndexType end, Function&& function ) const;
 
       /**
-       * \brief Call \ref TNL::Algorithms::Segments::CSR::forElements for all elements of the segments.
+       * \brief Call \ref noaTNL::Algorithms::Segments::CSR::forElements for all elements of the segments.
        *
-       * See \ref TNL::Algorithms::Segments::CSR::forElements for more details.
+       * See \ref noaTNL::Algorithms::Segments::CSR::forElements for more details.
        */
       template< typename Function >
       void forAllElements( Function&& function ) const;
@@ -338,7 +338,7 @@ class CSR
        * ```
        * auto f = [=] __cuda_callable__ ( const SegmentView& segment ) {...}
        * ```
-       * where \e segment represents given segment (see \ref TNL::Algorithms::Segments::SegmentView).
+       * where \e segment represents given segment (see \ref noaTNL::Algorithms::Segments::SegmentView).
        * Its type is given by \ref SegmentViewType.
        *
        * \par Example
@@ -350,15 +350,15 @@ class CSR
       void forSegments( IndexType begin, IndexType end, Function&& function ) const;
 
       /**
-       * \brief Call \ref TNL::Algorithms::Segments::CSR::forSegments for all segments.
+       * \brief Call \ref noaTNL::Algorithms::Segments::CSR::forSegments for all segments.
        *
-       * See \ref TNL::Algorithms::Segments::CSR::forSegments for more details.
+       * See \ref noaTNL::Algorithms::Segments::CSR::forSegments for more details.
        */
       template< typename Function >
       void forAllSegments( Function&& function ) const;
 
       /**
-       * \brief Call \ref TNL::Algorithms::Segments::CSR::forSegments sequentially for particular segments.
+       * \brief Call \ref noaTNL::Algorithms::Segments::CSR::forSegments sequentially for particular segments.
        *
        * With this method, the given segments are processed sequentially one-by-one. This is usefull for example
        * for printing of segments based data structures or for debugging reasons.
@@ -369,7 +369,7 @@ class CSR
        *    elements of which we want to apply the lambda function.
        * \param function is the lambda function to be applied on the elements of the segments.
        *
-       * See \ref TNL::Algorithms::Segments::CSR::forSegments for more details.
+       * See \ref noaTNL::Algorithms::Segments::CSR::forSegments for more details.
        *
        * \par Example
        * \include Algorithms/Segments/SegmentsExample_CSR_sequentialForSegments.cpp
@@ -380,9 +380,9 @@ class CSR
       void sequentialForSegments( IndexType begin, IndexType end, Function&& function ) const;
 
       /**
-       * \brief Call \ref TNL::Algorithms::Segments::CSR::sequentialForSegments for all segments.
+       * \brief Call \ref noaTNL::Algorithms::Segments::CSR::sequentialForSegments for all segments.
        *
-       * See \ref TNL::Algorithms::Segments::CSR::sequentialForSegments for more details.
+       * See \ref noaTNL::Algorithms::Segments::CSR::sequentialForSegments for more details.
        */
       template< typename Function >
       void sequentialForAllSegments( Function&& f ) const;
@@ -436,9 +436,9 @@ class CSR
       void reduceSegments( IndexType begin, IndexType end, Fetch& fetch, const Reduce& reduce, Keep& keep, const Value& zero ) const;
 
       /**
-       * \brief Call \ref TNL::Algorithms::Segments::CSR::reduceSegments for all segments.
+       * \brief Call \ref noaTNL::Algorithms::Segments::CSR::reduceSegments for all segments.
        *
-       * See \ref TNL::Algorithms::Segments::CSR::reduceSegments for more details.
+       * See \ref noaTNL::Algorithms::Segments::CSR::reduceSegments for more details.
        */
       template< typename Fetch, typename Reduce, typename Keep, typename Value >
       void reduceAllSegments( Fetch& fetch, const Reduce& reduce, Keep& keep, const Value& zero ) const;
@@ -563,6 +563,6 @@ using CSRDefault = CSRScalar< Device, Index, IndexAllocator >;
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/CSR.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSR.hpp>

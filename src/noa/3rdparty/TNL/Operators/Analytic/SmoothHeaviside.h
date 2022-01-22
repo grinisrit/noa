@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Functions/Domain.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 namespace Analytic {   
    
@@ -84,4 +84,4 @@ class SmoothHeaviside : public Functions::Domain< Dimensions, Functions::SpaceDo
 
 } // namespace Analytic
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

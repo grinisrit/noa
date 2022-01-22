@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <TNL/Algorithms/Sorting/detail/bitonicSort.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/bitonicSort.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -41,4 +41,4 @@ struct BitonicSort
 
       } // namespace Sorting
    } // namespace Algorithms
-} //namespace TNL
+} //namespace noaTNL

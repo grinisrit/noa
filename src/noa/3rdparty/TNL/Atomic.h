@@ -10,9 +10,9 @@
 
 #include <atomic>  // std::atomic
 
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
 
 // double-precision atomicAdd function for Maxwell and older GPUs
 // copied from: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#atomic-functions
@@ -40,7 +40,7 @@ namespace {
 #endif
 #endif
 
-namespace TNL {
+namespace noaTNL {
 
 template< typename T, typename Device >
 class Atomic;
@@ -56,7 +56,7 @@ public:
    using std::atomic< T >::atomic;
 
    // NOTE: std::atomic is not copyable (see https://stackoverflow.com/a/15250851 for
-   // an explanation), but we need copyability for TNL::Containers::Array. Note that
+   // an explanation), but we need copyability for noaTNL::Containers::Array. Note that
    // this copy-constructor and copy-assignment operator are not atomic as they
    // synchronize only with respect to one or the other object.
    Atomic( const Atomic& desired ) noexcept
@@ -127,7 +127,7 @@ public:
    }
 
    // NOTE: std::atomic is not copyable (see https://stackoverflow.com/a/15250851 for
-   // an explanation), but we need copyability for TNL::Containers::Array. Note that
+   // an explanation), but we need copyability for noaTNL::Containers::Array. Note that
    // this copy-constructor and copy-assignment operator are not atomic as they
    // synchronize only with respect to one or the other object.
    __cuda_callable__
@@ -366,4 +366,4 @@ protected:
    T value;
 };
 
-} // namespace TNL
+} // namespace noaTNL

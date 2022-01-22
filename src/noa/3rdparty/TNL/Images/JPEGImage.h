@@ -10,9 +10,9 @@
 #include <jpeglib.h>
 #endif
 
-#include <TNL/String.h>
-#include <TNL/Images/Image.h>
-#include <TNL/Images/RegionOfInterest.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Images/Image.h>
+#include <noa/3rdparty/TNL/Images/RegionOfInterest.h>
 
 #ifdef HAVE_JPEG_H
 struct my_error_mgr
@@ -22,7 +22,7 @@ struct my_error_mgr
 };
 #endif
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {   
 
 template< typename Index = int >
@@ -87,7 +87,7 @@ class JPEGImage : public Image< Index >
 };
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Images//JPEGImage_impl.h>
+#include <noa/3rdparty/TNL/Images//JPEGImage_impl.h>
 

@@ -13,16 +13,16 @@
 #pragma once
 
 #include <ostream>
-#include <TNL/Logger.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Meshes/MeshDetails/ConfigValidator.h>
-#include <TNL/Meshes/MeshDetails/traits/MeshTraits.h>
-#include <TNL/Meshes/MeshDetails/layers/StorageLayer.h>
-#include <TNL/Meshes/MeshDetails/layers/EntityTags/LayerFamily.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/ConfigValidator.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/StorageLayer.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/EntityTags/LayerFamily.h>
 
-#include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace TNL {
+namespace noaTNL {
 /**
  * \brief Namespace for numerical meshes and related objects.
  */
@@ -204,7 +204,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forAll( Func f ) const;
@@ -215,7 +215,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forBoundary( Func f ) const;
@@ -226,7 +226,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forInterior( Func f ) const;
@@ -237,7 +237,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forLocal( Func f ) const;
@@ -248,7 +248,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forGhost( Func f ) const;
@@ -291,8 +291,8 @@ template< typename MeshConfig, typename Device >
 std::ostream& operator<<( std::ostream& str, const Mesh< MeshConfig, Device >& mesh );
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/MeshEntity.h>
+#include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
 
-#include <TNL/Meshes/Mesh.hpp>
+#include <noa/3rdparty/TNL/Meshes/Mesh.hpp>

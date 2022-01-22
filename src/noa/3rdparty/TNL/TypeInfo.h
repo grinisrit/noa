@@ -24,9 +24,9 @@
    #include <cstdlib>  // std::free
 #endif
 
-#include <TNL/String.h>
+#include <noa/3rdparty/TNL/String.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace detail {
 
 inline std::string
@@ -127,4 +127,4 @@ String getSerializationType()
    return T::getSerializationType();
 }
 
-} // namespace TNL
+} // namespace noaTNL

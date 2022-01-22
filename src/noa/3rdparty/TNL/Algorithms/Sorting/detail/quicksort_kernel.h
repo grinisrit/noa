@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <TNL/Containers/Array.h>
-#include <TNL/Algorithms/Sorting/detail/task.h>
-#include <TNL/Algorithms/Sorting/detail/cudaPartition.h>
-#include <TNL/Algorithms/Sorting/detail/quicksort_1Block.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/task.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/cudaPartition.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/quicksort_1Block.h>
 
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -258,4 +258,4 @@ __global__ void cudaQuickSort2ndPhase(Containers::ArrayView<Value, Devices::Cuda
 
       } // namespace Sorting
    } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

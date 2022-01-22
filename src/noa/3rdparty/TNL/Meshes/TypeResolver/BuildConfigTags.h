@@ -6,20 +6,20 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/Mesh.h>
-#include <TNL/Meshes/DefaultConfig.h>
-#include <TNL/Meshes/Topologies/Edge.h>
-#include <TNL/Meshes/Topologies/Triangle.h>
-#include <TNL/Meshes/Topologies/Quadrangle.h>
-#include <TNL/Meshes/Topologies/Tetrahedron.h>
-#include <TNL/Meshes/Topologies/Hexahedron.h>
-#include <TNL/Meshes/Topologies/Simplex.h>
-#include <TNL/Meshes/Topologies/Wedge.h>
-#include <TNL/Meshes/Topologies/Pyramid.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/DefaultConfig.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Triangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Quadrangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Hexahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Simplex.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Wedge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Pyramid.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 /**
  * \brief Namespace for the configuration of the \ref GridTypeResolver and
@@ -144,4 +144,4 @@ struct MeshTag
 
 } // namespace BuildConfigTags
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Functions/MeshFunction.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Operators/Operator.h>
-#include <TNL/Operators/diffusion/ExactLinearDiffusion.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/ExactLinearDiffusion.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -176,6 +176,6 @@ class LinearDiffusion< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real, Ind
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Operators/diffusion/LinearDiffusion_impl.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/LinearDiffusion_impl.h>

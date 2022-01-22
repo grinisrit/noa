@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -139,4 +139,4 @@ public:
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

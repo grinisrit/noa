@@ -7,9 +7,9 @@
 #pragma once
 
 #include <cmath>
-#include <TNL/Functions/Analytic/ExpBump.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/ExpBump.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -203,4 +203,4 @@ operator()( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

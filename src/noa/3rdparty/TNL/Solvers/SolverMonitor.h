@@ -9,9 +9,9 @@
 #include <thread>
 #include <atomic>
 
-#include <TNL/Timer.h>
+#include <noa/3rdparty/TNL/Timer.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
 
 /**
@@ -51,7 +51,7 @@ class SolverMonitor
        *
        * If a timer is set, the monitor can measure real elapsed time since the start of the solver.
        *
-       * \param timer is an instance of \ref TNL::Timer.
+       * \param timer is an instance of \ref noaTNL::Timer.
        */
       void setTimer( Timer& timer ) { this->timer = &timer; }
 
@@ -89,7 +89,7 @@ class SolverMonitor
       }
 
       /**
-       * \brief Stops the main loop of the monitor. See \ref TNL::SolverMonitor::runMainLoop.
+       * \brief Stops the main loop of the monitor. See \ref noaTNL::SolverMonitor::runMainLoop.
        */
       void stopMainLoop() { stopped = true; }
 
@@ -151,4 +151,4 @@ class SolverMonitorThread
 };
 
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

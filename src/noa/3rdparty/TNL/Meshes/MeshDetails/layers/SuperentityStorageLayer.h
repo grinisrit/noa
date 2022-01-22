@@ -12,12 +12,12 @@
 
 #pragma once
 
-#include <TNL/File.h>
-#include <TNL/Meshes/DimensionTag.h>
-#include <TNL/Meshes/MeshDetails/traits/MeshTraits.h>
-#include <TNL/Meshes/MeshDetails/traits/WeakStorageTraits.h>
+#include <noa/3rdparty/TNL/File.h>
+#include <noa/3rdparty/TNL/Meshes/DimensionTag.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/WeakStorageTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -221,4 +221,4 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

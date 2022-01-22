@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Solvers/Linear/LinearSolver.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/LinearSolver.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
       namespace Linear {
 
@@ -21,7 +21,7 @@ namespace TNL {
  *
  * \tparam Matrix is type of matrix describing the linear system.
  *
- * See \ref TNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
+ * See \ref noaTNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
  */
 template< typename Matrix >
 class CG
@@ -78,6 +78,6 @@ class CG
 
       } // namespace Linear
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/Linear/CG.hpp>
+#include <noa/3rdparty/TNL/Solvers/Linear/CG.hpp>

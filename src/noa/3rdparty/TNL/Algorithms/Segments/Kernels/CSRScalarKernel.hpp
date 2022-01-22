@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Containers/VectorView.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -54,12 +54,12 @@ struct CSRScalarKernelreduceSegmentsDispatcher< Index, Device, Fetch, Reduction,
          keep( segmentIdx, aux );
       };
 
-      if( std::is_same< Device, TNL::Devices::Sequential >::value )
+      if( std::is_same< Device, noaTNL::Devices::Sequential >::value )
       {
          for( Index segmentIdx = first; segmentIdx < last; segmentIdx ++ )
             l( segmentIdx );
       }
-      else if( std::is_same< Device, TNL::Devices::Host >::value )
+      else if( std::is_same< Device, noaTNL::Devices::Host >::value )
       {
 #ifdef HAVE_OPENMP
         #pragma omp parallel for firstprivate( l ) schedule( dynamic, 100 ), if( Devices::Host::isOMPEnabled() )
@@ -99,12 +99,12 @@ struct CSRScalarKernelreduceSegmentsDispatcher< Index, Device, Fetch, Reduce, Ke
          keep( segmentIdx, aux );
       };
 
-      if( std::is_same< Device, TNL::Devices::Sequential >::value )
+      if( std::is_same< Device, noaTNL::Devices::Sequential >::value )
       {
          for( Index segmentIdx = first; segmentIdx < last; segmentIdx ++ )
             l( segmentIdx );
       }
-      else if( std::is_same< Device, TNL::Devices::Host >::value )
+      else if( std::is_same< Device, noaTNL::Devices::Host >::value )
       {
 #ifdef HAVE_OPENMP
         #pragma omp parallel for firstprivate( l ) schedule( dynamic, 100 ), if( Devices::Host::isOMPEnabled() )
@@ -156,7 +156,7 @@ getConstView() const -> ConstViewType
 
 template< typename Index,
           typename Device >
-TNL::String
+noaTNL::String
 CSRScalarKernel< Index, Device >::
 getKernelType()
 {
@@ -196,7 +196,7 @@ reduceSegments( const OffsetsView& offsets,
         keeper( segmentIdx, aux );
     };
 
-     if( std::is_same< DeviceType, TNL::Devices::Host >::value )
+     if( std::is_same< DeviceType, noaTNL::Devices::Host >::value )
     {
 #ifdef HAVE_OPENMP
         #pragma omp parallel for firstprivate( l ) schedule( dynamic, 100 ), if( Devices::Host::isOMPEnabled() )
@@ -219,4 +219,4 @@ reduceSegments( const OffsetsView& offsets,
 }
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

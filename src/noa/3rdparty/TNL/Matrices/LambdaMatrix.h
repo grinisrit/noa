@@ -7,11 +7,11 @@
 #pragma once
 
 #include <type_traits>
-#include <TNL/String.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Matrices/LambdaMatrixRowView.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Matrices/LambdaMatrixRowView.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -307,7 +307,7 @@ class LambdaMatrix
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::LambdaMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::LambdaMatrix::RowView.
        *
        * \par Example
        * \include Matrices/LambdaMatrix/LambdaMatrixExample_forRows.cpp
@@ -331,7 +331,7 @@ class LambdaMatrix
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::LambdaMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::LambdaMatrix::RowView.
        *
        * \par Example
        * \include Matrices/LambdaMatrix/LambdaMatrixExample_forRows.cpp
@@ -351,7 +351,7 @@ class LambdaMatrix
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::LambdaMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::LambdaMatrix::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -606,6 +606,6 @@ struct LambdaMatrixFactory
 };
 
 } //namespace Matrices
-} //namespace TNL
+} //namespace noaTNL
 
-#include <TNL/Matrices/LambdaMatrix.hpp>
+#include <noa/3rdparty/TNL/Matrices/LambdaMatrix.hpp>

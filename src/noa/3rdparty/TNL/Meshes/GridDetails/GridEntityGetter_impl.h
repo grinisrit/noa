@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Meshes/GridDetails/GridEntityGetter.h>
-#include <TNL/Meshes/GridDetails/Grid1D.h>
-#include <TNL/Meshes/GridDetails/Grid2D.h>
-#include <TNL/Meshes/GridDetails/Grid3D.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityGetter.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/Grid1D.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/Grid2D.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/Grid3D.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /****
@@ -489,4 +489,4 @@ class GridEntityGetter< Meshes::Grid< 3, Real, Device, Index >, GridEntity, 0 >
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

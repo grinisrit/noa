@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/VTKTraits.h>
+#include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace VTK {
 
@@ -85,4 +85,4 @@ struct EntityShapeGroupElement< EntityShape::Polyhedron, 5 >
 
 } // namespace VTK
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

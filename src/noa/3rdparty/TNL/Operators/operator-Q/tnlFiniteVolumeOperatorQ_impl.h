@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Operators/operator-Q/tnlFiniteVolumeOperatorQ.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/operator-Q/tnlFiniteVolumeOperatorQ.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename MeshReal,
@@ -532,4 +532,4 @@ operator()(
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

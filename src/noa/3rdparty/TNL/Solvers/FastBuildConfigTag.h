@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Solvers/BuildConfigTags.h>
-#include <TNL/Meshes/TypeResolver/BuildConfigTags.h>
+#include <noa/3rdparty/TNL/Solvers/BuildConfigTags.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/BuildConfigTags.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 
 class FastBuildConfigTag {};
@@ -57,4 +57,4 @@ template<> struct GridIndexTag< Solvers::FastBuildConfigTag, long int >{ static 
 
 } // namespace BuildConfigTags
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

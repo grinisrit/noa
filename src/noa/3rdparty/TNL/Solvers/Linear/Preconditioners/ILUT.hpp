@@ -12,10 +12,10 @@
 #include <set>
 
 #include "ILUT.h"
-#include <TNL/Solvers/Linear/Utils/TriangularSolve.h>
-#include <TNL/Timer.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Utils/TriangularSolve.h>
+#include <noa/3rdparty/TNL/Timer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 namespace Preconditioners {
@@ -277,4 +277,4 @@ solve( ConstVectorViewType _b, VectorViewType _x ) const
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

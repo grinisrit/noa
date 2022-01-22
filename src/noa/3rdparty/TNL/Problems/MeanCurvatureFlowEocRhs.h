@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename ExactOperator,
@@ -55,4 +55,4 @@ class MeanCurvatureFlowEocRhs : public Domain< Dimension, SpaceDomain >
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL

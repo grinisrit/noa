@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Functions/OperatorFunction.h>
-#include <TNL/Functions/MeshFunction.h>
-#include <TNL/Operators/Operator.h>
-#include <TNL/Operators/ExactOperatorComposition.h>
+#include <noa/3rdparty/TNL/Functions/OperatorFunction.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Operators/ExactOperatorComposition.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 /****
@@ -188,5 +188,5 @@ class OperatorComposition< OuterOperator, InnerOperator, void >
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

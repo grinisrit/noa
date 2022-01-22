@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/MeshDetails/traits/MeshTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace EntityTags {
 
@@ -39,4 +39,4 @@ enum EntityTags : std::uint8_t
 
 } // namespace EntityTags
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Solvers/SolverMonitor.h>
+#include <noa/3rdparty/TNL/Solvers/SolverMonitor.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
 
 /**
@@ -26,7 +26,7 @@ namespace TNL {
  *
  * \include IterativeLinearSolverWithMonitorExample.out
  *
- * The following example shows how to employ timer (\ref TNL::Timer) to the monitor
+ * The following example shows how to employ timer (\ref noaTNL::Timer) to the monitor
  * of iterative solvers:
  *
  * \includelineno Solvers/Linear/IterativeLinearSolverWithTimerExample.cpp
@@ -136,6 +136,6 @@ class IterativeSolverMonitor : public SolverMonitor
 };
 
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/IterativeSolverMonitor.hpp>
+#include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.hpp>

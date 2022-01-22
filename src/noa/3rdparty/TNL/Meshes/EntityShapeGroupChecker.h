@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Algorithms/staticFor.h>
-#include <TNL/Meshes/EntityShapeGroup.h>
+#include <noa/3rdparty/TNL/Algorithms/staticFor.h>
+#include <noa/3rdparty/TNL/Meshes/EntityShapeGroup.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace VTK {
 
@@ -48,4 +48,4 @@ public:
 
 } // namespace VTK
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

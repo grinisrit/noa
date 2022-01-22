@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/ChunkedEllpackView.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
-//#include <TNL/Algorithms/Segments/detail/ChunkedEllpack.h>
-#include <TNL/Cuda/SharedMemory.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ChunkedEllpackView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+//#include <noa/3rdparty/TNL/Algorithms/Segments/detail/ChunkedEllpack.h>
+#include <noa/3rdparty/TNL/Cuda/SharedMemory.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -81,7 +81,7 @@ ChunkedEllpackView< Device, Index, Organization >::
 getSerializationType()
 {
    // FIXME: the serialized data DEPEND on the Organization parameter, so it should be reflected in the serialization type
-   return "ChunkedEllpack< [any_device], " + TNL::getSerializationType< IndexType >() + " >";
+   return "ChunkedEllpack< [any_device], " + noaTNL::getSerializationType< IndexType >() + " >";
 }
 
 template< typename Device,
@@ -333,7 +333,7 @@ forSegments( IndexType begin, IndexType end, Function&& function ) const
       auto segment = view.getSegmentView( segmentIdx );
       function( segment );
    };
-   TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Device,
@@ -659,4 +659,4 @@ reduceSegmentsKernel( IndexType gridIdx,
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {   
 
 template< typename Mesh,
@@ -39,4 +39,4 @@ getCompressedRowLengths( const MeshPointer& meshPointer,
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

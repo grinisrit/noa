@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/String.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Operators/Operator.h>
-#include <TNL/Operators/ExactIdentityOperator.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Operators/ExactIdentityOperator.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< int Dimension,
@@ -83,5 +83,5 @@ class ExactFunctionInverseOperator
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Functions/FunctionAdapter.h>
-#include <TNL/Pointers/SharedPointer.h>
-#include <TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Functions/FunctionAdapter.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -95,6 +95,6 @@ class BoundaryConditionsSetter
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
 

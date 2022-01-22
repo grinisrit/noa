@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {
@@ -244,4 +244,4 @@ std::ostream& operator<< ( std::ostream& str, const CSRAdaptiveKernelBlockDescri
          } // namespace detail
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

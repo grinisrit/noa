@@ -1,10 +1,10 @@
-#include <TNL/Meshes/DefaultConfig.h>
-#include <TNL/Meshes/Topologies/Tetrahedron.h>
-#include <TNL/Meshes/Readers/VTUReader.h>
-#include <TNL/Meshes/Writers/VTUWriter.h>
+#include <noa/3rdparty/TNL/Meshes/DefaultConfig.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/VTUReader.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.h>
 
-using namespace TNL;
-using namespace TNL::Meshes;
+using namespace noaTNL;
+using namespace noaTNL::Meshes;
 using TetrahedronMesh = Mesh<DefaultConfig<Topologies::Tetrahedron>>;
 
 

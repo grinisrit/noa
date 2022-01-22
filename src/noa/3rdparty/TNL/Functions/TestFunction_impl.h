@@ -6,41 +6,41 @@
 
 #pragma once
 
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Allocators/Cuda.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Allocators/Cuda.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 
-#include <TNL/Functions/Analytic/Constant.h>
-#include <TNL/Functions/Analytic/ExpBump.h>
-#include <TNL/Functions/Analytic/SinBumps.h>
-#include <TNL/Functions/Analytic/SinWave.h>
-#include <TNL/Functions/Analytic/Constant.h>
-#include <TNL/Functions/Analytic/ExpBump.h>
-#include <TNL/Functions/Analytic/SinBumps.h>
-#include <TNL/Functions/Analytic/SinWave.h>
-#include <TNL/Functions/Analytic/Cylinder.h>
-#include <TNL/Functions/Analytic/Flowerpot.h>
-#include <TNL/Functions/Analytic/Twins.h>
-#include <TNL/Functions/Analytic/Blob.h>
-#include <TNL/Functions/Analytic/PseudoSquare.h>
-#include <TNL/Functions/Analytic/Paraboloid.h>
-#include <TNL/Functions/Analytic/VectorNorm.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Constant.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/ExpBump.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinBumps.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinWave.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Constant.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/ExpBump.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinBumps.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinWave.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Cylinder.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Flowerpot.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Twins.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Blob.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/PseudoSquare.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Paraboloid.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/VectorNorm.h>
 /****
  * The signed distance test functions
  */
-#include <TNL/Functions/Analytic/SinBumpsSDF.h>
-#include <TNL/Functions/Analytic/SinWaveSDF.h>
-#include <TNL/Functions/Analytic/ParaboloidSDF.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinBumpsSDF.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinWaveSDF.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/ParaboloidSDF.h>
 
-#include <TNL/Operators/Analytic/Identity.h>
-#include <TNL/Operators/Analytic/Heaviside.h>
-#include <TNL/Operators/Analytic/SmoothHeaviside.h>
+#include <noa/3rdparty/TNL/Operators/Analytic/Identity.h>
+#include <noa/3rdparty/TNL/Operators/Analytic/Heaviside.h>
+#include <noa/3rdparty/TNL/Operators/Analytic/SmoothHeaviside.h>
 
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
 #include "TestFunction.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 
 template< int FunctionDimension,
@@ -103,8 +103,8 @@ configSetup( Config::ConfigDescription& config,
    config.addEntry     < double >( prefix + "diameter", "Diameter for the cylinder, flowerpot test functions.", 1.0 );
    config.addEntry     < double >( prefix + "height", "Height of zero-level-set function for the blob, pseudosquare test functions.", 1.0 );
    Analytic::VectorNorm< 3, double >::configSetup( config, "vector-norm-" );
-   TNL::Operators::Analytic::Heaviside< 3, double >::configSetup( config, "heaviside-" );
-   TNL::Operators::Analytic::SmoothHeaviside< 3, double >::configSetup( config, "smooth-heaviside-" );
+   noaTNL::Operators::Analytic::Heaviside< 3, double >::configSetup( config, "heaviside-" );
+   noaTNL::Operators::Analytic::SmoothHeaviside< 3, double >::configSetup( config, "smooth-heaviside-" );
    config.addEntry     < String >( prefix + "time-dependence", "Time dependence of the test function.", "none" );
       config.addEntryEnum( "none" );
       config.addEntryEnum( "linear" );
@@ -182,8 +182,8 @@ TestFunction< FunctionDimension, Real, Device >::
 setup( const Config::ParameterContainer& parameters,
        const String& prefix )
 {
-   using namespace TNL::Functions::Analytic;
-   using namespace TNL::Operators::Analytic;
+   using namespace noaTNL::Functions::Analytic;
+   using namespace noaTNL::Operators::Analytic;
    std::cout << "Test function setup ... " << std::endl;
    const String& timeDependence =
             parameters.getParameter< String >(
@@ -362,7 +362,7 @@ operator = ( const TestFunction& function )
     * TODO: if the function is on the device we cannot do the following
     */
    abort();
-   using namespace TNL::Functions::Analytic;
+   using namespace noaTNL::Functions::Analytic;
    this->functionType   = function.functionType;
    this->timeDependence = function.timeDependence;
    this->timeScale      = function.timeScale;
@@ -427,8 +427,8 @@ getPartialDerivative( const PointType& vertex,
           const Real& time ) const
 {
    TNL_ASSERT_TRUE( this->function, "The test function was not set properly." );
-   using namespace TNL::Functions::Analytic;
-   using namespace TNL::Operators::Analytic;
+   using namespace noaTNL::Functions::Analytic;
+   using namespace noaTNL::Operators::Analytic;
    Real scale( 1.0 );
    switch( this->timeDependence )
    {
@@ -612,7 +612,7 @@ TestFunction< FunctionDimension, Real, Device >::
 getTimeDerivative( const PointType& vertex,
                    const Real& time ) const
 {
-   using namespace TNL::Functions::Analytic;
+   using namespace noaTNL::Functions::Analytic;
    Real scale( 0.0 );
    switch( timeDependence )
    {
@@ -768,8 +768,8 @@ void
 TestFunction< FunctionDimension, Real, Device >::
 deleteFunctions()
 {
-   using namespace TNL::Functions::Analytic;
-   using namespace TNL::Operators::Analytic;
+   using namespace noaTNL::Functions::Analytic;
+   using namespace noaTNL::Operators::Analytic;
    switch( functionType )
    {
       case constant:
@@ -927,7 +927,7 @@ std::ostream&
 TestFunction< FunctionDimension, Real, Device >::
 print( std::ostream& str ) const
 {
-   using namespace TNL::Functions::Analytic;
+   using namespace noaTNL::Functions::Analytic;
    str << " timeDependence = " << this->timeDependence;
    str << " functionType = " << this->functionType;
    str << " function = " << this->function << "; ";
@@ -965,4 +965,4 @@ TestFunction< FunctionDimension, Real, Device >::
 }
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

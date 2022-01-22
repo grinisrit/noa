@@ -12,12 +12,12 @@
 
 #pragma once
 
-#include <TNL/Algorithms/staticFor.h>
-#include <TNL/Meshes/MeshDetails/traits/MeshTraits.h>
-#include <TNL/Meshes/Topologies/Polygon.h>
-#include <TNL/Meshes/Topologies/SubentityVertexCount.h>
+#include <noa/3rdparty/TNL/Algorithms/staticFor.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexCount.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -336,4 +336,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename Grid >
@@ -124,6 +124,6 @@ class FiniteDifferences< Meshes::Grid< 3, Real, Device, Index > >
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Operators/FiniteDifferences_impl.h>
+#include <noa/3rdparty/TNL/Operators/FiniteDifferences_impl.h>

@@ -11,12 +11,12 @@
 #include <type_traits>
 #include <cmath>
 
-#include <TNL/Algorithms/Multireduction.h>
-#include <TNL/Matrices/MatrixOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/Multireduction.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixOperations.h>
 
 #include "GMRES.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 
@@ -830,4 +830,4 @@ setSize( const VectorViewType& x )
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <TNL/Containers/ndarray/Indexing.h>
-#include <TNL/Containers/ndarray/SizesHolderHelpers.h>   // StorageSizeGetter
-#include <TNL/Containers/ndarray/Subarrays.h>   // DummyStrideBase
+#include <noa/3rdparty/TNL/Containers/ndarray/Indexing.h>
+#include <noa/3rdparty/TNL/Containers/ndarray/SizesHolderHelpers.h>   // StorageSizeGetter
+#include <noa/3rdparty/TNL/Containers/ndarray/Subarrays.h>   // DummyStrideBase
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename SizesHolder,
@@ -114,4 +114,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

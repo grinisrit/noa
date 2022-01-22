@@ -10,16 +10,16 @@
 
 #include "Preconditioner.h"
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Matrices/SparseMatrix.h>
-#include <TNL/Pointers/UniquePointer.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrix.h>
+#include <noa/3rdparty/TNL/Pointers/UniquePointer.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
 #if defined(HAVE_CUDA) && defined(HAVE_CUSPARSE)
 #include <cusparse.h>
 #endif
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
       namespace Linear {
       namespace Preconditioners {
@@ -65,7 +65,7 @@ class ILU0
  *
  * See [detailed description](https://en.wikipedia.org/wiki/Incomplete_LU_factorization).
  *
- * See \ref TNL::Solvers::Linear::Preconditioners::Preconditioner for example of setup with a linear solver.
+ * See \ref noaTNL::Solvers::Linear::Preconditioners::Preconditioner for example of setup with a linear solver.
  *
  * \tparam Matrix is type of the matrix describing the linear system.
  */
@@ -267,6 +267,6 @@ public:
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
 #include "ILU0.hpp"

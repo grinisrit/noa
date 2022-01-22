@@ -10,17 +10,17 @@
 #include <string>
 #include <cstdint>
 
-#include <TNL/Meshes/Topologies/Edge.h>
-#include <TNL/Meshes/Topologies/Triangle.h>
-#include <TNL/Meshes/Topologies/Quadrangle.h>
-#include <TNL/Meshes/Topologies/Tetrahedron.h>
-#include <TNL/Meshes/Topologies/Hexahedron.h>
-#include <TNL/Meshes/Topologies/Polygon.h>
-#include <TNL/Meshes/Topologies/Wedge.h>
-#include <TNL/Meshes/Topologies/Pyramid.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Triangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Quadrangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Hexahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Wedge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Pyramid.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace VTK {
 
@@ -213,4 +213,4 @@ inline const char* ghostArrayName()
 
 } // namespace VTK
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

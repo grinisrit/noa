@@ -17,7 +17,7 @@
  *
  * For the purpose of providing Python bindings it is possible to change the
  * reporting behaviour by defining the TNL_THROW_ASSERTION_ERROR macro, which
- * leads to throwing the ::TNL::Assert::AssertionError holding the error
+ * leads to throwing the ::noaTNL::Assert::AssertionError holding the error
  * message (which is not printed in this case). The AssertionError class does
  * not inherit from std::exception to avoid being caught by normal exception
  * handlers, but the code for Python bindings can use it to translate it to the
@@ -116,9 +116,9 @@
 #include <iostream>
 #include <stdio.h>
 
-#include <TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace TNL {
+namespace noaTNL {
 /**
  * \brief Internal namespace for helper classes used in the TNL_ASSERT_* macros.
  */
@@ -306,7 +306,7 @@ cmpHelperTrue( const char* assertion,
 {
    // explicit cast is necessary, because T1::operator! might not be defined
    if( ! (bool) val1 )
-      ::TNL::Assert::cmpHelperOpFailure( assertion, message, file, function, line,
+      ::noaTNL::Assert::cmpHelperOpFailure( assertion, message, file, function, line,
                                          expr1, "true", val1, true, "==" );
 }
 
@@ -324,7 +324,7 @@ cmpHelperFalse( const char* assertion,
                 const T2& val2 )
 {
    if( val1 )
-      ::TNL::Assert::cmpHelperOpFailure( assertion, message, file, function, line,
+      ::noaTNL::Assert::cmpHelperOpFailure( assertion, message, file, function, line,
                                          expr1, "false", val1, false, "==" );
 }
 
@@ -344,7 +344,7 @@ cmpHelper##op_name( const char* assertion, \
                     const T2& val2 ) \
 {\
    if( ! ( (val1) op (val2) ) ) \
-      ::TNL::Assert::cmpHelperOpFailure( assertion, message, file, function, line, \
+      ::noaTNL::Assert::cmpHelperOpFailure( assertion, message, file, function, line, \
                                          expr1, expr2, val1, val2, #op );\
 }
 
@@ -370,7 +370,7 @@ TNL_IMPL_CMP_HELPER_( GT, > );
 #undef TNL_IMPL_CMP_HELPER_
 
 } // namespace Assert
-} // namespace TNL
+} // namespace noaTNL
 
 // Internal macro wrapping the __PRETTY_FUNCTION__ "magic".
 #if defined( __NVCC__ ) && ( __CUDACC_VER_MAJOR__ < 8 )
@@ -401,22 +401,22 @@ TNL_IMPL_CMP_HELPER_( GT, > );
 // Main definitions of the TNL_ASSERT_* macros
 // unary
 #define TNL_ASSERT_TRUE( val, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperTrue, ==, val, true, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperTrue, ==, val, true, msg )
 #define TNL_ASSERT_FALSE( val, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperFalse, ==, val, false, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperFalse, ==, val, false, msg )
 // binary
 #define TNL_ASSERT_EQ( val1, val2, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperEQ, ==, val1, val2, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperEQ, ==, val1, val2, msg )
 #define TNL_ASSERT_NE( val1, val2, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperNE, !=, val1, val2, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperNE, !=, val1, val2, msg )
 #define TNL_ASSERT_LE( val1, val2, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperLE, <=, val1, val2, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperLE, <=, val1, val2, msg )
 #define TNL_ASSERT_LT( val1, val2, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperLT, <,  val1, val2, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperLT, <,  val1, val2, msg )
 #define TNL_ASSERT_GE( val1, val2, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperGE, >=, val1, val2, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperGE, >=, val1, val2, msg )
 #define TNL_ASSERT_GT( val1, val2, msg ) \
-   __TNL_ASSERT_PRED2( ::TNL::Assert::cmpHelperGT, >,  val1, val2, msg )
+   __TNL_ASSERT_PRED2( ::noaTNL::Assert::cmpHelperGT, >,  val1, val2, msg )
 
 
 
@@ -456,7 +456,7 @@ TNL_IMPL_CMP_HELPER_( GT, > );
                                                                                                          \
       std::string msg = buffer.str();                                                                    \
       std::cerr.rdbuf( old );                                                                            \
-      throw ::TNL::Assert::AssertionError( msg );                                                        \
+      throw ::noaTNL::Assert::AssertionError( msg );                                                        \
    }
 #else // #ifdef TNL_THROW_ASSERTION_ERROR
 // This will be used in regular C++ code

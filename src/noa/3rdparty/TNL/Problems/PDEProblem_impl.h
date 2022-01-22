@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Problems/PDEProblem.h>
-#include <TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
+#include <noa/3rdparty/TNL/Problems/PDEProblem.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -224,4 +224,4 @@ getSolverMonitor()
 }
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL

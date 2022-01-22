@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Images//DicomSeries.h>
-#include <TNL/Images//DicomSeriesInfo.h>
+#include <noa/3rdparty/TNL/Images//DicomSeries.h>
+#include <noa/3rdparty/TNL/Images//DicomSeriesInfo.h>
 #include <dirent.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {   
 
 int findLastIndexOf(String &str, const char* c)
@@ -393,4 +393,4 @@ inline bool DicomSeries::isDicomSeriesLoaded()
 }
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL

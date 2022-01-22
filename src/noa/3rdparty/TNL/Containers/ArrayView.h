@@ -10,12 +10,12 @@
 
 #include <type_traits>  // std::add_const_t
 
-#include <TNL/TypeTraits.h>
-#include <TNL/File.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/TypeTraits.h>
+#include <noa/3rdparty/TNL/File.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 /**
@@ -592,6 +592,6 @@ template< typename Value, typename Device, typename Index >
 File& operator>>( File&& file, ArrayView< Value, Device, Index > view );
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Containers/ArrayView.hpp>
+#include <noa/3rdparty/TNL/Containers/ArrayView.hpp>

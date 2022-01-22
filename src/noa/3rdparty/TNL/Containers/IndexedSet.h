@@ -9,7 +9,7 @@
 #include <map>
 #include <ostream>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< class Key,
@@ -48,6 +48,6 @@ template< typename Element,
 std::ostream& operator <<( std::ostream& str, IndexedSet< Element, Index >& set );
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Containers/IndexedSet_impl.h>
+#include <noa/3rdparty/TNL/Containers/IndexedSet_impl.h>

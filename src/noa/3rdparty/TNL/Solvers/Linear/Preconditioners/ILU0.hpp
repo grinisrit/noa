@@ -9,11 +9,11 @@
 #pragma once
 
 #include "ILU0.h"
-#include <TNL/Solvers/Linear/Utils/TriangularSolve.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Utils/TriangularSolve.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 namespace Preconditioners {
@@ -410,4 +410,4 @@ solve( ConstVectorViewType b, VectorViewType x ) const
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

@@ -8,10 +8,10 @@
 
 #include <utility>
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/TypeResolver/GridTypeResolver.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/GridTypeResolver.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -163,7 +163,7 @@ bool
 GridTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::
 resolveTerminate( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The mesh type " << TNL::getType< GridType >() << " is disabled in the build configuration." << std::endl;
+   std::cerr << "The mesh type " << noaTNL::getType< GridType >() << " is disabled in the build configuration." << std::endl;
    return false;
 }
 
@@ -181,4 +181,4 @@ resolveTerminate( Reader& reader, Functor&& functor )
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

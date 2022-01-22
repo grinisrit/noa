@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
 /**
  * \brief Namespace holding segments data structures.
@@ -93,27 +93,27 @@ The following example demonstrates the essence of *segments* in TNL:
 
 \includelineno Algorithms/Segments/SegmentsExample_General.cpp
 
-We demonstrate two formats of segments - \ref TNL::Algorithms::Segments::CSR and \ref TNL::Algorithms::Segments::Ellpack running on both CPU and GPU
+We demonstrate two formats of segments - \ref noaTNL::Algorithms::Segments::CSR and \ref noaTNL::Algorithms::Segments::Ellpack running on both CPU and GPU
 (lines 58-76). For each of them, we call function `SegmentsExample` which first creates given segments (line 18). The segments are defined by the sizes of
 particular segments.
 
 Next we allocate array with data related to the segments (line 24). The number of elemets managed by the segments is given by
-\ref TNL::Algorithms::Segments::CSR::getStorageSize and \ref TNL::Algorithms::Segments::Ellpack::getStorageSize respectively.
+\ref noaTNL::Algorithms::Segments::CSR::getStorageSize and \ref noaTNL::Algorithms::Segments::Ellpack::getStorageSize respectively.
 
-Next we setup the segments elements (lines 29-33) by calling \ref TNL::Algorithms::Segments::CSR::forAllElements
-(and \ref TNL::Algorithms::Segments::CSR::forAllElements respectively) which iterates over all elements of the segments
+Next we setup the segments elements (lines 29-33) by calling \ref noaTNL::Algorithms::Segments::CSR::forAllElements
+(and \ref noaTNL::Algorithms::Segments::CSR::forAllElements respectively) which iterates over all elements of the segments
 in parallel and perform given lambda function. The lambda function receives index of the segment (`segmentIdx`),
 index of the element within the segment (`localIdx`), index of the element within the array `data` and a reference to boolean (`compute`) which serves as a
 hint for interrupting the iteration over the elements of given segment when it is set to `false`. The value of the elements having the local index smaller or equal
 to the segments index is set to the value of the segment index. It creates, in fact, lower triangular matrix elements of which have values equal to row index.
 
-Next we use a function \ref TNL::Algorithms::Segments::printSegments to print the content of the segments (lines 38-39). To do this we have to provide a lambda function
+Next we use a function \ref noaTNL::Algorithms::Segments::printSegments to print the content of the segments (lines 38-39). To do this we have to provide a lambda function
 `fetch` (line 38) which returns value of elements with given global index.
 
 Finally we show how to compute sum of all elemnts in each segment. Firstly, we create vector into which we will store the sums (line 44) and get its view (line 45).
-The size of the vector is given by the number of the segments which can be obtained by the means of the method \ref TNL::Algorithms::Segments::CSR::getSegmentsCount
-(and \ref TNL::Algorithms::Segments::Ellpack::getSegmentsCount respectively). The sums are computed using the method \ref TNL::Algorithms::Segments::CSR::reduceAllSegments
-(and \ref TNL::Algorithms::Segments::Ellpack::reduceAllSegments respectively) which works the same way as the flexible parallel reduction (\ref TNL::Algorithms::Reduction).
+The size of the vector is given by the number of the segments which can be obtained by the means of the method \ref noaTNL::Algorithms::Segments::CSR::getSegmentsCount
+(and \ref noaTNL::Algorithms::Segments::Ellpack::getSegmentsCount respectively). The sums are computed using the method \ref noaTNL::Algorithms::Segments::CSR::reduceAllSegments
+(and \ref noaTNL::Algorithms::Segments::Ellpack::reduceAllSegments respectively) which works the same way as the flexible parallel reduction (\ref noaTNL::Algorithms::Reduction).
 It requires lambda functions `fetch` for reading the data related to particular elements of the segments, function `reduce` which is \ref std::plus in this case and a
 function `keep` to store the result of sums in particular segments.
 
@@ -135,4 +135,4 @@ is becoming invalid at that moment.
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

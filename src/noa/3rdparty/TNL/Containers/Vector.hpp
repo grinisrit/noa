@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Real,
@@ -162,4 +162,4 @@ operator%=( const VectorExpression& expression )
 }
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

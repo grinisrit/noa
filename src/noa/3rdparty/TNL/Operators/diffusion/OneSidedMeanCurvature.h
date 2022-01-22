@@ -12,16 +12,16 @@
 
 #pragma once
 
-#include <TNL/Operators/Operator.h>
-#include <TNL/Operators/FunctionInverseOperator.h>
-#include <TNL/Operators/geometric/FDMGradientNorm.h>
-#include <TNL/Operators/NeumannBoundaryConditions.h>
-#include <TNL/Operators/diffusion/OneSidedNonlinearDiffusion.h>
-#include <TNL/Functions/OperatorFunction.h>
-#include <TNL/Functions/Analytic/Constant.h>
-#include <TNL/Operators/diffusion/ExactMeanCurvature.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Operators/FunctionInverseOperator.h>
+#include <noa/3rdparty/TNL/Operators/geometric/FDMGradientNorm.h>
+#include <noa/3rdparty/TNL/Operators/NeumannBoundaryConditions.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/OneSidedNonlinearDiffusion.h>
+#include <noa/3rdparty/TNL/Functions/OperatorFunction.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Constant.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/ExactMeanCurvature.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -121,4 +121,4 @@ class OneSidedMeanCurvature
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

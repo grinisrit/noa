@@ -12,17 +12,17 @@
 
 #pragma once
 
-#include <TNL/Problems/PDEProblem.h>
-#include <TNL/Operators/diffusion/LinearDiffusion.h>
-#include <TNL/Functions/MeshFunctionView.h>
-#include <TNL/Timer.h>
-#include <TNL/Solvers/PDE/ExplicitUpdater.h>
-#include <TNL/Solvers/PDE/LinearSystemAssembler.h>
-#include <TNL/Solvers/PDE/BackwardTimeDiscretisation.h>
+#include <noa/3rdparty/TNL/Problems/PDEProblem.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/LinearDiffusion.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionView.h>
+#include <noa/3rdparty/TNL/Timer.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/ExplicitUpdater.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/LinearSystemAssembler.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/BackwardTimeDiscretisation.h>
 
-#include <TNL/Meshes/DistributedMeshes/DistributedMeshSynchronizer.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMeshSynchronizer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -123,6 +123,6 @@ class HeatEquationProblem : public PDEProblem< Mesh,
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Problems/HeatEquationProblem_impl.h>
+#include <noa/3rdparty/TNL/Problems/HeatEquationProblem_impl.h>

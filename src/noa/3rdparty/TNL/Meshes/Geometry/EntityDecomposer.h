@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Meshes/MeshEntity.h>
-#include <TNL/Meshes/Topologies/Triangle.h>
-#include <TNL/Meshes/Topologies/Polygon.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
-#include <TNL/Meshes/Geometry/getEntityCenter.h>
+#include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Triangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Meshes/Geometry/getEntityCenter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 enum class EntityDecomposerVersion
@@ -230,4 +230,4 @@ private:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

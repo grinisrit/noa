@@ -10,11 +10,11 @@
 
 #include <algorithm>
 
-#include <TNL/Assert.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -57,4 +57,4 @@ struct BubbleSort
 
       } // namespace Sorting
    } // namespace Algorithms
-} //namespace TNL
+} //namespace noaTNL

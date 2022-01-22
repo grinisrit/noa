@@ -7,15 +7,15 @@
 #pragma once
 
 #include <map>
-#include <TNL/Matrices/Matrix.h>
-#include <TNL/Matrices/MatrixType.h>
-#include <TNL/Allocators/Default.h>
-#include <TNL/Algorithms/Segments/CSR.h>
-#include <TNL/Matrices/SparseMatrixRowView.h>
-#include <TNL/Matrices/SparseMatrixView.h>
-#include <TNL/Matrices/DenseMatrix.h>
+#include <noa/3rdparty/TNL/Matrices/Matrix.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixType.h>
+#include <noa/3rdparty/TNL/Allocators/Default.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSR.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixView.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -60,7 +60,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
       using ValuesVectorType = typename Matrix< Real, Device, Index, RealAllocator >::ValuesType;
       using ValuesViewType = typename ValuesVectorType::ViewType;
       using ConstValuesViewType = typename ValuesViewType::ConstViewType;
-      using ColumnsIndexesVectorType = Containers::Vector< typename TNL::copy_const< Index >::template from< Real >::type, Device, Index, IndexAllocator >;
+      using ColumnsIndexesVectorType = Containers::Vector< typename noaTNL::copy_const< Index >::template from< Real >::type, Device, Index, IndexAllocator >;
       using ColumnsIndexesViewType = typename ColumnsIndexesVectorType::ViewType;
       using ConstColumnsIndexesViewType = typename ColumnsIndexesViewType::ConstViewType;
       using RowsCapacitiesType = Containers::Vector< std::remove_const_t< Index >, Device, Index, IndexAllocator >;
@@ -233,8 +233,8 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * The number of matrix rows is given by the size of \e rowCapacities vector.
        *
        * \tparam RowCapacitiesVector is the row capacities vector type. Usually it is some of
-       *    \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView, \ref TNL::Containers::Vector or
-       *    \ref TNL::Containers::VectorView.
+       *    \ref noaTNL::Containers::Array, \ref noaTNL::Containers::ArrayView, \ref noaTNL::Containers::Vector or
+       *    \ref noaTNL::Containers::VectorView.
        * \param rowCapacities is a vector telling how many matrix elements must be
        *    allocated in each row.
        * \param columns is the number of matrix columns.
@@ -246,7 +246,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * \par Output
        * \include SparseMatrixExample_Constructor_rowCapacities_vector.out
        */
-      template< typename RowCapacitiesVector, std::enable_if_t< TNL::IsArrayType< RowCapacitiesVector >::value, int > = 0 >
+      template< typename RowCapacitiesVector, std::enable_if_t< noaTNL::IsArrayType< RowCapacitiesVector >::value, int > = 0 >
       explicit SparseMatrix( const RowCapacitiesVector& rowCapacities,
                              const IndexType columns,
                              const RealAllocatorType& realAllocator = RealAllocatorType(),
@@ -865,7 +865,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -891,7 +891,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -915,7 +915,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -939,7 +939,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -958,7 +958,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
        *
        * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
        * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
@@ -976,7 +976,7 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref TNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
        *
        * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
        * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
@@ -1197,6 +1197,6 @@ class SparseMatrix : public Matrix< Real, Device, Index, RealAllocator >
 };
 
    } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/SparseMatrix.hpp>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrix.hpp>

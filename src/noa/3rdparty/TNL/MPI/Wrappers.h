@@ -14,14 +14,14 @@
 #else
    #include "DummyDefs.h"
    #include <cstring>  // std::memcpy
-   #include <TNL/Exceptions/MPISupportMissing.h>
+   #include <noa/3rdparty/TNL/Exceptions/MPISupportMissing.h>
 #endif
 
-#include <TNL/Assert.h>
+#include <noa/3rdparty/TNL/Assert.h>
 #include "getDataType.h"
 #include "Profiling.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace MPI {
 
 // forward declaration to break cyclic inclusion
@@ -371,7 +371,7 @@ void Alltoall( const T* sendData,
 }
 
 } // namespace MPI
-} // namespace TNL
+} // namespace noaTNL
 
 // late inclusion to break cyclic inclusion
 #include "selectGPU.h"

@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <TNL/Timer.h>
-#include <TNL/Logger.h>
+#include <noa/3rdparty/TNL/Timer.h>
+#include <noa/3rdparty/TNL/Logger.h>
 
 // check if we are on a POSIX system or Windows,
 // see https://stackoverflow.com/a/4575466
@@ -15,7 +15,7 @@
    #include <sys/resource.h>
 #endif
 
-namespace TNL {
+namespace noaTNL {
 
 inline Timer::Timer()
 {
@@ -116,4 +116,4 @@ inline unsigned long long Timer::rdtsc() const
   return ( ( unsigned long long ) lo ) | ( ( ( unsigned long long ) hi ) << 32 );
 }
 
-} // namespace TNL
+} // namespace noaTNL

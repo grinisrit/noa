@@ -9,15 +9,15 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <TNL/Assert.h>
-#include <TNL/Math.h>
-#include <TNL/TypeInfo.h>
-#include <TNL/Containers/detail/ArrayIO.h>
-#include <TNL/Containers/detail/ArrayAssignment.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/TypeInfo.h>
+#include <noa/3rdparty/TNL/Containers/detail/ArrayIO.h>
+#include <noa/3rdparty/TNL/Containers/detail/ArrayAssignment.h>
 
 #include "Array.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Value,
@@ -272,7 +272,7 @@ reallocate( IndexType size )
 
    // copy the old elements into aux
    Algorithms::MemoryOperations< Device >::
-         copy( aux.getData(), this->getData(), TNL::min( this->size, size ) );
+         copy( aux.getData(), this->getData(), noaTNL::min( this->size, size ) );
 
    // swap *this with aux, old data will be released
    this->swap( aux );
@@ -410,8 +410,8 @@ void
 Array< Value, Device, Index, Allocator >::
 swap( Array< Value, Device, Index, Allocator >& array )
 {
-   TNL::swap( this->size, array.size );
-   TNL::swap( this->data, array.data );
+   noaTNL::swap( this->size, array.size );
+   noaTNL::swap( this->data, array.data );
 }
 
 template< typename Value,
@@ -842,4 +842,4 @@ File& operator>>( File&& file, Array< Value, Device, Index, Allocator >& array )
 }
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

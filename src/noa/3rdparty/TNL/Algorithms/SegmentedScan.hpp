@@ -10,9 +10,9 @@
 
 #include "SegmentedScan.h"
 
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< detail::ScanType Type >
@@ -97,4 +97,4 @@ perform( Vector& v,
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

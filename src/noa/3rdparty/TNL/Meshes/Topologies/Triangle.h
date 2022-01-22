@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Topologies/Edge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -52,4 +52,4 @@ template<> struct SubentityVertexMap< Triangle, Edge, 2, 1> { static constexpr i
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

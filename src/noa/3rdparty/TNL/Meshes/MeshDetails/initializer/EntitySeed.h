@@ -14,10 +14,10 @@
 
 #include <algorithm>
 
-#include <TNL/Meshes/MeshDetails/traits/MeshTraits.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename EntitySeed >
@@ -127,8 +127,8 @@ public:
 
    // this constructor definition is here to avoid default constructor being implicitly declared as __host__ __device__, that causes warning:
    // warning #20011-D: calling a __host__ function("std::allocator<int> ::allocator") 
-   // from a __host__ __device__ function("TNL::Meshes::EntitySeed< ::MeshTest::TestTwoWedgesMeshConfig,  
-   // ::TNL::Meshes::Topologies::Polygon> ::EntitySeed [subobject]") is not allowed
+   // from a __host__ __device__ function("noaTNL::Meshes::EntitySeed< ::MeshTest::TestTwoWedgesMeshConfig,
+   // ::noaTNL::Meshes::Topologies::Polygon> ::EntitySeed [subobject]") is not allowed
    EntitySeed()
    {
    }
@@ -206,7 +206,7 @@ struct EntitySeedEq
       IdArrayType sortedLeft( left.getCornerIds() );
       IdArrayType sortedRight( right.getCornerIds() );
 
-      //use std::sort for now, because polygon EntitySeeds use TNL::Containers::Array for cornersIds, that is missing sort function
+      //use std::sort for now, because polygon EntitySeeds use noaTNL::Containers::Array for cornersIds, that is missing sort function
       std::sort( sortedLeft.getData(), sortedLeft.getData() + sortedLeft.getSize() );
       std::sort( sortedRight.getData(), sortedRight.getData() + sortedRight.getSize() );
       /*sortedLeft.sort();
@@ -227,4 +227,4 @@ struct EntitySeedEq< EntitySeed< MeshConfig, Topologies::Vertex > >
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

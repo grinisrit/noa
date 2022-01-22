@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <TNL/Meshes/GridDetails/BoundaryGridEntityChecker.h>
-#include <TNL/Meshes/GridDetails/GridEntityCenterGetter.h>
-#include <TNL/Meshes/GridDetails/GridEntityMeasureGetter.h>
-#include <TNL/Meshes/GridEntity.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/BoundaryGridEntityChecker.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityCenterGetter.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityMeasureGetter.h>
+#include <noa/3rdparty/TNL/Meshes/GridEntity.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /*template< int Dimension,
@@ -725,5 +725,5 @@ getMesh() const
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 

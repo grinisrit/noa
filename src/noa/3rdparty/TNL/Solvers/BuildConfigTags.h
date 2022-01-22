@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Solvers/ODE/Merson.h>
-#include <TNL/Solvers/ODE/Euler.h>
+#include <noa/3rdparty/TNL/Solvers/ODE/Merson.h>
+#include <noa/3rdparty/TNL/Solvers/ODE/Euler.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 
 class DefaultBuildConfigTag {};
@@ -69,4 +69,4 @@ public:
 template< typename ConfigTag, typename ExplicitSolver > struct ConfigTagExplicitSolver{ static constexpr bool enabled = true; };
 
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

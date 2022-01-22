@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/CSR.h>
-#include <TNL/Algorithms/Segments/detail/CSR.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSR.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/CSR.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -56,9 +56,9 @@ CSR< Device, Index, Kernel, IndexAllocator >::
 getSerializationType()
 {
    return "CSR< [any_device], " +
-      TNL::getSerializationType< IndexType >() + ", " +
+      noaTNL::getSerializationType< IndexType >() + ", " +
       // FIXME: the serialized data do not depend on the the kernel type so it should not be in the serialization type
-      TNL::getSerializationType< KernelType >() + " >";
+      noaTNL::getSerializationType< KernelType >() + " >";
 }
 
 template< typename Device,
@@ -360,4 +360,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< CSR, Fetch >
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

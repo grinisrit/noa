@@ -7,9 +7,9 @@
 #pragma once
 
 #include <type_traits>
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -297,5 +297,5 @@ class MeshEntitiesInterpolants< Meshes::Grid< 3, Real, Device, Index >, 2, 3 >
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

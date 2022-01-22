@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Traverser.h>
-#include <TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Mesh,
@@ -153,4 +153,4 @@ processLocalEntities( const MeshPointer& meshPointer,
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

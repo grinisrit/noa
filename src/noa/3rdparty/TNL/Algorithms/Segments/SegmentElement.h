@@ -8,9 +8,9 @@
 
 #include <ostream>
 
-#include <TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -77,4 +77,4 @@ class SegmentElement
 
       } // namespace Segments
    } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

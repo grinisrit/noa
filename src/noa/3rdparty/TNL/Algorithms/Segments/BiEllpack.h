@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Allocators/Default.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/Segments/BiEllpackView.h>
-#include <TNL/Algorithms/Segments/SegmentView.h>
+#include <noa/3rdparty/TNL/Allocators/Default.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/BiEllpackView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
 
-namespace TNL
+namespace noaTNL
 {
    namespace Algorithms
    {
@@ -193,6 +193,6 @@ std::ostream& operator<<( std::ostream& str, const BiEllpack< Device, Index, Ind
 
       } // namespace Segments
    }    // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/BiEllpack.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/BiEllpack.hpp>

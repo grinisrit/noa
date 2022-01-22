@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 class CommonData
@@ -24,4 +24,4 @@ class CommonData
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL

@@ -9,15 +9,15 @@
 #include <type_traits>
 #include <filesystem>
 
-#include <TNL/Meshes/Traits.h>
-#include <TNL/Meshes/Readers/getMeshReader.h>
-#include <TNL/Meshes/Writers/VTKWriter.h>
-#include <TNL/Meshes/Writers/VTUWriter.h>
-#include <TNL/Meshes/Writers/VTIWriter.h>
-#include <TNL/Meshes/Writers/PVTIWriter.h>
-#include <TNL/Functions/MeshFunctionGnuplotWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Traits.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/getMeshReader.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTKWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTIWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/PVTIWriter.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionGnuplotWriter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 
 template< typename MeshFunction >
@@ -228,7 +228,7 @@ writeDistributedMeshFunction( const Meshes::DistributedMeshes::DistributedMesh< 
    if( format == "pvti" ) {
       const MPI_Comm communicator = distributedMesh.getCommunicator();
       std::ofstream file;
-      if( TNL::MPI::GetRank( communicator ) == 0 )
+      if( noaTNL::MPI::GetRank( communicator ) == 0 )
          file.open( fileName );
 
       using PVTI = Meshes::Writers::PVTIWriter< typename MeshFunction::MeshType >;
@@ -278,4 +278,4 @@ writeDistributedMeshFunction( const Meshes::DistributedMeshes::DistributedMesh< 
 // TODO: specialization of writeDistributedMeshFunction for unstructured mesh
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

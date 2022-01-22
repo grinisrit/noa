@@ -13,10 +13,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Topologies/SubentityVertexMap.h>
-#include <TNL/Meshes/Topologies/Vertex.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Vertex.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -192,4 +192,4 @@ class CombinationIncrement
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

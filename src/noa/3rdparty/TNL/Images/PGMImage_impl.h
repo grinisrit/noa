@@ -7,9 +7,9 @@
 #pragma once 
 
 #include <cstring>
-#include <TNL/Images//PGMImage.h>
+#include <noa/3rdparty/TNL/Images//PGMImage.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {   
 
 template< typename Index >
@@ -250,5 +250,5 @@ PGMImage< Index >::
 }
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL
 

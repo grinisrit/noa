@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Algorithms/Segments/CSR.h>
-#include <TNL/Algorithms/Segments/Ellpack.h>
-#include <TNL/Matrices/SparseMatrixView.h>
-#include <TNL/Matrices/DenseMatrixView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSR.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixView.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrixView.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -20,7 +20,7 @@ namespace Matrices {
  * \tparam Device is a device on which the array is allocated.
  * \tparam Real is a type of array elements.
  * \tparam Index is a type for indexing of matrix elements.
- * \tparam Organization is matrix elements organization - see \ref TNL::Algorithms::Segments::ElementsOrganization.
+ * \tparam Organization is matrix elements organization - see \ref noaTNL::Algorithms::Segments::ElementsOrganization.
  * \param rows is a number of matrix rows.
  * \param columns is a number of matrix columns.
  * \param values is the array with matrix elements values.

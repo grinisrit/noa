@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/TypeTraits.h>
+#include <noa/3rdparty/TNL/TypeTraits.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Matrices {
       namespace details {
 
@@ -28,4 +28,4 @@ static void set_size_if_resizable( VectorOrView& v, typename VectorOrView::Index
 
       } //namespace details
    } //namepsace Matrices
-} //namespace TNL
+} //namespace noaTNL

@@ -10,11 +10,11 @@
 
 #include <functional>  // reduction functions like std::plus, std::logical_and, std::logical_or etc.
 
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< typename Device >
@@ -114,6 +114,6 @@ struct Multireduction< Devices::Cuda >
 };
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
 #include "Multireduction.hpp"

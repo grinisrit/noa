@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 /***
@@ -201,5 +201,5 @@ class FunctionAdapter< Mesh, Function, SpaceDomain >
 #endif
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

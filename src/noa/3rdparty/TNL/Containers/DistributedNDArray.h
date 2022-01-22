@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <TNL/Containers/NDArray.h>
-#include <TNL/Containers/DistributedNDArrayView.h>
+#include <noa/3rdparty/TNL/Containers/NDArray.h>
+#include <noa/3rdparty/TNL/Containers/DistributedNDArrayView.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename NDArray >
@@ -441,4 +441,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

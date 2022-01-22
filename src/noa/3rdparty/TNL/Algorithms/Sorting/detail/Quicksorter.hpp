@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include <TNL/Functional.h>
-#include <TNL/Algorithms/Sorting/detail/task.h>
-#include <TNL/Algorithms/Sorting/detail/quicksort_kernel.h>
-#include <TNL/Algorithms/Sorting/detail/quicksort_1Block.h>
-#include <TNL/Algorithms/Sorting/detail/Quicksorter.h>
-#include <TNL/Algorithms/reduce.h>
-#include <TNL/Algorithms/scan.h>
+#include <noa/3rdparty/TNL/Functional.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/task.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/quicksort_kernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/quicksort_1Block.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/Quicksorter.h>
+#include <noa/3rdparty/TNL/Algorithms/reduce.h>
+#include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace TNL {
+namespace noaTNL {
     namespace Algorithms {
         namespace Sorting {
 
@@ -311,7 +311,7 @@ int getSetsNeededFunction(int elemPerBlock, const Quicksorter< Value, Devices::C
         int size = task.partitionEnd - task.partitionBegin;
         return size / elemPerBlock + (size % elemPerBlock != 0);
     };
-    return reduce< Devices::Cuda >( 0, quicksort.host_1stPhaseTasksAmount, fetch, TNL::Plus{} );
+    return reduce< Devices::Cuda >( 0, quicksort.host_1stPhaseTasksAmount, fetch, noaTNL::Plus{} );
 }
 
 template< typename Value >
@@ -395,4 +395,4 @@ processNewTasks()
 
         } // namespace Sorting
     } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename MeshReal,
@@ -221,4 +221,4 @@ getValueStriped( const MeshFunction& u,
 }   
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

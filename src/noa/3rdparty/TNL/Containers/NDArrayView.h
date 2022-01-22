@@ -8,16 +8,16 @@
 
 #pragma once
 
-#include <TNL/Containers/NDArrayIndexer.h>
-#include <TNL/Containers/ndarray/SizesHolder.h>
-#include <TNL/Containers/ndarray/Subarrays.h>
-#include <TNL/Containers/ndarray/Executors.h>
-#include <TNL/Containers/ndarray/BoundaryExecutors.h>
-#include <TNL/Containers/ndarray/Operations.h>
-#include <TNL/Algorithms/MemoryOperations.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/Containers/NDArrayIndexer.h>
+#include <noa/3rdparty/TNL/Containers/ndarray/SizesHolder.h>
+#include <noa/3rdparty/TNL/Containers/ndarray/Subarrays.h>
+#include <noa/3rdparty/TNL/Containers/ndarray/Executors.h>
+#include <noa/3rdparty/TNL/Containers/ndarray/BoundaryExecutors.h>
+#include <noa/3rdparty/TNL/Containers/ndarray/Operations.h>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Value,
@@ -309,4 +309,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

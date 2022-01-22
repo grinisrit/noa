@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Meshes/Mesh.h>
-#include <TNL/Meshes/MeshEntity.h>
-#include <TNL/Meshes/MeshBuilder.h>
-#include <TNL/Meshes/Geometry/EntityRefiner.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/scan.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
+#include <noa/3rdparty/TNL/Meshes/MeshBuilder.h>
+#include <noa/3rdparty/TNL/Meshes/Geometry/EntityRefiner.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 // TODO: refactor to avoid duplicate points altogether - first split edges, then faces, then cells
@@ -26,9 +26,9 @@ template< EntityRefinerVersion RefinerVersion,
 auto // returns MeshBuilder
 refineMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 {
-   using namespace TNL;
-   using namespace TNL::Containers;
-   using namespace TNL::Algorithms;
+   using namespace noaTNL;
+   using namespace noaTNL::Containers;
+   using namespace noaTNL::Algorithms;
 
    using Mesh = Mesh< MeshConfig, Devices::Host >;
    using MeshBuilder = MeshBuilder< Mesh >;
@@ -113,4 +113,4 @@ getRefinedMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

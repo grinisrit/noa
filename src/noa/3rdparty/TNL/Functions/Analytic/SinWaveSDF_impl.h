@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Functions/Analytic/SinWaveSDF.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinWaveSDF.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 namespace Analytic {
 
@@ -160,4 +160,4 @@ getPartialDerivative( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

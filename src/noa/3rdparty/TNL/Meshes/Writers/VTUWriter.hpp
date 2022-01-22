@@ -10,16 +10,16 @@
 
 #include <limits>
 
-#include <TNL/Containers/Array.h>
-#include <TNL/Meshes/Writers/VTUWriter.h>
-#include <TNL/Meshes/Writers/detail/VTUMeshEntitiesCollector.h>
-#include <TNL/Meshes/Writers/detail/VTUPolyhedralFacesWriter.h>
-#include <TNL/Endianness.h>
-#include <TNL/base64.h>
-#include <TNL/zlib_compression.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/detail/VTUMeshEntitiesCollector.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/detail/VTUPolyhedralFacesWriter.h>
+#include <noa/3rdparty/TNL/Endianness.h>
+#include <noa/3rdparty/TNL/base64.h>
+#include <noa/3rdparty/TNL/zlib_compression.h>
 
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 
@@ -302,4 +302,4 @@ VTUWriter< Mesh >::closePiece()
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

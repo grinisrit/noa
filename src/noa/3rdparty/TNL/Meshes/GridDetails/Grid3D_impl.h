@@ -8,13 +8,13 @@
 
 #include <fstream>
 #include <iomanip>
-#include <TNL/Assert.h>
-#include <TNL/Meshes/GridDetails/GridEntityGetter_impl.h>
-#include <TNL/Meshes/GridDetails/NeighborGridEntityGetter3D_impl.h>
-#include <TNL/Meshes/GridDetails/Grid3D.h>
-#include <TNL/Meshes/GridDetails/GridEntityMeasureGetter.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityGetter_impl.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/NeighborGridEntityGetter3D_impl.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/Grid3D.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityMeasureGetter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Real,
@@ -498,4 +498,4 @@ writeProlog( Logger& logger ) const
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

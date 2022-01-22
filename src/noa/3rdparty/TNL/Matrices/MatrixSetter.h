@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename DifferentialOperator,
@@ -157,6 +157,6 @@ class MatrixSetter< Meshes::Grid< Dimension, Real, Device, Index >,
 */
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/MatrixSetter_impl.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixSetter_impl.h>

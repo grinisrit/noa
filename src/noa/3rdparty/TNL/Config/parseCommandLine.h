@@ -12,10 +12,10 @@
 #include <sstream>
 #include <iomanip>
 
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Config {
 
 /**
@@ -208,7 +208,7 @@ convertStringValue( const String& value, const String& param )
    str << value;
    str >> v;
    if( str.fail() )
-      throw Exceptions::ConfigError( "Value '" + value + "' could not be converted to type " + TNL::getType<T>().getString() +
+      throw Exceptions::ConfigError( "Value '" + value + "' could not be converted to type " + noaTNL::getType<T>().getString() +
                                      " as required for the parameter " + param + "." );
    return v;
 }
@@ -364,4 +364,4 @@ parseCommandLine( int argc, char* argv[],
 }
 
 } // namespace Config
-} // namespace TNL
+} // namespace noaTNL

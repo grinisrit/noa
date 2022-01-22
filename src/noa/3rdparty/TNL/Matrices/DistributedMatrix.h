@@ -10,12 +10,12 @@
 
 #include <type_traits>
 
-#include <TNL/Containers/Subrange.h>
-#include <TNL/Containers/DistributedVector.h>
-#include <TNL/Containers/DistributedVectorView.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Containers/Subrange.h>
+#include <noa/3rdparty/TNL/Containers/DistributedVector.h>
+#include <noa/3rdparty/TNL/Containers/DistributedVectorView.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 // TODO: 2D distribution for dense matrices (maybe it should be in different template,
@@ -196,6 +196,6 @@ protected:
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
 #include "DistributedMatrix_impl.h"

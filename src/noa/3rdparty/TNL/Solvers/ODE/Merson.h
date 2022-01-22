@@ -7,10 +7,10 @@
 #pragma once
 
 #include <math.h>
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Solvers/ODE/ExplicitSolver.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Solvers/ODE/ExplicitSolver.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace ODE {
 
@@ -56,6 +56,6 @@ class Merson : public ExplicitSolver< Problem, SolverMonitor >
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/ODE/Merson.hpp>
+#include <noa/3rdparty/TNL/Solvers/ODE/Merson.hpp>

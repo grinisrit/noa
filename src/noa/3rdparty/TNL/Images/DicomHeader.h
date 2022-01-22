@@ -12,7 +12,7 @@
 #include <dcmtk/dcmdata/dcdeftag.h>
 #endif
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {
 
 class DicomSeriesInfo;
@@ -60,7 +60,7 @@ class DicomHeader
 };
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Images//DicomHeader_impl.h>
+#include <noa/3rdparty/TNL/Images//DicomHeader_impl.h>
 

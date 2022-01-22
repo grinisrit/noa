@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <TNL/Solvers/Linear/LinearSolver.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/LinearSolver.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
       namespace Linear {
 
@@ -33,9 +33,9 @@ namespace TNL {
  *
  * See [Wikipedia](https://en.wikipedia.org/wiki/Generalized_minimal_residual_method) for more details.
  *
- * See \ref TNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
+ * See \ref noaTNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
  *
- * See \ref TNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
+ * See \ref noaTNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
  *
  * \tparam Matrix is type of matrix describing the linear system.
  */
@@ -235,6 +235,6 @@ class GMRES
 
       } // namespace Linear
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/Linear/GMRES.hpp>
+#include <noa/3rdparty/TNL/Solvers/Linear/GMRES.hpp>

@@ -10,9 +10,9 @@
 
 #include "BICGStabL.h"
 
-#include <TNL/Matrices/MatrixOperations.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixOperations.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 
@@ -291,4 +291,4 @@ setSize( const VectorViewType& x )
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

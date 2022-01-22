@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/SlicedEllpackView.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SlicedEllpackView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
 #include "SlicedEllpackView.h"
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -54,7 +54,7 @@ SlicedEllpackView< Device, Index, Organization, SliceSize >::
 getSerializationType()
 {
    // FIXME: the serialized data DEPEND on the Organization and Alignment parameters, so it should be reflected in the serialization type
-   return "SlicedEllpack< [any_device], " + TNL::getSerializationType< IndexType >() + " >";
+   return "SlicedEllpack< [any_device], " + noaTNL::getSerializationType< IndexType >() + " >";
 }
 
 template< typename Device,
@@ -276,7 +276,7 @@ forSegments( IndexType begin, IndexType end, Function&& function ) const
       auto segment = view.getSegmentView( segmentIdx );
       function( segment );
    };
-   TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Device,
@@ -412,4 +412,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< SlicedEllpackView, Fetch >
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

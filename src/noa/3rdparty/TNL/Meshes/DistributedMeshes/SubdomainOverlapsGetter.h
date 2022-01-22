@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -118,6 +118,6 @@ class SubdomainOverlapsGetter< Grid< 3, Real, Device, Index > >
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.hpp>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.hpp>

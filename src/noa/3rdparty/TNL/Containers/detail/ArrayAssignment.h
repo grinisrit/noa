@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/TypeTraits.h>
-#include <TNL/Algorithms/MemoryOperations.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/TypeTraits.h>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 namespace detail {
 
@@ -69,4 +69,4 @@ struct ArrayAssignment< Array, T, false >
 
 } // namespace detail
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

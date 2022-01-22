@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include <TNL/File.h>
-#include <TNL/Meshes/MeshDetails/traits/WeakStorageTraits.h>
-#include <TNL/Meshes/MeshDetails/layers/SubentityStorageLayer.h>
-#include <TNL/Meshes/MeshDetails/layers/SuperentityStorageLayer.h>
-#include <TNL/Meshes/MeshDetails/layers/DualGraphLayer.h>
+#include <noa/3rdparty/TNL/File.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/WeakStorageTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/SubentityStorageLayer.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/SuperentityStorageLayer.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/DualGraphLayer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -317,4 +317,4 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

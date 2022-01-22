@@ -8,9 +8,9 @@
 
 #include <ostream>
 #include <iostream>
-#include <TNL/String.h>
+#include <noa/3rdparty/TNL/String.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -59,7 +59,7 @@ class MatrixWriter
        * \param matrix is the source matrix.
        * \param verbose controls verbosity of the matrix export.
        */
-      static void writeGnuplot( const TNL::String& fileName,
+      static void writeGnuplot( const noaTNL::String& fileName,
                                 const Matrix& matrix,
                                 bool verbose = false );
 
@@ -81,7 +81,7 @@ class MatrixWriter
        * \param matrix is the source matrix.
        * \param verbose controls verbosity of the matrix export.
        */
-      static void writeEps( const TNL::String& fileName,
+      static void writeEps( const noaTNL::String& fileName,
                             const Matrix& matrix,
                             bool verbose = false );
 
@@ -103,7 +103,7 @@ class MatrixWriter
        * \param matrix is the source matrix.
        * \param verbose controls verbosity of the matrix export.
        */
-      static void writeMtx( const TNL::String& fileName,
+      static void writeMtx( const noaTNL::String& fileName,
                             const Matrix& matrix,
                             bool verbose = false );
 
@@ -119,20 +119,20 @@ class MatrixWriter
                             bool verbose = false );
 
    protected:
-      using HostMatrix = typename Matrix::template Self< RealType, TNL::Devices::Host >;
+      using HostMatrix = typename Matrix::template Self< RealType, noaTNL::Devices::Host >;
 };
 
 /// This is to prevent from appearing in Doxygen documentation.
 /// \cond HIDDEN_CLASS
 template< typename Matrix >
-class MatrixWriter< Matrix, TNL::Devices::Host >
+class MatrixWriter< Matrix, noaTNL::Devices::Host >
 {
    public:
 
    typedef typename Matrix::IndexType IndexType;
    typedef typename Matrix::RealType RealType;
 
-   static void writeGnuplot( const TNL::String& fileName,
+   static void writeGnuplot( const noaTNL::String& fileName,
                              const Matrix& matrix,
                              bool verbose = false );
 
@@ -141,7 +141,7 @@ class MatrixWriter< Matrix, TNL::Devices::Host >
                              const Matrix& matrix,
                              bool verbose = false );
 
-   static void writeEps( const TNL::String& fileName,
+   static void writeEps( const noaTNL::String& fileName,
                          const Matrix& matrix,
                          bool verbose = false );
 
@@ -149,7 +149,7 @@ class MatrixWriter< Matrix, TNL::Devices::Host >
                          const Matrix& matrix,
                          bool verbose = false );
 
-   static void writeMtx( const TNL::String& fileName,
+   static void writeMtx( const noaTNL::String& fileName,
                          const Matrix& matrix,
                          bool verbose = false );
 
@@ -171,6 +171,6 @@ class MatrixWriter< Matrix, TNL::Devices::Host >
 /// \endcond
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/MatrixWriter.hpp>
+#include <noa/3rdparty/TNL/Matrices/MatrixWriter.hpp>

@@ -10,14 +10,14 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Pointers/SharedPointer.h>
-#include <TNL/Cuda/StreamPool.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
-#include <TNL/Meshes/GridDetails/GridTraverser.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Cuda/StreamPool.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridTraverser.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /****
@@ -251,4 +251,4 @@ processEntities(
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

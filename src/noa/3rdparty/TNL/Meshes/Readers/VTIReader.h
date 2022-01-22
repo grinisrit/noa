@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Readers/XMLVTK.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/XMLVTK.h>
 #include <cstdint>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Readers {
 
@@ -27,7 +27,7 @@ class VTIReader
       const std::string spacing = getAttributeString( datasetElement, "Spacing" );
 
       // check the <Piece> tag
-      using namespace tinyxml2;
+      using namespace noaTinyxml2;
       const XMLElement* piece = getChildSafe( datasetElement, "Piece" );
       if( piece->NextSiblingElement( "Piece" ) )
          // ambiguity - throw error, we don't know which piece to parse (or all of them?)
@@ -151,4 +151,4 @@ public:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

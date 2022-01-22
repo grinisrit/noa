@@ -12,12 +12,12 @@
 
 #pragma once
 
-#include <TNL/Meshes/MeshDetails/initializer/EntitySeed.h>
-#include <TNL/Meshes/MeshDetails/initializer/SubentitySeedsCreator.h>
-#include <TNL/Atomic.h>
-#include <TNL/Algorithms/AtomicOperations.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/EntitySeed.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/SubentitySeedsCreator.h>
+#include <noa/3rdparty/TNL/Atomic.h>
+#include <noa/3rdparty/TNL/Algorithms/AtomicOperations.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig >
@@ -540,4 +540,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

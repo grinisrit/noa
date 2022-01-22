@@ -7,10 +7,10 @@
 #pragma once
 
 #include <istream>
-#include <TNL/String.h>
-#include <TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -72,13 +72,13 @@ class MatrixReader
                            bool verbose = false );
 
    protected:
-      using HostMatrix = typename Matrix::template Self< RealType, TNL::Devices::Host >;
+      using HostMatrix = typename Matrix::template Self< RealType, noaTNL::Devices::Host >;
 };
 
 /// This is to prevent from appearing in Doxygen documentation.
 /// \cond HIDDEN_CLASS
 template< typename Matrix >
-class MatrixReader< Matrix, TNL::Devices::Host >
+class MatrixReader< Matrix, noaTNL::Devices::Host >
 {
    public:
 
@@ -169,6 +169,6 @@ class MatrixReader< Matrix, TNL::Devices::Host >
 
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/MatrixReader.hpp>
+#include <noa/3rdparty/TNL/Matrices/MatrixReader.hpp>

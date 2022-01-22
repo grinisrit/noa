@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Meshes/Mesh.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -36,6 +36,6 @@ loadDistributedMesh( DistributedMeshes::DistributedMesh< Mesh >& distributedMesh
                      const std::string& fileFormat = "auto" );
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/TypeResolver/resolveDistributedMeshType.hpp>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveDistributedMeshType.hpp>

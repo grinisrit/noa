@@ -8,16 +8,16 @@
 
 #include <type_traits>
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/Segments/SegmentView.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRVectorKernel.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRHybridKernel.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRLightKernel.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernel.h>
-#include <TNL/Algorithms/Segments/SegmentsPrinting.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRVectorKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRHybridKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRLightKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentsPrinting.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -183,6 +183,6 @@ using CSRViewDefault = CSRViewScalar< Device, Index >;
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/CSRView.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSRView.hpp>

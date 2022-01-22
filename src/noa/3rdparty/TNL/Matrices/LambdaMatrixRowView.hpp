@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Matrices/LambdaMatrixRowView.h>
-#include <TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/LambdaMatrixRowView.h>
+#include <noa/3rdparty/TNL/Assert.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename MatrixElementsLambda,
@@ -171,4 +171,4 @@ std::ostream& operator<<( std::ostream& str, const LambdaMatrixRowView< MatrixEl
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

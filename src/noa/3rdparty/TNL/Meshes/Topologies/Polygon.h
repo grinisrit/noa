@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Topologies/Edge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -31,4 +31,4 @@ struct Subtopology< Polygon, 1 >
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

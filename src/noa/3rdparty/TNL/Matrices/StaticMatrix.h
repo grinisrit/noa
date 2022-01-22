@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <TNL/Containers/NDArray.h>
-#include <TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Containers/NDArray.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Value,
@@ -60,4 +60,4 @@ public:
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

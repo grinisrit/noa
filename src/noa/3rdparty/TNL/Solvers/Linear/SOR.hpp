@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Functional.h>
-#include <TNL/Algorithms/AtomicOperations.h>
-#include <TNL/Solvers/Linear/SOR.h>
-#include <TNL/Solvers/Linear/Utils/LinearResidueGetter.h>
+#include <noa/3rdparty/TNL/Functional.h>
+#include <noa/3rdparty/TNL/Algorithms/AtomicOperations.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/SOR.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Utils/LinearResidueGetter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 
@@ -113,9 +113,9 @@ performIteration( const ConstVectorViewType& b,
    auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) mutable {
       Algorithms::AtomicOperations< DeviceType >::add( x[ rowIdx ], omega_ / diagonalView[ rowIdx ] * ( b[ rowIdx ] - value ) );
    };
-   this->matrix->reduceAllRows( fetch, TNL::Plus{}, keep, 0.0 );
+   this->matrix->reduceAllRows( fetch, noaTNL::Plus{}, keep, 0.0 );
 }
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

@@ -8,11 +8,11 @@
 
 #include <iomanip>
 #include <functional>
-#include <TNL/Assert.h>
-#include <TNL/Matrices/DenseMatrix.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 #ifdef HAVE_CUDA
@@ -140,7 +140,7 @@ RowMajorDenseMatrixViewVectorMultiplicationKernel( const Matrix matrix, const In
    __shared__ Real inVectorCache[ inVectorCacheSize ];
 
    constexpr int threadsPerRow = 32;
-   //const Index rowIdx = begin + ((gridIdx * TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / threadsPerRow;
+   //const Index rowIdx = begin + ((gridIdx * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / threadsPerRow;
    const Index rowIdx = first + ( ( gridIdx * Cuda::getMaxGridSize() + blockIdx.x ) * 256 + threadIdx.x ) /  threadsPerRow;
 
    Real result = 0.0;
@@ -278,9 +278,9 @@ DenseMatrixView< Real, Device, Index, Organization >::
 getSerializationType()
 {
    return String( "Matrices::DenseMatrix< " ) +
-      TNL::getSerializationType< RealType >() + ", [any_device], " +
-      TNL::getSerializationType< IndexType >() + ", " +
-      TNL::getSerializationType( Organization ) + " >";
+      noaTNL::getSerializationType< RealType >() + ", [any_device], " +
+      noaTNL::getSerializationType< IndexType >() + ", " +
+      noaTNL::getSerializationType( Organization ) + " >";
 }
 
 template< typename Real,
@@ -1123,4 +1123,4 @@ Index DenseMatrixView< Real, Device, Index, Organization >::getElementIndex( con
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

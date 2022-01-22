@@ -8,9 +8,9 @@
 
 #include <fstream>
 
-#include <TNL/String.h>
+#include <noa/3rdparty/TNL/String.h>
 
-namespace TNL {
+namespace noaTNL {
 
 struct CacheSizes {
    int L1instruction = 0;
@@ -63,6 +63,6 @@ protected:
    }
 };
 
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/SystemInfo.hpp>
+#include <noa/3rdparty/TNL/SystemInfo.hpp>

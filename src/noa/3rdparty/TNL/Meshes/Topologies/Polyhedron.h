@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Topologies/Polygon.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -37,4 +37,4 @@ struct Subtopology< Polyhedron, 2 >
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

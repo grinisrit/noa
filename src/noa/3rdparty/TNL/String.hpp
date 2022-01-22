@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/String.h>
-#include <TNL/Assert.h>
-#include <TNL/Math.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Math.h>
 
-namespace TNL {
+namespace noaTNL {
 
 inline int String::getLength() const
 {
@@ -258,4 +258,4 @@ inline String operator+( const std::string& string1, const String& string2 )
    return String( string1 ) + string2;
 }
 
-} // namespace TNL
+} // namespace noaTNL

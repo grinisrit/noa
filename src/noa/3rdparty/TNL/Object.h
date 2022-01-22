@@ -8,13 +8,13 @@
 
 #include <vector>
 
-#include <TNL/String.h>
-#include <TNL/File.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/File.h>
 
 /**
  * \brief The main TNL namespace.
  */
-namespace TNL {
+namespace noaTNL {
 
 /**
  * \brief Basic class for majority of TNL objects like matrices, meshes, grids, solvers, etc..
@@ -146,6 +146,6 @@ parseObjectType( const String& objectType );
  */
 void saveObjectType( File& file, const String& type );
 
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Object.hpp>
+#include <noa/3rdparty/TNL/Object.hpp>

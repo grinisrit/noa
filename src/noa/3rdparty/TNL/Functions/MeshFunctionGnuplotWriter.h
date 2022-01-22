@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 
 namespace Meshes {
    template< typename, typename, typename > class MeshEntity;
@@ -40,18 +40,18 @@ class MeshFunctionGnuplotWriterBase
       };
 
       template< typename MeshConfig, typename Device, typename Topology, int dim >
-      struct center< TNL::Meshes::MeshEntity< MeshConfig, Device, Topology >, dim >
+      struct center< noaTNL::Meshes::MeshEntity< MeshConfig, Device, Topology >, dim >
       {
-         static int get( const TNL::Meshes::MeshEntity< MeshConfig, Device, Topology >& entity )
+         static int get( const noaTNL::Meshes::MeshEntity< MeshConfig, Device, Topology >& entity )
          {
             throw Exceptions::NotImplementedError();
          }
       };
 
       template< typename MeshConfig, typename Device, typename Topology >
-      struct center< TNL::Meshes::MeshEntity< MeshConfig, Device, Topology >, 0 >
+      struct center< noaTNL::Meshes::MeshEntity< MeshConfig, Device, Topology >, 0 >
       {
-         static int get( const TNL::Meshes::MeshEntity< MeshConfig, Device, Topology >& entity )
+         static int get( const noaTNL::Meshes::MeshEntity< MeshConfig, Device, Topology >& entity )
          {
             throw Exceptions::NotImplementedError();
          }
@@ -158,4 +158,4 @@ public:
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

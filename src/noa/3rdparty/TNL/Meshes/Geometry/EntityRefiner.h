@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Meshes/MeshEntity.h>
-#include <TNL/Meshes/Topologies/Triangle.h>
-#include <TNL/Meshes/Topologies/Quadrangle.h>
-#include <TNL/Meshes/Topologies/Tetrahedron.h>
-#include <TNL/Meshes/Topologies/Hexahedron.h>
+#include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Triangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Quadrangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Hexahedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 enum class EntityRefinerVersion
@@ -242,4 +242,4 @@ struct EntityRefiner< MeshConfig, Topologies::Hexahedron, EntityRefinerVersion::
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

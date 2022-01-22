@@ -10,13 +10,13 @@
 #include <memory>  // std::unique_ptr
 #include <stdexcept>
 
-#include <TNL/Algorithms/MemoryOperations.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/reduce.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/reduce.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< typename Element, typename Index >
@@ -150,7 +150,7 @@ copyFromIterator( DestinationElement* destination,
                   SourceIterator last )
 {
    using BaseType = typename std::remove_cv< DestinationElement >::type;
-   const int buffer_size = TNL::min( Cuda::getTransferBufferSize() / sizeof(BaseType), destinationSize );
+   const int buffer_size = noaTNL::min( Cuda::getTransferBufferSize() / sizeof(BaseType), destinationSize );
    std::unique_ptr< BaseType[] > buffer{ new BaseType[ buffer_size ] };
    Index copiedElements = 0;
    while( copiedElements < destinationSize && first != last ) {
@@ -182,4 +182,4 @@ compare( const Element1* destination,
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

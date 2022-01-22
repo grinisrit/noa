@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 
 template< int, typename > class VectorField;
@@ -177,6 +177,6 @@ public:
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Functions/VectorFieldGnuplotWriter_impl.h>
+#include <noa/3rdparty/TNL/Functions/VectorFieldGnuplotWriter_impl.h>

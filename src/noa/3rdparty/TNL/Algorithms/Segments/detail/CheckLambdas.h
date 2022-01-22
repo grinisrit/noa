@@ -7,7 +7,7 @@
 #pragma once
 
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {
@@ -33,4 +33,4 @@ class CheckFetchLambda
          } // namespace detail
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

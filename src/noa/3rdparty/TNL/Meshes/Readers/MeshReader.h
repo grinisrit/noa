@@ -12,11 +12,11 @@
 #include <vector>
 #include <variant>
 
-#include <TNL/Meshes/MeshBuilder.h>
-#include <TNL/Meshes/VTKTraits.h>
-#include <TNL/Meshes/Traits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshBuilder.h>
+#include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
+#include <noa/3rdparty/TNL/Meshes/Traits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 //! \brief Namespace for mesh readers.
 namespace Readers {
@@ -81,7 +81,7 @@ public:
     * \brief Method which loads the intermediate mesh representation into a
     * mesh object.
     *
-    * This overload applies to structured grids, i.e. \ref TNL::Meshes::Grid.
+    * This overload applies to structured grids, i.e. \ref noaTNL::Meshes::Grid.
     *
     * When the method exits, the intermediate mesh representation is destroyed
     * to save memory. However, depending on the specific file format, the mesh
@@ -132,7 +132,7 @@ public:
     * \brief Method which loads the intermediate mesh representation into a
     * mesh object.
     *
-    * This overload applies to unstructured meshes, i.e. \ref TNL::Meshes::Mesh.
+    * This overload applies to unstructured meshes, i.e. \ref noaTNL::Meshes::Mesh.
     *
     * When the method exits, the intermediate mesh representation is destroyed
     * to save memory. However, depending on the specific file format, the mesh
@@ -351,7 +351,7 @@ protected:
    std::string forcedGlobalIndexType = "";
    std::string forcedLocalIndexType = "short int";  // not stored in any file format
 
-   // intermediate representation of a grid (this is relevant only for TNL::Meshes::Grid)
+   // intermediate representation of a grid (this is relevant only for noaTNL::Meshes::Grid)
    std::vector< std::int64_t > gridExtent;
    std::vector< double > gridOrigin, gridSpacing;
 
@@ -394,4 +394,4 @@ protected:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

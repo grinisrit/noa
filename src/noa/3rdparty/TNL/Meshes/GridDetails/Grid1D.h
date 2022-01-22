@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include <TNL/Logger.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/GridDetails/GridEntityTopology.h>
-#include <TNL/Meshes/GridDetails/GridEntityGetter.h>
-#include <TNL/Meshes/GridDetails/NeighborGridEntityGetter.h>
-#include <TNL/Meshes/GridEntity.h>
-#include <TNL/Meshes/GridEntityConfig.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityTopology.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityGetter.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/NeighborGridEntityGetter.h>
+#include <noa/3rdparty/TNL/Meshes/GridEntity.h>
+#include <noa/3rdparty/TNL/Meshes/GridEntityConfig.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Real,
@@ -205,6 +205,6 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/GridDetails/Grid1D_impl.h>
+#include <noa/3rdparty/TNL/Meshes/GridDetails/Grid1D_impl.h>

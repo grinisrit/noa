@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Debugging/OutputRedirection.h>
-#include <TNL/TypeTraits.h>
+#include <noa/3rdparty/TNL/Debugging/OutputRedirection.h>
+#include <noa/3rdparty/TNL/TypeTraits.h>
 
 #include "Wrappers.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace MPI {
 
 inline bool isInitialized()
@@ -230,4 +230,4 @@ bcast( Array& array,
 }
 
 } // namespace MPI
-} // namespace TNL
+} // namespace noaTNL

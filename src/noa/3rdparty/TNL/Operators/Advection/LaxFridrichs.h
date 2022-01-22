@@ -7,12 +7,12 @@
 #ifndef LaxFridrichs_H
 #define LaxFridrichs_H
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Functions/VectorField.h>
-#include <TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Functions/VectorField.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Operators {
       namespace Advection {
    
@@ -312,6 +312,6 @@ class LaxFridrichs< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real, Index,
 
       }// namespace Advection
    } // namepsace Operators
-} // namespace TNL
+} // namespace noaTNL
 
 #endif	/* LaxFridrichs_H */

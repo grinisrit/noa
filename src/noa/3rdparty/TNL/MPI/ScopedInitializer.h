@@ -11,7 +11,7 @@
 #include "Wrappers.h"
 #include "Utils.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace MPI {
 
 struct ScopedInitializer
@@ -29,4 +29,4 @@ struct ScopedInitializer
 };
 
 } // namespace MPI
-} // namespace TNL
+} // namespace noaTNL

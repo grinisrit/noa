@@ -10,12 +10,12 @@
 
 #include <memory>
 
-#include <TNL/Containers/ArrayView.h>
-#include <TNL/Containers/Subrange.h>
-#include <TNL/Containers/ByteArraySynchronizer.h>
-#include <TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Containers/ArrayView.h>
+#include <noa/3rdparty/TNL/Containers/Subrange.h>
+#include <noa/3rdparty/TNL/Containers/ByteArraySynchronizer.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Value,
@@ -226,6 +226,6 @@ protected:
 };
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL
 
 #include "DistributedArrayView.hpp"

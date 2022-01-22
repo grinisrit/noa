@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Containers/StaticVector.h>
-#include <TNL/Functions/Domain.h>
-#include <TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -118,7 +118,7 @@ std::ostream& operator << ( std::ostream& str, const Twins< Dimension, Real >& f
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Functions/Analytic/Twins_impl.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Twins_impl.h>
 

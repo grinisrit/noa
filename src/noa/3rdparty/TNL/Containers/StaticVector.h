@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Containers/StaticArray.h>
-#include <TNL/Containers/Expressions/StaticExpressionTemplates.h>
+#include <noa/3rdparty/TNL/Containers/StaticArray.h>
+#include <noa/3rdparty/TNL/Containers/Expressions/StaticExpressionTemplates.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
  /**
@@ -181,12 +181,12 @@ namespace Expressions {
 } // namespace Expressions
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Containers/StaticVector.hpp>
+#include <noa/3rdparty/TNL/Containers/StaticVector.hpp>
 
 // TODO: move to some other source file
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Real >
@@ -216,7 +216,7 @@ Real TriangleArea( const StaticVector< 2, Real >& a,
    u2. z() = 0;
 
    const StaticVector< 3, Real > v = VectorProduct( u1, u2 );
-   return 0.5 * TNL::sqrt( dot( v, v ) );
+   return 0.5 * noaTNL::sqrt( dot( v, v ) );
 }
 
 template< typename Real >
@@ -234,8 +234,8 @@ Real TriangleArea( const StaticVector< 3, Real >& a,
    u2. z() = c. z() - a. z();
 
    const StaticVector< 3, Real > v = VectorProduct( u1, u2 );
-   return 0.5 * TNL::sqrt( dot( v, v ) );
+   return 0.5 * noaTNL::sqrt( dot( v, v ) );
 }
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

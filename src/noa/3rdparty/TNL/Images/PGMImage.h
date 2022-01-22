@@ -6,12 +6,12 @@
 
 #pragma once 
 
-#include <TNL/String.h>
-#include <TNL/Images//Image.h>
-#include <TNL/Images//RegionOfInterest.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Images//Image.h>
+#include <noa/3rdparty/TNL/Images//RegionOfInterest.h>
 #include <fstream>
 
-namespace TNL {
+namespace noaTNL {
 namespace Images {   
 
 template< typename Index = int >
@@ -72,8 +72,8 @@ class PGMImage : public Image< Index >
 };
 
 } // namespace Images
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Images//PGMImage_impl.h>
+#include <noa/3rdparty/TNL/Images//PGMImage_impl.h>
 
 

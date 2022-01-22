@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Real = double,
@@ -25,4 +25,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

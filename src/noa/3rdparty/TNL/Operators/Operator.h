@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -42,5 +42,5 @@ class Operator : public Functions::Domain< Mesh::getMeshDimension(), DomainType 
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

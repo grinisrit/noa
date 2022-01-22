@@ -9,9 +9,9 @@
  */
 #pragma once
 
-#include <TNL/Functions/Analytic/SinBumps.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/SinBumps.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -278,5 +278,5 @@ operator()( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

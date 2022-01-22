@@ -12,10 +12,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/MeshDetails/traits/MeshSubentityTraits.h>
-#include <TNL/Meshes/MeshDetails/traits/MeshSuperentityTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshSubentityTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshSuperentityTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -58,4 +58,4 @@ struct WeakSuperentityStorageTrait< MeshConfig, Device, EntityTopology, Superdim
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

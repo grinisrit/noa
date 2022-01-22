@@ -15,10 +15,10 @@
 #include <numeric>   // std::iota
 #include <vector>
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Mesh >
@@ -123,7 +123,7 @@ public:
          const PointType& left = this->points[ a ];
          const PointType& right = this->points[ b ];
          for( LocalIndexType i = 0; i < PointType::getSize(); i++ )
-            if( TNL::abs( left[ i ] - right[ i ] ) > numericalThreshold )
+            if( noaTNL::abs( left[ i ] - right[ i ] ) > numericalThreshold )
                return left[ i ] < right[ i ];
          return false;
       };
@@ -420,4 +420,4 @@ private:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

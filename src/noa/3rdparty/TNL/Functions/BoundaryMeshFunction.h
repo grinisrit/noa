@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
    
@@ -35,4 +35,4 @@ class BoundaryMeshFunction :
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

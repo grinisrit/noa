@@ -7,9 +7,9 @@
 // Implemented by: Xuan Thang Nguyen
 
 #pragma once
-#include <TNL/Math.h>
+#include <noa/3rdparty/TNL/Math.h>
 
-namespace TNL {
+namespace noaTNL {
     namespace Algorithms {
         namespace Sorting {
 
@@ -46,10 +46,10 @@ template <typename Value, typename CMP>
 __cuda_callable__ void cmpSwap(Value &a, Value &b, bool ascending, const CMP &Cmp)
 {
     if (ascending == Cmp(b, a))
-        TNL::swap(a, b);
+        noaTNL::swap(a, b);
 }
 
 #endif
         } //namespace Sorting
     } //namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -12,17 +12,17 @@
 
 //#define CUDA_REDUCTION_PROFILING
 
-#include <TNL/Assert.h>
-#include <TNL/Algorithms/Multireduction.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
-#include <TNL/Algorithms/detail/CudaMultireductionKernel.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Algorithms/Multireduction.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/detail/CudaMultireductionKernel.h>
 
 #ifdef CUDA_REDUCTION_PROFILING
-#include <TNL/Timer.h>
+#include <noa/3rdparty/TNL/Timer.h>
 #include <iostream>
 #endif
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< typename Result,
@@ -123,7 +123,7 @@ reduce( const Result identity,
    const int blocks = size / block_size;
 
    if( Devices::Host::isOMPEnabled() && blocks >= 2 ) {
-      const int threads = TNL::min( blocks, Devices::Host::getMaxThreadsCount() );
+      const int threads = noaTNL::min( blocks, Devices::Host::getMaxThreadsCount() );
 #pragma omp parallel num_threads(threads)
       {
          // first thread initializes the result array
@@ -239,4 +239,4 @@ reduce( const Result identity,
 };
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

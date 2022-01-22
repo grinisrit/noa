@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 template< typename Mesh >
@@ -142,4 +142,4 @@ class MeshFunctionNormGetter< Meshes::Grid< Dimension, MeshReal, Devices::Cuda, 
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

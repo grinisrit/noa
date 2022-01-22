@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Matrices/DenseMatrix.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Real,
@@ -1427,4 +1427,4 @@ bool operator!=( const DenseMatrixView< Real, Device, Index, Organization >& lef
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

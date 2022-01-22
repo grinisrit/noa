@@ -8,7 +8,7 @@
 
 #include "CG.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 
@@ -118,4 +118,4 @@ setSize( const VectorViewType& x )
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

@@ -8,27 +8,27 @@
 
 #pragma once
 
-#include <TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
 #include "cassert"
-#include <TNL/Algorithms/Sorting/detail/bitonicSort.h>
-#include <TNL/Algorithms/detail/CudaScanKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Sorting/detail/bitonicSort.h>
+#include <noa/3rdparty/TNL/Algorithms/detail/CudaScanKernel.h>
 
-namespace TNL {
+namespace noaTNL {
     namespace Algorithms {
         namespace Sorting {
 
 #ifdef HAVE_CUDA
 
 template <typename Value, typename CMP>
-__device__ void externSort( Containers::ArrayView<Value, TNL::Devices::Cuda> src,
-                            Containers::ArrayView<Value, TNL::Devices::Cuda> dst,
+__device__ void externSort( Containers::ArrayView<Value, noaTNL::Devices::Cuda> src,
+                            Containers::ArrayView<Value, noaTNL::Devices::Cuda> dst,
                             const CMP &Cmp, Value *sharedMem)
 {
     bitonicSort_Block(src, dst, sharedMem, Cmp);
 }
 
 template <typename Value, typename CMP>
-__device__ void externSort( Containers::ArrayView<Value, TNL::Devices::Cuda> src,
+__device__ void externSort( Containers::ArrayView<Value, noaTNL::Devices::Cuda> src,
                             const CMP &Cmp)
 {
     bitonicSort_Block(src, Cmp);
@@ -46,8 +46,8 @@ __device__ void stackPush(int stackArrBegin[], int stackArrEnd[],
 //---------------------------------------------------------------
 
 template <typename Value, typename CMP, int stackSize, bool useShared>
-__device__ void singleBlockQuickSort( Containers::ArrayView<Value, TNL::Devices::Cuda> arr,
-                                      Containers::ArrayView<Value, TNL::Devices::Cuda> aux,
+__device__ void singleBlockQuickSort( Containers::ArrayView<Value, noaTNL::Devices::Cuda> arr,
+                                      Containers::ArrayView<Value, noaTNL::Devices::Cuda> aux,
                                       const CMP &Cmp, int _iteration,
                                       Value *sharedMem, int memSize,
                                       int maxBitonicSize)
@@ -129,10 +129,10 @@ __device__ void singleBlockQuickSort( Containers::ArrayView<Value, TNL::Devices:
         countElem(src.getView(begin, end), Cmp, smaller, bigger, pivot);
 
         //synchronization is in this function already
-        using BlockScan = Algorithms::detail::CudaBlockScan< Algorithms::detail::ScanType::Inclusive, 0, TNL::Plus, int >;
+        using BlockScan = Algorithms::detail::CudaBlockScan< Algorithms::detail::ScanType::Inclusive, 0, noaTNL::Plus, int >;
         __shared__ typename BlockScan::Storage storage;
-        int smallerPrefSumInc = BlockScan::scan( TNL::Plus{}, 0, smaller, threadIdx.x, storage );
-        int biggerPrefSumInc = BlockScan::scan( TNL::Plus{}, 0, bigger, threadIdx.x, storage );
+        int smallerPrefSumInc = BlockScan::scan( noaTNL::Plus{}, 0, smaller, threadIdx.x, storage );
+        int biggerPrefSumInc = BlockScan::scan( noaTNL::Plus{}, 0, bigger, threadIdx.x, storage );
 
         if (threadIdx.x == blockDim.x - 1) //has sum of all smaller and greater elements than pivot in src
         {
@@ -249,4 +249,4 @@ __device__ void stackPush(int stackArrBegin[], int stackArrEnd[],
 
         } // namespace Sorting
     } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

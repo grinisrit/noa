@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Matrices/MatrixRowViewIterator.h>
-#include <TNL/Matrices/MultidiagonalMatrixElement.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.h>
+#include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrixElement.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -198,6 +198,6 @@ class TridiagonalMatrixRowView
 };
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Matrices/TridiagonalMatrixRowView.hpp>
+#include <noa/3rdparty/TNL/Matrices/TridiagonalMatrixRowView.hpp>

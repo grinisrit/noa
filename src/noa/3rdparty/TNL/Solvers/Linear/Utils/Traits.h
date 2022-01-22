@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include <TNL/MPI/Wrappers.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Containers/VectorView.h>
-#include <TNL/Containers/DistributedVector.h>
-#include <TNL/Containers/DistributedVectorView.h>
-#include <TNL/Matrices/DistributedMatrix.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Containers/DistributedVector.h>
+#include <noa/3rdparty/TNL/Containers/DistributedVectorView.h>
+#include <noa/3rdparty/TNL/Matrices/DistributedMatrix.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace Linear {
 
@@ -91,4 +91,4 @@ struct Traits< Matrices::DistributedMatrix< Matrix > >
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

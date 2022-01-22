@@ -8,9 +8,9 @@
 
 #include <type_traits>
 
-#include <TNL/Meshes/TypeResolver/BuildConfigTags.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/BuildConfigTags.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -137,6 +137,6 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/TypeResolver/MeshTypeResolver.hpp>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/MeshTypeResolver.hpp>

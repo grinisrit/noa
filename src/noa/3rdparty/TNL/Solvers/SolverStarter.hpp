@@ -6,20 +6,20 @@
 
 #pragma once
 
-#include <TNL/Logger.h>
-#include <TNL/String.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/MPI/Config.h>
-#include <TNL/Solvers/SolverStarter.h>
-#include <TNL/Solvers/BuildConfigTags.h>
-#include <TNL/Solvers/ODE/Merson.h>
-#include <TNL/Solvers/ODE/Euler.h>
-#include <TNL/Solvers/PDE/ExplicitTimeStepper.h>
-#include <TNL/Solvers/PDE/SemiImplicitTimeStepper.h>
-#include <TNL/Solvers/PDE/PDESolverTypeResolver.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/MPI/Config.h>
+#include <noa/3rdparty/TNL/Solvers/SolverStarter.h>
+#include <noa/3rdparty/TNL/Solvers/BuildConfigTags.h>
+#include <noa/3rdparty/TNL/Solvers/ODE/Merson.h>
+#include <noa/3rdparty/TNL/Solvers/ODE/Euler.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/ExplicitTimeStepper.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/SemiImplicitTimeStepper.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/PDESolverTypeResolver.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 
 template< typename Problem,
@@ -397,7 +397,7 @@ bool SolverStarter< ConfigTag > :: writeEpilog( std::ostream& str, const Solver&
       return false;
    logger.writeParameter< const char* >( "Compute time:", "" );
    this->computeTimer.writeLog( logger, 1 );
-   if( std::is_same< typename Solver::DeviceType, TNL::Devices::Cuda >::value )
+   if( std::is_same< typename Solver::DeviceType, noaTNL::Devices::Cuda >::value )
    {
       logger.writeParameter< const char* >( "GPU synchronization time:", "" );
       Pointers::getSmartPointersSynchronizationTimer< Devices::Cuda >().writeLog( logger, 1 );
@@ -414,4 +414,4 @@ bool SolverStarter< ConfigTag > :: writeEpilog( std::ostream& str, const Solver&
 }
 
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

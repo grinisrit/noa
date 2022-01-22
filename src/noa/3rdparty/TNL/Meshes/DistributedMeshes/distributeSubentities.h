@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <TNL/Meshes/DistributedMeshes/DistributedMeshSynchronizer.h>
-#include <TNL/Meshes/MeshDetails/layers/EntityTags/Traits.h>
-#include <TNL/Algorithms/scan.h>
-#include <TNL/Algorithms/contains.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMeshSynchronizer.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/EntityTags/Traits.h>
+#include <noa/3rdparty/TNL/Algorithms/scan.h>
+#include <noa/3rdparty/TNL/Algorithms/contains.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -203,9 +203,9 @@ distributeSubentities( DistributedMesh& mesh, bool preferHighRanks = true )
          for( LocalIndexType k = 0; k < entity.template getSuperentitiesCount< DistributedMesh::getMeshDimension() >(); k++ ) {
             const GlobalIndexType gk = entity.template getSuperentityIndex< DistributedMesh::getMeshDimension() >( k );
             if( preferHighRanks )
-               owner = TNL::max( owner, getCellOwner( gk ) );
+               owner = noaTNL::max( owner, getCellOwner( gk ) );
             else
-               owner = TNL::min( owner, getCellOwner( gk ) );
+               owner = noaTNL::min( owner, getCellOwner( gk ) );
          }
          return owner;
       }
@@ -425,4 +425,4 @@ distributeSubentities( DistributedMesh& mesh, bool preferHighRanks = true )
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

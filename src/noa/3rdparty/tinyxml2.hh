@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include "_tinyxml2/tinyxml2.h"
-#include "_tinyxml2/tinyxml2.cpp"
+#include "noa/3rdparty/_tinyxml2/tinyxml2.h"
+#include "noa/3rdparty/_tinyxml2/tinyxml2.cpp"
 
 #ifndef HAVE_TINYXML2
 #define HAVE_TINYXML2

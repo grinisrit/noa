@@ -11,7 +11,7 @@
 #include <string>
 #include <stdexcept>
 
-namespace TNL {
+namespace noaTNL {
 namespace Exceptions {
 
 class FileSerializationError
@@ -24,4 +24,4 @@ public:
 };
 
 } // namespace Exceptions
-} // namespace TNL
+} // namespace noaTNL

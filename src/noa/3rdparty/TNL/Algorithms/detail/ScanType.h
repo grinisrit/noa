@@ -8,7 +8,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 namespace detail {
 
@@ -24,4 +24,4 @@ enum class ScanPhaseType {
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

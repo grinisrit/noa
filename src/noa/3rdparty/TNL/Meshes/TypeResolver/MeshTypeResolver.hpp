@@ -8,11 +8,11 @@
 
 #include <utility>
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Meshes/TypeResolver/MeshTypeResolver.h>
-#include <TNL/Meshes/VTKTraits.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/MeshTypeResolver.h>
+#include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -295,4 +295,4 @@ resolveTerminate( Reader& reader, Functor&& functor )
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

@@ -15,16 +15,16 @@
 
 #pragma once
 
-#include <TNL/Logger.h>
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Solvers/PDE/PDESolver.h>
-#include <TNL/Problems/CommonData.h>
-#include <TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/PDESolver.h>
+#include <noa/3rdparty/TNL/Problems/CommonData.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-#include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -80,6 +80,6 @@ class TimeIndependentPDESolver : public PDESolver< typename Problem::RealType,
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/PDE/TimeIndependentPDESolver.hpp>
+#include <noa/3rdparty/TNL/Solvers/PDE/TimeIndependentPDESolver.hpp>

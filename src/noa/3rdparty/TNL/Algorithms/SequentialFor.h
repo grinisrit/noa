@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
 
 /**
@@ -47,4 +47,4 @@ struct SequentialFor
 
 
    } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

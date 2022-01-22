@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Containers/Expressions/TypeTraits.h>
+#include <noa/3rdparty/TNL/Containers/Expressions/TypeTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 namespace Expressions {
 
@@ -35,4 +35,4 @@ getExpressionVariableType()
 
 } // namespace Expressions
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

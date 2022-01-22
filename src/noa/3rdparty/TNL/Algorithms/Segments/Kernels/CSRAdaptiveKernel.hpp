@@ -6,21 +6,21 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Containers/VectorView.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
-#include <TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
 template< typename Index,
           typename Device >
-TNL::String
+noaTNL::String
 CSRAdaptiveKernel< Index, Device >::
 getKernelType()
 {
@@ -154,7 +154,7 @@ void
 CSRAdaptiveKernel< Index, Device >::
 initValueSize( const Offsets& offsets )
 {
-   using HostOffsetsType = TNL::Containers::Vector< typename Offsets::IndexType, TNL::Devices::Host, typename Offsets::IndexType >;
+   using HostOffsetsType = noaTNL::Containers::Vector< typename Offsets::IndexType, noaTNL::Devices::Host, typename Offsets::IndexType >;
    HostOffsetsType hostOffsets( offsets );
    const Index rows = offsets.getSize();
    Index start( 0 ), nextStart( 0 );
@@ -171,7 +171,7 @@ initValueSize( const Offsets& offsets )
       if( type == detail::Type::LONG )
       {
          const Index blocksCount = inBlocks.size();
-         const Index warpsPerCudaBlock = detail::CSRAdaptiveKernelParameters< SizeOfValue >::CudaBlockSize() / TNL::Cuda::getWarpSize();
+         const Index warpsPerCudaBlock = detail::CSRAdaptiveKernelParameters< SizeOfValue >::CudaBlockSize() / noaTNL::Cuda::getWarpSize();
          Index warpsLeft = roundUpDivision( blocksCount, warpsPerCudaBlock ) * warpsPerCudaBlock - blocksCount;
          if( warpsLeft == 0 )
             warpsLeft = warpsPerCudaBlock;
@@ -193,4 +193,4 @@ initValueSize( const Offsets& offsets )
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

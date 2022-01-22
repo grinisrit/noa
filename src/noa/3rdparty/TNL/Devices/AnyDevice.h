@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Devices {
 
 class AnyDevice
@@ -28,4 +28,4 @@ struct PickDevice< Devices::AnyDevice >
 };
 
 } // namespace Devices
-} // namespace TNL
+} // namespace noaTNL

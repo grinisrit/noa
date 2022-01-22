@@ -8,7 +8,7 @@
 
 #include <limits>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace ODE {
 
@@ -153,4 +153,4 @@ setTestingMode( bool testingMode )
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

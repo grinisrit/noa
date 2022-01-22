@@ -8,9 +8,9 @@
 
 #include <ostream>
 
-#include <TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 /**
@@ -102,4 +102,4 @@ class LambdaMatrixElement
 };
 
    } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

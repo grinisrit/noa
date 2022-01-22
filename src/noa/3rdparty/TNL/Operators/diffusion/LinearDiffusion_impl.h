@@ -12,10 +12,10 @@
 
 #pragma once
 
-#include <TNL/Operators/diffusion/LinearDiffusion.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/LinearDiffusion.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename MeshReal,
@@ -254,4 +254,4 @@ setMatrixElements( const PreimageFunction& u,
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

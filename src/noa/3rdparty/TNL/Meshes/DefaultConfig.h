@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/Topologies/SubentityVertexMap.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /****
@@ -88,4 +88,4 @@ struct DefaultConfig
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

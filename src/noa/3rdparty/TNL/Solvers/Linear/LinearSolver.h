@@ -11,11 +11,11 @@
 #include <type_traits>  // std::add_const_t
 #include <memory>  // std::shared_ptr
 
-#include <TNL/Solvers/IterativeSolver.h>
-#include <TNL/Solvers/Linear/Preconditioners/Preconditioner.h>
-#include <TNL/Solvers/Linear/Utils/Traits.h>
+#include <noa/3rdparty/TNL/Solvers/IterativeSolver.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Preconditioners/Preconditioner.h>
+#include <noa/3rdparty/TNL/Solvers/Linear/Utils/Traits.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
       namespace Linear {
 
@@ -39,7 +39,7 @@ namespace TNL {
  *
  * \include IterativeLinearSolverExample.out
  *
- * See also \ref TNL::Solvers::IterativeSolverMonitor for monitoring of iterative solvers.
+ * See also \ref noaTNL::Solvers::IterativeSolverMonitor for monitoring of iterative solvers.
  */
 template< typename Matrix >
 class LinearSolver
@@ -171,4 +171,4 @@ class LinearSolver
 };
       } // namespace Linear
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

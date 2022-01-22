@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
+#include <noa/3rdparty/TNL/Assert.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /***
@@ -49,4 +49,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

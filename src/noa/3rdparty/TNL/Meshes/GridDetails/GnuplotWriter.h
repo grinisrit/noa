@@ -7,9 +7,9 @@
 #pragma once
 
 #include <ostream>
-#include <TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 class GnuplotWriter
@@ -47,4 +47,4 @@ class GnuplotWriter
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

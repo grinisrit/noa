@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Algorithms/detail/ScanType.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Algorithms/detail/ScanType.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 namespace detail {
 
@@ -152,6 +152,6 @@ struct Scan< Devices::Cuda, Type, PhaseType >
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
 #include "Scan.hpp"

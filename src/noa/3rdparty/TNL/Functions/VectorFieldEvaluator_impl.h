@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Functions/VectorFieldEvaluator.h>
-#include <TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/TNL/Functions/VectorFieldEvaluator.h>
+#include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 template< typename OutVectorField,
@@ -166,4 +166,4 @@ evaluateEntities( OutVectorFieldPointer& meshFunction,
 }
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

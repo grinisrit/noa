@@ -8,14 +8,14 @@
 
 #include <type_traits>
 
-#include <TNL/TypeTraits.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/Segments/ElementsOrganization.h>
-#include <TNL/Algorithms/Segments/ChunkedEllpackSegmentView.h>
-#include <TNL/Algorithms/Segments/detail/ChunkedEllpack.h>
-#include <TNL/Algorithms/Segments/SegmentsPrinting.h>
+#include <noa/3rdparty/TNL/TypeTraits.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ElementsOrganization.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ChunkedEllpackSegmentView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/ChunkedEllpack.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentsPrinting.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -38,7 +38,7 @@ class ChunkedEllpackView
       using SegmentViewType = ChunkedEllpackSegmentView< IndexType, Organization >;
       using ChunkedEllpackSliceInfoType = detail::ChunkedEllpackSliceInfo< IndexType >;
       using ChunkedEllpackSliceInfoAllocator = typename Allocators::Default< Device >::template Allocator< ChunkedEllpackSliceInfoType >;
-      using ChunkedEllpackSliceInfoContainer = Containers::Array< typename TNL::copy_const< ChunkedEllpackSliceInfoType >::template from< Index >::type, DeviceType, IndexType, ChunkedEllpackSliceInfoAllocator >;
+      using ChunkedEllpackSliceInfoContainer = Containers::Array< typename noaTNL::copy_const< ChunkedEllpackSliceInfoType >::template from< Index >::type, DeviceType, IndexType, ChunkedEllpackSliceInfoAllocator >;
       using ChunkedEllpackSliceInfoContainerView = typename ChunkedEllpackSliceInfoContainer::ViewType;
 
       static constexpr bool havePadding() { return true; };
@@ -229,6 +229,6 @@ class ChunkedEllpackView
 };
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/ChunkedEllpackView.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ChunkedEllpackView.hpp>

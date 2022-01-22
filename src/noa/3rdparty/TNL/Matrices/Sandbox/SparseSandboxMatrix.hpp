@@ -8,10 +8,10 @@
 
 #include <functional>
 #include <sstream>
-#include <TNL/Algorithms/reduce.h>
-#include <TNL/Matrices/Sandbox/SparseSandboxMatrix.h>
+#include <noa/3rdparty/TNL/Algorithms/reduce.h>
+#include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrix.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Matrices {
       namespace Sandbox {
 
@@ -69,7 +69,7 @@ template< typename Real,
           typename MatrixType,
           typename RealAllocator,
           typename IndexAllocator >
-   template< typename RowCapacitiesVector, std::enable_if_t< TNL::IsArrayType< RowCapacitiesVector >::value, int > >
+   template< typename RowCapacitiesVector, std::enable_if_t< noaTNL::IsArrayType< RowCapacitiesVector >::value, int > >
 SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::
 SparseSandboxMatrix( const RowCapacitiesVector& rowCapacities,
                      const IndexType columns,
@@ -1191,4 +1191,4 @@ getColumnIndexes() -> ColumnsIndexesVectorType&
 
       } // namespace Sandbox
    } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

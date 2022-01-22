@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Functions/Analytic/Twins.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/Twins.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -139,5 +139,5 @@ operator()( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

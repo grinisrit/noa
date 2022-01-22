@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 enum DomainType { NonspaceDomain, SpaceDomain, MeshDomain, MeshInteriorDomain, MeshBoundaryDomain };
@@ -26,5 +26,5 @@ class Domain
 };
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 

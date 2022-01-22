@@ -15,7 +15,7 @@
 #include <ostream>
 #include <iomanip>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 
@@ -62,4 +62,4 @@ public:
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

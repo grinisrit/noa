@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename GridEntity >
@@ -221,5 +221,5 @@ class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Inde
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 

@@ -8,11 +8,11 @@
 
 #include <type_traits>
 
-#include <TNL/Object.h>
-#include <TNL/File.h>
-#include <TNL/TypeInfo.h>
+#include <noa/3rdparty/TNL/Object.h>
+#include <noa/3rdparty/TNL/File.h>
+#include <noa/3rdparty/TNL/TypeInfo.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 namespace detail {
 
@@ -31,8 +31,8 @@ struct ArrayIO< Value, Index, Allocator, true >
    static String getSerializationType()
    {
       return String( "Containers::Array< " ) +
-             TNL::getSerializationType< Value >() + ", [any_device], " +
-             TNL::getSerializationType< Index >() + ", [any_allocator] >";
+             noaTNL::getSerializationType< Value >() + ", [any_device], " +
+             noaTNL::getSerializationType< Index >() + ", [any_allocator] >";
    }
 
    static void save( File& file,
@@ -76,8 +76,8 @@ struct ArrayIO< Value, Index, Allocator, false >
    static String getSerializationType()
    {
       return String( "Containers::Array< " ) +
-             TNL::getSerializationType< Value >() + ", [any_device], " +
-             TNL::getSerializationType< Index >() + ", [any_allocator] >";
+             noaTNL::getSerializationType< Value >() + ", [any_device], " +
+             noaTNL::getSerializationType< Index >() + ", [any_allocator] >";
    }
 
    static void save( File& file,
@@ -115,4 +115,4 @@ struct ArrayIO< Value, Index, Allocator, false >
 
 } // namespace detail
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

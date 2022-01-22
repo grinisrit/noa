@@ -6,17 +6,17 @@
 
 #pragma once
 
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Logger.h>
-#include <TNL/Pointers/SharedPointer.h>
-#include <TNL/Solvers/PDE/PDESolver.h>
-#include <TNL/Solvers/PDE/MeshDependentTimeSteps.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Logger.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/PDESolver.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/MeshDependentTimeSteps.h>
 
-#include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -97,6 +97,6 @@ class TimeDependentPDESolver
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/PDE/TimeDependentPDESolver.hpp>
+#include <noa/3rdparty/TNL/Solvers/PDE/TimeDependentPDESolver.hpp>

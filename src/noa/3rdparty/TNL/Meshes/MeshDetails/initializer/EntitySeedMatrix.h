@@ -6,10 +6,10 @@
 
 #pragma once
 
-//#include <TNL/Meshes/MeshDetails/traits/MeshTraits.h>
-#include <TNL/Meshes/Topologies/IsDynamicTopology.h>
+//#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/IsDynamicTopology.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -471,4 +471,4 @@ class EntitySeedMatrix< MeshConfig, EntityTopology, true >
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

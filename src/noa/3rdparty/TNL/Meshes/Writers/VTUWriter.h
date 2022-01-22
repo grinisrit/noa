@@ -10,9 +10,9 @@
 
 #include <ostream>
 
-#include <TNL/Meshes/VTKTraits.h>
+#include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 
@@ -97,6 +97,6 @@ protected:
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/Writers/VTUWriter.hpp>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.hpp>

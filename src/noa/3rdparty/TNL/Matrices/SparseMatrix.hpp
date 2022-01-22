@@ -7,9 +7,9 @@
 #pragma once
 
 #include <sstream>
-#include <TNL/Matrices/SparseMatrix.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrix.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Real,
@@ -92,7 +92,7 @@ template< typename Real,
           typename ComputeReal,
           typename RealAllocator,
           typename IndexAllocator >
-   template< typename RowCapacitiesVector, std::enable_if_t< TNL::IsArrayType< RowCapacitiesVector >::value, int > >
+   template< typename RowCapacitiesVector, std::enable_if_t< noaTNL::IsArrayType< RowCapacitiesVector >::value, int > >
 SparseMatrix< Real, Device, Index, MatrixType, Segments, ComputeReal, RealAllocator, IndexAllocator >::
 SparseMatrix( const RowCapacitiesVector& rowCapacities,
               const IndexType columns,
@@ -1318,4 +1318,4 @@ getColumnIndexes() -> ColumnsIndexesVectorType&
 
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

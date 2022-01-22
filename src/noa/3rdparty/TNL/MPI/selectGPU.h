@@ -8,11 +8,11 @@
 
 #include <cstdlib>  // std::getenv
 
-#include <TNL/Cuda/CheckDevice.h>
+#include <noa/3rdparty/TNL/Cuda/CheckDevice.h>
 
 #include "Utils.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace MPI {
 
 inline void selectGPU()
@@ -41,4 +41,4 @@ inline void selectGPU()
 }
 
 } // namespace MPI
-} // namespace TNL
+} // namespace noaTNL

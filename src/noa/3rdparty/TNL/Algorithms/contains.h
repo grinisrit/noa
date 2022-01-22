@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Algorithms/detail/Contains.h>
+#include <noa/3rdparty/TNL/Algorithms/detail/Contains.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 /**
@@ -68,4 +68,4 @@ containsOnlyValue( const Array& array,
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

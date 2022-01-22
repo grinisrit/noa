@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <TNL/Containers/DistributedArrayView.h>
-#include <TNL/Containers/Expressions/DistributedExpressionTemplates.h>
-#include <TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Containers/DistributedArrayView.h>
+#include <noa/3rdparty/TNL/Containers/Expressions/DistributedExpressionTemplates.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 template< typename Real,
@@ -162,6 +162,6 @@ namespace Expressions {
 } // namespace Expressions
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Containers/DistributedVectorView.hpp>
+#include <noa/3rdparty/TNL/Containers/DistributedVectorView.hpp>

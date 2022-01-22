@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <TNL/Containers/Array.h>
-#include <TNL/MPI/Wrappers.h>
-#include <TNL/Meshes/DistributedMeshes/GlobalIndexStorage.h>
-#include <TNL/Meshes/MeshDetails/IndexPermutationApplier.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/GlobalIndexStorage.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/IndexPermutationApplier.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -239,6 +239,6 @@ protected:
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/DistributedMeshes/DistributedGrid.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGrid.h>

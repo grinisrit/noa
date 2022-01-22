@@ -11,11 +11,11 @@
 #ifdef HAVE_CUDA
 #include <cuda.h>
 #endif
-#include <TNL/Devices/Sequential.h>
-#include <TNL/Devices/Host.h>
-#include <TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Devices/Sequential.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< typename Device >
@@ -107,4 +107,4 @@ struct AtomicOperations< Devices::Cuda >
    }
 };
 } //namespace Algorithms
-} //namespace TNL
+} //namespace noaTNL

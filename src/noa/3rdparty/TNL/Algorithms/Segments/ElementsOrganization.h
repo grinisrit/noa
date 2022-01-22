@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Devices/Host.h>
+#include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -36,4 +36,4 @@ inline String getSerializationType( Algorithms::Segments::ElementsOrganization O
       return String( "ColumnMajorOrder" );
 }
 
-} // namespace TNL
+} // namespace noaTNL

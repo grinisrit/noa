@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Algorithms/scan.h>
+#include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {
@@ -109,4 +109,4 @@ class CSR
          } // namespace detail
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -11,7 +11,7 @@
 #include <climits>
 #include <type_traits>
 
-namespace TNL {
+namespace noaTNL {
 
 /**
  * \brief Function takes a value and swaps its endianness.

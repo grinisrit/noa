@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Functions/MeshFunctionEvaluator.h>
-#include <TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionEvaluator.h>
+#include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {   
 
 template< typename OutMeshFunction,
@@ -158,4 +158,4 @@ evaluateEntities( OutMeshFunctionPointer& meshFunction,
 }
 
 } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL

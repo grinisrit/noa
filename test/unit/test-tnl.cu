@@ -1,13 +1,13 @@
 #define HAVE_CUDA
 
-#include <TNL/Containers/Array.h>
-#include <TNL/Containers/ArrayView.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/Containers/ArrayView.h>
 #include <torch/torch.h>
 
 #include <gtest/gtest.h>
 
-using namespace TNL;
-using namespace TNL::Containers;
+using namespace noaTNL;
+using namespace noaTNL::Containers;
 
 TEST(TNL, TensorBlobCUDA) {
 

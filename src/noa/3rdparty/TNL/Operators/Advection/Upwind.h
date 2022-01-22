@@ -7,12 +7,12 @@
 #ifndef Upwind_H
 #define Upwind_H
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Functions/VectorField.h>
-#include <TNL/Pointers/SharedPointer.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Functions/VectorField.h>
+#include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Operators {
       namespace Advection {
    
@@ -323,6 +323,6 @@ class Upwind< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real, Index, Veloc
 
       }// namespace Advection
    } // namepsace Operators
-} // namespace TNL
+} // namespace noaTNL
 
 #endif	/* Upwind_H */

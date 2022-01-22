@@ -10,7 +10,7 @@
 
 #include <string>
 
-namespace TNL {
+namespace noaTNL {
 namespace Config {
 
 class ConfigEntryBase
@@ -56,4 +56,4 @@ public:
 };
 
 } // namespace Config
-} // namespace TNL
+} // namespace noaTNL

@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include <TNL/Operators/diffusion/OneSidedMeanCurvature.h>
-#include <TNL/Problems/PDEProblem.h>
-#include <TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ.h>
-#include <TNL/Matrices/CSR.h>
-#include <TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/OneSidedMeanCurvature.h>
+#include <noa/3rdparty/TNL/Problems/PDEProblem.h>
+#include <noa/3rdparty/TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ.h>
+#include <noa/3rdparty/TNL/Matrices/CSR.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -103,6 +103,6 @@ class MeanCurvatureFlowProblem : public PDEProblem< Mesh,
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL
 
 #include "MeanCurvatureFlowProblem_impl.h"

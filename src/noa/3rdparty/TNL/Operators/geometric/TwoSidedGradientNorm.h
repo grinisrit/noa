@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Operators/fdm/ForwardFiniteDifference.h>
-#include <TNL/Operators/fdm/BackwardFiniteDifference.h>
-#include <TNL/Operators/geometric/ExactGradientNorm.h>
-#include <TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Operators/fdm/ForwardFiniteDifference.h>
+#include <noa/3rdparty/TNL/Operators/fdm/BackwardFiniteDifference.h>
+#include <noa/3rdparty/TNL/Operators/geometric/ExactGradientNorm.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -178,5 +178,5 @@ class TwoSidedGradientNorm< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

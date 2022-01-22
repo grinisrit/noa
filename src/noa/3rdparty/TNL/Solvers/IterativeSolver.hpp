@@ -10,7 +10,7 @@
 
 #include "IterativeSolver.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 
 template< typename Real, typename Index, typename SolverMonitor >
@@ -244,4 +244,4 @@ setSolverMonitor( SolverMonitorType& solverMonitor )
 }
 
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Math.h>
-#include <TNL/Cuda/SharedMemory.h>
-#include <TNL/Exceptions/CudaBadAlloc.h>
-#include <TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/Cuda/SharedMemory.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaBadAlloc.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
 #include "ScanType.h"
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 namespace detail {
 
@@ -332,7 +332,7 @@ struct CudaTileScan
       // calculate indices
       constexpr int maxElementsInBlock = blockSize * valuesPerThread;
       const int remainingElements = end - begin - blockIdx.x * maxElementsInBlock;
-      const int elementsInBlock = TNL::min( remainingElements, maxElementsInBlock );
+      const int elementsInBlock = noaTNL::min( remainingElements, maxElementsInBlock );
 
       // update global array offsets for the thread
       const int threadOffset = blockIdx.x * maxElementsInBlock + threadIdx.x;
@@ -436,7 +436,7 @@ CudaScanKernelUpsweep( const InputView input,
    // calculate indices
    constexpr int maxElementsInBlock = blockSize * valuesPerThread;
    const int remainingElements = end - begin - blockIdx.x * maxElementsInBlock;
-   const int elementsInBlock = TNL::min( remainingElements, maxElementsInBlock );
+   const int elementsInBlock = noaTNL::min( remainingElements, maxElementsInBlock );
 
    // update global array offset for the thread
    const int threadOffset = blockIdx.x * maxElementsInBlock + threadIdx.x;
@@ -782,7 +782,7 @@ struct CudaScanKernelLauncher
          for( Index gridIdx = 0; gridIdx < numberOfGrids; gridIdx++ ) {
             // compute current grid offset and size of data to be scanned
             const Index gridOffset = gridIdx * maxGridSize() * maxElementsInBlock;
-            const Index currentSize = TNL::min( end - begin - gridOffset, maxGridSize() * maxElementsInBlock );
+            const Index currentSize = noaTNL::min( end - begin - gridOffset, maxGridSize() * maxElementsInBlock );
 
             // setup block and grid size
             dim3 cudaBlockSize, cudaGridSize;
@@ -898,7 +898,7 @@ struct CudaScanKernelLauncher
          for( Index gridIdx = 0; gridIdx < numberOfGrids; gridIdx++ ) {
             // compute current grid offset and size of data to be scanned
             const Index gridOffset = gridIdx * maxGridSize() * maxElementsInBlock;
-            const Index currentSize = TNL::min( end - begin - gridOffset, maxGridSize() * maxElementsInBlock );
+            const Index currentSize = noaTNL::min( end - begin - gridOffset, maxGridSize() * maxElementsInBlock );
 
             // setup block and grid size
             dim3 cudaBlockSize, cudaGridSize;
@@ -964,4 +964,4 @@ struct CudaScanKernelLauncher
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

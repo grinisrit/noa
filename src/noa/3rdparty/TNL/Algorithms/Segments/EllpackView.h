@@ -8,13 +8,13 @@
 
 #include <type_traits>
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/Segments/SegmentView.h>
-#include <TNL/Algorithms/Segments/ElementsOrganization.h>
-#include <TNL/Algorithms/Segments/SegmentsPrinting.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/ElementsOrganization.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SegmentsPrinting.h>
 
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -137,6 +137,6 @@ std::ostream& operator<<( std::ostream& str, const EllpackView< Device, Index, O
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/EllpackView.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/EllpackView.hpp>

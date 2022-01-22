@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {
@@ -105,4 +105,4 @@ getSizeValueLogConstexpr( const int i )
          } // namespace detail
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

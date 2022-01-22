@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/Ellpack.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -74,7 +74,7 @@ Ellpack< Device, Index, IndexAllocator, Organization, Alignment >::
 getSerializationType()
 {
    // FIXME: the serialized data DEPEND on the Organization and Alignment parameters, so it should be reflected in the serialization type
-   return "Ellpack< [any_device], " + TNL::getSerializationType< IndexType >() + " >";
+   return "Ellpack< [any_device], " + noaTNL::getSerializationType< IndexType >() + " >";
 }
 
 template< typename Device,
@@ -373,4 +373,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< Ellpack, Fetch >
 
       } // namespace Segments
    }  // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

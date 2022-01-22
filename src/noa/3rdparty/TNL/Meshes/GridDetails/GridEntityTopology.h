@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 
@@ -34,5 +34,5 @@ class GridEntityTopology
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 

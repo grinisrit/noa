@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< int Dimension,
@@ -239,4 +239,4 @@ class ExactGradientNorm< 3, Real >
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

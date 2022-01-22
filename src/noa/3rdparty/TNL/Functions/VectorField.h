@@ -8,17 +8,17 @@
 
 #include <filesystem>
 
-#include <TNL/Functions/Domain.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Functions/MeshFunction.h>
-#include <TNL/Functions/MeshFunctionView.h>
-#include <TNL/Functions/VectorFieldGnuplotWriter.h>
-#include <TNL/Meshes/Writers/VTKWriter.h>
-#include <TNL/Meshes/Writers/VTUWriter.h>
-#include <TNL/Meshes/Writers/VTIWriter.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunction.h>
+#include <noa/3rdparty/TNL/Functions/MeshFunctionView.h>
+#include <noa/3rdparty/TNL/Functions/VectorFieldGnuplotWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTKWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.h>
+#include <noa/3rdparty/TNL/Meshes/Writers/VTIWriter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Functions {
 
 template< int Size,

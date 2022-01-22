@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Algorithms/MemoryOperations.h>
+#include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 template< typename Element, typename Index >
@@ -144,4 +144,4 @@ compare( const Element1* destination,
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

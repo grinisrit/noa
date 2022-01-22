@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Meshes/Mesh.h>
-#include <TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 /**
@@ -86,6 +86,6 @@ loadMesh( Mesh< MeshConfig, Devices::Cuda >& mesh,
           const std::string& fileFormat = "auto" );
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Meshes/TypeResolver/resolveMeshType.hpp>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveMeshType.hpp>

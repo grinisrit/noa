@@ -7,9 +7,9 @@
 #pragma once
 
 #include <iostream>
-#include <TNL/Containers/Array.h>
+#include <noa/3rdparty/TNL/Containers/Array.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -60,7 +60,7 @@ struct SegmentsPrinter
       using DeviceType = typename Segments::DeviceType;
       using ValueType = decltype( fetch( IndexType() ) );
 
-      TNL::Containers::Array< ValueType, DeviceType, IndexType > aux( 1 );
+      noaTNL::Containers::Array< ValueType, DeviceType, IndexType > aux( 1 );
       auto view = segments.getConstView();
       for( IndexType segmentIdx = 0; segmentIdx < segments.getSegmentsCount(); segmentIdx++ )
       {
@@ -105,7 +105,7 @@ std::ostream& printSegments( const Segments& segments, Fetch&& fetch, std::ostre
    using DeviceType = typename Segments::DeviceType;
    using ValueType = decltype( fetch( IndexType() ) );
 
-   TNL::Containers::Array< ValueType, DeviceType, IndexType > aux( 1 );
+   noaTNL::Containers::Array< ValueType, DeviceType, IndexType > aux( 1 );
    auto view = segments.getConstView();
    for( IndexType segmentIdx = 0; segmentIdx < segments.getSegmentsCount(); segmentIdx++ )
    {
@@ -132,4 +132,4 @@ std::ostream& printSegments( const Segments& segments, Fetch&& fetch, std::ostre
 
       } // namespace Segments
    } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <TNL/Functions/FunctionAdapter.h>
+#include <noa/3rdparty/TNL/Functions/FunctionAdapter.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -443,5 +443,5 @@ std::ostream& operator << ( std::ostream& str, const NeumannBoundaryConditions< 
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

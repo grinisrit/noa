@@ -8,19 +8,19 @@
 
 #include <iomanip>
 #include <sstream>
-#include <TNL/String.h>
-#include <TNL/Containers/Vector.h>
-#include <TNL/Timer.h>
-#include <TNL/Matrices/MatrixReader.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Timer.h>
+#include <noa/3rdparty/TNL/Matrices/MatrixReader.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 
 template< typename Matrix, typename Device >
 void
 MatrixReader< Matrix, Device >::
-readMtx( const TNL::String& fileName,
+readMtx( const noaTNL::String& fileName,
          Matrix& matrix,
          bool verbose )
 {
@@ -42,12 +42,12 @@ readMtx( std::istream& str,
 }
 
 /**
- * MatrixReader specialization for TNL::Devices::Host.
+ * MatrixReader specialization for noaTNL::Devices::Host.
  */
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 readMtx( const String& fileName,
          Matrix& matrix,
          bool verbose )
@@ -61,7 +61,7 @@ readMtx( const String& fileName,
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 readMtx( std::istream& file,
          Matrix& matrix,
          bool verbose )
@@ -88,7 +88,7 @@ readMtx( std::istream& file,
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 verifyMtxFile( std::istream& file, const Matrix& matrix, bool verbose )
 {
    bool symmetricSourceMatrix( false );
@@ -139,7 +139,7 @@ verifyMtxFile( std::istream& file, const Matrix& matrix, bool verbose )
 
 template< typename Matrix >
 bool
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 findLineByElement( std::istream& file,
                    const IndexType& row,
                    const IndexType& column,
@@ -172,7 +172,7 @@ findLineByElement( std::istream& file,
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::checkMtxHeader( const String& header, bool& symmetric )
+MatrixReader< Matrix, noaTNL::Devices::Host >::checkMtxHeader( const String& header, bool& symmetric )
 {
    std::vector< String > parsedLine = header.split( ' ', String::SplitSkip::SkipEmpty );
    if( (int) parsedLine.size() < 5 || parsedLine[ 0 ] != "%%MatrixMarket" )
@@ -195,7 +195,7 @@ MatrixReader< Matrix, TNL::Devices::Host >::checkMtxHeader( const String& header
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::readMtxHeader( std::istream& file,
+MatrixReader< Matrix, noaTNL::Devices::Host >::readMtxHeader( std::istream& file,
                                        IndexType& rows,
                                        IndexType& columns,
                                        bool& symmetric,
@@ -236,7 +236,7 @@ MatrixReader< Matrix, TNL::Devices::Host >::readMtxHeader( std::istream& file,
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 computeCompressedRowLengthsFromMtxFile( std::istream& file,
                                         Containers::Vector< int, DeviceType, int >& rowLengths,
                                         const int columns,
@@ -311,7 +311,7 @@ computeCompressedRowLengthsFromMtxFile( std::istream& file,
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 readMatrixElementsFromMtxFile( std::istream& file,
                                Matrix& matrix,
                                bool symmetricSourceMatrix,
@@ -363,7 +363,7 @@ readMatrixElementsFromMtxFile( std::istream& file,
 
 template< typename Matrix >
 void
-MatrixReader< Matrix, TNL::Devices::Host >::
+MatrixReader< Matrix, noaTNL::Devices::Host >::
 parseMtxLineWithElement( const String& line,
                          IndexType& row,
                          IndexType& column,
@@ -382,4 +382,4 @@ parseMtxLineWithElement( const String& line,
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

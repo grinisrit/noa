@@ -8,14 +8,14 @@
 
 #include <utility>  // std::pair
 
-#include <TNL/Assert.h>
-#include <TNL/Math.h>
-#include <TNL/Cuda/DeviceInfo.h>
-#include <TNL/Algorithms/CudaReductionBuffer.h>
-#include <TNL/Algorithms/MultiDeviceMemoryOperations.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/Cuda/DeviceInfo.h>
+#include <noa/3rdparty/TNL/Algorithms/CudaReductionBuffer.h>
+#include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 namespace detail {
 
@@ -665,7 +665,7 @@ struct CudaReductionKernelLauncher
          const Index size = end - begin;
          dim3 blockSize, gridSize;
          blockSize.x = Reduction_maxThreadsPerBlock;
-         gridSize.x = TNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
+         gridSize.x = noaTNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
 
          // This is "general", but this method always sets blockSize.x to a specific value,
          // so runtime switch is not necessary - it only prolongs the compilation time.
@@ -770,7 +770,7 @@ struct CudaReductionKernelLauncher
          dim3 blockSize, gridSize;
          const Index size = end - begin;
          blockSize.x = Reduction_maxThreadsPerBlock;
-         gridSize.x = TNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
+         gridSize.x = noaTNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
 
          // This is "general", but this method always sets blockSize.x to a specific value,
          // so runtime switch is not necessary - it only prolongs the compilation time.
@@ -871,4 +871,4 @@ struct CudaReductionKernelLauncher
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

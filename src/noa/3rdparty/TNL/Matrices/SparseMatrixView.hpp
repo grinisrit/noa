@@ -8,13 +8,13 @@
 
 #include <iomanip>
 #include <functional>
-#include <TNL/Matrices/SparseMatrixView.h>
-#include <TNL/Algorithms/reduce.h>
-#include <TNL/Algorithms/AtomicOperations.h>
-#include <TNL/Matrices/details/SparseMatrix.h>
-#include <TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixView.h>
+#include <noa/3rdparty/TNL/Algorithms/reduce.h>
+#include <noa/3rdparty/TNL/Algorithms/AtomicOperations.h>
+#include <noa/3rdparty/TNL/Matrices/details/SparseMatrix.h>
+#include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 template< typename Real,
@@ -93,9 +93,9 @@ SparseMatrixView< Real, Device, Index, MatrixType, SegmentsView, ComputeReal >::
 getSerializationType()
 {
    return String( "Matrices::SparseMatrix< " ) +
-             TNL::getSerializationType< RealType >() + ", " +
-             TNL::getSerializationType< SegmentsViewType >() + ", [any_device], " +
-             TNL::getSerializationType< IndexType >() + ", " +
+             noaTNL::getSerializationType< RealType >() + ", " +
+             noaTNL::getSerializationType< SegmentsViewType >() + ", [any_device], " +
+             noaTNL::getSerializationType< IndexType >() + ", " +
              MatrixType::getSerializationType() + ", [any_allocator], [any_allocator] >";
 }
 

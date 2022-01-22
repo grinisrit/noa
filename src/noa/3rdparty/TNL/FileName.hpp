@@ -9,13 +9,13 @@
 #include <sstream>
 #include <iomanip>
 
-#include <TNL/FileName.h>
-#include <TNL/String.h>
-#include <TNL/Math.h>
+#include <noa/3rdparty/TNL/FileName.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Math.h>
 
 #include "FileName.h"
 
-namespace TNL {
+namespace noaTNL {
 
 inline FileName::FileName()
 : index( 0 ), digitsCount( 5 )
@@ -110,4 +110,4 @@ inline String removeFileNameExtension( String fileName )
    return fileName;
 }
 
-} // namespace TNL
+} // namespace noaTNL

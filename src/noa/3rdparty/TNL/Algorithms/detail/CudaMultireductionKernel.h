@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Math.h>
-#include <TNL/Cuda/DeviceInfo.h>
-#include <TNL/Cuda/SharedMemory.h>
-#include <TNL/Algorithms/CudaReductionBuffer.h>
-#include <TNL/Exceptions/CudaSupportMissing.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/Cuda/DeviceInfo.h>
+#include <noa/3rdparty/TNL/Cuda/SharedMemory.h>
+#include <noa/3rdparty/TNL/Algorithms/CudaReductionBuffer.h>
+#include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 namespace detail {
 
@@ -165,7 +165,7 @@ CudaMultireductionKernelLauncher( const Result identity,
    dim3 blockSize, gridSize;
 
    // version A: max 16 rows of threads
-   blockSize.y = TNL::min( n, 16 );
+   blockSize.y = noaTNL::min( n, 16 );
 
    // version B: up to 16 rows of threads, then "minimize" number of inactive rows
 //   if( n <= 16 )
@@ -187,7 +187,7 @@ CudaMultireductionKernelLauncher( const Result identity,
    while( blockSize.x * blockSize.y > Multireduction_maxThreadsPerBlock )
       blockSize.x /= 2;
 
-   gridSize.x = TNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSizeX );
+   gridSize.x = noaTNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSizeX );
    gridSize.y = Cuda::getNumberOfBlocks( n, blockSize.y );
 
    if( gridSize.y > (unsigned) Cuda::getMaxGridSize() ) {
@@ -280,4 +280,4 @@ CudaMultireductionKernelLauncher( const Result identity,
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

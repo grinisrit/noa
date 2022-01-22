@@ -15,7 +15,7 @@
 #include <iostream>
 #include <exception>
 
-namespace TNL {
+namespace noaTNL {
 namespace Benchmarks {
 
 
@@ -227,4 +227,4 @@ getBaseTime() const
 }
 
 } // namespace Benchmarks
-} // namespace TNL
+} // namespace noaTNL

@@ -13,11 +13,11 @@
 #include <vector>
 #include <map>
 
-#include <TNL/Meshes/Readers/MeshReader.h>
-#include <TNL/Endianness.h>
-#include <TNL/Meshes/EntityShapeGroupChecker.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/MeshReader.h>
+#include <noa/3rdparty/TNL/Endianness.h>
+#include <noa/3rdparty/TNL/Meshes/EntityShapeGroupChecker.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Readers {
 
@@ -817,4 +817,4 @@ protected:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

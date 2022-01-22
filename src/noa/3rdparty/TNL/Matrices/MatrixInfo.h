@@ -6,22 +6,22 @@
 
 #pragma once
 
-#include <TNL/String.h>
-#include <TNL/Matrices/DenseMatrix.h>
-#include <TNL/Matrices/DenseMatrixView.h>
-#include <TNL/Matrices/SparseMatrix.h>
-#include <TNL/Matrices/SparseMatrixView.h>
-#include <TNL/Matrices/Sandbox/SparseSandboxMatrix.h>
-#include <TNL/Algorithms/Segments/CSRView.h>
-#include <TNL/Algorithms/Segments/EllpackView.h>
-#include <TNL/Algorithms/Segments/SlicedEllpackView.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
+#include <noa/3rdparty/TNL/Matrices/DenseMatrixView.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrix.h>
+#include <noa/3rdparty/TNL/Matrices/SparseMatrixView.h>
+#include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrix.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/CSRView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/EllpackView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/SlicedEllpackView.h>
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/CSR.h>
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/Ellpack.h>
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/SlicedEllpack.h>
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/ChunkedEllpack.h>
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/BiEllpack.h>
 
-namespace TNL {
+namespace noaTNL {
 /**
  * \brief Namespace for matrix formats.
  */
@@ -100,9 +100,9 @@ struct MatrixInfo< Sandbox::SparseSandboxMatrixView< Real, Device, Index, Matrix
    static String getFormat()
    {
       if( MatrixType::isSymmetric() )
-         return TNL::String( "Symmetric Sandbox" );
+         return noaTNL::String( "Symmetric Sandbox" );
       else
-         return TNL::String( "Sandbox" );
+         return noaTNL::String( "Sandbox" );
    };
 };
 
@@ -241,4 +241,4 @@ struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::SlicedEllpack< Re
 
 /// \endcond
 } //namespace Matrices
-} //namespace TNL
+} //namespace noaTNL

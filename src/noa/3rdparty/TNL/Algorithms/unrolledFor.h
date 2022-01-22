@@ -8,7 +8,7 @@
 
 #include <utility>
 
-namespace TNL {
+namespace noaTNL {
 namespace Algorithms {
 
 namespace detail {
@@ -83,4 +83,4 @@ constexpr void unrolledFor( Func&& f )
 }
 
 } // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL

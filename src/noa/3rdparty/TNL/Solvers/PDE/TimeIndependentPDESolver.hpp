@@ -15,12 +15,12 @@
 
 #pragma once
 
-#include <TNL/Solvers/PDE/TimeIndependentPDESolver.h>
-#include <TNL/Meshes/TypeResolver/resolveMeshType.h>
-#include <TNL/Meshes/TypeResolver/resolveDistributedMeshType.h>
-#include <TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/TimeIndependentPDESolver.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveMeshType.h>
+#include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveDistributedMeshType.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -165,4 +165,4 @@ writeEpilog( Logger& logger ) const
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

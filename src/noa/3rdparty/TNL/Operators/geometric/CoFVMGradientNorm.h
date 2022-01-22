@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Operators/geometric/ExactGradientNorm.h>
-#include <TNL/Operators/interpolants/MeshEntitiesInterpolants.h>
-#include <TNL/Operators/Operator.h>
-#include <TNL/Operators/OperatorComposition.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/geometric/ExactGradientNorm.h>
+#include <noa/3rdparty/TNL/Operators/interpolants/MeshEntitiesInterpolants.h>
+#include <noa/3rdparty/TNL/Operators/Operator.h>
+#include <noa/3rdparty/TNL/Operators/OperatorComposition.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -464,5 +464,5 @@ class CoFVMGradientNorm< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, 2, Real
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL
 

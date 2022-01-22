@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Operators/operator-curvature/ExactOperatorCurvature.h>
+#include <noa/3rdparty/TNL/Operators/operator-curvature/ExactOperatorCurvature.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename OperatorQ >
@@ -49,4 +49,4 @@ getValue( const Function& function,
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

@@ -6,11 +6,11 @@
 
 #pragma once 
 
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Containers/StaticVector.h>
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Functions {
       namespace Analytic {
 
@@ -131,8 +131,8 @@ std::ostream& operator << ( std::ostream& str, const ParaboloidSDF< Dimensions, 
          
       } // namespace Analytic
    } // namespace Functions
-} // namespace TNL
+} // namespace noaTNL
 
 
-#include <TNL/Functions/Analytic/ParaboloidSDF_impl.h>
+#include <noa/3rdparty/TNL/Functions/Analytic/ParaboloidSDF_impl.h>
 

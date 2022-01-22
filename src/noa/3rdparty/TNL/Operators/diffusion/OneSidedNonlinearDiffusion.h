@@ -12,11 +12,11 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Meshes/Grid.h>
-#include <TNL/Operators/diffusion/ExactNonlinearDiffusion.h>
+#include <noa/3rdparty/TNL/Containers/Vector.h>
+#include <noa/3rdparty/TNL/Meshes/Grid.h>
+#include <noa/3rdparty/TNL/Operators/diffusion/ExactNonlinearDiffusion.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -332,4 +332,4 @@ class OneSidedNonlinearDiffusion< Meshes::Grid< 3, MeshReal, Device, MeshIndex >
 };
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

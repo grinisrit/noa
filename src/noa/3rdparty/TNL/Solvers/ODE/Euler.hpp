@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Solvers/ODE/Euler.h>
+#include <noa/3rdparty/TNL/Solvers/ODE/Euler.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace ODE {
 
@@ -137,4 +137,4 @@ bool Euler< Problem, SolverMonitor > :: solve( DofVectorPointer& _u )
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

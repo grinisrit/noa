@@ -12,11 +12,11 @@
 
 #pragma once
 
-#include <TNL/Meshes/Mesh.h>
-#include <TNL/Meshes/MeshDetails/IndexPermutationApplier.h>
-#include <TNL/Meshes/MeshDetails/initializer/Initializer.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/IndexPermutationApplier.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/Initializer.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig, typename Device, typename MeshType >
@@ -391,4 +391,4 @@ std::ostream& operator<<( std::ostream& str, const Mesh< MeshConfig, Device >& m
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

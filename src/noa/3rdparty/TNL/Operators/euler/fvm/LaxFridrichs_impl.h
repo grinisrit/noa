@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {   
 
 template< typename Real,
@@ -504,4 +504,4 @@ Real LaxFridrichs< Meshes::Grid< 2, Real, Device, Index, tnlIdenticalGridGeometr
 }
 
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

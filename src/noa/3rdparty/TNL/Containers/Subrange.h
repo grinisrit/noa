@@ -10,11 +10,11 @@
 
 #include <ostream>
 
-#include <TNL/Assert.h>
-#include <TNL/String.h>
-#include <TNL/TypeInfo.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/String.h>
+#include <noa/3rdparty/TNL/TypeInfo.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 
 // Specifies a subrange [begin, end) of a range [0, globalSize).
@@ -114,7 +114,7 @@ protected:
    Index end = 0;
 };
 
-// due to formatting in TNL::Assert
+// due to formatting in noaTNL::Assert
 template< typename Index >
 std::ostream& operator<<( std::ostream& str, const Subrange< Index >& range )
 {
@@ -122,4 +122,4 @@ std::ostream& operator<<( std::ostream& str, const Subrange< Index >& range )
 }
 
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

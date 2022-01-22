@@ -10,15 +10,15 @@
 
 #include <limits>
 
-#include <TNL/Containers/StaticVector.h>  // TNL::product
-#include <TNL/Meshes/Writers/VTIWriter.h>
-#include <TNL/Endianness.h>
-#include <TNL/base64.h>
+#include <noa/3rdparty/TNL/Containers/StaticVector.h>  // noaTNL::product
+#include <noa/3rdparty/TNL/Meshes/Writers/VTIWriter.h>
+#include <noa/3rdparty/TNL/Endianness.h>
+#include <noa/3rdparty/TNL/base64.h>
 #include <stdexcept>
-#include <TNL/zlib_compression.h>
+#include <noa/3rdparty/TNL/zlib_compression.h>
 
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Writers {
 
@@ -93,8 +93,8 @@ VTIWriter< Mesh >::writeImageData( const typename Mesh::PointType& gridOrigin,
    }
 
    // sets points and cells counts
-   pointsCount = TNL::product( end - begin + 1 );
-   cellsCount = TNL::product( end - begin );
+   pointsCount = noaTNL::product( end - begin + 1 );
+   cellsCount = noaTNL::product( end - begin );
 }
 
 template< typename Mesh >
@@ -301,4 +301,4 @@ VTIWriter< Mesh >::closePiece()
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

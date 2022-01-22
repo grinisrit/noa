@@ -11,7 +11,7 @@
 #include <execinfo.h>
 #include <cxxabi.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Debugging {
 
 #ifndef NDEBUG
@@ -99,10 +99,10 @@ printStackBacktrace( FILE *out = stderr, unsigned int max_frames = 63 )
 #endif
 
 } // namespace Debugging
-} // namespace TNL
+} // namespace noaTNL
 
 #ifdef NDEBUG
 #define PrintStackBacktrace
 #else
-#define PrintStackBacktrace TNL::Debugging::printStackBacktrace();
+#define PrintStackBacktrace noaTNL::Debugging::printStackBacktrace();
 #endif

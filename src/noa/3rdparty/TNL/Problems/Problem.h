@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Real,
@@ -22,4 +22,4 @@ class Problem
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL

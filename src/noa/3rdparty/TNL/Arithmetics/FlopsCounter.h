@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace TNL {
+namespace noaTNL {
 
 class tnlFlopsCounter
 {
@@ -76,4 +76,4 @@ class tnlFlopsCounter
 
 extern tnlFlopsCounter tnl_flops_counter;
 
-} // namespace TNL
+} // namespace noaTNL

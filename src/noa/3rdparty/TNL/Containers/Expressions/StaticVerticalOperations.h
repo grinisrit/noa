@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <TNL/Math.h>
-#include <TNL/Containers/Expressions/TypeTraits.h>
+#include <noa/3rdparty/TNL/Math.h>
+#include <noa/3rdparty/TNL/Containers/Expressions/TypeTraits.h>
 
 ////
 // By vertical operations we mean those applied across vector elements or
 // vector expression elements. It means for example minim/maximum of all
 // vector elements etc.
-namespace TNL {
+namespace noaTNL {
 namespace Containers {
 namespace Expressions {
 
@@ -21,8 +21,8 @@ template< typename Expression >
 __cuda_callable__
 auto StaticExpressionMin( const Expression& expression )
 {
-   // use argument-dependent lookup and make TNL::min available for unqualified calls
-   using TNL::min;
+   // use argument-dependent lookup and make noaTNL::min available for unqualified calls
+   using noaTNL::min;
    using ResultType = RemoveET< typename Expression::RealType >;
    ResultType aux = expression[ 0 ];
    for( int i = 1; i < expression.getSize(); i++ )
@@ -52,8 +52,8 @@ template< typename Expression >
 __cuda_callable__
 auto StaticExpressionMax( const Expression& expression )
 {
-   // use argument-dependent lookup and make TNL::max available for unqualified calls
-   using TNL::max;
+   // use argument-dependent lookup and make noaTNL::max available for unqualified calls
+   using noaTNL::max;
    using ResultType = RemoveET< typename Expression::RealType >;
    ResultType aux = expression[ 0 ];
    for( int i = 1; i < expression.getSize(); i++ )
@@ -153,4 +153,4 @@ auto StaticExpressionBinaryXor( const Expression& expression )
 
 } // namespace Expressions
 } // namespace Containers
-} // namespace TNL
+} // namespace noaTNL

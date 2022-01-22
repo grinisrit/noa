@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <TNL/Solvers/cfd/navier-stokes/NavierStokesSolver.h>
+#include <noa/3rdparty/TNL/Solvers/cfd/navier-stokes/NavierStokesSolver.h>
 
-namespace TNL {
+namespace noaTNL {
 
 template< typename AdvectionScheme,
           typename DiffusionScheme,
@@ -624,4 +624,4 @@ bool NavierStokesSolver< AdvectionScheme,
    return true;
 }
 
-} // namespace TNL
+} // namespace noaTNL

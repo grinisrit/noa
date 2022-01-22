@@ -9,10 +9,10 @@
 #include <cstdlib>
 
 #include "DistributedGrid.h"
-#include <TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
-#include <TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -151,7 +151,7 @@ int
 DistributedMesh< Grid< Dimension, Real, Device, Index > >::
 getGhostLevels() const
 {
-   return TNL::max( TNL::max(lowerOverlap), TNL::max(upperOverlap) );
+   return noaTNL::max( noaTNL::max(lowerOverlap), noaTNL::max(upperOverlap) );
 }
 
 template< int Dimension, typename Real, typename Device, typename Index >
@@ -524,4 +524,4 @@ std::ostream& operator<<( std::ostream& str, const DistributedMesh< Grid< Dimens
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

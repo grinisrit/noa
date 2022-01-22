@@ -13,9 +13,9 @@
 
 #pragma once
 
-#include <TNL/Problems/HeatEquationProblem.h>
+#include <noa/3rdparty/TNL/Problems/HeatEquationProblem.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -36,6 +36,6 @@ class HeatEquationEocProblem : public HeatEquationProblem< Mesh, BoundaryConditi
 };
 
 } // namespace Problems
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Problems/HeatEquationEocProblem_impl.h>
+#include <noa/3rdparty/TNL/Problems/HeatEquationEocProblem_impl.h>

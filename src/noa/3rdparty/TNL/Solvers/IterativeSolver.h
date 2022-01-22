@@ -8,11 +8,11 @@
 
 #include <limits>
 
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Solvers/IterativeSolverMonitor.h>
+#include <noa/3rdparty/TNL/Config/ConfigDescription.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Solvers {
 
 /**
@@ -232,6 +232,6 @@ class IterativeSolver
 };
 
    } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Solvers/IterativeSolver.hpp>
+#include <noa/3rdparty/TNL/Solvers/IterativeSolver.hpp>

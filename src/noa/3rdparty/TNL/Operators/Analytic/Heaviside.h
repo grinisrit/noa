@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include <TNL/Functions/Domain.h>
-#include <TNL/Devices/Cuda.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
+#include <noa/3rdparty/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/TNL/Config/ParameterContainer.h>
+#include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Operators {
 namespace Analytic {   
    
@@ -76,4 +76,4 @@ class Heaviside : public Functions::Domain< Dimensions, Functions::SpaceDomain >
 
 } // namespace Analytic
 } // namespace Operators
-} // namespace TNL
+} // namespace noaTNL

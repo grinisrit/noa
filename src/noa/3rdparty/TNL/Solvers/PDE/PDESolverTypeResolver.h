@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <TNL/Solvers/PDE/TimeDependentPDESolver.h>
-#include <TNL/Solvers/PDE/TimeIndependentPDESolver.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/TimeDependentPDESolver.h>
+#include <noa/3rdparty/TNL/Solvers/PDE/TimeIndependentPDESolver.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Solvers {
 namespace PDE {
 
@@ -40,4 +40,4 @@ class PDESolverTypeResolver< Problem, TimeStepper, false >
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace TNL
+} // namespace noaTNL

@@ -6,23 +6,23 @@
 
 #pragma once
 
-#include <TNL/Cuda/CudaCallable.h>
-#include <TNL/Meshes/GridEntity.h>
-#include <TNL/Meshes/Mesh.h>
-#include <TNL/Meshes/MeshEntity.h>
-#include <TNL/Meshes/Geometry/getOutwardNormalVector.h>
-#include <TNL/Meshes/Topologies/Vertex.h>
-#include <TNL/Meshes/Topologies/Edge.h>
-#include <TNL/Meshes/Topologies/Triangle.h>
-#include <TNL/Meshes/Topologies/Quadrangle.h>
-#include <TNL/Meshes/Topologies/Tetrahedron.h>
-#include <TNL/Meshes/Topologies/Hexahedron.h>
-#include <TNL/Meshes/Topologies/Polygon.h>
-#include <TNL/Meshes/Topologies/Wedge.h>
-#include <TNL/Meshes/Topologies/Pyramid.h>
-#include <TNL/Meshes/Topologies/Polyhedron.h>
+#include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
+#include <noa/3rdparty/TNL/Meshes/GridEntity.h>
+#include <noa/3rdparty/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
+#include <noa/3rdparty/TNL/Meshes/Geometry/getOutwardNormalVector.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Vertex.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Triangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Quadrangle.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Hexahedron.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Wedge.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Pyramid.h>
+#include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename Grid, typename Config >
@@ -73,7 +73,7 @@ getTriangleArea( const VectorExpression & v1,
                  const VectorExpression & v2 )
 {
     using Real = typename VectorExpression::RealType;
-    return Real( 0.5 ) * TNL::abs( v1.x() * v2.y() - v1.y() * v2.x() );
+    return Real( 0.5 ) * noaTNL::abs( v1.x() * v2.y() - v1.y() * v2.x() );
 }
 
 template< typename VectorExpression,
@@ -88,7 +88,7 @@ getTriangleArea( const VectorExpression & v1,
     const Real c1 = v1.y() * v2.z() - v1.z() * v2.y();   // first component of the cross product
     const Real c2 = v1.z() * v2.x() - v1.x() * v2.z();   // second component of the cross product
     const Real c3 = v1.x() * v2.y() - v1.y() * v2.x();   // third component of the cross product
-    return Real( 0.5 ) * TNL::sqrt( c1 * c1 + c2 * c2 + c3 * c3 );
+    return Real( 0.5 ) * noaTNL::sqrt( c1 * c1 + c2 * c2 + c3 * c3 );
 }
 
 template< typename MeshConfig, typename Device >
@@ -134,7 +134,7 @@ getTetrahedronVolume( const VectorExpression& v1,
                    ( v1.z() * v2.y() * v3.x() +
                      v1.y() * v2.x() * v3.z() +
                      v1.x() * v2.z() * v3.y() );
-    return Real( 1.0 / 6.0 ) * TNL::abs( det );
+    return Real( 1.0 / 6.0 ) * noaTNL::abs( det );
 }
 
 template< typename MeshConfig, typename Device >
@@ -229,7 +229,7 @@ getEntityMeasure( const Mesh< MeshConfig, Device > & mesh,
                   const MeshEntity< MeshConfig, Device, Topologies::Polygon > & entity )
 {
     const auto area = getPolygon2DArea< 0, 1 >( mesh, entity );
-    return TNL::abs( area );
+    return noaTNL::abs( area );
 }
 
 template< typename MeshConfig,
@@ -247,7 +247,7 @@ getEntityMeasure( const Mesh< MeshConfig, Device > & mesh,
 
     // select largest abs coordinate of normal vector to ignore for projection
     auto normal = getNormalVector( mesh, entity );
-    normal = TNL::abs( normal );
+    normal = noaTNL::abs( normal );
     int coord = 2;  // ignore z-coord
     if ( normal.x() > normal.y() ) {
         if ( normal.x() > normal.z() ) coord = 0;  // ignore x-coord
@@ -269,7 +269,7 @@ getEntityMeasure( const Mesh< MeshConfig, Device > & mesh,
             area *= l2Norm( normal ) / normal.z();
             break;
     }
-    return TNL::abs( area );
+    return noaTNL::abs( area );
 }
 
 // Wedge
@@ -346,7 +346,7 @@ getEntityMeasure( const Mesh< MeshConfig, Device > & mesh,
             };
         }
     }
-    return Real{ 1.0 / 6.0 } * TNL::abs( volume );
+    return Real{ 1.0 / 6.0 } * noaTNL::abs( volume );
 }*/
 
 template< typename MeshConfig,
@@ -403,4 +403,4 @@ getEntityMeasure( const Mesh< MeshConfig, Devices::Cuda > & mesh,
 }
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

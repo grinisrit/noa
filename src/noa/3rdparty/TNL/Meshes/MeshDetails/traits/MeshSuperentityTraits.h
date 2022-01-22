@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <TNL/Meshes/MeshDetails/traits/MeshEntityTraits.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshEntityTraits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -37,4 +37,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL

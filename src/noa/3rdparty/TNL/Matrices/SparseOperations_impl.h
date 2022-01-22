@@ -12,10 +12,10 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include <TNL/Pointers/DevicePointer.h>
-#include <TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Pointers/DevicePointer.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Matrices {
 
 #ifdef HAVE_CUDA
@@ -137,7 +137,7 @@ copySparseMatrix_impl( Matrix1& A, const Matrix2& B )
       Pointers::synchronizeSmartPointersOnDevice< Devices::Cuda >();
       SparseMatrixSetRowLengthsVectorKernel<<< gridSize, blockSize >>>(
             rowLengths.getData(),
-            &Bpointer.template getData< TNL::Devices::Cuda >(),
+            &Bpointer.template getData< noaTNL::Devices::Cuda >(),
             rows,
             cols );
       TNL_CHECK_CUDA_DEVICE;
@@ -146,8 +146,8 @@ copySparseMatrix_impl( Matrix1& A, const Matrix2& B )
       // copy rows
       Pointers::synchronizeSmartPointersOnDevice< Devices::Cuda >();
       SparseMatrixCopyKernel<<< gridSize, blockSize >>>(
-            &Apointer.template modifyData< TNL::Devices::Cuda >(),
-            &Bpointer.template getData< TNL::Devices::Cuda >(),
+            &Apointer.template modifyData< noaTNL::Devices::Cuda >(),
+            &Bpointer.template getData< noaTNL::Devices::Cuda >(),
             rowLengths.getData(),
             rows );
       TNL_CHECK_CUDA_DEVICE;
@@ -350,4 +350,4 @@ reorderArray( const Array1& src, Array2& dest, const PermutationArray& perm )
 }
 
 } // namespace Matrices
-} // namespace TNL
+} // namespace noaTNL

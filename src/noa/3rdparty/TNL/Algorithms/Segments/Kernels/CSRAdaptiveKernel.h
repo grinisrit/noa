@@ -6,16 +6,16 @@
 
 #pragma once
 
-#include <TNL/Assert.h>
-#include <TNL/Cuda/LaunchHelpers.h>
-#include <TNL/Containers/VectorView.h>
-#include <TNL/Algorithms/ParallelFor.h>
-#include <TNL/Algorithms/Segments/detail/LambdaAdapter.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
-#include <TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernelView.h>
-#include <TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
+#include <noa/3rdparty/TNL/Assert.h>
+#include <noa/3rdparty/TNL/Cuda/LaunchHelpers.h>
+#include <noa/3rdparty/TNL/Containers/VectorView.h>
+#include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernelView.h>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
 
-namespace TNL {
+namespace noaTNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -63,7 +63,7 @@ struct CSRAdaptiveKernel
 
    static int getSizeValueLog( const int& i ) { return detail::CSRAdaptiveKernelParameters<>::getSizeValueLog( i ); };
 
-   static TNL::String getKernelType();
+   static noaTNL::String getKernelType();
 
    template< typename Offsets >
    void init( const Offsets& offsets );
@@ -111,6 +111,6 @@ struct CSRAdaptiveKernel
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace TNL
+} // namespace noaTNL
 
-#include <TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernel.hpp>
+#include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernel.hpp>

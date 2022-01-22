@@ -10,12 +10,12 @@
 
 #include <filesystem>
 
-#include <TNL/MPI/Wrappers.h>
-#include <TNL/MPI/Utils.h>
-#include <TNL/Meshes/Readers/VTIReader.h>
-#include <TNL/Meshes/MeshDetails/layers/EntityTags/Traits.h>
+#include <noa/3rdparty/TNL/MPI/Wrappers.h>
+#include <noa/3rdparty/TNL/MPI/Utils.h>
+#include <noa/3rdparty/TNL/Meshes/Readers/VTIReader.h>
+#include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/EntityTags/Traits.h>
 
-namespace TNL {
+namespace noaTNL {
 namespace Meshes {
 namespace Readers {
 
@@ -32,7 +32,7 @@ class PVTIReader
 #ifdef HAVE_TINYXML2
    void readParallelImageData()
    {
-      using namespace tinyxml2;
+      using namespace noaTinyxml2;
 
       // read the required attributes
       const std::string extent = getAttributeString( datasetElement, "WholeExtent" );
@@ -328,4 +328,4 @@ protected:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace TNL
+} // namespace noaTNL
