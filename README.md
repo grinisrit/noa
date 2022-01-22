@@ -15,10 +15,7 @@ A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
 drop the `src/noa` folder into your project.
 
-:warning: However, you need to make sure that third-party libraries in
-`noa/3rdparty` are also on the include-path.
-
-:warning: Moreover, beyond `C++17` source code, the project contains:
+:warning: However, beyond `C++17` source code, the project contains:
 * `C99` sources in `noa/kernels.h` 
 * `CUDA` sources in `noa/kernels.cuh`
 
