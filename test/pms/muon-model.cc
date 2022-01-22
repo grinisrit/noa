@@ -1,12 +1,6 @@
-#include <noa/3rdparty/TNL/Meshes/DefaultConfig.h>
-#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
-#include <noa/3rdparty/TNL/Meshes/Readers/VTUReader.h>
-#include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.h>
+#include "load-mesh.hh"
 
-using namespace noaTNL;
-using namespace noaTNL::Meshes;
-using TetrahedronMesh = Mesh<DefaultConfig<Topologies::Tetrahedron>>;
-
+#include <noa/3rdparty/pumas.hh>
 
 #include <gflags/gflags.h>
 
@@ -20,12 +14,9 @@ auto main(int argc, char **argv) -> int {
 
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    auto mesh = TetrahedronMesh{};
-    auto reader = Readers::VTUReader{FLAGS_mesh};
-    reader.loadMesh(mesh);
+    load_mesh(FLAGS_mesh);
 
-    std::cout << mesh.getMeshDimension() << "\n"
-              << mesh.getEntitiesCount<mesh.getMeshDimension()>() << "\n";
+    std::cout << noa::pumas::PUMAS_MODE_BACKWARD << std::endl;
 
     gflags::ShutDownCommandLineFlags();
 

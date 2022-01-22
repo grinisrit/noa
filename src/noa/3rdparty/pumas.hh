@@ -28,5 +28,10 @@
 
 #pragma once
 
+#include <stdio.h>
+
+namespace noa::pumas {
+
 #include "noa/3rdparty/_pumas/pumas.h"
-#include "noa/3rdparty/_pumas/pumas.c"
+
+}

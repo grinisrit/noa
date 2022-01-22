@@ -16,7 +16,8 @@ include(pumas-materials)
 
 # Main executables
 add_executable(muon_model
-        muon-model.cc)
+        muon-model.cc
+        ${NOA_ROOT_DIR}/test/kernels.c)
 add_dependencies(muon_model pumas_materials)
 set_target_properties(muon_model PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
