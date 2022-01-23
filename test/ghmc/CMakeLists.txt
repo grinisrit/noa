@@ -21,4 +21,4 @@ target_include_directories(sampler PRIVATE ${NOA_ROOT_DIR}/test ${OpenMP_CXX_INC
 
 # Link libraries
 target_link_libraries(sampler PRIVATE ${PROJECT_NAME} gflags ${OpenMP_CXX_LIBRARIES})
-target_compile_options(sampler PRIVATE -Wall -Wextra -Wpedantic -O3 ${OpenMP_CXX_FLAGS})
+target_compile_options(sampler PRIVATE ${W_FLAGS} -O3 ${OpenMP_CXX_FLAGS})

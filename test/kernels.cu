@@ -1,1 +1,1 @@
-#include <noa/pms/kernels.cuh>
+#include <noa/kernels.cuh>

@@ -11,7 +11,7 @@ project(NOA
         DESCRIPTION
         "Differentiable Programming Algorithms in Modern C++"
         HOMEPAGE_URL https://github.com/grinisrit/noa
-        LANGUAGES CXX)
+        LANGUAGES C CXX)
 
 # User options
 option(INSTALL_NOA "Install NOA to GNU locations" ON)
@@ -22,6 +22,15 @@ option(BUILD_JNOA "Build JNI bindings" OFF)
 
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
+
+# Warning flags
+set(W_FLAGS "-Wall;-Wextra;-Wpedantic")
+
+# Native optimisations
+set(NA_OPT_FLAGS "-march=native;-mtune=native")
+
+# CUDA modern C++ extensions
+set(MCXX_CUDA "--expt-relaxed-constexpr;--expt-extended-lambda")
 
 # Cache path to root directory
 set(NOA_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -34,11 +43,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(check-torch)
 
 # Set up CUDA if available
-if(BUILD_NOA_CUDA)
+if (BUILD_NOA_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-endif()
+endif ()
 
 # NOA library  
 add_library(${PROJECT_NAME} INTERFACE)
@@ -48,7 +57,8 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 # Header-only library
 target_include_directories(
         ${PROJECT_NAME}
-        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Interface LibTorch
@@ -94,10 +104,10 @@ if (INSTALL_NOA)
 
     install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
             ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-            ${PROJECT_SOURCE_DIR}/cmake/noa-pms-models.cmake
+            ${PROJECT_SOURCE_DIR}/cmake/pumas-materials.cmake
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noa
+    install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/noa
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 endif ()
