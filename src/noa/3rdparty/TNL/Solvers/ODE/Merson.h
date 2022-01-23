@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Config/ConfigDescription.h>
 #include <noa/3rdparty/TNL/Solvers/ODE/ExplicitSolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace ODE {
 
@@ -56,6 +56,6 @@ class Merson : public ExplicitSolver< Problem, SolverMonitor >
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/ODE/Merson.hpp>

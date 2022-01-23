@@ -21,7 +21,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include "Utils.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace MPI {
 
 inline void configSetup( Config::ConfigDescription& config, const String& prefix = "" )
@@ -96,4 +96,4 @@ inline bool setup( const Config::ParameterContainer& parameters,
 }
 
 } // namespace MPI
-} // namespace noaTNL
+} // namespace noa::TNL

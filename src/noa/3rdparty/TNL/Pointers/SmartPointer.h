@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief Namespace for TNL pointers.
@@ -25,4 +25,4 @@ class SmartPointer
 };
 
 } // namespace Pointers
-} // namespace noaTNL
+} // namespace noa::TNL

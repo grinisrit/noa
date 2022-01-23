@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Matrices/TridiagonalMatrix.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Real,
@@ -72,8 +72,8 @@ TridiagonalMatrix< Real, Device, Index, Organization, RealAllocator >::
 getSerializationType()
 {
    return String( "Matrices::TridiagonalMatrix< " ) +
-          noaTNL::getSerializationType< RealType >() + ", [any_device], " +
-          noaTNL::getSerializationType< IndexType >() + ", " +
+          noa::TNL::getSerializationType< RealType >() + ", [any_device], " +
+          noa::TNL::getSerializationType< IndexType >() + ", " +
           ( Organization ? "true" : "false" ) + ", [any_allocator] >";
 }
 
@@ -821,4 +821,4 @@ getPaddingIndex() const
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

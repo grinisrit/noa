@@ -17,7 +17,7 @@
 #include <cstddef>   // std::nullptr_t
 #include <algorithm> // swap
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Pointers {
 
 /**
@@ -453,4 +453,4 @@ class SharedPointer< Object, Devices::Host > : public SmartPointer
 };
 
 } // namespace Pointers
-} // namespace noaTNL
+} // namespace noa::TNL

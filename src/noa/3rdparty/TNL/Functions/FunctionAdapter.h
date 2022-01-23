@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 /***
@@ -201,5 +201,5 @@ class FunctionAdapter< Mesh, Function, SpaceDomain >
 #endif
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 

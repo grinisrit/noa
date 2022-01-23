@@ -13,7 +13,7 @@
 
 #include <noa/3rdparty/TNL/Containers/NDArrayView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< std::size_t slicedDimension = 0,
@@ -441,4 +441,4 @@ public:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

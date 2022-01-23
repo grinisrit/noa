@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename ValuesView, typename Indexer >
@@ -113,4 +113,4 @@ cend() const -> const IteratorType
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

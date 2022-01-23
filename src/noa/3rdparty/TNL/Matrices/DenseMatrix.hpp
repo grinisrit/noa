@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Real,
@@ -1427,4 +1427,4 @@ bool operator!=( const DenseMatrixView< Real, Device, Index, Organization >& lef
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

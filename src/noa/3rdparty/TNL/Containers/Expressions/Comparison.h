@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/reduce.h>
 #include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace Expressions {
 
@@ -271,4 +271,4 @@ struct Comparison< T1, T2, VectorExpressionVariable, ArithmeticVariable >
 
 } // namespace Expressions
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

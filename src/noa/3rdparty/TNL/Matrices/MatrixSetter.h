@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename DifferentialOperator,
@@ -157,6 +157,6 @@ class MatrixSetter< Meshes::Grid< Dimension, Real, Device, Index >,
 */
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/MatrixSetter_impl.h>

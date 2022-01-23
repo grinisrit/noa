@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Functions/OperatorFunction.h>
 #include <noa/3rdparty/TNL/Functions/FunctionAdapter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 template< typename OutVectorField,
@@ -164,6 +164,6 @@ class VectorFieldEvaluatorAdditionEntitiesProcessor
 };
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Functions/VectorFieldEvaluator_impl.h>

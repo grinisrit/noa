@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/scan.h>
 #include <noa/3rdparty/TNL/Algorithms/contains.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -203,9 +203,9 @@ distributeSubentities( DistributedMesh& mesh, bool preferHighRanks = true )
          for( LocalIndexType k = 0; k < entity.template getSuperentitiesCount< DistributedMesh::getMeshDimension() >(); k++ ) {
             const GlobalIndexType gk = entity.template getSuperentityIndex< DistributedMesh::getMeshDimension() >( k );
             if( preferHighRanks )
-               owner = noaTNL::max( owner, getCellOwner( gk ) );
+               owner = noa::TNL::max( owner, getCellOwner( gk ) );
             else
-               owner = noaTNL::min( owner, getCellOwner( gk ) );
+               owner = noa::TNL::min( owner, getCellOwner( gk ) );
          }
          return owner;
       }
@@ -425,4 +425,4 @@ distributeSubentities( DistributedMesh& mesh, bool preferHighRanks = true )
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

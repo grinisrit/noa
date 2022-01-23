@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -76,4 +76,4 @@ getPartialDerivative( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

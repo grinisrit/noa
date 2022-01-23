@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 namespace Analytic {
 
@@ -84,4 +84,4 @@ class Shift : public Functions::Domain< Dimensions, Functions::SpaceDomain >
 
 } // namespace Analytic
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 template< typename T, typename R = void >
 struct enable_if_type
@@ -308,4 +308,4 @@ public:
     static constexpr bool value = ( sizeof( test< std::decay_t<T> >(0) ) == sizeof( YesType ) );
 };
 
-} //namespace noaTNL
+} //namespace noa::TNL

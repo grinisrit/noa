@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -118,6 +118,6 @@ class SubdomainOverlapsGetter< Grid< 3, Real, Device, Index > >
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.hpp>

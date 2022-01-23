@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Config/ConfigEntryBase.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 class ConfigDelimiter : public ConfigEntryBase
@@ -26,4 +26,4 @@ public:
 };
 
 } //namespace Config
-} //namespace noaTNL
+} //namespace noa::TNL

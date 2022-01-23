@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Containers/detail/StaticArrayAssignment.h>
 #include <noa/3rdparty/TNL/Algorithms/unrolledFor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 namespace detail {
@@ -377,4 +377,4 @@ File& operator>>( File&& file, StaticArray< Size, Value >& array )
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

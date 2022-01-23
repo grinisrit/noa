@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -36,4 +36,4 @@ inline String getSerializationType( Algorithms::Segments::ElementsOrganization O
       return String( "ColumnMajorOrder" );
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

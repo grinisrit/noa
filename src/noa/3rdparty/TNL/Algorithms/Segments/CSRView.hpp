@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/CSR.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -56,9 +56,9 @@ CSRView< Device, Index, Kernel >::
 getSerializationType()
 {
    return "CSR< [any_device], " +
-      noaTNL::getSerializationType< IndexType >() + ", " +
+      noa::TNL::getSerializationType< IndexType >() + ", " +
       // FIXME: the serialized data do not depend on the the kernel type so it should not be in the serialization type
-      noaTNL::getSerializationType< KernelType >() + " >";
+      noa::TNL::getSerializationType< KernelType >() + " >";
 }
 
 template< typename Device,
@@ -200,7 +200,7 @@ forSegments( IndexType begin, IndexType end, Function&& function ) const
       auto segment = view.getSegmentView( segmentIdx );
       function( segment );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Device,
@@ -245,8 +245,8 @@ void
 CSRView< Device, Index, Kernel >::
 reduceSegments( IndexType first, IndexType last, Fetch& fetch, const Reduction& reduction, ResultKeeper& keeper, const Real& zero ) const
 {
-   if( std::is_same< DeviceType, noaTNL::Devices::Host >::value )
-      noaTNL::Algorithms::Segments::CSRScalarKernel< IndexType, DeviceType >::reduceSegments( offsets, first, last, fetch, reduction, keeper, zero );
+   if( std::is_same< DeviceType, noa::TNL::Devices::Host >::value )
+      noa::TNL::Algorithms::Segments::CSRScalarKernel< IndexType, DeviceType >::reduceSegments( offsets, first, last, fetch, reduction, keeper, zero );
    else
       kernel.reduceSegments( offsets, first, last, fetch, reduction, keeper, zero );
 }
@@ -309,4 +309,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< CSRView, Fetch >
 
       } // namespace Segments
    }  // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -12,7 +12,7 @@
 
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< detail::ScanType Type >
@@ -97,4 +97,4 @@ perform( Vector& v,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

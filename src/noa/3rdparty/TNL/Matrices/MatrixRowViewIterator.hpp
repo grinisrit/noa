@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.h>
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename RowView >
@@ -88,4 +88,4 @@ operator*() const -> const MatrixElementType
 
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

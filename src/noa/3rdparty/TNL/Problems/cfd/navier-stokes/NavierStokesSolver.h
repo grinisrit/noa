@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/String.h>
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 template< typename AdvectionScheme,
           typename DiffusionScheme,
@@ -140,6 +140,6 @@ class NavierStokesSolver
 
 };
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/cfd/navier-stokes/NavierStokesSolver_impl.h>

@@ -11,7 +11,7 @@
 #include <string>
 #include <limits>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Debugging {
 
 /*
@@ -63,4 +63,4 @@ printMemoryUsage( std::ostream& str = std::cerr )
 }
 
 } // namespace Debugging
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -18,7 +18,7 @@
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 #include <noa/3rdparty/TNL/Operators/diffusion/ExactLinearDiffusion.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -176,6 +176,6 @@ class LinearDiffusion< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real, Ind
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Operators/diffusion/LinearDiffusion_impl.h>

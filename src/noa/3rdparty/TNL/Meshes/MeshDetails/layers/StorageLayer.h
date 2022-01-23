@@ -18,7 +18,7 @@
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/SuperentityStorageLayer.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/DualGraphLayer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -317,4 +317,4 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Functions/MeshFunctionNormGetter.h>
 #include <noa/3rdparty/TNL/Functions/MeshFunctionIO.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< typename Mesh,
@@ -423,4 +423,4 @@ operator << ( std::ostream& str, const MeshFunctionView< Mesh, MeshEntityDimensi
 }
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Containers/ByteArraySynchronizer.h>
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Value,
@@ -226,6 +226,6 @@ protected:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "DistributedArrayView.hpp"

@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /**
@@ -94,4 +94,4 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

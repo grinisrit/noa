@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRHybridKernel.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -36,7 +36,7 @@ void reduceSegmentsCSRHybridVectorKernel(
     ResultKeeper keep,
     const Real zero )
 {
-    const Index segmentIdx =  noaTNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
+    const Index segmentIdx =  noa::TNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
     if( segmentIdx >= last )
         return;
 
@@ -49,7 +49,7 @@ void reduceSegmentsCSRHybridVectorKernel(
     for( Index globalIdx = offsets[ segmentIdx ] + localIdx; globalIdx < endIdx; globalIdx += ThreadsPerSegment )
     {
       aux = reduce( aux, detail::FetchLambdaAdapter< Index, Fetch >::call( fetch, segmentIdx, localIdx, globalIdx, compute ) );
-      localIdx += noaTNL::Cuda::getWarpSize();
+      localIdx += noa::TNL::Cuda::getWarpSize();
     }
 
     /****
@@ -89,16 +89,16 @@ void reduceSegmentsCSRHybridMultivectorKernel(
     ResultKeeper keep,
     const Real zero )
 {
-    const Index segmentIdx =  noaTNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
+    const Index segmentIdx =  noa::TNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
     if( segmentIdx >= last )
         return;
 
     __shared__ Real shared[ BlockSize / 32 ];
-    if( threadIdx.x < BlockSize / noaTNL::Cuda::getWarpSize() )
+    if( threadIdx.x < BlockSize / noa::TNL::Cuda::getWarpSize() )
         shared[ threadIdx.x ] = zero;
 
     const int laneIdx = threadIdx.x & ( ThreadsPerSegment - 1 ); // & is cheaper than %
-    const int inWarpLaneIdx = threadIdx.x & ( noaTNL::Cuda::getWarpSize() - 1 ); // & is cheaper than %
+    const int inWarpLaneIdx = threadIdx.x & ( noa::TNL::Cuda::getWarpSize() - 1 ); // & is cheaper than %
     const Index beginIdx = offsets[ segmentIdx ];
     const Index endIdx   = offsets[ segmentIdx + 1 ] ;
 
@@ -116,7 +116,7 @@ void reduceSegmentsCSRHybridMultivectorKernel(
     result += __shfl_down_sync(0xFFFFFFFF, result, 2);
     result += __shfl_down_sync(0xFFFFFFFF, result, 1);
 
-    const Index warpIdx = threadIdx.x / noaTNL::Cuda::getWarpSize();
+    const Index warpIdx = threadIdx.x / noa::TNL::Cuda::getWarpSize();
     if( inWarpLaneIdx == 0 )
         shared[ warpIdx ] = result;
 
@@ -125,7 +125,7 @@ void reduceSegmentsCSRHybridMultivectorKernel(
     if( warpIdx == 0 && inWarpLaneIdx < 16 )
     {
         //constexpr int totalWarps = BlockSize / WarpSize;
-        constexpr int warpsPerSegment = ThreadsPerSegment / noaTNL::Cuda::getWarpSize();
+        constexpr int warpsPerSegment = ThreadsPerSegment / noa::TNL::Cuda::getWarpSize();
         if( warpsPerSegment >= 32 )
         {
             shared[ inWarpLaneIdx ] =  reduce( shared[ inWarpLaneIdx ], shared[ inWarpLaneIdx + 16 ] );
@@ -176,7 +176,7 @@ init( const Offsets& offsets )
     if( segmentsCount <= 0 )
        return;
     const Index elementsInSegment = std::ceil( ( double ) offsets.getElement( segmentsCount ) / ( double ) segmentsCount );
-    this->threadsPerSegment = noaTNL::min( std::pow( 2, std::ceil( std::log2( elementsInSegment ) ) ), ThreadsInBlock ); //noaTNL::Cuda::getWarpSize() );
+    this->threadsPerSegment = noa::TNL::min( std::pow( 2, std::ceil( std::log2( elementsInSegment ) ) ), ThreadsInBlock ); //noa::TNL::Cuda::getWarpSize() );
     TNL_ASSERT_GE( threadsPerSegment, 0, "" );
     TNL_ASSERT_LE( threadsPerSegment, ThreadsInBlock, "" );
 }
@@ -204,11 +204,11 @@ getView() -> ViewType
 template< typename Index,
           typename Device,
           int ThreadsInBlock >
-noaTNL::String
+noa::TNL::String
 CSRHybridKernel< Index, Device, ThreadsInBlock >::
 getKernelType()
 {
-    return "Hybrid " + noaTNL::convertToString( ThreadsInBlock );
+    return "Hybrid " + noa::TNL::convertToString( ThreadsInBlock );
 }
 
 template< typename Index,
@@ -248,12 +248,12 @@ reduceSegments( const OffsetsView& offsets,
        return;
     const size_t threadsCount = this->threadsPerSegment * ( last - first );
     dim3 blocksCount, gridsCount, blockSize( ThreadsInBlock );
-    noaTNL::Cuda::setupThreads( blockSize, blocksCount, gridsCount, threadsCount );
+    noa::TNL::Cuda::setupThreads( blockSize, blocksCount, gridsCount, threadsCount );
     //std::cerr << " this->threadsPerSegment = " << this->threadsPerSegment << " offsets = " << offsets << std::endl;
     for( unsigned int gridIdx = 0; gridIdx < gridsCount.x; gridIdx ++ )
     {
         dim3 gridSize;
-        noaTNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, gridSize );
+        noa::TNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, gridSize );
         switch( this->threadsPerSegment )
         {
             case 0:      // this means zero/empty matrix
@@ -305,4 +305,4 @@ reduceSegments( const OffsetsView& offsets,
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

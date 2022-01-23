@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Functions/tnlFunction.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename ExactOperatorQ, int Dimension >
@@ -72,6 +72,6 @@ class tnlFunctionType< ExactOperatorCurvature< ExactOperatorQ, Dimension > >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Operators/operator-curvature/ExactOperatorCurvature_impl.h>

@@ -21,7 +21,7 @@
 #include "getDataType.h"
 #include "Profiling.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace MPI {
 
 // forward declaration to break cyclic inclusion
@@ -371,7 +371,7 @@ void Alltoall( const T* sendData,
 }
 
 } // namespace MPI
-} // namespace noaTNL
+} // namespace noa::TNL
 
 // late inclusion to break cyclic inclusion
 #include "selectGPU.h"

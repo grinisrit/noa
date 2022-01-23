@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace ODE {
 
@@ -103,6 +103,6 @@ protected:
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/ODE/ExplicitSolver.hpp>

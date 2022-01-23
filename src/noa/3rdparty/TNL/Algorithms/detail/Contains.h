@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 #include <noa/3rdparty/TNL/Algorithms/reduce.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
@@ -153,4 +153,4 @@ struct ContainsOnlyValue< Devices::Cuda >
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

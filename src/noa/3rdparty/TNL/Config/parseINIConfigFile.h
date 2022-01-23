@@ -16,7 +16,7 @@
 
 #include <Leksys/iniparser.hpp>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 ParameterContainer
@@ -122,4 +122,4 @@ parseINIConfigFile( const std::string& configPath,
 }
 
 } // namespace Config
-} // namespace noaTNL
+} // namespace noa::TNL

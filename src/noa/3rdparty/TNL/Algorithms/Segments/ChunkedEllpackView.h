@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/ChunkedEllpack.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentsPrinting.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -38,7 +38,7 @@ class ChunkedEllpackView
       using SegmentViewType = ChunkedEllpackSegmentView< IndexType, Organization >;
       using ChunkedEllpackSliceInfoType = detail::ChunkedEllpackSliceInfo< IndexType >;
       using ChunkedEllpackSliceInfoAllocator = typename Allocators::Default< Device >::template Allocator< ChunkedEllpackSliceInfoType >;
-      using ChunkedEllpackSliceInfoContainer = Containers::Array< typename noaTNL::copy_const< ChunkedEllpackSliceInfoType >::template from< Index >::type, DeviceType, IndexType, ChunkedEllpackSliceInfoAllocator >;
+      using ChunkedEllpackSliceInfoContainer = Containers::Array< typename noa::TNL::copy_const< ChunkedEllpackSliceInfoType >::template from< Index >::type, DeviceType, IndexType, ChunkedEllpackSliceInfoAllocator >;
       using ChunkedEllpackSliceInfoContainerView = typename ChunkedEllpackSliceInfoContainer::ViewType;
 
       static constexpr bool havePadding() { return true; };
@@ -229,6 +229,6 @@ class ChunkedEllpackView
 };
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/ChunkedEllpackView.hpp>

@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Operators/diffusion/ExactNonlinearDiffusion.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -332,4 +332,4 @@ class OneSidedNonlinearDiffusion< Meshes::Grid< 3, MeshReal, Device, MeshIndex >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

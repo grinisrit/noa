@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Functions/VectorField.h>
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Operators {
       namespace Advection {
    
@@ -312,6 +312,6 @@ class LaxFridrichs< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real, Index,
 
       }// namespace Advection
    } // namepsace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #endif	/* LaxFridrichs_H */

@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Algorithms/reduce.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< typename Element, typename Index >
@@ -166,4 +166,4 @@ compare( const DestinationElement* destination,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

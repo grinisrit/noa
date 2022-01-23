@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentsPrinting.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -136,6 +136,6 @@ std::ostream& operator<<( std::ostream& str, const SlicedEllpackView< Device, In
 
       } // namespace Segements
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/SlicedEllpackView.hpp>

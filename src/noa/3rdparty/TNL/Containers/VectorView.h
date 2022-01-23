@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Containers/ArrayView.h>
 #include <noa/3rdparty/TNL/Containers/Expressions/ExpressionTemplates.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 /**
@@ -233,6 +233,6 @@ namespace Expressions {
 } // namespace Expressions
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Containers/VectorView.hpp>

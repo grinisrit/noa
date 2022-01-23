@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Cuda/MemoryHelpers.h>
 #include <noa/3rdparty/TNL/Cuda/SharedMemory.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Real,
@@ -236,4 +236,4 @@ computeColorsVector(Containers::Vector<Index, Device, Index> &colorsVector)
 }*/
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

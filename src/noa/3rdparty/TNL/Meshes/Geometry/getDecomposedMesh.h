@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 // Polygon Mesh
@@ -34,9 +34,9 @@ template< EntityDecomposerVersion DecomposerVersion,
 auto // returns MeshBuilder
 decomposeMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 {
-   using namespace noaTNL;
-   using namespace noaTNL::Containers;
-   using namespace noaTNL::Algorithms;
+   using namespace noa::TNL;
+   using namespace noa::TNL::Containers;
+   using namespace noa::TNL::Algorithms;
 
    using TriangleMeshConfig = TriangleConfig< MeshConfig >;
    using TriangleMesh = Mesh< TriangleMeshConfig, Devices::Host >;
@@ -135,9 +135,9 @@ template< EntityDecomposerVersion DecomposerVersion,
 auto // returns MeshBuilder
 decomposeMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 {
-   using namespace noaTNL;
-   using namespace noaTNL::Containers;
-   using namespace noaTNL::Algorithms;
+   using namespace noa::TNL;
+   using namespace noa::TNL::Containers;
+   using namespace noa::TNL::Algorithms;
 
    using TetrahedronMeshConfig = TetrahedronConfig< MeshConfig >;
    using TetrahedronMesh = Mesh< TetrahedronMeshConfig, Devices::Host >;
@@ -224,4 +224,4 @@ getDecomposedMesh( const Mesh< MeshConfig, Devices::Host > & inMesh )
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

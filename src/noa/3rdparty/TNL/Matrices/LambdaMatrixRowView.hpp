@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Matrices/LambdaMatrixRowView.h>
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename MatrixElementsLambda,
@@ -171,4 +171,4 @@ std::ostream& operator<<( std::ostream& str, const LambdaMatrixRowView< MatrixEl
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

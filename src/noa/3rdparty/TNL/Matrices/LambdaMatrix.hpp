@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Matrices/details/SparseMatrix.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename MatrixElementsLambda,
@@ -354,7 +354,7 @@ forRows( IndexType begin, IndexType end, Function&& function ) const
       auto rowView = view.getRow( rowIdx );
       function( rowView );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename MatrixElementsLambda,
@@ -442,4 +442,4 @@ std::ostream& operator<< ( std::ostream& str, const LambdaMatrix< MatrixElements
 }
 
 } //namespace Matrices
-} //namespace noaTNL
+} //namespace noa::TNL

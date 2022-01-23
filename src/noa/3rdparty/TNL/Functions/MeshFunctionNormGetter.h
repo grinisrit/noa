@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 template< typename Mesh >
@@ -142,4 +142,4 @@ class MeshFunctionNormGetter< Meshes::Grid< Dimension, MeshReal, Devices::Cuda, 
 };
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

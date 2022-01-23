@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Containers/SharedVector.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -334,6 +334,6 @@ class tnlFiniteVolumeOperatorQ< Meshes::Grid< 3,MeshReal, Device, MeshIndex >, R
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Operators/operator-Q/tnlFiniteVolumeOperatorQ_impl.h>

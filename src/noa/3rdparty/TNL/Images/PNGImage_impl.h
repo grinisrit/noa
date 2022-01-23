@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Images//PNGImage.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index >
@@ -403,5 +403,5 @@ PNGImage< Index >::
 }
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 

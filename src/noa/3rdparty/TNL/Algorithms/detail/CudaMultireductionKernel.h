@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Algorithms/CudaReductionBuffer.h>
 #include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
@@ -165,7 +165,7 @@ CudaMultireductionKernelLauncher( const Result identity,
    dim3 blockSize, gridSize;
 
    // version A: max 16 rows of threads
-   blockSize.y = noaTNL::min( n, 16 );
+   blockSize.y = noa::TNL::min( n, 16 );
 
    // version B: up to 16 rows of threads, then "minimize" number of inactive rows
 //   if( n <= 16 )
@@ -187,7 +187,7 @@ CudaMultireductionKernelLauncher( const Result identity,
    while( blockSize.x * blockSize.y > Multireduction_maxThreadsPerBlock )
       blockSize.x /= 2;
 
-   gridSize.x = noaTNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSizeX );
+   gridSize.x = noa::TNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSizeX );
    gridSize.y = Cuda::getNumberOfBlocks( n, blockSize.y );
 
    if( gridSize.y > (unsigned) Cuda::getMaxGridSize() ) {
@@ -280,4 +280,4 @@ CudaMultireductionKernelLauncher( const Result identity,
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

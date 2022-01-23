@@ -21,7 +21,7 @@
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/ChunkedEllpack.h>
 #include <Benchmarks/SpMV/ReferenceFormats/Legacy/BiEllpack.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 /**
  * \brief Namespace for matrix formats.
  */
@@ -100,9 +100,9 @@ struct MatrixInfo< Sandbox::SparseSandboxMatrixView< Real, Device, Index, Matrix
    static String getFormat()
    {
       if( MatrixType::isSymmetric() )
-         return noaTNL::String( "Symmetric Sandbox" );
+         return noa::TNL::String( "Symmetric Sandbox" );
       else
-         return noaTNL::String( "Sandbox" );
+         return noa::TNL::String( "Sandbox" );
    };
 };
 
@@ -241,4 +241,4 @@ struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::SlicedEllpack< Re
 
 /// \endcond
 } //namespace Matrices
-} //namespace noaTNL
+} //namespace noa::TNL

@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
       namespace Linear {
          /**
@@ -22,4 +22,4 @@ namespace noaTNL {
          } // namespace Preconditioners
       } // namespace Linear
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

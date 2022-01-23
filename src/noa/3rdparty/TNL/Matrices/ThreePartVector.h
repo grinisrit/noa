@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 #include <noa/3rdparty/TNL/Containers/VectorView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 namespace __DistributedSpMV_impl {
 
@@ -190,4 +190,4 @@ protected:
 
 } // namespace __DistributedSpMV_impl
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

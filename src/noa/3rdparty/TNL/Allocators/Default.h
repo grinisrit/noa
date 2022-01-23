@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Devices/Host.h>
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Allocators {
 
 /**
@@ -49,4 +49,4 @@ struct Default< Devices::Cuda >
 };
 
 } // namespace Allocators
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Operators/operator-Q/tnlFiniteVolumeOperatorQ.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename MeshReal,
@@ -532,4 +532,4 @@ operator()(
 }
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

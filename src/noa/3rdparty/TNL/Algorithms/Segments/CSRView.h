@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernel.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentsPrinting.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -183,6 +183,6 @@ using CSRViewDefault = CSRViewScalar< Device, Index >;
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/CSRView.hpp>

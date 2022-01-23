@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Mesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -128,6 +128,6 @@ template< typename MeshConfig,
 std::ostream& operator<<( std::ostream& str, const MeshEntity< MeshConfig, Device, EntityTopology >& entity );
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/MeshEntity.hpp>

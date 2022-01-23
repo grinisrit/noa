@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
@@ -67,4 +67,4 @@ struct DistributedScan
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

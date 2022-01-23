@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Config/ConfigDescription.h>
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Devices {
 
 class Cuda
@@ -41,4 +41,4 @@ public:
 };
 
 } // namespace Devices
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Operators/ExactFunctionInverseOperator.h>
 #include <noa/3rdparty/TNL/Operators/geometric/ExactGradientNorm.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< int Dimension,
@@ -84,5 +84,5 @@ class ExactMeanCurvature
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

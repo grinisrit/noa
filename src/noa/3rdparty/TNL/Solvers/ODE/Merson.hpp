@@ -13,7 +13,7 @@
 
 #include "Merson.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace ODE {
 
@@ -209,4 +209,4 @@ void Merson< Problem, SolverMonitor >::writeGrids( const DofVectorPointer& u )
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Containers/ndarray/SizesHolderHelpers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace __ndarray_impl {
 
@@ -340,4 +340,4 @@ struct SlicedNDArrayBase
 
 } // namespace __ndarray_impl
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

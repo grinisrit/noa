@@ -9,7 +9,7 @@
 #pragma once
 #include <noa/3rdparty/TNL/Math.h>
 
-namespace noaTNL {
+namespace noa::TNL {
     namespace Algorithms {
         namespace Sorting {
 
@@ -46,10 +46,10 @@ template <typename Value, typename CMP>
 __cuda_callable__ void cmpSwap(Value &a, Value &b, bool ascending, const CMP &Cmp)
 {
     if (ascending == Cmp(b, a))
-        noaTNL::swap(a, b);
+        noa::TNL::swap(a, b);
 }
 
 #endif
         } //namespace Sorting
     } //namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

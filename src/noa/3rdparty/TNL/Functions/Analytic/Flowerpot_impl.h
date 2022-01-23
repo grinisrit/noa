@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Analytic/Flowerpot.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -154,5 +154,5 @@ operator()( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 

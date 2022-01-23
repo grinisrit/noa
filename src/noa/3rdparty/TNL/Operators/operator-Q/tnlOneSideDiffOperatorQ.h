@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -124,6 +124,6 @@ class tnlOneSideDiffOperatorQ< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, R
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ_impl.h>

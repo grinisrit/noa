@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/TypeTraits.h>
 #include <noa/3rdparty/TNL/Algorithms/unrolledFor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace detail {
 
@@ -57,4 +57,4 @@ struct StaticArrayAssignment< StaticArray, T, false >
 
 } // namespace detail
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

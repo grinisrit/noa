@@ -20,7 +20,7 @@
 #include <gmp.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Arithmetics {
     
 class MultiPrecision
@@ -75,4 +75,4 @@ MultiPrecision sqrt(const MultiPrecision);
 MultiPrecision cqrt(const MultiPrecision);
 
 } // namespace Arithmetics
-} // namespace noaTNL
+} // namespace noa::TNL

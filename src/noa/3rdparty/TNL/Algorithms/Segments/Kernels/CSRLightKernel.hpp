@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRLightKernel.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -35,7 +35,7 @@ void SpMVCSRLight2( OffsetsView offsets,
                                  const Index gridID)
 {
    const Index segmentIdx =
-      first + ( ( gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x ) / 2;
+      first + ( ( gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x ) / 2;
    if( segmentIdx >= last )
       return;
 
@@ -72,7 +72,7 @@ void SpMVCSRLight4( OffsetsView offsets,
                                  const Index gridID )
 {
    const Index segmentIdx =
-      first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / 4;
+      first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / 4;
    if (segmentIdx >= last)
       return;
 
@@ -111,7 +111,7 @@ void SpMVCSRLight8( OffsetsView offsets,
                                  const Index gridID)
 {
    const Index segmentIdx =
-      first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / 8;
+      first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / 8;
    if (segmentIdx >= last)
       return;
 
@@ -151,7 +151,7 @@ void SpMVCSRLight16( OffsetsView offsets,
                                   const Index gridID )
 {
    const Index segmentIdx =
-      first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x ) / 16;
+      first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x ) / 16;
    if( segmentIdx >= last )
       return;
 
@@ -192,7 +192,7 @@ void SpMVCSRVector( OffsetsView offsets,
                     const Index gridID )
 {
    const int warpSize = 32;
-   const Index warpID = first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / warpSize;
+   const Index warpID = first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / warpSize;
    if (warpID >= last)
       return;
 
@@ -234,7 +234,7 @@ void SpMVCSRVector( OffsetsView offsets,
                     const Index gridID )
 {
    //const int warpSize = 32;
-   const Index warpID = first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / ThreadsPerSegment;
+   const Index warpID = first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / ThreadsPerSegment;
    if (warpID >= last)
       return;
 
@@ -295,16 +295,16 @@ void reduceSegmentsCSRLightMultivectorKernel(
     ResultKeeper keep,
     const Real zero )
 {
-    const Index segmentIdx =  noaTNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
+    const Index segmentIdx =  noa::TNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
     if( segmentIdx >= last )
         return;
 
     __shared__ Real shared[ BlockSize / 32 ];
-    if( threadIdx.x < BlockSize / noaTNL::Cuda::getWarpSize() )
+    if( threadIdx.x < BlockSize / noa::TNL::Cuda::getWarpSize() )
         shared[ threadIdx.x ] = zero;
 
     const int laneIdx = threadIdx.x & ( ThreadsPerSegment - 1 ); // & is cheaper than %
-    const int inWarpLaneIdx = threadIdx.x & ( noaTNL::Cuda::getWarpSize() - 1 ); // & is cheaper than %
+    const int inWarpLaneIdx = threadIdx.x & ( noa::TNL::Cuda::getWarpSize() - 1 ); // & is cheaper than %
     const Index beginIdx = offsets[ segmentIdx ];
     const Index endIdx   = offsets[ segmentIdx + 1 ] ;
 
@@ -322,7 +322,7 @@ void reduceSegmentsCSRLightMultivectorKernel(
     result += __shfl_down_sync(0xFFFFFFFF, result, 2);
     result += __shfl_down_sync(0xFFFFFFFF, result, 1);
 
-    const Index warpIdx = threadIdx.x / noaTNL::Cuda::getWarpSize();
+    const Index warpIdx = threadIdx.x / noa::TNL::Cuda::getWarpSize();
     if( inWarpLaneIdx == 0 )
         shared[ warpIdx ] = result;
 
@@ -331,7 +331,7 @@ void reduceSegmentsCSRLightMultivectorKernel(
     if( warpIdx == 0 && inWarpLaneIdx < 16 )
     {
         //constexpr int totalWarps = BlockSize / WarpSize;
-        constexpr int warpsPerSegment = ThreadsPerSegment / noaTNL::Cuda::getWarpSize();
+        constexpr int warpsPerSegment = ThreadsPerSegment / noa::TNL::Cuda::getWarpSize();
         if( warpsPerSegment >= 32 )
         {
             shared[ inWarpLaneIdx ] =  reduce( shared[ inWarpLaneIdx ], shared[ inWarpLaneIdx + 16 ] );
@@ -396,7 +396,7 @@ struct CSRLightKernelreduceSegmentsDispatcher< Index, Device, Fetch, Reduction, 
                        const Real& zero,
                        const Index threadsPerSegment )
    {
-      noaTNL::Algorithms::Segments::CSRScalarKernel< Index, Device >::
+      noa::TNL::Algorithms::Segments::CSRScalarKernel< Index, Device >::
          reduceSegments( offsets, first, last, fetch, reduce, keep, zero );
    }
 };
@@ -430,15 +430,15 @@ struct CSRLightKernelreduceSegmentsDispatcher< Index, Device, Fetch, Reduce, Kee
 
       for (Index grid = 0; neededThreads != 0; ++grid)
       {
-         if( noaTNL::Cuda::getMaxGridXSize() * threads >= neededThreads)
+         if( noa::TNL::Cuda::getMaxGridXSize() * threads >= neededThreads)
          {
             blocks = roundUpDivision(neededThreads, threads);
             neededThreads = 0;
          }
          else
          {
-            blocks = noaTNL::Cuda::getMaxGridXSize();
-            neededThreads -= noaTNL::Cuda::getMaxGridXSize() * threads;
+            blocks = noa::TNL::Cuda::getMaxGridXSize();
+            neededThreads -= noa::TNL::Cuda::getMaxGridXSize() * threads;
          }
 
          if( threadsPerSegment == 1 )
@@ -573,7 +573,7 @@ getView() -> ViewType
 
 template< typename Index,
           typename Device >
-noaTNL::String
+noa::TNL::String
 CSRLightKernel< Index, Device >::
 getKernelType()
 {
@@ -659,4 +659,4 @@ getThreadsPerSegment() const
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

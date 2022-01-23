@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Matrices/DenseMatrixRowView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
 
 template< typename SegmentView,
@@ -132,4 +132,4 @@ cend() const -> const IteratorType
 }
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

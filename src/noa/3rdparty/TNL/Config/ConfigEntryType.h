@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <variant>   // backport of std::variant from C++17
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 using std::variant;
@@ -103,4 +103,4 @@ template<> inline std::string getUIEntryType< std::vector< double > >()         
 template<> inline std::string getUIEntryType< std::vector< std::string > >()      { return "list of string"; };
 
 } // namespace Config
-} // namespace noaTNL
+} // namespace noa::TNL

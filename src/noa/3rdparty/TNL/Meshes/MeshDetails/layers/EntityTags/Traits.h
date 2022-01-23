@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace EntityTags {
 
@@ -39,4 +39,4 @@ enum EntityTags : std::uint8_t
 
 } // namespace EntityTags
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Solvers/PDE/PDESolver.h>
 #include <noa/3rdparty/TNL/MPI/Utils.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -117,5 +117,5 @@ setTotalTimer( Timer& totalTimer )
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 

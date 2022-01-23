@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -71,7 +71,7 @@ std::ostream& operator << ( std::ostream& str, const Constant< dimensions, Real 
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Functions/Analytic/Constant_impl.h>
 

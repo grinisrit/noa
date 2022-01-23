@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Analytic/SinBumpsSDF.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Functions {
       namespace Analytic {
 
@@ -235,4 +235,4 @@ getPartialDerivative( const PointType& v,
 
       } // namespace Analytic
    } // namespace Fucntions
-} // namespace noaTNL
+} // namespace noa::TNL

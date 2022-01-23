@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentElement.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -98,6 +98,6 @@ class SegmentViewIterator
 
       } // namespace Segments
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentViewIterator.hpp>

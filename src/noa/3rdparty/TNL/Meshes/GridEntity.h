@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/NeighborGridEntitiesStorage.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename GridEntity,
@@ -385,7 +385,7 @@ class GridEntity< Meshes::Grid< Dimension, Real, Device, Index >, 0, Config >
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntity_impl.h>
 

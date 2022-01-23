@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -36,9 +36,9 @@ struct CSRLightKernel
 
    ConstViewType getConstView() const;
 
-   static noaTNL::String getKernelType();
+   static noa::TNL::String getKernelType();
 
-   noaTNL::String getSetup() const;
+   noa::TNL::String getSetup() const;
 
    template< typename OffsetsView,
              typename Fetch,
@@ -71,6 +71,6 @@ struct CSRLightKernel
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRLightKernel.hpp>

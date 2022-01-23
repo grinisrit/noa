@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrixRowView.h>
 #include <noa/3rdparty/TNL/TypeTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       namespace Sandbox {
 
@@ -56,7 +56,7 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
       using BaseType = MatrixView< Real, Device, Index >;
       using ValuesViewType = typename BaseType::ValuesView;
       using ConstValuesViewType = typename ValuesViewType::ConstViewType;
-      using ColumnsIndexesViewType = Containers::VectorView< typename noaTNL::copy_const< Index >::template from< Real >::type, Device, Index >;
+      using ColumnsIndexesViewType = Containers::VectorView< typename noa::TNL::copy_const< Index >::template from< Real >::type, Device, Index >;
       using ConstColumnsIndexesViewType = typename ColumnsIndexesViewType::ConstViewType;
       using RowsCapacitiesView = Containers::VectorView< Index, Device, Index >;
       using ConstRowsCapacitiesView = typename RowsCapacitiesView::ConstViewType;
@@ -137,7 +137,7 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
        *
        * SANDBOX_TODO: You may replace it with containers views for metadata of your format.
        */
-      using RowPointersView = noaTNL::Containers::VectorView< IndexType, DeviceType, IndexType >;
+      using RowPointersView = noa::TNL::Containers::VectorView< IndexType, DeviceType, IndexType >;
 
       /**
        * \brief Constructor with no parameters.
@@ -571,7 +571,7 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseSandboxMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseSandboxMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -597,7 +597,7 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseSandboxMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseSandboxMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -621,7 +621,7 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseSandboxMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseSandboxMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -645,7 +645,7 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseSandboxMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseSandboxMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -862,6 +862,6 @@ class SparseSandboxMatrixView : public MatrixView< Real, Device, Index >
 
       } // namespace Sandbox
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrixView.hpp>

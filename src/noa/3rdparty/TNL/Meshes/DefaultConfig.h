@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -88,4 +88,4 @@ struct DefaultConfig
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

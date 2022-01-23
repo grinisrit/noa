@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< int Dimension >
@@ -64,6 +64,6 @@ class ExactLinearDiffusion< 3 > : public Functions::Domain< 3 >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Operators/diffusion/ExactLinearDiffusion_impl.h>

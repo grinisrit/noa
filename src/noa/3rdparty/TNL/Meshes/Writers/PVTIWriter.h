@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/Writers/VTIWriter.h>
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGrid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 
@@ -114,6 +114,6 @@ protected:
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/Writers/PVTIWriter.hpp>

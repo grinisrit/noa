@@ -18,7 +18,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 // 3D Polygon Mesh
@@ -29,9 +29,9 @@ template< EntityDecomposerVersion DecomposerVersion,
 auto // returns MeshBuilder
 planarCorrection( const Mesh< MeshConfig, Devices::Host >& inMesh )
 {
-   using namespace noaTNL;
-   using namespace noaTNL::Containers;
-   using namespace noaTNL::Algorithms;
+   using namespace noa::TNL;
+   using namespace noa::TNL::Containers;
+   using namespace noa::TNL::Algorithms;
 
    using PolygonMesh = Mesh< MeshConfig, Devices::Host >;
    using MeshBuilder = MeshBuilder< PolygonMesh >;
@@ -148,9 +148,9 @@ template< EntityDecomposerVersion DecomposerVersion,
 auto // returns MeshBuilder
 planarCorrection( const Mesh< MeshConfig, Devices::Host >& inMesh )
 {
-   using namespace noaTNL;
-   using namespace noaTNL::Containers;
-   using namespace noaTNL::Algorithms;
+   using namespace noa::TNL;
+   using namespace noa::TNL::Containers;
+   using namespace noa::TNL::Algorithms;
 
    using PolyhedronMesh = Mesh< MeshConfig, Devices::Host >;
    using MeshBuilder = MeshBuilder< PolyhedronMesh >;
@@ -313,4 +313,4 @@ getPlanarMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

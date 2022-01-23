@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Devices {
 
 class AnyDevice
@@ -28,4 +28,4 @@ struct PickDevice< Devices::AnyDevice >
 };
 
 } // namespace Devices
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Sorting/detail/quicksort_1Block.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -258,4 +258,4 @@ __global__ void cudaQuickSort2ndPhase(Containers::ArrayView<Value, Devices::Cuda
 
       } // namespace Sorting
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

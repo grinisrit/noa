@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Topologies/Triangle.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -86,4 +86,4 @@ template<> struct SubentityVertexMap< Tetrahedron, Triangle, 3, 2> { static cons
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

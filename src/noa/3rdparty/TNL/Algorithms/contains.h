@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/detail/Contains.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 /**
@@ -68,4 +68,4 @@ containsOnlyValue( const Array& array,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< int Dimension,
@@ -35,5 +35,5 @@ class ExactDifference
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

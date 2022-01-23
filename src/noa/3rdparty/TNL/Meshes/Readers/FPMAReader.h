@@ -12,7 +12,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Readers/MeshReader.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -174,4 +174,4 @@ private:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

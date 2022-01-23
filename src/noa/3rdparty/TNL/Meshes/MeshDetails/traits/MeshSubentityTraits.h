@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshEntityTraits.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -82,4 +82,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

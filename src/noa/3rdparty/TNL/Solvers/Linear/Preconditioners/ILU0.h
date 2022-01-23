@@ -19,7 +19,7 @@
 #include <cusparse.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
       namespace Linear {
       namespace Preconditioners {
@@ -65,7 +65,7 @@ class ILU0
  *
  * See [detailed description](https://en.wikipedia.org/wiki/Incomplete_LU_factorization).
  *
- * See \ref noaTNL::Solvers::Linear::Preconditioners::Preconditioner for example of setup with a linear solver.
+ * See \ref noa::TNL::Solvers::Linear::Preconditioners::Preconditioner for example of setup with a linear solver.
  *
  * \tparam Matrix is type of the matrix describing the linear system.
  */
@@ -267,6 +267,6 @@ public:
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "ILU0.hpp"

@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityMeasureGetter.h>
 #include <noa/3rdparty/TNL/Meshes/GridEntity.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /*template< int Dimension,
@@ -725,5 +725,5 @@ getMesh() const
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 

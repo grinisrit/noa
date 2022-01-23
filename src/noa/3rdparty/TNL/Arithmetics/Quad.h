@@ -15,7 +15,7 @@
 
 #include <noa/3rdparty/TNL/String.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Arithmetics {    
 
 template <class T>
@@ -111,4 +111,4 @@ template <typename T>
 void printQuad(T *a); // Print of quad-double
 
 } // namespace Arithmetics
-} //namespace noaTNL
+} //namespace noa::TNL

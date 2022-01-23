@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/Containers/VectorView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 /**
@@ -275,6 +275,6 @@ namespace Expressions {
 } // namespace Expressions
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Containers/Vector.hpp>

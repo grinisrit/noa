@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Containers/Expressions/TypeTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace Expressions {
 
@@ -35,4 +35,4 @@ getExpressionVariableType()
 
 } // namespace Expressions
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

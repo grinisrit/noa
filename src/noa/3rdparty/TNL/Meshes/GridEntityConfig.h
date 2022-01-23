@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 enum GridEntityStencilStorage
@@ -79,4 +79,4 @@ class GridEntityCrossStencilStorage
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

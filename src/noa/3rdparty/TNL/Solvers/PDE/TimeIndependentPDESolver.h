@@ -24,7 +24,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -80,6 +80,6 @@ class TimeIndependentPDESolver : public PDESolver< typename Problem::RealType,
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/PDE/TimeIndependentPDESolver.hpp>

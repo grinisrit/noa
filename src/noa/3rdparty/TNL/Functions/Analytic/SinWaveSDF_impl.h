@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Analytic/SinWaveSDF.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {
 
@@ -160,4 +160,4 @@ getPartialDerivative( const PointType& v,
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

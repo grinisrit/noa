@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/tnlIdenticalGridGeometry.h>
 #include <noa/3rdparty/TNL/Operators/gradient/tnlCentralFDMGradient.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -158,6 +158,6 @@ class LaxFridrichs< Meshes::Grid< 2, Real, Device, Index, tnlIdenticalGridGeomet
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/implementation/operators/euler/fvm/LaxFridrichs_impl.h>

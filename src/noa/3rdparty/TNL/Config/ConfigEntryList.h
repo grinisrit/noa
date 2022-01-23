@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Config/ConfigEntry.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 template< typename EntryType >
@@ -22,4 +22,4 @@ public:
 };
 
 } // namespace Config
-} // namespace noaTNL
+} // namespace noa::TNL

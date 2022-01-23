@@ -16,7 +16,7 @@
 #include <dcmtk/ofstd/ofstring.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 class DicomHeader;
@@ -65,7 +65,7 @@ class DicomPatientInfo
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Images//DicomPatientInfo_impl.h>
 

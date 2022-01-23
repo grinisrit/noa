@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< int FunctionDimension,
@@ -136,7 +136,7 @@ std::ostream& operator << ( std::ostream& str, const TestFunction< FunctionDimen
 }
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Functions/TestFunction_impl.h>
 

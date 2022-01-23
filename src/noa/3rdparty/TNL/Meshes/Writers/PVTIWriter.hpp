@@ -12,7 +12,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Writers/PVTIWriter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 
@@ -319,4 +319,4 @@ PVTIWriter< Grid >::closePPointData()
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

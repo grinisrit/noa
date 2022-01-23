@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrixView.h>
 #include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       /**
        * \brief Namespace for sandbox matrices.
@@ -40,20 +40,20 @@ namespace noaTNL {
  * several TNL tools compatible with interface of this templated class like:
  *
  * 1. Large set of existing unit tests.
- * 3. Matrix reading from MTX files - to use \ref noaTNL::Matrices::MatrixReader, the following methods must be functional
- *    a. \ref noaTNL::Matrices::SandboxSparseMatrix::setRowCapacities
- *    b. \ref noaTNL::Matrices::SandboxSparseMatrix::setElement
- *    c. \ref noaTNL::Matrices::SandboxSparseMatrix::operator= between different devices
+ * 3. Matrix reading from MTX files - to use \ref noa::TNL::Matrices::MatrixReader, the following methods must be functional
+ *    a. \ref noa::TNL::Matrices::SandboxSparseMatrix::setRowCapacities
+ *    b. \ref noa::TNL::Matrices::SandboxSparseMatrix::setElement
+ *    c. \ref noa::TNL::Matrices::SandboxSparseMatrix::operator= between different devices
  * 4. Matrix benchmarks - the following methods must be functional
- *    a. \ref noaTNL::Matrices::SandboxSparseMatrix::vectorProduct - for SpMV benchmark
+ *    a. \ref noa::TNL::Matrices::SandboxSparseMatrix::vectorProduct - for SpMV benchmark
  * 5. Linear solvers
  * 6. Simple comparison of performance with other matrix formats
  *
  * In the core of this class there is:
  *
- * 1. Vector 'values` (\ref noaTNL::Matrices::Matrix::values) which is inheritted from \ref noaTNL::Matrices::Matrix. This vector is used for storing
+ * 1. Vector 'values` (\ref noa::TNL::Matrices::Matrix::values) which is inheritted from \ref noa::TNL::Matrices::Matrix. This vector is used for storing
  *    of matrix elements values.
- * 2. Vector `columnIndexes` (\ref noaTNL::Matrices::SendboxMatrix::columnIndexes). This vector is used for storing of matrix elements column indexes.
+ * 2. Vector `columnIndexes` (\ref noa::TNL::Matrices::SendboxMatrix::columnIndexes). This vector is used for storing of matrix elements column indexes.
  *
  * This class contains fully functional implementation of CSR format and so the user have to replace just what he needs to. Once you have
  * successfully implemented the sparse matrix format in this form, you may consider to extract it into a form of segments to make it accessible
@@ -61,33 +61,33 @@ namespace noaTNL {
  *
  * Parts of the code, that need to be modified are marked by SANDBOX_TODO tag. The whole implementation consits of the following classes:
  *
- * 1. \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix - this class, it serves for matrix setup and performing of the main operations.
- * 2. \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrixView - view class which is necessary mainly for passing the matrix to GPU kernels. Most methods of `SparseSandboxMatrix` are common
+ * 1. \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix - this class, it serves for matrix setup and performing of the main operations.
+ * 2. \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrixView - view class which is necessary mainly for passing the matrix to GPU kernels. Most methods of `SparseSandboxMatrix` are common
  *    with `SparseSandboxMatrixView` and in this case they are implemented in the view class (and there is just redirection from this class). For this reason, `SparseSandboxMatrix` contains instance of the view class
- *    (\ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::view) which needs to be regularly updated each time when metadata are changed. This is usually done by the means of
- *    method \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::getView.
- * 3. \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrixRowView - is a class for accessing particular matrix rows. It will, likely, require some changes as well.
+ *    (\ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::view) which needs to be regularly updated each time when metadata are changed. This is usually done by the means of
+ *    method \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::getView.
+ * 3. \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrixRowView - is a class for accessing particular matrix rows. It will, likely, require some changes as well.
  *
  * We suggest the following way of implementation of the new sparse matrix format:
  *
- * 1. Add metadata required by your format next to \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::rowPointers but do not replace the row pointers. It will allow you
+ * 1. Add metadata required by your format next to \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::rowPointers but do not replace the row pointers. It will allow you
  *    to implement your new format next to the original CSR and to check/compare with the valid CSR implementation any time you get into troubles. The adventage is that all
  *    unit tests are working properly and you may just focus on modifying one method after another. The unit tests are called from
  *    `src/UnitTests/Matrices/SparseMatrixTests_SandboxMatrix.h` and `src/UnitTests/Matrices/SparseMatrixVectorProductTests_SandboxMatrix.h`
- * 2. Modify first the method \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::setRowCapacities which is responsible for the setup of the format metadata.
- * 3. Continue with modification of constructors, view class, \ref noaTNL::Matrices::Sandbox::SparseSandoxMatrix::getView and \ref noaTNL::Matrices::Sandbox::SparseSandoxMatrix::getConstView.
- * 4. Next you need to modify \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::setElement and \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::getElement methods and assignment operator
- *    at least for copying the matrix across different devices (i.e. from CPU to GPU). It will allow you to use \ref noaTNL::Matrices::MatrixReader. We recommend to have the same data layout
+ * 2. Modify first the method \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::setRowCapacities which is responsible for the setup of the format metadata.
+ * 3. Continue with modification of constructors, view class, \ref noa::TNL::Matrices::Sandbox::SparseSandoxMatrix::getView and \ref noa::TNL::Matrices::Sandbox::SparseSandoxMatrix::getConstView.
+ * 4. Next you need to modify \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::setElement and \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::getElement methods and assignment operator
+ *    at least for copying the matrix across different devices (i.e. from CPU to GPU). It will allow you to use \ref noa::TNL::Matrices::MatrixReader. We recommend to have the same data layout
  *    on both CPU and GPU so that the transfer of the matrix from CPU to GPU is trivial.
- * 5. Finally proceed to \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::vectorProduct to implement SpMV operation. We recommend to implement first the CPU version which is easier to
+ * 5. Finally proceed to \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::vectorProduct to implement SpMV operation. We recommend to implement first the CPU version which is easier to
  *     debug. Next proceed to GPU version.
  * 6. When SpMV works it is time to delete the original CSR implementation, i.e. everything around `rowPointers`.
  * 7. Optimize your implementation to the best performance and test with `tnl-benchmark-spmv` - you need to include your new matrix to `src/Benchmarks/SpMV/spmv.h` and modify this file
  *    accordingly.
- * 8. If you want, you may now generalize SpMV to \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::reduceRows method.
+ * 8. If you want, you may now generalize SpMV to \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::reduceRows method.
  * 9. If you have `reduceRows` implemented, you may use the original implementation of SpMV based just on the `reduceRows` method.
- * 10. You may implement \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::forRows and \ref noaTNL::Matrices::Sandbox::SparseSandboxMatrix::forElements.
- * 11. Now you have complete implementation of new sparse matrix format. You may turn it into new type of segments (\ref noaTNL::Algorithms::Segments).
+ * 10. You may implement \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::forRows and \ref noa::TNL::Matrices::Sandbox::SparseSandboxMatrix::forElements.
+ * 11. Now you have complete implementation of new sparse matrix format. You may turn it into new type of segments (\ref noa::TNL::Algorithms::Segments).
  *
  * During the implementation some unit tests may crash. If you do not need them at the moment, you may comment them in files
  * `src/UnitTests/Matrices/SparseMatrixTests.h` and `src/UnitTests/Matrices/SparseMatrixVectorProductTests.h`
@@ -113,7 +113,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
       using ValuesVectorType = typename Matrix< Real, Device, Index, RealAllocator >::ValuesType;
       using ValuesViewType = typename ValuesVectorType::ViewType;
       using ConstValuesViewType = typename ValuesViewType::ConstViewType;
-      using ColumnsIndexesVectorType = Containers::Vector< typename noaTNL::copy_const< Index >::template from< Real >::type, Device, Index, IndexAllocator >;
+      using ColumnsIndexesVectorType = Containers::Vector< typename noa::TNL::copy_const< Index >::template from< Real >::type, Device, Index, IndexAllocator >;
       using ColumnsIndexesViewType = typename ColumnsIndexesVectorType::ViewType;
       using ConstColumnsIndexesViewType = typename ColumnsIndexesViewType::ConstViewType;
       using RowsCapacitiesType = Containers::Vector< std::remove_const_t< Index >, Device, Index, IndexAllocator >;
@@ -199,7 +199,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        *
        * SANDBOX_TODO: You may replace it with containers for metadata of your format.
        */
-      using RowPointers = noaTNL::Containers::Vector< IndexType, DeviceType, IndexType >;
+      using RowPointers = noa::TNL::Containers::Vector< IndexType, DeviceType, IndexType >;
 
       /**
        * \brief Constructor only with values and column indexes allocators.
@@ -267,8 +267,8 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * The number of matrix rows is given by the size of \e rowCapacities vector.
        *
        * \tparam RowCapacitiesVector is the row capacities vector type. Usually it is some of
-       *    \ref noaTNL::Containers::Array, \ref noaTNL::Containers::ArrayView, \ref noaTNL::Containers::Vector or
-       *    \ref noaTNL::Containers::VectorView.
+       *    \ref noa::TNL::Containers::Array, \ref noa::TNL::Containers::ArrayView, \ref noa::TNL::Containers::Vector or
+       *    \ref noa::TNL::Containers::VectorView.
        * \param rowCapacities is a vector telling how many matrix elements must be
        *    allocated in each row.
        * \param columns is the number of matrix columns.
@@ -280,7 +280,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * \par Output
        * \include SparseMatrixExample_Constructor_rowCapacities_vector.out
        */
-      template< typename RowCapacitiesVector, std::enable_if_t< noaTNL::IsArrayType< RowCapacitiesVector >::value, int > = 0 >
+      template< typename RowCapacitiesVector, std::enable_if_t< noa::TNL::IsArrayType< RowCapacitiesVector >::value, int > = 0 >
       explicit SparseSandboxMatrix( const RowCapacitiesVector& rowCapacities,
                                     const IndexType columns,
                                     const RealAllocatorType& realAllocator = RealAllocatorType(),
@@ -832,7 +832,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -858,7 +858,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -882,7 +882,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -906,7 +906,7 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixExample_forRows.cpp
@@ -1170,6 +1170,6 @@ class SparseSandboxMatrix : public Matrix< Real, Device, Index, RealAllocator >
 
       } // namespace Sandbox
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrix.hpp>

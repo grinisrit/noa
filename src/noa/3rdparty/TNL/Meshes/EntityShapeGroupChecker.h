@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Algorithms/staticFor.h>
 #include <noa/3rdparty/TNL/Meshes/EntityShapeGroup.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace VTK {
 
@@ -48,4 +48,4 @@ public:
 
 } // namespace VTK
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Matrices/MatrixType.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -26,8 +26,8 @@ namespace Matrices {
  * \tparam Device is a device where the matrix is allocated.
  * \tparam Index is a type for indexing of the matrix elements.
  * \tparam MatrixElementsOrganization tells the ordering of matrix elements in memory. It is either
- *         \ref noaTNL::Algorithms::Segments::RowMajorOrder
- *         or \ref noaTNL::Algorithms::Segments::ColumnMajorOrder.
+ *         \ref noa::TNL::Algorithms::Segments::RowMajorOrder
+ *         or \ref noa::TNL::Algorithms::Segments::ColumnMajorOrder.
  *
  * See \ref DenseMatrix.
  */
@@ -657,7 +657,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::DenseMatrix::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixExample_forRows.cpp
@@ -683,7 +683,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::DenseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixViewExample_forRows.cpp
@@ -707,7 +707,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::DenseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixViewExample_forRows.cpp
@@ -731,7 +731,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::DenseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/DenseMatrix/DenseMatrixViewExample_forRows.cpp
@@ -751,7 +751,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::DenseMatrixView::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -770,7 +770,7 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::DenseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::DenseMatrixView::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -931,6 +931,6 @@ class DenseMatrixView : public MatrixView< Real, Device, Index >
 };
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/DenseMatrixView.hpp>

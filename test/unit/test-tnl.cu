@@ -6,8 +6,8 @@
 
 #include <gtest/gtest.h>
 
-using namespace noaTNL;
-using namespace noaTNL::Containers;
+using namespace noa::TNL;
+using namespace noa::TNL::Containers;
 
 TEST(TNL, TensorBlobCUDA) {
 

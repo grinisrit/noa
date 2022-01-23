@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.h>
 #include <noa/3rdparty/TNL/Matrices/details/SparseMatrixRowViewValueGetter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -275,6 +275,6 @@ template< typename SegmentView,
 std::ostream& operator<<( std::ostream& str, const SparseMatrixRowView< SegmentView, ValuesView, ColumnsIndexesView >& row );
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.hpp>

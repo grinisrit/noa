@@ -9,7 +9,7 @@
 
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {   
 
@@ -34,5 +34,5 @@ class BackwardTimeDiscretisation
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 

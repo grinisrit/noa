@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 namespace detail {
@@ -75,4 +75,4 @@ struct VTUPolyhedralFacesWriter< Meshes::Grid< Dimension, MeshReal, Device, Mesh
 } // namespace detail
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

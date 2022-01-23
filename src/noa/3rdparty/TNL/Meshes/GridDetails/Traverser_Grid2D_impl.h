@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/GridDetails/GridTraverser.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -319,4 +319,4 @@ processAllEntities( const GridPointer& gridPointer,
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

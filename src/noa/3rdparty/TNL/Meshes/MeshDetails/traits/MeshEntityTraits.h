@@ -20,7 +20,7 @@
 
 #include <unordered_set>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig, typename Device, typename EntityTopology > class MeshEntity;
@@ -82,4 +82,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

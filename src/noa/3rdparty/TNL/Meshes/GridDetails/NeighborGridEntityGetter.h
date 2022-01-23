@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 #include <noa/3rdparty/TNL/Meshes/GridEntityConfig.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename GridEntity,
@@ -39,5 +39,5 @@ class NeighborGridEntityGetter
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 

@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Matrices/MatrixView.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/ElementsOrganization.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 /**
  * \brief Namespace for different matrix types.
  */
@@ -258,6 +258,6 @@ std::ostream& operator << ( std::ostream& str, const Matrix< Real, Device, Index
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/Matrix.hpp>

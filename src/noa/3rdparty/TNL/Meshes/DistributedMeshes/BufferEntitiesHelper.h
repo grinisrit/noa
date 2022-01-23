@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -166,4 +166,4 @@ class BufferEntitiesHelper< MeshFunctionType, MaskPointer, 3, RealType, Device, 
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

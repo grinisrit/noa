@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid3D.h>
 #include <noa/3rdparty/TNL/Algorithms/staticFor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -462,4 +462,4 @@ class NeighborGridEntityGetter<
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

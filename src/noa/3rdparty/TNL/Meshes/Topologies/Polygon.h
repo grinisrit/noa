@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -31,4 +31,4 @@ struct Subtopology< Polygon, 1 >
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

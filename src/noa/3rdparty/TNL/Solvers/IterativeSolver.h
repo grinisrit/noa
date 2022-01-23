@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
 
 /**
@@ -232,6 +232,6 @@ class IterativeSolver
 };
 
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/IterativeSolver.hpp>

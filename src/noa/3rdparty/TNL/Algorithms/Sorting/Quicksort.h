@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/Sorting/detail/Quicksorter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -34,4 +34,4 @@ struct Quicksort
 
       } // namespace Sorting
    } // namespace Algorithms
-} //namespace noaTNL
+} //namespace noa::TNL

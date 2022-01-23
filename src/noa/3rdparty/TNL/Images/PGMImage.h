@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Images//RegionOfInterest.h>
 #include <fstream>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index = int >
@@ -72,7 +72,7 @@ class PGMImage : public Image< Index >
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Images//PGMImage_impl.h>
 

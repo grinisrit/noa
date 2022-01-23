@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/Directions.h>
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -144,6 +144,6 @@ std::ostream& operator<<( std::ostream& str, const DistributedMesh< Grid< Dimens
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGrid.hpp>

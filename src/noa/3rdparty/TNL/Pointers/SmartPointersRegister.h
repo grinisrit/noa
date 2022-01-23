@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Devices/Sequential.h>
 #include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Pointers {
 
 // Since TNL currently supports only execution on host (which does not need
@@ -118,4 +118,4 @@ bool synchronizeSmartPointersOnDevice( int deviceId = -1 )
 }
 
 } // namespace Pointers
-} // namespace noaTNL
+} // namespace noa::TNL

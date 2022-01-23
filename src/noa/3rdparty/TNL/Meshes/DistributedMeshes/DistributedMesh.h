@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/GlobalIndexStorage.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/IndexPermutationApplier.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -239,6 +239,6 @@ protected:
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGrid.h>

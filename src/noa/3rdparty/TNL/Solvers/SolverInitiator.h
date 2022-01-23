@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/TNL/Solvers/BuildConfigTags.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< template< typename Real, typename Device, typename Index, typename MeshType, typename ConfigTag, typename SolverStarter > class ProblemSetter,
@@ -23,6 +23,6 @@ class SolverInitiator
 };
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/SolverInitiator.hpp>

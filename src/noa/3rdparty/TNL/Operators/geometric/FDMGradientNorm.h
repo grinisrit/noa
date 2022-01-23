@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Operators/geometric/ExactGradientNorm.h>
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -179,5 +179,5 @@ class FDMGradientNorm< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Differenc
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

@@ -18,7 +18,7 @@
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Mesh >
@@ -123,7 +123,7 @@ public:
          const PointType& left = this->points[ a ];
          const PointType& right = this->points[ b ];
          for( LocalIndexType i = 0; i < PointType::getSize(); i++ )
-            if( noaTNL::abs( left[ i ] - right[ i ] ) > numericalThreshold )
+            if( noa::TNL::abs( left[ i ] - right[ i ] ) > numericalThreshold )
                return left[ i ] < right[ i ];
          return false;
       };
@@ -420,4 +420,4 @@ private:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

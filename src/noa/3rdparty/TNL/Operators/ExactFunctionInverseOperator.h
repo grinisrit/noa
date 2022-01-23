@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 #include <noa/3rdparty/TNL/Operators/ExactIdentityOperator.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< int Dimension,
@@ -83,5 +83,5 @@ class ExactFunctionInverseOperator
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

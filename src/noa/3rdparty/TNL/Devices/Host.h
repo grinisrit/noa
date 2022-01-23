@@ -14,7 +14,7 @@
 #include <omp.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Devices {
 
 class Host
@@ -118,4 +118,4 @@ public:
 };
 
 } // namespace Devices
-} // namespace noaTNL
+} // namespace noa::TNL

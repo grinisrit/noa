@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 #include <noa/3rdparty/TNL/Matrices/SparseMatrixElement.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename RowView >
@@ -101,6 +101,6 @@ class MatrixRowViewIterator
 
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.hpp>

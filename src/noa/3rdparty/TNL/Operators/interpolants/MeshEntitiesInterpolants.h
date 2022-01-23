@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -297,5 +297,5 @@ class MeshEntitiesInterpolants< Meshes::Grid< 3, Real, Device, Index >, 2, 3 >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

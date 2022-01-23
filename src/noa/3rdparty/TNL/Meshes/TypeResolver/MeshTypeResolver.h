@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/TypeResolver/BuildConfigTags.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -137,6 +137,6 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/TypeResolver/MeshTypeResolver.hpp>

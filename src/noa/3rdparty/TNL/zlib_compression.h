@@ -16,7 +16,7 @@
 
 #include <noa/3rdparty/TNL/base64.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief Use zlib to compress the data, then encode it with base64 and write
@@ -185,4 +185,4 @@ decompress_block( std::istream& input_stream )
    return {data_size, decompress_data<T>(decoded_data.second.get(), decoded_data.first, data_size)};
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

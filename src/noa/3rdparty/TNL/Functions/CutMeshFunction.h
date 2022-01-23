@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 template <  typename MeshFunctionType,
             typename OutMesh,
@@ -134,4 +134,4 @@ class CutMeshFunction
 };
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< typename Element, typename Index >
@@ -144,4 +144,4 @@ compare( const Element1* destination,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

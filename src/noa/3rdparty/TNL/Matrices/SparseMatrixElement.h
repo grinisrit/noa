@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 
@@ -118,4 +118,4 @@ class SparseMatrixElement
 };
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -25,7 +25,7 @@
 #include <noa/3rdparty/TNL/Config/ConfigDescription.h>
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Benchmarks {
 
 // returns a tuple of (loops, mean, stddev) where loops is the number of
@@ -34,7 +34,7 @@ namespace Benchmarks {
 template< typename Device,
           typename ComputeFunction,
           typename ResetFunction,
-          typename Monitor = noaTNL::Solvers::IterativeSolverMonitor< double, int > >
+          typename Monitor = noa::TNL::Solvers::IterativeSolverMonitor< double, int > >
 std::tuple< int, double, double >
 timeFunction( ComputeFunction compute,
               ResetFunction reset,
@@ -110,8 +110,8 @@ inline std::map< std::string, std::string > getHardwareMetadata()
    int nproc = 1;
    // check if MPI was initialized (some benchmarks do not initialize MPI even when
    // they are built with HAVE_MPI and thus MPI::GetSize() cannot be used blindly)
-   if( noaTNL::MPI::Initialized() )
-      nproc = noaTNL::MPI::GetSize();
+   if( noa::TNL::MPI::Initialized() )
+      nproc = noa::TNL::MPI::GetSize();
 #endif
 
    std::map< std::string, std::string > metadata {
@@ -179,4 +179,4 @@ inline void writeMapAsJson( const std::map< std::string, std::string >& data,
 }
 
 } // namespace Benchmarks
-} // namespace noaTNL
+} // namespace noa::TNL

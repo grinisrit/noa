@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexCount.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -336,4 +336,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

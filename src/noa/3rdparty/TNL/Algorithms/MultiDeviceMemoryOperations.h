@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< typename DestinationDevice,
@@ -133,14 +133,14 @@ copy( DestinationElement* destination,
    else
    {
       using BaseType = std::remove_cv_t< SourceElement >;
-      const int buffer_size = noaTNL::min( Cuda::getTransferBufferSize() / sizeof(BaseType), size );
+      const int buffer_size = noa::TNL::min( Cuda::getTransferBufferSize() / sizeof(BaseType), size );
       std::unique_ptr< BaseType[] > buffer{ new BaseType[ buffer_size ] };
       Index i = 0;
       while( i < size )
       {
          if( cudaMemcpy( (void*) buffer.get(),
                          (void*) &source[ i ],
-                         noaTNL::min( size - i, buffer_size ) * sizeof(SourceElement),
+                         noa::TNL::min( size - i, buffer_size ) * sizeof(SourceElement),
                          cudaMemcpyDeviceToHost ) != cudaSuccess )
             std::cerr << "Transfer of data from CUDA device to host failed." << std::endl;
          TNL_CHECK_CUDA_DEVICE;
@@ -177,12 +177,12 @@ compare( const Element1* destination,
    TNL_ASSERT_TRUE( source, "Attempted to compare data through a nullptr." );
    TNL_ASSERT_GE( size, (Index) 0, "Array size must be non-negative." );
 #ifdef HAVE_CUDA
-   const int buffer_size = noaTNL::min( Cuda::getTransferBufferSize() / sizeof(Element2), size );
+   const int buffer_size = noa::TNL::min( Cuda::getTransferBufferSize() / sizeof(Element2), size );
    std::unique_ptr< Element2[] > host_buffer{ new Element2[ buffer_size ] };
    Index compared = 0;
    while( compared < size )
    {
-      const int transfer = noaTNL::min( size - compared, buffer_size );
+      const int transfer = noa::TNL::min( size - compared, buffer_size );
       if( cudaMemcpy( (void*) host_buffer.get(),
                       (void*) &source[ compared ],
                       transfer * sizeof(Element2),
@@ -228,7 +228,7 @@ copy( DestinationElement* destination,
    }
    else
    {
-      const int buffer_size = noaTNL::min( Cuda::getTransferBufferSize() / sizeof(DestinationElement), size );
+      const int buffer_size = noa::TNL::min( Cuda::getTransferBufferSize() / sizeof(DestinationElement), size );
       std::unique_ptr< DestinationElement[] > buffer{ new DestinationElement[ buffer_size ] };
       Index i = 0;
       while( i < size )
@@ -271,4 +271,4 @@ compare( const Element1* hostData,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

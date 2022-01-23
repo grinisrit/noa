@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
 #include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 namespace detail {
@@ -639,4 +639,4 @@ struct VTKMeshEntityTypesWriter< Grid< Dimension, MeshReal, Device, MeshIndex >,
 } // namespace detail
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

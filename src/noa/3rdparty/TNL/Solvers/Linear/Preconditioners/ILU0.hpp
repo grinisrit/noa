@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 namespace Preconditioners {
@@ -410,4 +410,4 @@ solve( ConstVectorViewType b, VectorViewType x ) const
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

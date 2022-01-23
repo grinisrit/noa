@@ -10,7 +10,7 @@
    #include <mpi.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace MPI {
 
 #ifdef HAVE_MPI
@@ -112,4 +112,4 @@ MPI_Datatype getDataType( const T& = T{} )
 #endif
 
 } // namespace MPI
-} // namespace noaTNL
+} // namespace noa::TNL

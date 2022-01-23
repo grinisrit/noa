@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 // TODO: refactor to avoid duplicate points altogether - first split edges, then faces, then cells
@@ -26,9 +26,9 @@ template< EntityRefinerVersion RefinerVersion,
 auto // returns MeshBuilder
 refineMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 {
-   using namespace noaTNL;
-   using namespace noaTNL::Containers;
-   using namespace noaTNL::Algorithms;
+   using namespace noa::TNL;
+   using namespace noa::TNL::Containers;
+   using namespace noa::TNL::Algorithms;
 
    using Mesh = Mesh< MeshConfig, Devices::Host >;
    using MeshBuilder = MeshBuilder< Mesh >;
@@ -113,4 +113,4 @@ getRefinedMesh( const Mesh< MeshConfig, Devices::Host >& inMesh )
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

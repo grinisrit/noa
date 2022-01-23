@@ -11,7 +11,7 @@
 
 #include "Wrappers.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace MPI {
 
 inline bool isInitialized()
@@ -230,4 +230,4 @@ bcast( Array& array,
 }
 
 } // namespace MPI
-} // namespace noaTNL
+} // namespace noa::TNL

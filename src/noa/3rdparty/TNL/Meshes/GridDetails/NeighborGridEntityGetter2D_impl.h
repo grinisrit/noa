@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid3D.h>
 #include <noa/3rdparty/TNL/Algorithms/staticFor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -387,7 +387,7 @@ class NeighborGridEntityGetter<
                     std::cerr << "( stepX, stepY ) cannot be perpendicular to entity coordinates: stepX = " << stepX << " stepY = " << stepY
                          << " entity.getOrientation() = " << entity.getOrientation() );*/
          TNL_ASSERT_GE( entity.getCoordinates(), CoordinatesType( 0, 0 ), "wrong coordinates" );
-         TNL_ASSERT_LT( entity.getCoordinates(), entity.getMesh().getDimensions() + noaTNL::abs(entity.getOrientation()), "wrong coordinates" );
+         TNL_ASSERT_LT( entity.getCoordinates(), entity.getMesh().getDimensions() + noa::TNL::abs(entity.getOrientation()), "wrong coordinates" );
          TNL_ASSERT( entity.getCoordinates() +
                        CoordinatesType( stepX - ( stepX > 0 ) * ( entity.getOrientation().x() != 0.0 ),
                                         stepY - ( stepY > 0 ) * ( entity.getOrientation().y() != 0.0 ) ) >= CoordinatesType( 0, 0 ) &&
@@ -493,4 +493,4 @@ class NeighborGridEntityGetter<
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

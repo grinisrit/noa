@@ -15,7 +15,7 @@
 #include "LinearSolver.h"
 #include <noa/3rdparty/TNL/Matrices/CSR.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 
@@ -80,7 +80,7 @@ public:
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "UmfpackWrapper.hpp"
 

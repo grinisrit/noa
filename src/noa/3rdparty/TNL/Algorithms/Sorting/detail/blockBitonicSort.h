@@ -8,7 +8,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Sorting/detail/helpers.h>
 #include <noa/3rdparty/TNL/Containers/Array.h>
 
-namespace noaTNL {
+namespace noa::TNL {
     namespace Algorithms {
         namespace Sorting {
 
@@ -22,8 +22,8 @@ namespace noaTNL {
  * @param sharedMem sharedMem pointer has to be able to store all of src elements
  * */
 template <typename Value, typename CMP>
-__device__ void bitonicSort_Block(noaTNL::Containers::ArrayView<Value, noaTNL::Devices::Cuda> src,
-                                  noaTNL::Containers::ArrayView<Value, noaTNL::Devices::Cuda> dst,
+__device__ void bitonicSort_Block(noa::TNL::Containers::ArrayView<Value, noa::TNL::Devices::Cuda> src,
+                                  noa::TNL::Containers::ArrayView<Value, noa::TNL::Devices::Cuda> dst,
                                   Value *sharedMem, const CMP &Cmp)
 {
     //copy from globalMem into sharedMem
@@ -79,7 +79,7 @@ __device__ void bitonicSort_Block(noaTNL::Containers::ArrayView<Value, noaTNL::D
  * this version doesnt use shared memory and is prefered for Value with big size
  * */
 template <typename Value, typename CMP>
-__device__ void bitonicSort_Block(noaTNL::Containers::ArrayView<Value, noaTNL::Devices::Cuda> src,
+__device__ void bitonicSort_Block(noa::TNL::Containers::ArrayView<Value, noa::TNL::Devices::Cuda> src,
                                   const CMP &Cmp)
 {
     int paddedSize = closestPow2_ptx(src.getSize());
@@ -114,4 +114,4 @@ __device__ void bitonicSort_Block(noaTNL::Containers::ArrayView<Value, noaTNL::D
 #endif
         } // namespace Sorting
     } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

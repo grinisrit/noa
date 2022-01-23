@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Operators/fdm/ExactDifference.h>
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -71,5 +71,5 @@ class BackwardFiniteDifference< Meshes::Grid< Dimension, MeshReal, MeshDevice, M
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

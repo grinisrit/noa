@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.h>
 #include <noa/3rdparty/TNL/TypeTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /// This is to prevent from appearing in Doxygen documentation.
@@ -72,7 +72,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
       using BaseType = MatrixView< Real, Device, Index >;
       using ValuesViewType = typename BaseType::ValuesView;
       using ConstValuesViewType = typename ValuesViewType::ConstViewType;
-      using ColumnsIndexesViewType = Containers::VectorView< typename noaTNL::copy_const< Index >::template from< Real >::type, Device, Index >;
+      using ColumnsIndexesViewType = Containers::VectorView< typename noa::TNL::copy_const< Index >::template from< Real >::type, Device, Index >;
       using ConstColumnsIndexesViewType = typename ColumnsIndexesViewType::ConstViewType;
       using RowsCapacitiesView = Containers::VectorView< Index, Device, Index >;
       using ConstRowsCapacitiesView = typename RowsCapacitiesView::ConstViewType;
@@ -642,7 +642,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -668,7 +668,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -692,7 +692,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -716,7 +716,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrixView::RowView.
        *
        * \par Example
        * \include Matrices/SparseMatrix/SparseMatrixViewExample_forRows.cpp
@@ -735,7 +735,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrixView::RowView.
        *
        * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
        * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
@@ -753,7 +753,7 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::SparseMatrixView::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::SparseMatrixView::RowView.
        *
        * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
        * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
@@ -933,6 +933,6 @@ class SparseMatrixView : public MatrixView< Real, Device, Index >
 };
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/SparseMatrixView.hpp>

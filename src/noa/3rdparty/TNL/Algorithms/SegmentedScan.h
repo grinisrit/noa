@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 #include <noa/3rdparty/TNL/Algorithms/detail/ScanType.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 /**
@@ -200,6 +200,6 @@ struct SegmentedScan< Devices::Cuda, Type >
 };
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/SegmentedScan.hpp>

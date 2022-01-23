@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/Directions.h>
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -225,4 +225,4 @@ class DistributedMeshSynchronizer< DistributedMesh< Grid< MeshDimension, GridRea
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

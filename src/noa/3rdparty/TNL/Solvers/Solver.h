@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/MPI/ScopedInitializer.h>
 #include <noa/3rdparty/TNL/MPI/Config.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< template< typename Real, typename Device, typename Index, typename MeshType, typename ConfigTag, typename SolverStarter > class ProblemSetter,
@@ -34,7 +34,7 @@ struct Solver
       Devices::Cuda::configSetup( configDescription );
       MPI::configSetup( configDescription );
 
-      noaTNL::MPI::ScopedInitializer mpi( argc, argv );
+      noa::TNL::MPI::ScopedInitializer mpi( argc, argv );
 
       if( ! parseCommandLine( argc, argv, configDescription, parameters ) )
          return false;
@@ -45,4 +45,4 @@ struct Solver
 };
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

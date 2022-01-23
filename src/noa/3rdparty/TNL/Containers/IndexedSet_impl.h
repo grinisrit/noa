@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Containers/IndexedSet.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< class Key,
@@ -103,4 +103,4 @@ std::ostream& operator<<( std::ostream& str, IndexedSet< Key, Index, Compare, Al
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

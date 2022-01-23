@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/detail/DistributedScan.h>
 #include <noa/3rdparty/TNL/Functional.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 /**
@@ -69,7 +69,7 @@ distributedInclusiveScan( const InputDistributedArray& input,
 
 /**
  * \brief Overload of \ref distributedInclusiveScan which uses a TNL functional
- *        object for reduction. \ref noaTNL::Plus is used by default.
+ *        object for reduction. \ref noa::TNL::Plus is used by default.
  *
  * The identity element is taken as `reduction.template getIdentity< typename OutputDistributedArray::ValueType >()`.
  * See \ref distributedInclusiveScan for the explanation of other parameters.
@@ -77,13 +77,13 @@ distributedInclusiveScan( const InputDistributedArray& input,
  */
 template< typename InputDistributedArray,
           typename OutputDistributedArray,
-          typename Reduction = noaTNL::Plus >
+          typename Reduction = noa::TNL::Plus >
 void
 distributedInclusiveScan( const InputDistributedArray& input,
                           OutputDistributedArray& output,
                           typename InputDistributedArray::IndexType begin = 0,
                           typename InputDistributedArray::IndexType end = 0,
-                          Reduction&& reduction = noaTNL::Plus{} )
+                          Reduction&& reduction = noa::TNL::Plus{} )
 {
    if( end == 0 )
       end = input.getSize();
@@ -144,7 +144,7 @@ distributedExclusiveScan( const InputDistributedArray& input,
 
 /**
  * \brief Overload of \ref distributedExclusiveScan which uses a TNL functional
- *        object for reduction. \ref noaTNL::Plus is used by default.
+ *        object for reduction. \ref noa::TNL::Plus is used by default.
  *
  * The identity element is taken as `reduction.template getIdentity< typename OutputDistributedArray::ValueType >()`.
  * See \ref distributedExclusiveScan for the explanation of other parameters.
@@ -152,13 +152,13 @@ distributedExclusiveScan( const InputDistributedArray& input,
  */
 template< typename InputDistributedArray,
           typename OutputDistributedArray,
-          typename Reduction = noaTNL::Plus >
+          typename Reduction = noa::TNL::Plus >
 void
 distributedExclusiveScan( const InputDistributedArray& input,
                           OutputDistributedArray& output,
                           typename InputDistributedArray::IndexType begin = 0,
                           typename InputDistributedArray::IndexType end = 0,
-                          Reduction&& reduction = noaTNL::Plus{} )
+                          Reduction&& reduction = noa::TNL::Plus{} )
 {
    if( end == 0 )
       end = input.getSize();
@@ -210,19 +210,19 @@ distributedInplaceInclusiveScan( DistributedArray& array,
 
 /**
  * \brief Overload of \ref distributedInplaceInclusiveScan which uses a TNL functional
- *        object for reduction. \ref noaTNL::Plus is used by default.
+ *        object for reduction. \ref noa::TNL::Plus is used by default.
  *
  * The identity element is taken as `reduction.template getIdentity< typename DistributedArray::ValueType >()`.
  * See \ref distributedInplaceInclusiveScan for the explanation of other parameters.
  * Note that when `end` equals 0 (the default), it is set to `array.getSize()`.
  */
 template< typename DistributedArray,
-          typename Reduction = noaTNL::Plus >
+          typename Reduction = noa::TNL::Plus >
 void
 distributedInplaceInclusiveScan( DistributedArray& array,
                                  typename DistributedArray::IndexType begin = 0,
                                  typename DistributedArray::IndexType end = 0,
-                                 Reduction&& reduction = noaTNL::Plus{} )
+                                 Reduction&& reduction = noa::TNL::Plus{} )
 {
    if( end == 0 )
       end = array.getSize();
@@ -274,19 +274,19 @@ distributedInplaceExclusiveScan( DistributedArray& array,
 
 /**
  * \brief Overload of \ref distributedInplaceExclusiveScan which uses a TNL functional
- *        object for reduction. \ref noaTNL::Plus is used by default.
+ *        object for reduction. \ref noa::TNL::Plus is used by default.
  *
  * The identity element is taken as `reduction.template getIdentity< typename DistributedArray::ValueType >()`.
  * See \ref distributedInplaceExclusiveScan for the explanation of other parameters.
  * Note that when `end` equals 0 (the default), it is set to `array.getSize()`.
  */
 template< typename DistributedArray,
-          typename Reduction = noaTNL::Plus >
+          typename Reduction = noa::TNL::Plus >
 void
 distributedInplaceExclusiveScan( DistributedArray& array,
                                  typename DistributedArray::IndexType begin = 0,
                                  typename DistributedArray::IndexType end = 0,
-                                 Reduction&& reduction = noaTNL::Plus{} )
+                                 Reduction&& reduction = noa::TNL::Plus{} )
 {
    if( end == 0 )
       end = array.getSize();
@@ -295,4 +295,4 @@ distributedInplaceExclusiveScan( DistributedArray& array,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

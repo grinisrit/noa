@@ -10,7 +10,7 @@
 
 #include "BICGStab.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 
@@ -165,4 +165,4 @@ setSize( const VectorViewType& x )
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

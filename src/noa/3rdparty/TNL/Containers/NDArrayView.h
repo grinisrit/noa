@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
 #include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Value,
@@ -309,4 +309,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< int Dimension,
@@ -239,4 +239,4 @@ class ExactGradientNorm< 3, Real >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

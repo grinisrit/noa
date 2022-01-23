@@ -6,8 +6,8 @@
 
 #include <noa/3rdparty/TNL/Experimental/Arithmetics/FlopsCounter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 tnlFlopsCounter tnl_flops_counter;
 
-} // namespace noaTNL
+} // namespace noa::TNL

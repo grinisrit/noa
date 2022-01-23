@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrixElement.h>
 #include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -216,6 +216,6 @@ class MultidiagonalMatrixRowView
 };
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/MultidiagonalMatrixRowView.hpp>

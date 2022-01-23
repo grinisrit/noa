@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/AtomicOperations.h>
 #include <noa/3rdparty/TNL/Matrices/details/SparseMatrix.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       namespace Sandbox {
 
@@ -83,8 +83,8 @@ SparseSandboxMatrixView< Real, Device, Index, MatrixType >::
 getSerializationType()
 {
    return String( "Matrices::Sandbox::SparseMatrix< " ) +
-             noaTNL::getSerializationType< RealType >() + ", " +
-             noaTNL::getSerializationType< IndexType >() + ", " +
+             noa::TNL::getSerializationType< RealType >() + ", " +
+             noa::TNL::getSerializationType< IndexType >() + ", " +
              MatrixType::getSerializationType() + ", [any_allocator], [any_allocator] >";
 }
 
@@ -193,7 +193,7 @@ getNonzeroElementsCount() const
          }
          row_sums_view[ rowIdx ] = sum;
       };
-      noaTNL::Algorithms::ParallelFor< DeviceType >::exec( ( IndexType ) 0, this->getRows(), f );
+      noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( ( IndexType ) 0, this->getRows(), f );
       return sum( row_sums );
    }
    return 0;
@@ -414,7 +414,7 @@ vectorProduct( const InVector& inVector,
 #define HAVE_SANDBOX_SIMPLE_SPMV
    // SANDBOX_TODO: The following is simple direct implementation of SpMV operation with CSR format. We recommend to start by
    //               replacing this part with SpMV based on your sparse format.
-   if( std::is_same< DeviceType, noaTNL::Devices::Host >::value )          // this way you may easily specialize for different device types
+   if( std::is_same< DeviceType, noa::TNL::Devices::Host >::value )          // this way you may easily specialize for different device types
    {
       // SANDBOX_TODO: This simple and naive implementation for CPU.
       for( IndexType rowIdx = firstRow; rowIdx < lastRow; rowIdx++ )
@@ -444,7 +444,7 @@ vectorProduct( const InVector& inVector,
             sum += valuesView[ globalIdx ] * inVectorView[ columnIndexesView[ globalIdx ] ];
          outVectorView[ rowIdx ] = outVectorView[ rowIdx ] * outVectorMultiplicator + matrixMultiplicator * sum;
       };
-      noaTNL::Algorithms::ParallelFor< DeviceType >::exec( firstRow, lastRow, f );
+      noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( firstRow, lastRow, f );
    }
 #ifdef HAVE_SANDBOX_SIMPLE_SPMV
 #else
@@ -554,7 +554,7 @@ reduceRows( IndexType begin, IndexType end, Fetch& fetch, const Reduce& reduce, 
       }
       keep( rowIdx, sum );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -589,7 +589,7 @@ reduceRows( IndexType begin, IndexType end, Fetch& fetch, const Reduce& reduce, 
       }
       keep( rowIdx, sum );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -642,7 +642,7 @@ forElements( IndexType begin, IndexType end, Function& function ) const
          localIdx++;
       }
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -672,7 +672,7 @@ forElements( IndexType begin, IndexType end, Function& function )
          localIdx++;
       }
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -719,7 +719,7 @@ forRows( IndexType begin, IndexType end, Function&& function )
                               values_view, columns_view );
       function( rowView );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -742,7 +742,7 @@ forRows( IndexType begin, IndexType end, Function&& function ) const
                                    values_view, columns_view );
       function( rowView );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,

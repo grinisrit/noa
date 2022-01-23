@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Exceptions/CudaBadAlloc.h>
 #include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 class CudaReductionBuffer
@@ -87,4 +87,4 @@ class CudaReductionBuffer
 };
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

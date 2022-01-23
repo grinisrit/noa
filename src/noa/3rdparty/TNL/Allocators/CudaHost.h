@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 #include <noa/3rdparty/TNL/Cuda/CheckDevice.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Allocators {
 
 /**
@@ -101,4 +101,4 @@ bool operator!=(const CudaHost<T1>& lhs, const CudaHost<T2>& rhs)
 }
 
 } // namespace Allocators
-} // namespace noaTNL
+} // namespace noa::TNL

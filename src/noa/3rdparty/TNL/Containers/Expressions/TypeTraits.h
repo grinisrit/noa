@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/TypeTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace Expressions {
 
@@ -183,4 +183,4 @@ struct OperandMemberType< R, typename enable_if_type< typename R::VectorOperandT
 
 } // namespace Expressions
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

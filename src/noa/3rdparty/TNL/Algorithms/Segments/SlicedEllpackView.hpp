@@ -13,7 +13,7 @@
 
 #include "SlicedEllpackView.h"
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -54,7 +54,7 @@ SlicedEllpackView< Device, Index, Organization, SliceSize >::
 getSerializationType()
 {
    // FIXME: the serialized data DEPEND on the Organization and Alignment parameters, so it should be reflected in the serialization type
-   return "SlicedEllpack< [any_device], " + noaTNL::getSerializationType< IndexType >() + " >";
+   return "SlicedEllpack< [any_device], " + noa::TNL::getSerializationType< IndexType >() + " >";
 }
 
 template< typename Device,
@@ -276,7 +276,7 @@ forSegments( IndexType begin, IndexType end, Function&& function ) const
       auto segment = view.getSegmentView( segmentIdx );
       function( segment );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Device,
@@ -412,4 +412,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< SlicedEllpackView, Fetch >
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

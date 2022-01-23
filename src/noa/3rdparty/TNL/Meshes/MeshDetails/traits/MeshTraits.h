@@ -23,7 +23,7 @@
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/IsDynamicTopology.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig, typename Device, typename EntityTopology > class MeshEntity;
@@ -119,4 +119,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/String.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 struct CacheSizes {
    int L1instruction = 0;
@@ -63,6 +63,6 @@ protected:
    }
 };
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/SystemInfo.hpp>

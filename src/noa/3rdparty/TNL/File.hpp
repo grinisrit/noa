@@ -20,7 +20,7 @@
 #include <noa/3rdparty/TNL/Exceptions/FileDeserializationError.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 inline File::File( const String& fileName, std::ios_base::openmode mode )
 {
@@ -321,4 +321,4 @@ inline File& operator>>( File& file, std::string& str )
    return file;
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

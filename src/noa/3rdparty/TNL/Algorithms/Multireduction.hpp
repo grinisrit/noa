@@ -22,7 +22,7 @@
 #include <iostream>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< typename Result,
@@ -123,7 +123,7 @@ reduce( const Result identity,
    const int blocks = size / block_size;
 
    if( Devices::Host::isOMPEnabled() && blocks >= 2 ) {
-      const int threads = noaTNL::min( blocks, Devices::Host::getMaxThreadsCount() );
+      const int threads = noa::TNL::min( blocks, Devices::Host::getMaxThreadsCount() );
 #pragma omp parallel num_threads(threads)
       {
          // first thread initializes the result array
@@ -239,4 +239,4 @@ reduce( const Result identity,
 };
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

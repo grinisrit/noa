@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Containers/Expressions/DistributedExpressionTemplates.h>
 #include <noa/3rdparty/TNL/Containers/VectorView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Real,
@@ -162,6 +162,6 @@ namespace Expressions {
 } // namespace Expressions
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Containers/DistributedVectorView.hpp>

@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Images//Image.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index = int >
@@ -49,7 +49,7 @@ class RegionOfInterest
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Images//RegionOfInterest_impl.h>
 

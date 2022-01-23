@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/Mesh.h>
 #include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 // compatibility wrapper
@@ -58,4 +58,4 @@ getEntityCenter( const Mesh< MeshConfig, Device > & mesh,
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

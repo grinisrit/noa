@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Assert.h>
 #include <noa/3rdparty/TNL/Math.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 inline int String::getLength() const
 {
@@ -258,4 +258,4 @@ inline String operator+( const std::string& string1, const String& string2 )
    return String( string1 ) + string2;
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

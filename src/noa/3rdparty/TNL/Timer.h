@@ -8,7 +8,7 @@
 
 #include <chrono>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 class Logger;
 
@@ -143,6 +143,6 @@ class Timer
       bool stopState;
 };
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Timer.hpp>

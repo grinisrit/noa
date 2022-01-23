@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Grid,
@@ -22,5 +22,5 @@ class GridEntityGetter
  */
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 

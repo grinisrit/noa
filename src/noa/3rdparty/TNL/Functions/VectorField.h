@@ -18,7 +18,7 @@
 #include <noa/3rdparty/TNL/Meshes/Writers/VTUWriter.h>
 #include <noa/3rdparty/TNL/Meshes/Writers/VTIWriter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< int Size,

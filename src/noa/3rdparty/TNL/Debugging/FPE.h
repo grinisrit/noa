@@ -11,7 +11,7 @@
 
 #include <noa/3rdparty/TNL/Debugging/StackBacktrace.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Debugging {
 
 static void
@@ -63,4 +63,4 @@ trackFloatingPointExceptions()
 }
 
 } // namespace Debugging
-} // namespace noaTNL
+} // namespace noa::TNL

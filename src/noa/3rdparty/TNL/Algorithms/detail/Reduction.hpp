@@ -21,7 +21,7 @@
 #include <noa/3rdparty/TNL/Timer.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace detail {
 
@@ -169,7 +169,7 @@ reduce( const Index begin,
    if( Devices::Host::isOMPEnabled() && blocks >= 2 ) {
       // global result variable
       Result result = identity;
-      const int threads = noaTNL::min( blocks, Devices::Host::getMaxThreadsCount() );
+      const int threads = noa::TNL::min( blocks, Devices::Host::getMaxThreadsCount() );
 #pragma omp parallel num_threads(threads)
       {
          // initialize array for thread-local results
@@ -231,7 +231,7 @@ reduceWithArgument( const Index begin,
    if( Devices::Host::isOMPEnabled() && blocks >= 2 ) {
       // global result variable
       std::pair< Result, Index > result( identity, -1 );
-      const int threads = noaTNL::min( blocks, Devices::Host::getMaxThreadsCount() );
+      const int threads = noa::TNL::min( blocks, Devices::Host::getMaxThreadsCount() );
 #pragma omp parallel num_threads(threads)
       {
          // initialize array for thread-local results
@@ -498,4 +498,4 @@ reduceWithArgument( const Index begin,
 
       } // namespace detail
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

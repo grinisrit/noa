@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Functions/VectorFieldEvaluator.h>
 #include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 template< typename OutVectorField,
@@ -166,4 +166,4 @@ evaluateEntities( OutVectorFieldPointer& meshFunction,
 }
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

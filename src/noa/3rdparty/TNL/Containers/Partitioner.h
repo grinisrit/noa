@@ -15,7 +15,7 @@
 
 #include <noa/3rdparty/TNL/Math.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Index >
@@ -29,8 +29,8 @@ public:
       if( communicator != MPI_COMM_NULL ) {
          const int rank = MPI::GetRank( communicator );
          const int partitions = MPI::GetSize( communicator );
-         const Index begin = noaTNL::min( globalSize, rank * globalSize / partitions );
-         const Index end = noaTNL::min( globalSize, (rank + 1) * globalSize / partitions );
+         const Index begin = noa::TNL::min( globalSize, rank * globalSize / partitions );
+         const Index end = noa::TNL::min( globalSize, (rank + 1) * globalSize / partitions );
          return SubrangeType( begin, end );
       }
       else
@@ -137,4 +137,4 @@ public:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

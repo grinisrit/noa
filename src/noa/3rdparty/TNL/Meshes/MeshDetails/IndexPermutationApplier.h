@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Meshes/Mesh.h>
 #include <noa/3rdparty/TNL/Matrices/MatrixPermutationApplier.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Mesh, int Dimension >
@@ -202,4 +202,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

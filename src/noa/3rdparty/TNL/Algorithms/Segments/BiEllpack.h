@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/BiEllpackView.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
 
-namespace noaTNL
+namespace noa::TNL
 {
    namespace Algorithms
    {
@@ -193,6 +193,6 @@ std::ostream& operator<<( std::ostream& str, const BiEllpack< Device, Index, Ind
 
       } // namespace Segments
    }    // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/BiEllpack.hpp>

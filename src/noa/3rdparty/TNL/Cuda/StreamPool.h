@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <unordered_map>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Cuda {
 
 #ifdef HAVE_CUDA
@@ -65,5 +65,5 @@ class StreamPool
 #endif
 
 } // namespace Cuda
-} // namespace noaTNL
+} // namespace noa::TNL
 

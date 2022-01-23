@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Images/RegionOfInterest.h>
 #include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index = int >
@@ -79,7 +79,7 @@ class PNGImage : public Image< Index >
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Images//PNGImage_impl.h>
 

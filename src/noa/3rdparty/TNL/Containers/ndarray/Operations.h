@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Containers/ndarray/Executors.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 namespace __ndarray_impl {
@@ -274,11 +274,11 @@ template< typename Output,
 void nd_maximum( Output& output, const Input1& input1, const Input2& input2 )
 {
 #ifndef __NVCC__
-   nd_map( output, [] __cuda_callable__ ( auto v1, auto v2 ){ return noaTNL::max( v1, v2 ); }, input1, input2 );
+   nd_map( output, [] __cuda_callable__ ( auto v1, auto v2 ){ return noa::TNL::max( v1, v2 ); }, input1, input2 );
 #else
    using value_type_1 = typename Input1::ValueType;
    using value_type_2 = typename Input2::ValueType;
-   nd_map( output, [] __cuda_callable__ ( value_type_1 v1, value_type_2 v2 ){ return noaTNL::max( v1, v2 ); }, input1, input2 );
+   nd_map( output, [] __cuda_callable__ ( value_type_1 v1, value_type_2 v2 ){ return noa::TNL::max( v1, v2 ); }, input1, input2 );
 #endif
 }
 
@@ -288,11 +288,11 @@ template< typename Output,
 void nd_minimum( Output& output, const Input1& input1, const Input2& input2 )
 {
 #ifndef __NVCC__
-   nd_map( output, [] __cuda_callable__ ( auto v1, auto v2 ){ return noaTNL::min( v1, v2 ); }, input1, input2 );
+   nd_map( output, [] __cuda_callable__ ( auto v1, auto v2 ){ return noa::TNL::min( v1, v2 ); }, input1, input2 );
 #else
    using value_type_1 = typename Input1::ValueType;
    using value_type_2 = typename Input2::ValueType;
-   nd_map( output, [] __cuda_callable__ ( value_type_1 v1, value_type_2 v2 ){ return noaTNL::min( v1, v2 ); }, input1, input2 );
+   nd_map( output, [] __cuda_callable__ ( value_type_1 v1, value_type_2 v2 ){ return noa::TNL::min( v1, v2 ); }, input1, input2 );
 #endif
 }
 
@@ -301,10 +301,10 @@ template< typename Output,
 void nd_absolute( Output& output, const Input& input )
 {
 #ifndef __NVCC__
-   nd_map( output, [] __cuda_callable__ ( auto v ){ return noaTNL::abs( v ); }, input );
+   nd_map( output, [] __cuda_callable__ ( auto v ){ return noa::TNL::abs( v ); }, input );
 #else
    using value_type = typename Input::ValueType;
-   nd_map( output, [] __cuda_callable__ ( value_type v ){ return noaTNL::abs( v ); }, input );
+   nd_map( output, [] __cuda_callable__ ( value_type v ){ return noa::TNL::abs( v ); }, input );
 #endif
 }
 
@@ -313,10 +313,10 @@ template< typename Output,
 void nd_sign( Output& output, const Input& input )
 {
 #ifndef __NVCC__
-   nd_map( output, [] __cuda_callable__ ( auto v ){ return noaTNL::sign( v ); }, input );
+   nd_map( output, [] __cuda_callable__ ( auto v ){ return noa::TNL::sign( v ); }, input );
 #else
    using value_type = typename Input::ValueType;
-   nd_map( output, [] __cuda_callable__ ( value_type v ){ return noaTNL::sign( v ); }, input );
+   nd_map( output, [] __cuda_callable__ ( value_type v ){ return noa::TNL::sign( v ); }, input );
 #endif
 }
 
@@ -326,11 +326,11 @@ template< typename Output,
 void nd_pow( Output& output, const Input1& input1, const Input2& input2 )
 {
 #ifndef __NVCC__
-   nd_map( output, [] __cuda_callable__ ( auto v1, auto v2 ){ return noaTNL::pow( v1, v2 ); }, input1, input2 );
+   nd_map( output, [] __cuda_callable__ ( auto v1, auto v2 ){ return noa::TNL::pow( v1, v2 ); }, input1, input2 );
 #else
    using value_type_1 = typename Input1::ValueType;
    using value_type_2 = typename Input2::ValueType;
-   nd_map( output, [] __cuda_callable__ ( value_type_1 v1, value_type_2 v2 ){ return noaTNL::pow( v1, v2 ); }, input1, input2 );
+   nd_map( output, [] __cuda_callable__ ( value_type_1 v1, value_type_2 v2 ){ return noa::TNL::pow( v1, v2 ); }, input1, input2 );
 #endif
 }
 
@@ -339,10 +339,10 @@ template< typename Output,
 void nd_sqrt( Output& output, const Input& input )
 {
 #ifndef __NVCC__
-   nd_map( output, [] __cuda_callable__ ( auto v ){ return noaTNL::sqrt( v ); }, input );
+   nd_map( output, [] __cuda_callable__ ( auto v ){ return noa::TNL::sqrt( v ); }, input );
 #else
    using value_type = typename Input::ValueType;
-   nd_map( output, [] __cuda_callable__ ( value_type v ){ return noaTNL::sqrt( v ); }, input );
+   nd_map( output, [] __cuda_callable__ ( value_type v ){ return noa::TNL::sqrt( v ); }, input );
 #endif
 }
 
@@ -359,4 +359,4 @@ void nd_square( Output& output, const Input& input )
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

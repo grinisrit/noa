@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Meshes/Readers/VTUReader.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/EntityTags/Traits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -32,7 +32,7 @@ class PVTUReader
 #ifdef HAVE_TINYXML2
    void readParallelUnstructuredGrid()
    {
-      using namespace noaTinyxml2;
+      using namespace noa::tinyxml2;
 
       // read GhostLevel attribute
       ghostLevels = getAttributeInteger( datasetElement, "GhostLevel" );
@@ -214,7 +214,7 @@ public:
       this->pointTags = this->cellTags = pointGlobalIndices = cellGlobalIndices = {};
 
       // check if we need to split the communicator
-      const Index minCount = MPI::reduce( noaTNL::min( pointsCount, cellsCount ), MPI_MIN );
+      const Index minCount = MPI::reduce( noa::TNL::min( pointsCount, cellsCount ), MPI_MIN );
       if( minCount == 0 ) {
          // split the communicator, remove the ranks which did not get a subdomain
          const int color = (pointsCount > 0 && cellsCount > 0) ? 0 : MPI_UNDEFINED;
@@ -265,4 +265,4 @@ protected:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

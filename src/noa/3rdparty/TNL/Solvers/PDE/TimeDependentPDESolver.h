@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -97,6 +97,6 @@ class TimeDependentPDESolver
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/PDE/TimeDependentPDESolver.hpp>

@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 #include <noa/3rdparty/TNL/Operators/ExactOperatorComposition.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 /****
@@ -188,5 +188,5 @@ class OperatorComposition< OuterOperator, InnerOperator, void >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

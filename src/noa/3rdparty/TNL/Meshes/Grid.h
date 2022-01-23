@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< int Dimension,
@@ -47,7 +47,7 @@ std::ostream& operator<<( std::ostream& str, const Grid< Dimension, Real, Device
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid1D.h>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid2D.h>

@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Functions/MeshFunctionEvaluator.h>
 #include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 template< typename OutMeshFunction,
@@ -158,4 +158,4 @@ evaluateEntities( OutMeshFunctionPointer& meshFunction,
 }
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

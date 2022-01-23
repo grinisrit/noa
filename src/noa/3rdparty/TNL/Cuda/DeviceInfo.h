@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/String.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Cuda {
 
 struct DeviceInfo
@@ -43,6 +43,6 @@ struct DeviceInfo
 };
 
 } // namespace Cuda
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Cuda/DeviceInfo.hpp>

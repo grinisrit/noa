@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Matrices/details/SparseMatrix.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Real,
@@ -93,9 +93,9 @@ SparseMatrixView< Real, Device, Index, MatrixType, SegmentsView, ComputeReal >::
 getSerializationType()
 {
    return String( "Matrices::SparseMatrix< " ) +
-             noaTNL::getSerializationType< RealType >() + ", " +
-             noaTNL::getSerializationType< SegmentsViewType >() + ", [any_device], " +
-             noaTNL::getSerializationType< IndexType >() + ", " +
+             noa::TNL::getSerializationType< RealType >() + ", " +
+             noa::TNL::getSerializationType< SegmentsViewType >() + ", [any_device], " +
+             noa::TNL::getSerializationType< IndexType >() + ", " +
              MatrixType::getSerializationType() + ", [any_allocator], [any_allocator] >";
 }
 

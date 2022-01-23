@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Devices/Host.h>
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace detail {
 
@@ -101,6 +101,6 @@ struct Reduction< Devices::Cuda >
 
       } // namespace detail
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/detail/Reduction.hpp>

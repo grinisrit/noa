@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Devices/Host.h>
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 /**
@@ -592,6 +592,6 @@ template< typename Value, typename Device, typename Index >
 File& operator>>( File&& file, ArrayView< Value, Device, Index > view );
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Containers/ArrayView.hpp>

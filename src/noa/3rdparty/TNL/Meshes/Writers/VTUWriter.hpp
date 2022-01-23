@@ -19,7 +19,7 @@
 #include <noa/3rdparty/TNL/zlib_compression.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 
@@ -302,4 +302,4 @@ VTUWriter< Mesh >::closePiece()
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

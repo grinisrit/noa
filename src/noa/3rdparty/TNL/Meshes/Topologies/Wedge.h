@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexCount.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polygon.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -126,4 +126,4 @@ template<> struct SubentityVertexMap< Wedge, Polygon, 4, 3> { static constexpr i
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

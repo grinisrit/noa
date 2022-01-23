@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Containers/VectorView.h>
 #include <noa/3rdparty/TNL/Containers/detail/VectorAssignment.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Real,
@@ -110,4 +110,4 @@ operator%=( const VectorExpression& expression )
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

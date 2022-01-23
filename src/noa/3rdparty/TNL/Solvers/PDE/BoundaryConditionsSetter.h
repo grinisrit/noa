@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 #include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -95,6 +95,6 @@ class BoundaryConditionsSetter
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 

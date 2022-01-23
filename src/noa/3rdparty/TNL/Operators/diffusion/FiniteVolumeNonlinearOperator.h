@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -181,6 +181,6 @@ class FiniteVolumeNonlinearOperator< Meshes::Grid< 3, MeshReal, Device, MeshInde
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "FiniteVolumeNonlinearOperator_impl.h"

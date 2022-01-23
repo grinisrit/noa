@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 #include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -89,6 +89,6 @@ class ExplicitTimeStepper
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/PDE/ExplicitTimeStepper.hpp>

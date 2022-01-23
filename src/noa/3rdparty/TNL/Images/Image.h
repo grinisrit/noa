@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 /**
  * \brief Namespace for image processing.
  */
@@ -38,5 +38,5 @@ class Image
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 

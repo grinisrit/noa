@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Endianness.h>
 #include <noa/3rdparty/TNL/Meshes/EntityShapeGroupChecker.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -817,4 +817,4 @@ protected:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

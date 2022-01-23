@@ -9,7 +9,7 @@
 //#include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/IsDynamicTopology.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -471,4 +471,4 @@ class EntitySeedMatrix< MeshConfig, EntityTopology, true >
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

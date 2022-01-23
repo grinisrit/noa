@@ -11,7 +11,7 @@
 
 #include <noa/3rdparty/TNL/Timer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
 
 /**
@@ -51,7 +51,7 @@ class SolverMonitor
        *
        * If a timer is set, the monitor can measure real elapsed time since the start of the solver.
        *
-       * \param timer is an instance of \ref noaTNL::Timer.
+       * \param timer is an instance of \ref noa::TNL::Timer.
        */
       void setTimer( Timer& timer ) { this->timer = &timer; }
 
@@ -89,7 +89,7 @@ class SolverMonitor
       }
 
       /**
-       * \brief Stops the main loop of the monitor. See \ref noaTNL::SolverMonitor::runMainLoop.
+       * \brief Stops the main loop of the monitor. See \ref noa::TNL::SolverMonitor::runMainLoop.
        */
       void stopMainLoop() { stopped = true; }
 
@@ -151,4 +151,4 @@ class SolverMonitorThread
 };
 
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

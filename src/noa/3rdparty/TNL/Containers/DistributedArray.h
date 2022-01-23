@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/Containers/DistributedArrayView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Value,
@@ -252,6 +252,6 @@ private:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "DistributedArray.hpp"

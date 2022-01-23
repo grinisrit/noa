@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Meshes/Writers/detail/VTKMeshEntitiesWriter.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 
@@ -187,4 +187,4 @@ VTKWriter< Mesh >::writeHeader()
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

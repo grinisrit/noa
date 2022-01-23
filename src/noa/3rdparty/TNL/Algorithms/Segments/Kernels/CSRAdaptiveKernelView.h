@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelParameters.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -22,7 +22,7 @@ struct CSRAdaptiveKernelView
    using DeviceType = Device;
    using ViewType = CSRAdaptiveKernelView< Index, Device >;
    using ConstViewType = CSRAdaptiveKernelView< Index, Device >;
-   using BlocksType = noaTNL::Containers::Vector< detail::CSRAdaptiveKernelBlockDescriptor< Index >, Device, Index >;
+   using BlocksType = noa::TNL::Containers::Vector< detail::CSRAdaptiveKernelBlockDescriptor< Index >, Device, Index >;
    using BlocksView = typename BlocksType::ViewType;
 
    static constexpr int MaxValueSizeLog = detail::CSRAdaptiveKernelParameters<>::MaxValueSizeLog;
@@ -37,7 +37,7 @@ struct CSRAdaptiveKernelView
 
    ConstViewType getConstView() const;
 
-   static noaTNL::String getKernelType();
+   static noa::TNL::String getKernelType();
 
    template< typename OffsetsView,
              typename Fetch,
@@ -64,6 +64,6 @@ struct CSRAdaptiveKernelView
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernelView.hpp>

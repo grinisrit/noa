@@ -14,7 +14,7 @@
 /**
  * \brief The main TNL namespace.
  */
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief Basic class for majority of TNL objects like matrices, meshes, grids, solvers, etc..
@@ -146,6 +146,6 @@ parseObjectType( const String& objectType );
  */
 void saveObjectType( File& file, const String& type );
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Object.hpp>

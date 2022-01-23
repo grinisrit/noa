@@ -40,7 +40,7 @@
 
 #include "TestFunction.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< int FunctionDimension,
@@ -103,8 +103,8 @@ configSetup( Config::ConfigDescription& config,
    config.addEntry     < double >( prefix + "diameter", "Diameter for the cylinder, flowerpot test functions.", 1.0 );
    config.addEntry     < double >( prefix + "height", "Height of zero-level-set function for the blob, pseudosquare test functions.", 1.0 );
    Analytic::VectorNorm< 3, double >::configSetup( config, "vector-norm-" );
-   noaTNL::Operators::Analytic::Heaviside< 3, double >::configSetup( config, "heaviside-" );
-   noaTNL::Operators::Analytic::SmoothHeaviside< 3, double >::configSetup( config, "smooth-heaviside-" );
+   noa::TNL::Operators::Analytic::Heaviside< 3, double >::configSetup( config, "heaviside-" );
+   noa::TNL::Operators::Analytic::SmoothHeaviside< 3, double >::configSetup( config, "smooth-heaviside-" );
    config.addEntry     < String >( prefix + "time-dependence", "Time dependence of the test function.", "none" );
       config.addEntryEnum( "none" );
       config.addEntryEnum( "linear" );
@@ -182,8 +182,8 @@ TestFunction< FunctionDimension, Real, Device >::
 setup( const Config::ParameterContainer& parameters,
        const String& prefix )
 {
-   using namespace noaTNL::Functions::Analytic;
-   using namespace noaTNL::Operators::Analytic;
+   using namespace noa::TNL::Functions::Analytic;
+   using namespace noa::TNL::Operators::Analytic;
    std::cout << "Test function setup ... " << std::endl;
    const String& timeDependence =
             parameters.getParameter< String >(
@@ -362,7 +362,7 @@ operator = ( const TestFunction& function )
     * TODO: if the function is on the device we cannot do the following
     */
    abort();
-   using namespace noaTNL::Functions::Analytic;
+   using namespace noa::TNL::Functions::Analytic;
    this->functionType   = function.functionType;
    this->timeDependence = function.timeDependence;
    this->timeScale      = function.timeScale;
@@ -427,8 +427,8 @@ getPartialDerivative( const PointType& vertex,
           const Real& time ) const
 {
    TNL_ASSERT_TRUE( this->function, "The test function was not set properly." );
-   using namespace noaTNL::Functions::Analytic;
-   using namespace noaTNL::Operators::Analytic;
+   using namespace noa::TNL::Functions::Analytic;
+   using namespace noa::TNL::Operators::Analytic;
    Real scale( 1.0 );
    switch( this->timeDependence )
    {
@@ -612,7 +612,7 @@ TestFunction< FunctionDimension, Real, Device >::
 getTimeDerivative( const PointType& vertex,
                    const Real& time ) const
 {
-   using namespace noaTNL::Functions::Analytic;
+   using namespace noa::TNL::Functions::Analytic;
    Real scale( 0.0 );
    switch( timeDependence )
    {
@@ -768,8 +768,8 @@ void
 TestFunction< FunctionDimension, Real, Device >::
 deleteFunctions()
 {
-   using namespace noaTNL::Functions::Analytic;
-   using namespace noaTNL::Operators::Analytic;
+   using namespace noa::TNL::Functions::Analytic;
+   using namespace noa::TNL::Operators::Analytic;
    switch( functionType )
    {
       case constant:
@@ -927,7 +927,7 @@ std::ostream&
 TestFunction< FunctionDimension, Real, Device >::
 print( std::ostream& str ) const
 {
-   using namespace noaTNL::Functions::Analytic;
+   using namespace noa::TNL::Functions::Analytic;
    str << " timeDependence = " << this->timeDependence;
    str << " functionType = " << this->functionType;
    str << " function = " << this->function << "; ";
@@ -965,4 +965,4 @@ TestFunction< FunctionDimension, Real, Device >::
 }
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

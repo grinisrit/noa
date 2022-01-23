@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< typename DestinationDevice >
@@ -197,7 +197,7 @@ struct MemoryOperations< Devices::Cuda >
 };
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/MemoryOperationsSequential.hpp>
 #include <noa/3rdparty/TNL/Algorithms/MemoryOperationsHost.hpp>

@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridEntityConfig.h>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/NeighborGridEntityGetter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename GridEntity,
@@ -115,5 +115,5 @@ class NeighborGridEntitiesStorage
 
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 

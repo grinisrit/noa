@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 template< typename ExactOperator,
@@ -52,4 +52,4 @@ class HeatEquationEocRhs
 };
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Solvers/Linear/Preconditioners/Preconditioner.h>
 #include <noa/3rdparty/TNL/Solvers/Linear/Utils/Traits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
       namespace Linear {
 
@@ -39,7 +39,7 @@ namespace noaTNL {
  *
  * \include IterativeLinearSolverExample.out
  *
- * See also \ref noaTNL::Solvers::IterativeSolverMonitor for monitoring of iterative solvers.
+ * See also \ref noa::TNL::Solvers::IterativeSolverMonitor for monitoring of iterative solvers.
  */
 template< typename Matrix >
 class LinearSolver
@@ -171,4 +171,4 @@ class LinearSolver
 };
       } // namespace Linear
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

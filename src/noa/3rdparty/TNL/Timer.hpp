@@ -15,7 +15,7 @@
    #include <sys/resource.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 
 inline Timer::Timer()
 {
@@ -116,4 +116,4 @@ inline unsigned long long Timer::rdtsc() const
   return ( ( unsigned long long ) lo ) | ( ( ( unsigned long long ) hi ) << 32 );
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

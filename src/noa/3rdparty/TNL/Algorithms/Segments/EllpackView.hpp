@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/EllpackView.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -26,7 +26,7 @@ EllpackCudaReductionKernelFull( Index first, Index last, Fetch fetch, const Redu
 {
    const int warpSize = 32;
    const int gridID = 0;
-   const Index segmentIdx = first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / warpSize;
+   const Index segmentIdx = first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / warpSize;
    if (segmentIdx >= last)
       return;
 
@@ -62,7 +62,7 @@ EllpackCudaReductionKernelCompact( Index first, Index last, Fetch fetch, const R
 {
    const int warpSize = 32;
    const int gridID = 0;
-   const Index segmentIdx = first + ((gridID * noaTNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / warpSize;
+   const Index segmentIdx = first + ((gridID * noa::TNL::Cuda::getMaxGridXSize() ) + (blockIdx.x * blockDim.x) + threadIdx.x) / warpSize;
    if (segmentIdx >= last)
       return;
 
@@ -186,7 +186,7 @@ EllpackView< Device, Index, Organization, Alignment >::
 getSerializationType()
 {
    // FIXME: the serialized data DEPEND on the Organization and Alignment parameters, so it should be reflected in the serialization type
-   return "Ellpack< [any_device], " + noaTNL::getSerializationType< IndexType >() + " >";
+   return "Ellpack< [any_device], " + noa::TNL::getSerializationType< IndexType >() + " >";
 }
 
 template< typename Device,
@@ -350,7 +350,7 @@ forSegments( IndexType begin, IndexType end, Function&& function ) const
       auto segment = view.getSegmentView( segmentIdx );
       function( segment );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Device,
@@ -475,4 +475,4 @@ print( Fetch&& fetch ) const -> SegmentsPrinter< EllpackView, Fetch >
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

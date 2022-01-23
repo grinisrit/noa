@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/LambdaAdapter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -34,7 +34,7 @@ struct CSRScalarKernel
 
     ConstViewType getConstView() const;
 
-    static noaTNL::String getKernelType();
+    static noa::TNL::String getKernelType();
 
     template< typename OffsetsView,
               typename Fetch,
@@ -54,6 +54,6 @@ struct CSRScalarKernel
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.hpp>

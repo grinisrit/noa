@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Solvers/cfd/navier-stokes/NavierStokesSolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 template< typename AdvectionScheme,
           typename DiffusionScheme,
@@ -624,4 +624,4 @@ bool NavierStokesSolver< AdvectionScheme,
    return true;
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

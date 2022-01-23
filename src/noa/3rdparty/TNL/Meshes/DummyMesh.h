@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Devices/Host.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Real = double,
@@ -25,4 +25,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

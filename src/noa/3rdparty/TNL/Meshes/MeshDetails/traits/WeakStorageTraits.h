@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshSubentityTraits.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshSuperentityTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -58,4 +58,4 @@ struct WeakSuperentityStorageTrait< MeshConfig, Device, EntityTopology, Superdim
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

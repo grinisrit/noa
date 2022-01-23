@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 template< typename Operator,
@@ -48,5 +48,5 @@ class ExactOperatorFunction : public Domain< Operator::getDomainDimension(), Spa
 };
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 

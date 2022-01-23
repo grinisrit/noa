@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 #include <noa/3rdparty/TNL/Operators/OperatorComposition.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -464,5 +464,5 @@ class CoFVMGradientNorm< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, 2, Real
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

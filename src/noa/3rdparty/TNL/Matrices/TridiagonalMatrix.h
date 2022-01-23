@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Matrices/details/TridiagonalMatrixIndexer.h>
 #include <noa/3rdparty/TNL/Matrices/TridiagonalMatrixView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -757,7 +757,7 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::TridiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forRows.cpp
@@ -783,7 +783,7 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::TridiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forRows.cpp
@@ -807,7 +807,7 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) mutable { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::TridiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forRows.cpp
@@ -831,7 +831,7 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::TridiagonalMatrix::RowView.
        *
        * \par Example
        * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forRows.cpp
@@ -850,7 +850,7 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::TridiagonalMatrix::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -868,7 +868,7 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
        * auto function = [] __cuda_callable__ ( RowView& row ) { ... };
        * ```
        *
-       * \e RowView represents matrix row - see \ref noaTNL::Matrices::TridiagonalMatrix::RowView.
+       * \e RowView represents matrix row - see \ref noa::TNL::Matrices::TridiagonalMatrix::RowView.
        *
        * \param begin defines beginning of the range [begin,end) of rows to be processed.
        * \param end defines ending of the range [begin,end) of rows to be processed.
@@ -1033,6 +1033,6 @@ class TridiagonalMatrix : public Matrix< Real, Device, Index, RealAllocator >
 };
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/TridiagonalMatrix.hpp>

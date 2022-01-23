@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/SlicedEllpack.h>
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -38,10 +38,10 @@ class PDEProblem : public Problem< Real, Device, Index >
       using DofVectorPointer = Pointers::SharedPointer< DofVectorType, DeviceType >;
       template< typename _Device, typename _Index, typename _IndexAlocator >
       using SegmentsType = Algorithms::Segments::SlicedEllpack< _Device, _Index, _IndexAlocator >;
-      using MatrixType = noaTNL::Matrices::SparseMatrix< Real,
+      using MatrixType = noa::TNL::Matrices::SparseMatrix< Real,
                                                       Device,
                                                       Index,
-                                                      noaTNL::Matrices::GeneralMatrix,
+                                                      noa::TNL::Matrices::GeneralMatrix,
                                                       SegmentsType
                                                     >;
       using CommonDataType = CommonData;
@@ -116,6 +116,6 @@ class PDEProblem : public Problem< Real, Device, Index >
 };
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Problems/PDEProblem_impl.h>

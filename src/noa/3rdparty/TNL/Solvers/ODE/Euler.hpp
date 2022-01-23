@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Solvers/ODE/Euler.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace ODE {
 
@@ -137,4 +137,4 @@ bool Euler< Problem, SolverMonitor > :: solve( DofVectorPointer& _u )
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

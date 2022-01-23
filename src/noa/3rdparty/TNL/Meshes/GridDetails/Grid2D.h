@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridEntity.h>
 #include <noa/3rdparty/TNL/Meshes/GridEntityConfig.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Real,
@@ -209,6 +209,6 @@ class Grid< 2, Real, Device, Index >
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid2D_impl.h>

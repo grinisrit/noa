@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {
@@ -109,4 +109,4 @@ class CSR
          } // namespace detail
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

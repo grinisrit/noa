@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename T >
@@ -41,4 +41,4 @@ class isDistributedGrid< DistributedMeshes::DistributedMesh< Grid< Dimension, Re
 {};
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

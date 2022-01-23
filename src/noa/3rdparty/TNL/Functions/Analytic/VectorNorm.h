@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Math.h>
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {
 
@@ -153,11 +153,11 @@ class VectorNorm< 1, Real > : public VectorNormBase< 1, Real >
             return 0.0;
          if( XDiffOrder == 0 )
          {
-            return this->multiplicator * ( noaTNL::abs( x ) * this->anisotropy.x() - this->radius );
+            return this->multiplicator * ( noa::TNL::abs( x ) * this->anisotropy.x() - this->radius );
          }
          if( XDiffOrder == 1 )
          {
-            return this->multiplicator * noaTNL::sign( x ) * this->anisotropy.x();
+            return this->multiplicator * noa::TNL::sign( x ) * this->anisotropy.x();
          }
          return 0.0;
       }
@@ -193,16 +193,16 @@ class VectorNorm< 2, Real > : public VectorNormBase< 2, Real >
          if( XDiffOrder == 0 && YDiffOrder == 0 )
          {
             if( this->maxNorm )
-               return ( noaTNL::max( noaTNL::abs( x ) * this->anisotropy.x(),
-                                  noaTNL::abs( y ) * this->anisotropy.y() ) - this->radius ) * this->multiplicator;
+               return ( noa::TNL::max( noa::TNL::abs( x ) * this->anisotropy.x(),
+                                  noa::TNL::abs( y ) * this->anisotropy.y() ) - this->radius ) * this->multiplicator;
             if( this->power == 1.0 )
-               return ( ( noaTNL::abs( x ) * this->anisotropy.x() +
-                          noaTNL::abs( y ) * this->anisotropy.y() ) - this->radius ) * this->multiplicator;
+               return ( ( noa::TNL::abs( x ) * this->anisotropy.x() +
+                          noa::TNL::abs( y ) * this->anisotropy.y() ) - this->radius ) * this->multiplicator;
             if( this->power == 2.0 )
                return ( std::sqrt( x * x  * this->anisotropy.x() +
                                    y * y  * this->anisotropy.y() ) - this->radius ) * this->multiplicator;
-            return ( std::pow( std::pow( noaTNL::abs( x ), this->power ) * this->anisotropy.x() +
-                               std::pow( noaTNL::abs( y ), this->power ) * this->anisotropy.y(), 1.0 / this-> power ) - this->radius ) * this->multiplicator;
+            return ( std::pow( std::pow( noa::TNL::abs( x ), this->power ) * this->anisotropy.x() +
+                               std::pow( noa::TNL::abs( y ), this->power ) * this->anisotropy.y(), 1.0 / this-> power ) - this->radius ) * this->multiplicator;
          }
          TNL_ASSERT_TRUE( false, "Not implemented yet." );
          return 0.0;
@@ -238,20 +238,20 @@ class VectorNorm< 3, Real > : public VectorNormBase< 3, Real >
          if( XDiffOrder == 0 && YDiffOrder == 0 && ZDiffOrder == 0 )
          {
             if( this->maxNorm )
-               return ( noaTNL::max( noaTNL::max( noaTNL::abs( x ) * this->anisotropy.x(),
-                                            noaTNL::abs( y ) * this->anisotropy.y() ),
-                                  noaTNL::abs( z ) * this->anisotropy.z() ) - this->radius ) * this->multiplicator;
+               return ( noa::TNL::max( noa::TNL::max( noa::TNL::abs( x ) * this->anisotropy.x(),
+                                            noa::TNL::abs( y ) * this->anisotropy.y() ),
+                                  noa::TNL::abs( z ) * this->anisotropy.z() ) - this->radius ) * this->multiplicator;
             if( this->power == 1.0 )
-               return ( ( noaTNL::abs( x ) * this->anisotropy.x() +
-                          noaTNL::abs( y ) * this->anisotropy.y() +
-                          noaTNL::abs( z ) * this->anisotropy.z() ) - this->radius ) * this->multiplicator;
+               return ( ( noa::TNL::abs( x ) * this->anisotropy.x() +
+                          noa::TNL::abs( y ) * this->anisotropy.y() +
+                          noa::TNL::abs( z ) * this->anisotropy.z() ) - this->radius ) * this->multiplicator;
             if( this->power == 2.0 )
                return ( std::sqrt( x * x  * this->anisotropy.x() +
                                    y * y  * this->anisotropy.y() +
                                    z * z  * this->anisotropy.z() ) - this->radius ) * this->multiplicator ;
-            return ( std::pow( std::pow( noaTNL::abs( x ), this->power ) * this->anisotropy.x() +
-                               std::pow( noaTNL::abs( y ), this->power ) * this->anisotropy.y() +
-                               std::pow( noaTNL::abs( z ), this->power ) * this->anisotropy.z(), 1.0 / this-> power ) - this->radius ) * this->multiplicator;
+            return ( std::pow( std::pow( noa::TNL::abs( x ), this->power ) * this->anisotropy.x() +
+                               std::pow( noa::TNL::abs( y ), this->power ) * this->anisotropy.y() +
+                               std::pow( noa::TNL::abs( z ), this->power ) * this->anisotropy.z(), 1.0 / this-> power ) - this->radius ) * this->multiplicator;
          }
          TNL_ASSERT_TRUE( false, "Not implemented yet." );
          return 0.0;
@@ -275,4 +275,4 @@ std::ostream& operator << ( std::ostream& str, const VectorNorm< Dimensions, Rea
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

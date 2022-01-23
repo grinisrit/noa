@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Matrices/LambdaMatrixElement.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -219,6 +219,6 @@ template< typename MatrixElementsLambda,
 std::ostream& operator<<( std::ostream& str, const LambdaMatrixRowView< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Index >& row );
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/LambdaMatrixRowView.hpp>

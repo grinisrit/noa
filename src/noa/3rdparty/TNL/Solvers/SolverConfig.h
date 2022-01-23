@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Solvers/LinearSolverTypeResolver.h>
 #include <noa/3rdparty/TNL/Matrices/SparseMatrix.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< typename ConfigTag,
@@ -153,4 +153,4 @@ struct SolverConfig
 };
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

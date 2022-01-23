@@ -9,7 +9,7 @@
 #include <ostream>
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 class GnuplotWriter
@@ -47,4 +47,4 @@ class GnuplotWriter
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 #include <noa/3rdparty/TNL/Containers/detail/VectorAssignment.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< int Size, typename Real >
@@ -99,4 +99,4 @@ operator StaticVector< Size, OtherReal >() const
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

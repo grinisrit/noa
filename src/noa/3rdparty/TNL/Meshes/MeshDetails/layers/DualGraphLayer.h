@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -180,4 +180,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

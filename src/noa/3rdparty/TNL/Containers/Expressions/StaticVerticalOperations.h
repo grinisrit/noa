@@ -13,7 +13,7 @@
 // By vertical operations we mean those applied across vector elements or
 // vector expression elements. It means for example minim/maximum of all
 // vector elements etc.
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace Expressions {
 
@@ -21,8 +21,8 @@ template< typename Expression >
 __cuda_callable__
 auto StaticExpressionMin( const Expression& expression )
 {
-   // use argument-dependent lookup and make noaTNL::min available for unqualified calls
-   using noaTNL::min;
+   // use argument-dependent lookup and make noa::TNL::min available for unqualified calls
+   using noa::TNL::min;
    using ResultType = RemoveET< typename Expression::RealType >;
    ResultType aux = expression[ 0 ];
    for( int i = 1; i < expression.getSize(); i++ )
@@ -52,8 +52,8 @@ template< typename Expression >
 __cuda_callable__
 auto StaticExpressionMax( const Expression& expression )
 {
-   // use argument-dependent lookup and make noaTNL::max available for unqualified calls
-   using noaTNL::max;
+   // use argument-dependent lookup and make noa::TNL::max available for unqualified calls
+   using noa::TNL::max;
    using ResultType = RemoveET< typename Expression::RealType >;
    ResultType aux = expression[ 0 ];
    for( int i = 1; i < expression.getSize(); i++ )
@@ -153,4 +153,4 @@ auto StaticExpressionBinaryXor( const Expression& expression )
 
 } // namespace Expressions
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

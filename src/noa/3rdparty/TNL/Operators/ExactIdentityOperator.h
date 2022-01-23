@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< int Dimension >
@@ -47,5 +47,5 @@ class ExactIdentityOperator
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

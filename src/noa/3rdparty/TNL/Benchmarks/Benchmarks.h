@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/String.h>
 #include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Benchmarks {
 
 const double oneGB = 1024.0 * 1024.0 * 1024.0;
@@ -156,6 +156,6 @@ class Benchmark
 };
 
 } // namespace Benchmarks
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "Benchmarks.hpp"

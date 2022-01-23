@@ -12,7 +12,7 @@
 
 #include "Utils.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace MPI {
 
 inline void selectGPU()
@@ -41,4 +41,4 @@ inline void selectGPU()
 }
 
 } // namespace MPI
-} // namespace noaTNL
+} // namespace noa::TNL

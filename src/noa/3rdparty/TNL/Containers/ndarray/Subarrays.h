@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Containers/ndarray/SizesHolder.h>
 #include <noa/3rdparty/TNL/Containers/ndarray/Indexing.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace __ndarray_impl {
 
@@ -349,4 +349,4 @@ public:
 
 } // namespace __ndarray_impl
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

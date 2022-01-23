@@ -16,7 +16,7 @@
  */
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename MeshReal,
@@ -200,4 +200,4 @@ setMatrixElements( const RealType& time,
 }
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

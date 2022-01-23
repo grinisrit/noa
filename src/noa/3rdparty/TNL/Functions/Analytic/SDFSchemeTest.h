@@ -16,7 +16,7 @@
 #include <functions/tnlSDFParaboloid.h>
 #include <functions/tnlSDFParaboloidSDF.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Functions {
       namespace Analytic {
 
@@ -99,6 +99,6 @@ class SDFSchemeTest< function, 3, Real > : public SDFSchemeTestBase< function,  
 
       } // namespace Analytic
    } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <functions/SDFSchemeTest_impl.h>

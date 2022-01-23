@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 #include <noa/3rdparty/TNL/Meshes/Mesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Mesh,
@@ -51,7 +51,7 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/Traverser.hpp>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Traverser_Grid1D.h>

@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Config/ConfigDescription.h>
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 /**
@@ -208,7 +208,7 @@ convertStringValue( const String& value, const String& param )
    str << value;
    str >> v;
    if( str.fail() )
-      throw Exceptions::ConfigError( "Value '" + value + "' could not be converted to type " + noaTNL::getType<T>().getString() +
+      throw Exceptions::ConfigError( "Value '" + value + "' could not be converted to type " + noa::TNL::getType<T>().getString() +
                                      " as required for the parameter " + param + "." );
    return v;
 }
@@ -364,4 +364,4 @@ parseCommandLine( int argc, char* argv[],
 }
 
 } // namespace Config
-} // namespace noaTNL
+} // namespace noa::TNL

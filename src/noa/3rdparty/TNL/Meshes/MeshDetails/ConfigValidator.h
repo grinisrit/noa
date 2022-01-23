@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Meshes/DimensionTag.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -102,4 +102,4 @@ class ConfigValidator
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Meshes/TypeResolver/MeshTypeResolver.h>
 #include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -295,4 +295,4 @@ resolveTerminate( Reader& reader, Functor&& functor )
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

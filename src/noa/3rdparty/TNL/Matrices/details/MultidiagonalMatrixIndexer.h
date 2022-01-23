@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       namespace details {
 
@@ -88,4 +88,4 @@ class MultidiagonalMatrixIndexer
 };
       } //namespace details
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/String.h>
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -72,13 +72,13 @@ class MatrixReader
                            bool verbose = false );
 
    protected:
-      using HostMatrix = typename Matrix::template Self< RealType, noaTNL::Devices::Host >;
+      using HostMatrix = typename Matrix::template Self< RealType, noa::TNL::Devices::Host >;
 };
 
 /// This is to prevent from appearing in Doxygen documentation.
 /// \cond HIDDEN_CLASS
 template< typename Matrix >
-class MatrixReader< Matrix, noaTNL::Devices::Host >
+class MatrixReader< Matrix, noa::TNL::Devices::Host >
 {
    public:
 
@@ -169,6 +169,6 @@ class MatrixReader< Matrix, noaTNL::Devices::Host >
 
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/MatrixReader.hpp>

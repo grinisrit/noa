@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       namespace details {
 
@@ -313,4 +313,4 @@ __global__ void DenseTranspositionNonAlignedKernel( Dense< Real, Devices::Cuda, 
 
       } //namespace details
    } //namepsace Matrices
-} //namespace noaTNL
+} //namespace noa::TNL

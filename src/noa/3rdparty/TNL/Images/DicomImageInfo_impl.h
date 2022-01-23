@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Images//DicomImageInfo.h>
 #include <noa/3rdparty/TNL/Images//DicomHeader.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 inline DicomImageInfo::DicomImageInfo( DicomHeader& dicomHeader )
@@ -100,4 +100,4 @@ inline int DicomImageInfo::getNumberOfSlices()
 }
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL

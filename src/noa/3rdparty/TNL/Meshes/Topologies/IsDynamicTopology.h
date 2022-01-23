@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Vertex.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -42,4 +42,4 @@ struct IsDynamicTopology< Topology, 1 >
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

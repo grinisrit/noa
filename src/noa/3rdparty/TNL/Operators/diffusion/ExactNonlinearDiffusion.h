@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Operators/ExactIdentityOperator.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template<  int Dimension,
@@ -186,5 +186,5 @@ class ExactNonlinearDiffusion< 3, Nonlinearity, InnerOperator >
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

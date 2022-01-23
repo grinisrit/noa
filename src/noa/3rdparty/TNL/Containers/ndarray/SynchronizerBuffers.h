@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Containers/NDArray.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace __ndarray_impl {
 
@@ -87,4 +87,4 @@ struct SynchronizerBuffers
 
 } // namespace __ndarray_impl
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

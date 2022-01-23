@@ -39,7 +39,7 @@
 
 #include <stdint.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Cuda {
 
 template< typename T, std::size_t _alignment = CHAR_BIT * sizeof(T) >
@@ -130,6 +130,6 @@ __device__ Index getInterleaving( const Index index )
 }
 
 } // namespace Cuda
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #endif

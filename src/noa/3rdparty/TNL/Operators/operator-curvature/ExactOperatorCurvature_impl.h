@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Operators/operator-curvature/ExactOperatorCurvature.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename OperatorQ >
@@ -49,4 +49,4 @@ getValue( const Function& function,
 }
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

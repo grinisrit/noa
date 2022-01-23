@@ -17,7 +17,7 @@
 
 #include "Array.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Value,
@@ -272,7 +272,7 @@ reallocate( IndexType size )
 
    // copy the old elements into aux
    Algorithms::MemoryOperations< Device >::
-         copy( aux.getData(), this->getData(), noaTNL::min( this->size, size ) );
+         copy( aux.getData(), this->getData(), noa::TNL::min( this->size, size ) );
 
    // swap *this with aux, old data will be released
    this->swap( aux );
@@ -410,8 +410,8 @@ void
 Array< Value, Device, Index, Allocator >::
 swap( Array< Value, Device, Index, Allocator >& array )
 {
-   noaTNL::swap( this->size, array.size );
-   noaTNL::swap( this->data, array.data );
+   noa::TNL::swap( this->size, array.size );
+   noa::TNL::swap( this->data, array.data );
 }
 
 template< typename Value,
@@ -842,4 +842,4 @@ File& operator>>( File&& file, Array< Value, Device, Index, Allocator >& array )
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

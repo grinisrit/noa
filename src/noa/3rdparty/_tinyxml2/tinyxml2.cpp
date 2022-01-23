@@ -131,7 +131,7 @@ static const unsigned char TIXML_UTF_LEAD_0 = 0xefU;
 static const unsigned char TIXML_UTF_LEAD_1 = 0xbbU;
 static const unsigned char TIXML_UTF_LEAD_2 = 0xbfU;
 
-namespace noaTinyxml2
+namespace noa::tinyxml2
 {
 
 struct Entity {
@@ -2984,4 +2984,4 @@ bool XMLPrinter::Visit( const XMLUnknown& unknown )
     return true;
 }
 
-}   // namespace noaTinyxml2
+}   // namespace noa::tinyxml2

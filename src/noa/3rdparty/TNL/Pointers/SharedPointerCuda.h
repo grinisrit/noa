@@ -19,7 +19,7 @@
 #include <cstddef>   // std::nullptr_t
 #include <algorithm> // swap
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Pointers {
 
 //#define HAVE_CUDA_UNIFIED_MEMORY
@@ -847,4 +847,4 @@ class SharedPointer< Object, Devices::Cuda > : public SmartPointer
 #endif // ! HAVE_CUDA_UNIFIED_MEMORY
 
 } // namespace Pointers
-} // namespace noaTNL
+} // namespace noa::TNL

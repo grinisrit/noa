@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 /**
@@ -102,4 +102,4 @@ class LambdaMatrixElement
 };
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

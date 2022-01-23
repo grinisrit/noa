@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/TypeTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       namespace details {
 
@@ -28,4 +28,4 @@ static void set_size_if_resizable( VectorOrView& v, typename VectorOrView::Index
 
       } //namespace details
    } //namepsace Matrices
-} //namespace noaTNL
+} //namespace noa::TNL

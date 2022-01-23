@@ -17,7 +17,7 @@
 
 #include <cstring>  // std::memcpy, std::memcmp
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Pointers {
 
 /**
@@ -849,4 +849,4 @@ struct Formatter< Pointers::DevicePointer< Object, Device > >
 } // namespace Assert
 #endif
 
-} // namespace noaTNL
+} // namespace noa::TNL

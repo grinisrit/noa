@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Matrices/Sandbox/SparseSandboxMatrixRowView.h>
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
       namespace Sandbox {
 
@@ -233,4 +233,4 @@ std::ostream& operator<<( std::ostream& str, const SparseSandboxMatrixRowView< V
 
       } // namespace Sandbox
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid3D.h>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/GridEntityMeasureGetter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Real,
@@ -498,4 +498,4 @@ writeProlog( Logger& logger ) const
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

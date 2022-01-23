@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -42,5 +42,5 @@ class Operator : public Functions::Domain< Mesh::getMeshDimension(), DomainType 
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

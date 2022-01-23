@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Images/Image.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index >
@@ -186,4 +186,4 @@ isIn( const Index row, const Index column ) const
 }
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL

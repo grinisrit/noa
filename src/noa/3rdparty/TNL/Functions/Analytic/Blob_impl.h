@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Analytic/Blob.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {
 

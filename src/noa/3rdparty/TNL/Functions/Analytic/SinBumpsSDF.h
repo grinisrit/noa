@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Functions {
       namespace Analytic {
 
@@ -145,6 +145,6 @@ std::ostream& operator << ( std::ostream& str, const SinBumpsSDF< Dimensions, Re
 
       } // namespace Analytic
    } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Functions/Analytic/SinBumpsSDF_impl.h>

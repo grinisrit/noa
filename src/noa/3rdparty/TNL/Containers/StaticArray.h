@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/String.h>
 #include <noa/3rdparty/TNL/File.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 /**
@@ -313,6 +313,6 @@ File& operator>>( File&& file, StaticArray< Size, Value >& array );
 
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Containers/StaticArray.hpp>

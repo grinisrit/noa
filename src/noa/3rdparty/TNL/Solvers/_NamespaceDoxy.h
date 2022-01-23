@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 
    /**
     * \brief Namespace for solvers.
@@ -14,4 +14,4 @@ namespace noaTNL {
    namespace Solvers {
 
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

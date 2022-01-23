@@ -9,7 +9,7 @@
 #include <utility>
 #include <type_traits>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 namespace detail {
@@ -118,4 +118,4 @@ constexpr void staticFor( Func&& f, ArgTypes&&... args )
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename MeshFunction >
@@ -43,5 +43,5 @@ class IdentityOperator
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Exceptions {
 
 struct NotImplementedError
@@ -22,4 +22,4 @@ struct NotImplementedError
 };
 
 } // namespace Exceptions
-} // namespace noaTNL
+} // namespace noa::TNL

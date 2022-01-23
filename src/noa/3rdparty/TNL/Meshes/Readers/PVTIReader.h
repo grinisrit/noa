@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Meshes/Readers/VTIReader.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/layers/EntityTags/Traits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -32,7 +32,7 @@ class PVTIReader
 #ifdef HAVE_TINYXML2
    void readParallelImageData()
    {
-      using namespace noaTinyxml2;
+      using namespace noa::tinyxml2;
 
       // read the required attributes
       const std::string extent = getAttributeString( datasetElement, "WholeExtent" );
@@ -328,4 +328,4 @@ protected:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

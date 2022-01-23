@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 #include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
@@ -665,7 +665,7 @@ struct CudaReductionKernelLauncher
          const Index size = end - begin;
          dim3 blockSize, gridSize;
          blockSize.x = Reduction_maxThreadsPerBlock;
-         gridSize.x = noaTNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
+         gridSize.x = noa::TNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
 
          // This is "general", but this method always sets blockSize.x to a specific value,
          // so runtime switch is not necessary - it only prolongs the compilation time.
@@ -770,7 +770,7 @@ struct CudaReductionKernelLauncher
          dim3 blockSize, gridSize;
          const Index size = end - begin;
          blockSize.x = Reduction_maxThreadsPerBlock;
-         gridSize.x = noaTNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
+         gridSize.x = noa::TNL::min( Cuda::getNumberOfBlocks( size, blockSize.x ), desGridSize );
 
          // This is "general", but this method always sets blockSize.x to a specific value,
          // so runtime switch is not necessary - it only prolongs the compilation time.
@@ -871,4 +871,4 @@ struct CudaReductionKernelLauncher
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

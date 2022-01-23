@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Topologies/Quadrangle.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -173,4 +173,4 @@ template<> struct SubentityVertexMap< Hexahedron, Quadrangle, 5, 3> { static con
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

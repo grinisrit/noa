@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 #include <noa/3rdparty/TNL/Algorithms/detail/ScanType.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
@@ -152,6 +152,6 @@ struct Scan< Devices::Cuda, Type, PhaseType >
 
 } // namespace detail
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "Scan.hpp"

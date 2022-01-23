@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/Analytic/ParaboloidSDF.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Functions {
       namespace Analytic {
 
@@ -156,4 +156,4 @@ getPartialDerivative( const PointType& v,
          
       } //namespace Analytic
    } // namepsace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

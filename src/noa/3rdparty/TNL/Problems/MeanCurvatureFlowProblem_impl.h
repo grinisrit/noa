@@ -23,7 +23,7 @@
 
 #include "MeanCurvatureFlowProblem.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -246,4 +246,4 @@ assemblyLinearSystem( const RealType& time,
 }
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL

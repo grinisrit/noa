@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/Readers/XMLVTK.h>
 #include <noa/3rdparty/TNL/Meshes/EntityShapeGroupChecker.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -21,7 +21,7 @@ class VTUReader
 #ifdef HAVE_TINYXML2
    void readUnstructuredGrid()
    {
-      using namespace noaTinyxml2;
+      using namespace noa::tinyxml2;
       const XMLElement* piece = getChildSafe( datasetElement, "Piece" );
       if( piece->NextSiblingElement( "Piece" ) )
          // ambiguity - throw error, we don't know which piece to parse (or all of them?)
@@ -263,4 +263,4 @@ public:
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Containers/UnorderedIndexedSet.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< class Key,
@@ -190,4 +190,4 @@ std::ostream& operator<<( std::ostream& str, UnorderedIndexedSet< Key, Index, Ha
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

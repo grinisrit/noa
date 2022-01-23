@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename MeshReal,
@@ -221,4 +221,4 @@ getValueStriped( const MeshFunction& u,
 }   
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -12,7 +12,7 @@
 
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace noaTNL {
+namespace noa::TNL {
     namespace Algorithms {
         namespace Sorting {
 
@@ -65,4 +65,4 @@ inline std::ostream& operator<<(std::ostream & out, const TASK & task)
 
         } // namespace Sorting
     } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

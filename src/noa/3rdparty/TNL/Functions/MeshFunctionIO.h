@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Meshes/Writers/PVTIWriter.h>
 #include <noa/3rdparty/TNL/Functions/MeshFunctionGnuplotWriter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< typename MeshFunction >
@@ -228,7 +228,7 @@ writeDistributedMeshFunction( const Meshes::DistributedMeshes::DistributedMesh< 
    if( format == "pvti" ) {
       const MPI_Comm communicator = distributedMesh.getCommunicator();
       std::ofstream file;
-      if( noaTNL::MPI::GetRank( communicator ) == 0 )
+      if( noa::TNL::MPI::GetRank( communicator ) == 0 )
          file.open( fileName );
 
       using PVTI = Meshes::Writers::PVTIWriter< typename MeshFunction::MeshType >;
@@ -278,4 +278,4 @@ writeDistributedMeshFunction( const Meshes::DistributedMeshes::DistributedMesh< 
 // TODO: specialization of writeDistributedMeshFunction for unstructured mesh
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/traits/WeakStorageTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig,
@@ -585,4 +585,4 @@ protected:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

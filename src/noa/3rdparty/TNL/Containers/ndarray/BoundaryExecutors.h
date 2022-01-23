@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Containers/ndarray/Meta.h>
 #include <noa/3rdparty/TNL/Containers/ndarray/SizesHolder.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace __ndarray_impl {
 
@@ -406,4 +406,4 @@ struct BoundaryExecutorDispatcher< Permutation, Devices::Cuda >
 
 } // namespace __ndarray_impl
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

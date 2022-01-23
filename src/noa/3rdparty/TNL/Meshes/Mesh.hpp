@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/IndexPermutationApplier.h>
 #include <noa/3rdparty/TNL/Meshes/MeshDetails/initializer/Initializer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename MeshConfig, typename Device, typename MeshType >
@@ -391,4 +391,4 @@ std::ostream& operator<<( std::ostream& str, const Mesh< MeshConfig, Device >& m
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

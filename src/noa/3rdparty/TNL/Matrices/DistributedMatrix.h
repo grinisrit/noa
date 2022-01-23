@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Containers/DistributedVectorView.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 // TODO: 2D distribution for dense matrices (maybe it should be in different template,
@@ -196,6 +196,6 @@ protected:
 };
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "DistributedMatrix_impl.h"

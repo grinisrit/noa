@@ -9,7 +9,7 @@
 #include <cstring>
 #include <noa/3rdparty/TNL/Images//PGMImage.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index >
@@ -250,5 +250,5 @@ PGMImage< Index >::
 }
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 

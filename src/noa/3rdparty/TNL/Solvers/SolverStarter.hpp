@@ -19,7 +19,7 @@
 #include <noa/3rdparty/TNL/Solvers/PDE/SemiImplicitTimeStepper.h>
 #include <noa/3rdparty/TNL/Solvers/PDE/PDESolverTypeResolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< typename Problem,
@@ -397,7 +397,7 @@ bool SolverStarter< ConfigTag > :: writeEpilog( std::ostream& str, const Solver&
       return false;
    logger.writeParameter< const char* >( "Compute time:", "" );
    this->computeTimer.writeLog( logger, 1 );
-   if( std::is_same< typename Solver::DeviceType, noaTNL::Devices::Cuda >::value )
+   if( std::is_same< typename Solver::DeviceType, noa::TNL::Devices::Cuda >::value )
    {
       logger.writeParameter< const char* >( "GPU synchronization time:", "" );
       Pointers::getSmartPointersSynchronizationTimer< Devices::Cuda >().writeLog( logger, 1 );
@@ -414,4 +414,4 @@ bool SolverStarter< ConfigTag > :: writeEpilog( std::ostream& str, const Solver&
 }
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

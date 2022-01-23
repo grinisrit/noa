@@ -17,7 +17,7 @@
 #include <cstring>  // std::memcpy, std::memcmp
 #include <cstddef>  // std::nullptr_t
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Pointers {
 
 /**
@@ -616,4 +616,4 @@ struct Formatter< Pointers::UniquePointer< Object, Device > >
 } // namespace Assert
 #endif
 
-} // namespace noaTNL
+} // namespace noa::TNL

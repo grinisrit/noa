@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Traverser_Grid2D.h>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Traverser_Grid3D.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -204,5 +204,5 @@ class ExplicitUpdater
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 

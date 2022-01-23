@@ -10,7 +10,7 @@
 
 #include "CudaSupportMissing.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Exceptions {
 
 #ifdef HAVE_CUDA
@@ -70,4 +70,4 @@ private:
 };
 
 } // namespace Exceptions
-} // namespace noaTNL
+} // namespace noa::TNL

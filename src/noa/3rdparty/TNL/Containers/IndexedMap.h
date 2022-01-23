@@ -9,7 +9,7 @@
 #include <map>
 #include <iostream>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Value,
@@ -70,6 +70,6 @@ template< typename Value,
 std::ostream& operator <<( std::ostream& str, IndexedMap< Value, Index, Key >& set );
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Containers/IndexedMap_impl.h>

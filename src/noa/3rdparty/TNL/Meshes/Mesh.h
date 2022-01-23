@@ -22,7 +22,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 /**
  * \brief Namespace for numerical meshes and related objects.
  */
@@ -204,7 +204,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noa::TNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forAll( Func f ) const;
@@ -215,7 +215,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noa::TNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forBoundary( Func f ) const;
@@ -226,7 +226,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noa::TNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forInterior( Func f ) const;
@@ -237,7 +237,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noa::TNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forLocal( Func f ) const;
@@ -248,7 +248,7 @@ class Mesh
        * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
        * mesh entity to be processed. The mesh itself is not passed to the function `f`, it is the user's
        * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
-       * and/or using a \ref noaTNL::Pointers::SharedPointer "SharedPointer".
+       * and/or using a \ref noa::TNL::Pointers::SharedPointer "SharedPointer".
        */
       template< int EntityDimension, typename Device2 = DeviceType, typename Func >
       void forGhost( Func f ) const;
@@ -291,7 +291,7 @@ template< typename MeshConfig, typename Device >
 std::ostream& operator<<( std::ostream& str, const Mesh< MeshConfig, Device >& mesh );
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/MeshEntity.h>
 

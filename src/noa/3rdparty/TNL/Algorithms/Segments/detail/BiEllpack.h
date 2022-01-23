@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/BiEllpackSegmentView.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/detail/CheckLambdas.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {

@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Solvers/IterativeSolverMonitor.h>
 #include <noa/3rdparty/TNL/Solvers/Linear/LinearSolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -86,6 +86,6 @@ class SemiImplicitTimeStepper
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/PDE/SemiImplicitTimeStepper.hpp>

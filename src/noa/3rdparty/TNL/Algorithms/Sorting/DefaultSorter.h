@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Sorting/Quicksort.h>
 #include <noa/3rdparty/TNL/Algorithms/Sorting/STLSort.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Sorting {
 
@@ -64,4 +64,4 @@ struct DefaultInplaceSorter< Devices::Cuda >
 
       } // namespace Sorting
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 #include <noa/3rdparty/TNL/Matrices/SparseMatrix.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 namespace Preconditioners {
@@ -28,7 +28,7 @@ class ILUT_impl
  *
  * See [detailed description](https://www-users.cse.umn.edu/~saad/PDF/umsi-92-38.pdf)
  *
- * See \ref noaTNL::Solvers::Linear::Preconditioners::Preconditioner for example of setup with a linear solver.
+ * See \ref noa::TNL::Solvers::Linear::Preconditioners::Preconditioner for example of setup with a linear solver.
  *
  * \tparam Matrix is type of the matrix describing the linear system.
  */
@@ -177,6 +177,6 @@ public:
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "ILUT.hpp"

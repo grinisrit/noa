@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace VTK {
 
@@ -85,4 +85,4 @@ struct EntityShapeGroupElement< EntityShape::Polyhedron, 5 >
 
 } // namespace VTK
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

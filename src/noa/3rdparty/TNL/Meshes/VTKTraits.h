@@ -20,7 +20,7 @@
 #include <noa/3rdparty/TNL/Meshes/Topologies/Pyramid.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace VTK {
 
@@ -213,4 +213,4 @@ inline const char* ghostArrayName()
 
 } // namespace VTK
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

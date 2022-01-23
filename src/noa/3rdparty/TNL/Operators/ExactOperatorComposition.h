@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename OuterOperator,
@@ -32,5 +32,5 @@ class ExactOperatorComposition
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Operators/diffusion/LinearDiffusion.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename MeshReal,
@@ -254,4 +254,4 @@ setMatrixElements( const PreimageFunction& u,
 }
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

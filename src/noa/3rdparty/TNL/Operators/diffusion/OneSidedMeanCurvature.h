@@ -21,7 +21,7 @@
 #include <noa/3rdparty/TNL/Functions/Analytic/Constant.h>
 #include <noa/3rdparty/TNL/Operators/diffusion/ExactMeanCurvature.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -121,4 +121,4 @@ class OneSidedMeanCurvature
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

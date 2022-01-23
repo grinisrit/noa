@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernelView.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -63,7 +63,7 @@ struct CSRAdaptiveKernel
 
    static int getSizeValueLog( const int& i ) { return detail::CSRAdaptiveKernelParameters<>::getSizeValueLog( i ); };
 
-   static noaTNL::String getKernelType();
+   static noa::TNL::String getKernelType();
 
    template< typename Offsets >
    void init( const Offsets& offsets );
@@ -111,6 +111,6 @@ struct CSRAdaptiveKernel
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRAdaptiveKernel.hpp>

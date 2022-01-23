@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Algorithms/reduce.h>
 #include <noa/3rdparty/TNL/Exceptions/CudaSupportMissing.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Algorithms {
 
 template< typename Element, typename Index >
@@ -150,7 +150,7 @@ copyFromIterator( DestinationElement* destination,
                   SourceIterator last )
 {
    using BaseType = typename std::remove_cv< DestinationElement >::type;
-   const int buffer_size = noaTNL::min( Cuda::getTransferBufferSize() / sizeof(BaseType), destinationSize );
+   const int buffer_size = noa::TNL::min( Cuda::getTransferBufferSize() / sizeof(BaseType), destinationSize );
    std::unique_ptr< BaseType[] > buffer{ new BaseType[ buffer_size ] };
    Index copiedElements = 0;
    while( copiedElements < destinationSize && first != last ) {
@@ -182,4 +182,4 @@ compare( const Element1* destination,
 }
 
 } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

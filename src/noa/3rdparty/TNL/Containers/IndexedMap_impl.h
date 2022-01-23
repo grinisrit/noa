@@ -8,7 +8,7 @@
 
 #include "IndexedMap.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename Value,
@@ -106,4 +106,4 @@ std::ostream& operator<<( std::ostream& str, IndexedMap< Value, Index, Key >& se
 }
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

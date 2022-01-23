@@ -17,7 +17,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/GridTraverser.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -251,4 +251,4 @@ processEntities(
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

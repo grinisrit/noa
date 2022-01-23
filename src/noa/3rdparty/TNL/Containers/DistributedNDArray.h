@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Containers/NDArray.h>
 #include <noa/3rdparty/TNL/Containers/DistributedNDArrayView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename NDArray >
@@ -441,4 +441,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

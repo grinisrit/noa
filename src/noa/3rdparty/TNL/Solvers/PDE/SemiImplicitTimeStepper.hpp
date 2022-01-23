@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Solvers/PDE/SemiImplicitTimeStepper.h>
 #include <noa/3rdparty/TNL/Solvers/LinearSolverTypeResolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -221,4 +221,4 @@ writeEpilog( Logger& logger ) const
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

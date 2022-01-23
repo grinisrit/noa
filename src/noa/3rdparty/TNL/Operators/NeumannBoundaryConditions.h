@@ -9,7 +9,7 @@
 
 #include <noa/3rdparty/TNL/Functions/FunctionAdapter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 
 template< typename Mesh,
@@ -443,5 +443,5 @@ std::ostream& operator << ( std::ostream& str, const NeumannBoundaryConditions< 
 }
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

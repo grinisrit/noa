@@ -12,7 +12,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Matrix1, typename Matrix2 >
@@ -42,6 +42,6 @@ void
 reorderArray( const Array1& src, Array2& dest, const PermutationArray& perm );
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "SparseOperations_impl.h"

@@ -19,7 +19,7 @@
 #include <noa/3rdparty/TNL/Meshes/Readers/PVTIReader.h>
 #include <noa/3rdparty/TNL/Meshes/Readers/FPMAReader.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -61,4 +61,4 @@ getMeshReader( const std::string& fileName,
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

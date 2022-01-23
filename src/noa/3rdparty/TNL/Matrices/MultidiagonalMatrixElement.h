@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 
@@ -111,4 +111,4 @@ class MultidiagonalMatrixElement
 };
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

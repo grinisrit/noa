@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Exceptions {
 
 struct MPISupportMissing
@@ -21,4 +21,4 @@ struct MPISupportMissing
 };
 
 } // namespace Exceptions
-} // namespace noaTNL
+} // namespace noa::TNL

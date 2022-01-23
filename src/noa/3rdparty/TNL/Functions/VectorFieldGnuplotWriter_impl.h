@@ -9,7 +9,7 @@
 #include <iostream>
 #include <noa/3rdparty/TNL/Functions/VectorFieldGnuplotWriter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< typename VectorField >
@@ -333,4 +333,4 @@ write( const VectorFieldType& vectorField,
 }
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

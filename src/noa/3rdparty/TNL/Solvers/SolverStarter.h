@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Solvers/SolverMonitor.h>
 #include <ostream>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< typename ConfigTag >
@@ -39,6 +39,6 @@ class SolverStarter
 };
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/SolverStarter.hpp>

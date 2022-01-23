@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {   
 
 template< typename Mesh,
@@ -39,4 +39,4 @@ getCompressedRowLengths( const MeshPointer& meshPointer,
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

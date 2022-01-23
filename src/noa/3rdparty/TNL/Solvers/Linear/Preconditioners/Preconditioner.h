@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/TNL/Solvers/Linear/Utils/Traits.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
       namespace Linear {
          namespace Preconditioners {
@@ -124,4 +124,4 @@ class Preconditioner
          } // namespace Preconditioners
       } // namespace Linear
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

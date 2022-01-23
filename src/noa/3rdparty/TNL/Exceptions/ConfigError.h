@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Exceptions {
 
 struct ConfigError
@@ -22,4 +22,4 @@ struct ConfigError
 };
 
 } // namespace Exceptions
-} // namespace noaTNL
+} // namespace noa::TNL

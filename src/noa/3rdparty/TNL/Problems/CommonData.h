@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 class CommonData
@@ -24,4 +24,4 @@ class CommonData
 };
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL

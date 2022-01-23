@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Matrices/MatrixRowViewIterator.h>
 #include <noa/3rdparty/TNL/Matrices/DenseMatrixElement.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Matrices {
 
 /**
@@ -201,6 +201,6 @@ class DenseMatrixRowView
       ValuesViewType values;
 };
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/DenseMatrixRowView.hpp>

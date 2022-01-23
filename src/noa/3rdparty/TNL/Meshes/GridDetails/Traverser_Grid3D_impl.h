@@ -10,7 +10,7 @@
 
 #include "Traverser_Grid3D.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -510,4 +510,4 @@ processAllEntities( const GridPointer& gridPointer,
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

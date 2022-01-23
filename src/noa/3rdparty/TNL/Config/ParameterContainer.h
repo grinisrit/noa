@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/TypeInfo.h>
 #include <noa/3rdparty/TNL/Exceptions/ConfigError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 class ParameterContainer
@@ -135,8 +135,8 @@ public:
          else {
             throw std::logic_error( "Parameter " + name + " already exists with different type. "
                                     "Current type index is " + std::to_string( search->second.index() ) +
-                                    " (variant type is " + std::string( noaTNL::getType< Parameter >() ) + "), "
-                                    "tried to set value of type " + std::string( noaTNL::getType< T >() ) + "." );
+                                    " (variant type is " + std::string( noa::TNL::getType< Parameter >() ) + "), "
+                                    "tried to set value of type " + std::string( noa::TNL::getType< T >() ) + "." );
          }
       }
       addParameter< T >( name, value );
@@ -158,8 +158,8 @@ public:
          else
             throw Exceptions::ConfigError( "Parameter " + name + " holds a value of different type than requested. "
                                            "Current type index is " + std::to_string( search->second.index() ) +
-                                           " (variant type is " + std::string( noaTNL::getType< Parameter >() ) + "), "
-                                           "tried to get value of type " + std::string( noaTNL::getType< T >() ) + "." );
+                                           " (variant type is " + std::string( noa::TNL::getType< Parameter >() ) + "), "
+                                           "tried to get value of type " + std::string( noa::TNL::getType< T >() ) + "." );
       }
       throw Exceptions::ConfigError( "The program attempts to get unknown parameter " + name + "." );
    }
@@ -198,4 +198,4 @@ protected:
 };
 
 } // namespace Config
-} // namespace noaTNL
+} // namespace noa::TNL

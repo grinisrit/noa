@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 #include <noa/3rdparty/TNL/Solvers/PDE/BoundaryConditionsSetter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
 /***
@@ -420,5 +420,5 @@ class OperatorFunction< Operator, Function, void, false, true >
 };
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 

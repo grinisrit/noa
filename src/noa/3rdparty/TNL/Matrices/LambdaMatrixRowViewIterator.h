@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 #include <noa/3rdparty/TNL/Matrices/LambdaMatrixElement.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename RowView >
@@ -89,6 +89,6 @@ class LambdaMatrixRowViewIterator
 
 
    } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/LambdaMatrixRowViewIterator.hpp>

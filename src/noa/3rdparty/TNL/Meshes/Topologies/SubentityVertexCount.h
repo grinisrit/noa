@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Topologies/SubentityVertexMap.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes{
 namespace Topologies {
 
@@ -22,4 +22,4 @@ struct SubentityVertexCount
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

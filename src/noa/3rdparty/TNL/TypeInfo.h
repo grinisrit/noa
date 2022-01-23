@@ -26,7 +26,7 @@
 
 #include <noa/3rdparty/TNL/String.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace detail {
 
 inline std::string
@@ -127,4 +127,4 @@ String getSerializationType()
    return T::getSerializationType();
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

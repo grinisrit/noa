@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 namespace Analytic {   
 
@@ -126,7 +126,7 @@ std::ostream& operator << ( std::ostream& str, const Cylinder< Dimension, Real >
 
 } // namespace Analytic
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Functions/Analytic/Cylinder_impl.h>
 

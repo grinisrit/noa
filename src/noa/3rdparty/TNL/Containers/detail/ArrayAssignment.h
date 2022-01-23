@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Algorithms/MemoryOperations.h>
 #include <noa/3rdparty/TNL/Algorithms/MultiDeviceMemoryOperations.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace detail {
 
@@ -69,4 +69,4 @@ struct ArrayAssignment< Array, T, false >
 
 } // namespace detail
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

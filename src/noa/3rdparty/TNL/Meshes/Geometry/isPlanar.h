@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Geometry/getEntityMeasure.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 // Polygon
@@ -37,4 +37,4 @@ isPlanar( const Mesh< MeshConfig, Device > & mesh,
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

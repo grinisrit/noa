@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 namespace Analytic {   
    
@@ -74,4 +74,4 @@ class Rotation: public Functions::Domain< Function::getDomainDimenions(),
 
 } // namespace Analytic
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

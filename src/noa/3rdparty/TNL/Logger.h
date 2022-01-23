@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/String.h>
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /// Creates calculations log in the form of a table.
 class Logger
@@ -82,6 +82,6 @@ protected:
    std::ostream& stream;
 };
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Logger_impl.h>

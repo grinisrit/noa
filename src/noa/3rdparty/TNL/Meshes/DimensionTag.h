@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /***
@@ -49,4 +49,4 @@ public:
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -19,7 +19,7 @@
 #include <noa/3rdparty/TNL/Meshes/Topologies/Pyramid.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Polyhedron.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 /**
  * \brief Namespace for the configuration of the \ref GridTypeResolver and
@@ -144,4 +144,4 @@ struct MeshTag
 
 } // namespace BuildConfigTags
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

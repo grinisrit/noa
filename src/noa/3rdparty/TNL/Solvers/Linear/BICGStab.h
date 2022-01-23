@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Solvers/Linear/LinearSolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
       namespace Linear {
 
@@ -19,7 +19,7 @@ namespace noaTNL {
  *
  * See [Wikipedia](https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method) for more details.
  *
- * See \ref noaTNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
+ * See \ref noa::TNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
  *
  * \tparam Matrix is type of matrix describing the linear system.
  */
@@ -109,6 +109,6 @@ class BICGStab
 
       } // namespace Linear
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/Linear/BICGStab.hpp>

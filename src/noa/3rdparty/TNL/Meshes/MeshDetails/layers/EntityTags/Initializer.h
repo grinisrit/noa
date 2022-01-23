@@ -14,7 +14,7 @@
 
 #include "Traits.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace EntityTags {
 
@@ -183,4 +183,4 @@ public:
 
 } // namespace EntityTags
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

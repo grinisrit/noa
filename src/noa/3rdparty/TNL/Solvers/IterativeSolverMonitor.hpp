@@ -18,7 +18,7 @@
 
 #include <noa/3rdparty/TNL/Solvers/IterativeSolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< typename Real, typename Index>
@@ -221,4 +221,4 @@ int IterativeSolverMonitor< Real, Index > :: getLineWidth()
 }
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

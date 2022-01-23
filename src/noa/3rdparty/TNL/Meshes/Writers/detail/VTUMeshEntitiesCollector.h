@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Meshes/VTKTraits.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 namespace detail {
@@ -352,4 +352,4 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
 } // namespace detail
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

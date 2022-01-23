@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Devices/Cuda.h>
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {
 namespace Analytic {   
    
@@ -55,4 +55,4 @@ class Identity : public Functions::Domain< Dimensions, Functions::SpaceDomain >
 
 } // namespace Analytic
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL

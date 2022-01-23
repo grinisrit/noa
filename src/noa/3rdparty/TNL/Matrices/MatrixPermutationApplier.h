@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Matrix,
@@ -90,4 +90,4 @@ void permuteMatrixColumns( Matrix& matrix, const PermutationArray& iperm )
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

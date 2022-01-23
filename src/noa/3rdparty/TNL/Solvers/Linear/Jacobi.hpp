@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Solvers/Linear/Jacobi.h>
 #include <noa/3rdparty/TNL/Solvers/Linear/Utils/LinearResidueGetter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Solvers {
       namespace Linear {
 
@@ -127,9 +127,9 @@ performIteration( const ConstVectorViewType& b,
    auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) mutable {
       out[ rowIdx ] = in[ rowIdx ] + omega_ / diagonalView[ rowIdx ] * ( b[ rowIdx ] - value );
    };
-   this->matrix->reduceAllRows( fetch, noaTNL::Plus{}, keep, 0.0 );
+   this->matrix->reduceAllRows( fetch, noa::TNL::Plus{}, keep, 0.0 );
 }
 
       } // namespace Linear
    } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

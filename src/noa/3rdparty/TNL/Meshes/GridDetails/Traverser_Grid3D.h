@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Meshes/Traverser.h>
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Real,
@@ -119,6 +119,6 @@ class Traverser< Meshes::Grid< 3, Real, Device, Index >, GridEntity, 0 >
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Traverser_Grid3D_impl.h>

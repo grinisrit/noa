@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Problems/MeanCurvatureFlowProblem.h>
 #include <noa/3rdparty/TNL/Operators/operator-Q/tnlOneSideDiffOperatorQ.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -33,6 +33,6 @@ class MeanCurvatureFlowEocProblem : public MeanCurvatureFlowProblem< Mesh, Bound
 };
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Problems/MeanCurvatureFlowEocProblem_impl.h>

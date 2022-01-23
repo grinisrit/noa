@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Config/ConfigEntryBase.h>
 #include <noa/3rdparty/TNL/Config/ConfigEntryType.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Config {
 
 template< typename EntryType, typename DefaultValueType = EntryType >
@@ -115,4 +115,4 @@ private:
 };
 
 } // namespace Config
-} // namespace noaTNL
+} // namespace noa::TNL

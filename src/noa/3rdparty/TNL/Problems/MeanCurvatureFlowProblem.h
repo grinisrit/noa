@@ -18,7 +18,7 @@
 #include <noa/3rdparty/TNL/Matrices/CSR.h>
 #include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -103,6 +103,6 @@ class MeanCurvatureFlowProblem : public PDEProblem< Mesh,
 };
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include "MeanCurvatureFlowProblem_impl.h"

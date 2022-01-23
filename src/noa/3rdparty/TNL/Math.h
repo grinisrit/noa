@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/TypeTraits.h>
 #include <noa/3rdparty/TNL/Cuda/CudaCallable.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief This function returns minimum of two numbers.
@@ -128,7 +128,7 @@ template< typename T1, typename T2, typename ResultType = typename std::common_t
 __cuda_callable__
 ResultType argAbsMin( const T1& a, const T2& b )
 {
-   return ( noaTNL::abs( a ) < noaTNL::abs( b ) ) ?  a : b;
+   return ( noa::TNL::abs( a ) < noa::TNL::abs( b ) ) ?  a : b;
 }
 
 /***
@@ -138,7 +138,7 @@ template< typename T1, typename T2, typename ResultType = typename std::common_t
 __cuda_callable__
 ResultType argAbsMax( const T1& a, const T2& b )
 {
-   return ( noaTNL::abs( a ) > noaTNL::abs( b ) ) ?  a : b;
+   return ( noa::TNL::abs( a ) > noa::TNL::abs( b ) ) ?  a : b;
 }
 
 /**
@@ -532,4 +532,4 @@ inline bool isPow2( long int x )
    return ( ( x & ( x - 1 ) ) == 0 );
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

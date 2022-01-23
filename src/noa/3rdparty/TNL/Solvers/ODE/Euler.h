@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Solvers/ODE/ExplicitSolver.h>
 #include <noa/3rdparty/TNL/Config/ParameterContainer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace ODE {
 
@@ -50,6 +50,6 @@ class Euler : public ExplicitSolver< Problem, SolverMonitor >
 
 } // namespace ODE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Solvers/ODE/Euler.hpp>

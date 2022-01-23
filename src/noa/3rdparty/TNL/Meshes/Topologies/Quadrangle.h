@@ -14,7 +14,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Topologies {
 
@@ -82,4 +82,4 @@ template<> struct SubentityVertexMap< Quadrangle, Edge, 3, 1> { static constexpr
 
 } // namespace Topologies
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

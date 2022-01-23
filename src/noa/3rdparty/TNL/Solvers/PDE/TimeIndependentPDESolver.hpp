@@ -20,7 +20,7 @@
 #include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveDistributedMeshType.h>
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -165,4 +165,4 @@ writeEpilog( Logger& logger ) const
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

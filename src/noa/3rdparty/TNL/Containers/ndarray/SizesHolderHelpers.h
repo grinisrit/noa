@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Algorithms/staticFor.h>
 #include <noa/3rdparty/TNL/Containers/ndarray/Meta.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace __ndarray_impl {
 
@@ -404,4 +404,4 @@ struct SetSizesMinHelper< TargetHolder, SourceHolder, 0 >
 
 } // namespace __ndarray_impl
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

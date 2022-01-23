@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Matrices/TridiagonalMatrixView.h>
 #include <noa/3rdparty/TNL/Exceptions/NotImplementedError.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Real,
@@ -64,9 +64,9 @@ TridiagonalMatrixView< Real, Device, Index, Organization >::
 getSerializationType()
 {
    return String( "Matrices::TridiagonalMatrix< " ) +
-          noaTNL::getSerializationType< RealType >() + ", [any_device], " +
-          noaTNL::getSerializationType< IndexType >() + ", " +
-          noaTNL::getSerializationType( Organization ) + ", [any_allocator] >";
+          noa::TNL::getSerializationType< RealType >() + ", [any_device], " +
+          noa::TNL::getSerializationType< IndexType >() + ", " +
+          noa::TNL::getSerializationType( Organization ) + ", [any_allocator] >";
 }
 
 template< typename Real,
@@ -484,7 +484,7 @@ forRows( IndexType begin, IndexType end, Function&& function )
       auto rowView = view.getRow( rowIdx );
       function( rowView );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -501,7 +501,7 @@ forRows( IndexType begin, IndexType end, Function&& function ) const
       auto rowView = view.getRow( rowIdx );
       function( rowView );
    };
-   noaTNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
+   noa::TNL::Algorithms::ParallelFor< DeviceType >::exec( begin, end, f );
 }
 
 template< typename Real,
@@ -852,4 +852,4 @@ getPaddingIndex() const
 
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

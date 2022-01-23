@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Meshes/Geometry/getEntityCenter.h>
 #include <noa/3rdparty/TNL/Meshes/Topologies/Edge.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename Grid, typename Config >
@@ -155,4 +155,4 @@ getOutwardNormalVector( const Mesh< MeshConfig, Device > & mesh,
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

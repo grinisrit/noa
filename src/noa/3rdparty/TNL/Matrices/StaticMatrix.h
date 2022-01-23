@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Containers/NDArray.h>
 #include <noa/3rdparty/TNL/Containers/StaticVector.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename Value,
@@ -60,4 +60,4 @@ public:
 };
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

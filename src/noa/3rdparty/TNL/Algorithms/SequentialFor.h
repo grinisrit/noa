@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
 
 /**
@@ -47,4 +47,4 @@ struct SequentialFor
 
 
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

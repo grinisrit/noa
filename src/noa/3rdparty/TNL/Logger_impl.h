@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Cuda/DeviceInfo.h>
 #include <noa/3rdparty/TNL/SystemInfo.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 inline void
 Logger::writeHeader( const String& title )
@@ -145,4 +145,4 @@ Logger::writeParameter( const String& label,
           << str.str() << " |" << std::endl;
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

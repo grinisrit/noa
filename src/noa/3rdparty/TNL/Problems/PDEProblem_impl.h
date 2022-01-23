@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Problems/PDEProblem.h>
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Problems {
 
 template< typename Mesh,
@@ -224,4 +224,4 @@ getSolverMonitor()
 }
 
 } // namespace Problems
-} // namespace noaTNL
+} // namespace noa::TNL

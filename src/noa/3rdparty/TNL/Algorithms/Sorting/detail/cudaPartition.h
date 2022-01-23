@@ -12,14 +12,14 @@
 #include <noa/3rdparty/TNL/Algorithms/Sorting/detail/task.h>
 #include <noa/3rdparty/TNL/Algorithms/detail/CudaScanKernel.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Sorting {
 
 #ifdef HAVE_CUDA
 
 template <typename Value, typename Device, typename CMP>
-__device__ Value pickPivot(noaTNL::Containers::ArrayView<Value, Device> src, const CMP &Cmp)
+__device__ Value pickPivot(noa::TNL::Containers::ArrayView<Value, Device> src, const CMP &Cmp)
 {
     //return src[0];
     //return src[src.getSize()-1];
@@ -50,7 +50,7 @@ __device__ Value pickPivot(noaTNL::Containers::ArrayView<Value, Device> src, con
 }
 
 template <typename Value, typename Device, typename CMP>
-__device__ int pickPivotIdx(noaTNL::Containers::ArrayView<Value, Device> src, const CMP &Cmp)
+__device__ int pickPivotIdx(noa::TNL::Containers::ArrayView<Value, Device> src, const CMP &Cmp)
 {
     //return 0;
     //return src.getSize()-1;
@@ -172,7 +172,7 @@ __device__ void cudaPartition( Containers::ArrayView<Value, Devices::Cuda> src,
     static __shared__ int smallerStart, biggerStart;
 
     int myBegin = elemPerBlock * (blockIdx.x - task.firstBlock);
-    int myEnd = noaTNL::min(myBegin + elemPerBlock, src.getSize());
+    int myEnd = noa::TNL::min(myBegin + elemPerBlock, src.getSize());
 
     auto srcView = src.getView(myBegin, myEnd);
 
@@ -182,10 +182,10 @@ __device__ void cudaPartition( Containers::ArrayView<Value, Devices::Cuda> src,
     countElem(srcView, Cmp, smaller, bigger, pivot);
 
     //synchronization is in this function already
-    using BlockScan = Algorithms::detail::CudaBlockScan< Algorithms::detail::ScanType::Inclusive, 0, noaTNL::Plus, int >;
+    using BlockScan = Algorithms::detail::CudaBlockScan< Algorithms::detail::ScanType::Inclusive, 0, noa::TNL::Plus, int >;
     __shared__ typename BlockScan::Storage storage;
-    int smallerPrefSumInc = BlockScan::scan( noaTNL::Plus{}, 0, smaller, threadIdx.x, storage );
-    int biggerPrefSumInc = BlockScan::scan( noaTNL::Plus{}, 0, bigger, threadIdx.x, storage );
+    int smallerPrefSumInc = BlockScan::scan( noa::TNL::Plus{}, 0, smaller, threadIdx.x, storage );
+    int biggerPrefSumInc = BlockScan::scan( noa::TNL::Plus{}, 0, bigger, threadIdx.x, storage );
 
     if (threadIdx.x == blockDim.x - 1) //last thread in block has sum of all values
     {
@@ -223,4 +223,4 @@ __device__ void cudaPartition( Containers::ArrayView<Value, Devices::Cuda> src,
 
       } // namespace Sorting
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

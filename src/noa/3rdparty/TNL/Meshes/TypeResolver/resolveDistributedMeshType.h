@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -36,6 +36,6 @@ loadDistributedMesh( DistributedMeshes::DistributedMesh< Mesh >& distributedMesh
                      const std::string& fileFormat = "auto" );
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/TypeResolver/resolveDistributedMeshType.hpp>

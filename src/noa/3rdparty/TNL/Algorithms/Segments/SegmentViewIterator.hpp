@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/SegmentView.h>
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -76,4 +76,4 @@ operator*() const -> const SegmentElementType
 
       } // namespace Segments
    } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

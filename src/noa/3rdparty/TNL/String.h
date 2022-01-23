@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief Class for managing strings.
@@ -391,6 +391,6 @@ template<> inline String convertToString( const bool& b )
    return "false";
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/String.hpp>

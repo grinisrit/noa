@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 #include <noa/3rdparty/TNL/Containers/VectorView.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 /**
  * \brief Namespace for different matrix formats.
  */
@@ -237,6 +237,6 @@ std::ostream& operator << ( std::ostream& str, const MatrixView< Real, Device, I
 }
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Matrices/MatrixView.hpp>

@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/String.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief Helper class for the construction of file names based on name, index and extension.
@@ -148,6 +148,6 @@ String getFileExtension( const String fileName );
  */
 String removeFileNameExtension( String fileName );
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/FileName.hpp>

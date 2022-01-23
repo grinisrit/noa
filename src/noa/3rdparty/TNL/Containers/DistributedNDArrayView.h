@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Containers/Subrange.h>
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename NDArrayView >
@@ -374,4 +374,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

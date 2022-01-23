@@ -22,7 +22,7 @@ struct my_error_mgr
 };
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 template< typename Index = int >
@@ -87,7 +87,7 @@ class JPEGImage : public Image< Index >
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Images//JPEGImage_impl.h>
 

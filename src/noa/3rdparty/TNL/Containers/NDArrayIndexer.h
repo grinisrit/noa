@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Containers/ndarray/SizesHolderHelpers.h>   // StorageSizeGetter
 #include <noa/3rdparty/TNL/Containers/ndarray/Subarrays.h>   // DummyStrideBase
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 template< typename SizesHolder,
@@ -114,4 +114,4 @@ protected:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

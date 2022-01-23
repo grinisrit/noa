@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Images//DicomHeader.h>
 #include <stdio.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 inline DicomSeriesInfo::DicomSeriesInfo( DicomHeader &dicomHeader)
@@ -174,4 +174,4 @@ inline const String& DicomSeriesInfo::getAcquisitionTime()
 }
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL

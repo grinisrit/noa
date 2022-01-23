@@ -10,7 +10,7 @@
 
 #include <noa/3rdparty/TNL/Meshes/Writers/FPMAWriter.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
 
@@ -80,4 +80,4 @@ FPMAWriter< Mesh >::writePoints( const Mesh& mesh )
 
 } // namespace Writers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

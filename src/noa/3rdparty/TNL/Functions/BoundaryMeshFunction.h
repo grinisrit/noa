@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Functions/MeshFunction.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {   
 
    
@@ -35,4 +35,4 @@ class BoundaryMeshFunction :
 };
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -8,7 +8,7 @@
 
 #include <noa/3rdparty/TNL/Algorithms/ParallelFor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -116,4 +116,4 @@ class CopyEntitiesHelper<MeshFunctionType,3>
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

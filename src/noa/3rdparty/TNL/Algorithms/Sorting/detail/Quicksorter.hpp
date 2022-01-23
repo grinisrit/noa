@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/Algorithms/reduce.h>
 #include <noa/3rdparty/TNL/Algorithms/scan.h>
 
-namespace noaTNL {
+namespace noa::TNL {
     namespace Algorithms {
         namespace Sorting {
 
@@ -311,7 +311,7 @@ int getSetsNeededFunction(int elemPerBlock, const Quicksorter< Value, Devices::C
         int size = task.partitionEnd - task.partitionBegin;
         return size / elemPerBlock + (size % elemPerBlock != 0);
     };
-    return reduce< Devices::Cuda >( 0, quicksort.host_1stPhaseTasksAmount, fetch, noaTNL::Plus{} );
+    return reduce< Devices::Cuda >( 0, quicksort.host_1stPhaseTasksAmount, fetch, noa::TNL::Plus{} );
 }
 
 template< typename Value >
@@ -395,4 +395,4 @@ processNewTasks()
 
         } // namespace Sorting
     } // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -15,7 +15,7 @@
 
 //#define TNL_DEBUG_SHARED_POINTERS
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Pointers {
 
 /**
@@ -72,7 +72,7 @@ struct Formatter< Pointers::SharedPointer< Object, Device > >
 } // namespace Assert
 #endif
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Pointers/SharedPointerHost.h>
 #include <noa/3rdparty/TNL/Pointers/SharedPointerCuda.h>

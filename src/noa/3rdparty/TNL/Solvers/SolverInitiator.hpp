@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Solvers/SolverStarter.h>
 #include <noa/3rdparty/TNL/Meshes/DummyMesh.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 
 template< template< typename Real, typename Device, typename Index, typename MeshType, typename ConfigTag, typename SolverStarter > class ProblemSetter,
@@ -201,4 +201,4 @@ class SolverInitiatorMeshResolver< ProblemSetter, Real, Device, Index, ConfigTag
 };
 
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

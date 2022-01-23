@@ -15,7 +15,7 @@
 #include <dcmtk/ofstd/ofstring.h>
 #endif
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {   
 
 inline DicomPatientInfo::DicomPatientInfo( DicomHeader &dicomHeader )
@@ -96,4 +96,4 @@ inline const String& DicomPatientInfo::getOrientation()
 }
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL

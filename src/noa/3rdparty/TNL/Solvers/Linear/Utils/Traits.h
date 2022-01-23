@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Containers/DistributedVectorView.h>
 #include <noa/3rdparty/TNL/Matrices/DistributedMatrix.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 
@@ -91,4 +91,4 @@ struct Traits< Matrices::DistributedMatrix< Matrix > >
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

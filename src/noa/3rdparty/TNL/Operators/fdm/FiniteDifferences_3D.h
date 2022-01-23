@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 /****
@@ -472,5 +472,5 @@ class FiniteDifferences<
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

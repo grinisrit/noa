@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Matrices/SparseMatrixRowView.h>
 #include <noa/3rdparty/TNL/Assert.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Matrices {
 
 template< typename SegmentView,
@@ -226,4 +226,4 @@ std::ostream& operator<<( std::ostream& str, const SparseMatrixRowView< SegmentV
 
 
 } // namespace Matrices
-} // namespace noaTNL
+} // namespace noa::TNL

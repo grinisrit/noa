@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Operators/geometric/ExactGradientNorm.h>
 #include <noa/3rdparty/TNL/Operators/Operator.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Operators {   
 
 template< typename Mesh,
@@ -178,5 +178,5 @@ class TwoSidedGradientNorm< Meshes::Grid< 3, MeshReal, Device, MeshIndex >, Real
 };
 
 } // namespace Operators
-} // namespace noaTNL
+} // namespace noa::TNL
 

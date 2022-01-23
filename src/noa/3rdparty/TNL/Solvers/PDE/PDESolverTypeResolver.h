@@ -9,7 +9,7 @@
 #include <noa/3rdparty/TNL/Solvers/PDE/TimeDependentPDESolver.h>
 #include <noa/3rdparty/TNL/Solvers/PDE/TimeIndependentPDESolver.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -40,4 +40,4 @@ class PDESolverTypeResolver< Problem, TimeStepper, false >
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

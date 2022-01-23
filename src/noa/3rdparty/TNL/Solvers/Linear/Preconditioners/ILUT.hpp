@@ -15,7 +15,7 @@
 #include <noa/3rdparty/TNL/Solvers/Linear/Utils/TriangularSolve.h>
 #include <noa/3rdparty/TNL/Timer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 namespace Preconditioners {
@@ -277,4 +277,4 @@ solve( ConstVectorViewType _b, VectorViewType _x ) const
 } // namespace Preconditioners
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

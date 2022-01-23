@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Allocators/Host.h>
 #include <noa/3rdparty/TNL/Allocators/Cuda.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 
 /**
  * \brief This class serves for binary IO. It allows to do IO even for data allocated on GPU together with on-the-fly data type conversion.
@@ -189,6 +189,6 @@ File& operator<<( File& file, const std::string& str );
  */
 File& operator>>( File& file, std::string& str );
 
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/File.hpp>

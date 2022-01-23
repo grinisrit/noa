@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/ChunkedEllpack.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Ellpack.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
@@ -47,7 +47,7 @@ ChunkedEllpack< Device, Index, IndexAllocator, Organization >::
 getSerializationType()
 {
    // FIXME: the serialized data DEPEND on the Organization parameter, so it should be reflected in the serialization type
-   return "ChunkedEllpack< [any_device], " + noaTNL::getSerializationType< IndexType >() + " >";
+   return "ChunkedEllpack< [any_device], " + noa::TNL::getSerializationType< IndexType >() + " >";
 }
 
 template< typename Device,
@@ -191,7 +191,7 @@ setSlice( SegmentsSizes& rowLengths,
    for( IndexType i = sliceBegin; i < sliceEnd; i++ )
    {
       TNL_ASSERT_NE( this->rowToChunkMapping[ i ], 0, "" );
-      maxChunkInSlice = noaTNL::max( maxChunkInSlice,
+      maxChunkInSlice = noa::TNL::max( maxChunkInSlice,
                               roundUpDivision( rowLengths[ i ], this->rowToChunkMapping[ i ] ) );
    }
 
@@ -518,4 +518,4 @@ printStructure( std::ostream& str )
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

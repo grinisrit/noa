@@ -13,7 +13,7 @@
 #include <noa/3rdparty/TNL/Meshes/TypeResolver/MeshTypeResolver.h>
 #include <noa/3rdparty/TNL/Meshes/Readers/getMeshReader.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 template< typename ConfigTag,
@@ -112,4 +112,4 @@ loadMesh( Mesh< MeshConfig, Devices::Cuda >& mesh,
 }
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

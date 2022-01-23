@@ -12,7 +12,7 @@
 #include <noa/3rdparty/TNL/File.h>
 #include <noa/3rdparty/TNL/TypeInfo.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 namespace detail {
 
@@ -31,8 +31,8 @@ struct ArrayIO< Value, Index, Allocator, true >
    static String getSerializationType()
    {
       return String( "Containers::Array< " ) +
-             noaTNL::getSerializationType< Value >() + ", [any_device], " +
-             noaTNL::getSerializationType< Index >() + ", [any_allocator] >";
+             noa::TNL::getSerializationType< Value >() + ", [any_device], " +
+             noa::TNL::getSerializationType< Index >() + ", [any_allocator] >";
    }
 
    static void save( File& file,
@@ -76,8 +76,8 @@ struct ArrayIO< Value, Index, Allocator, false >
    static String getSerializationType()
    {
       return String( "Containers::Array< " ) +
-             noaTNL::getSerializationType< Value >() + ", [any_device], " +
-             noaTNL::getSerializationType< Index >() + ", [any_allocator] >";
+             noa::TNL::getSerializationType< Value >() + ", [any_device], " +
+             noa::TNL::getSerializationType< Index >() + ", [any_allocator] >";
    }
 
    static void save( File& file,
@@ -115,4 +115,4 @@ struct ArrayIO< Value, Index, Allocator, false >
 
 } // namespace detail
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL

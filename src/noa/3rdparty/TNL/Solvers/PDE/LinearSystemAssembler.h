@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Functions/FunctionAdapter.h>
 #include <noa/3rdparty/TNL/Meshes/Traverser.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
@@ -197,4 +197,4 @@ protected:
 
 } // namespace PDE
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

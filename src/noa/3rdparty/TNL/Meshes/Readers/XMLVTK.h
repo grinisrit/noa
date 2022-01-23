@@ -21,7 +21,7 @@
 #include <noa/3rdparty/tinyxml2.hh>
 
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
 
@@ -43,7 +43,7 @@ class XMLVTK
 {
 #ifdef HAVE_TINYXML2
 protected:
-   static void verifyElement( const noaTinyxml2::XMLElement* elem, const std::string name )
+   static void verifyElement( const noa::tinyxml2::XMLElement* elem, const std::string name )
    {
       if( ! elem )
          throw MeshReaderError( "XMLVTK", "tag <" + name + "> not found" );
@@ -51,11 +51,11 @@ protected:
          throw MeshReaderError( "XMLVTK", "invalid XML format - expected a <" + name + "> element, got <" + elem->Name() + ">" );
    }
 
-   static const noaTinyxml2::XMLElement*
-   verifyHasOnlyOneChild( const noaTinyxml2::XMLElement* parent, const std::string childName = "" )
+   static const noa::tinyxml2::XMLElement*
+   verifyHasOnlyOneChild( const noa::tinyxml2::XMLElement* parent, const std::string childName = "" )
    {
       const std::string parentName = parent->Name();
-      const noaTinyxml2::XMLElement* elem = parent->FirstChildElement();
+      const noa::tinyxml2::XMLElement* elem = parent->FirstChildElement();
       if( ! childName.empty() )
          verifyElement( elem, childName );
       else if( ! elem )
@@ -66,7 +66,7 @@ protected:
    }
 
    static std::string
-   getAttributeString( const noaTinyxml2::XMLElement* elem, std::string name, std::string defaultValue = "" )
+   getAttributeString( const noa::tinyxml2::XMLElement* elem, std::string name, std::string defaultValue = "" )
    {
       const char* attribute = nullptr;
       attribute = elem->Attribute( name.c_str() );
@@ -78,35 +78,35 @@ protected:
    }
 
    static std::int64_t
-   getAttributeInteger( const noaTinyxml2::XMLElement* elem, std::string name )
+   getAttributeInteger( const noa::tinyxml2::XMLElement* elem, std::string name )
    {
       std::int64_t value;
-      noaTinyxml2::XMLError status = elem->QueryInt64Attribute( name.c_str(), &value );
-      if( status != noaTinyxml2::XML_SUCCESS )
+      noa::tinyxml2::XMLError status = elem->QueryInt64Attribute( name.c_str(), &value );
+      if( status != noa::tinyxml2::XML_SUCCESS )
          throw MeshReaderError( "XMLVTK", "element <" + std::string(elem->Name()) + "> does not have the attribute '" + name + "' or it could not be converted to int64_t" );
       return value;
    }
 
    static std::int64_t
-   getAttributeInteger( const noaTinyxml2::XMLElement* elem, std::string name, int64_t defaultValue )
+   getAttributeInteger( const noa::tinyxml2::XMLElement* elem, std::string name, int64_t defaultValue )
    {
       std::int64_t value;
-      noaTinyxml2::XMLError status = elem->QueryInt64Attribute( name.c_str(), &value );
-      if( status != noaTinyxml2::XML_SUCCESS )
+      noa::tinyxml2::XMLError status = elem->QueryInt64Attribute( name.c_str(), &value );
+      if( status != noa::tinyxml2::XML_SUCCESS )
          return defaultValue;
       return value;
    }
 
-   static const noaTinyxml2::XMLElement*
-   getChildSafe( const noaTinyxml2::XMLElement* parent, std::string name )
+   static const noa::tinyxml2::XMLElement*
+   getChildSafe( const noa::tinyxml2::XMLElement* parent, std::string name )
    {
-      const noaTinyxml2::XMLElement* child = parent->FirstChildElement( name.c_str() );
+      const noa::tinyxml2::XMLElement* child = parent->FirstChildElement( name.c_str() );
       verifyElement( child, name );
       return child;
    }
 
    static void
-   verifyDataArray( const noaTinyxml2::XMLElement* elem, std::string elemName = "DataArray" )
+   verifyDataArray( const noa::tinyxml2::XMLElement* elem, std::string elemName = "DataArray" )
    {
       // the elemName parameter is necessary due to parallel formats using "PDataArray"
       verifyElement( elem, elemName.c_str() );
@@ -129,11 +129,11 @@ protected:
          throw MeshReaderError( "XMLVTK", "unsupported NumberOfComponents in " + elemName + ": " + NumberOfComponents );
    }
 
-   static const noaTinyxml2::XMLElement*
-   getDataArrayByName( const noaTinyxml2::XMLElement* parent, std::string name )
+   static const noa::tinyxml2::XMLElement*
+   getDataArrayByName( const noa::tinyxml2::XMLElement* parent, std::string name )
    {
-      const noaTinyxml2::XMLElement* found = nullptr;
-      const noaTinyxml2::XMLElement* child = parent->FirstChildElement( "DataArray" );
+      const noa::tinyxml2::XMLElement* found = nullptr;
+      const noa::tinyxml2::XMLElement* child = parent->FirstChildElement( "DataArray" );
       while( child != nullptr ) {
          verifyElement( child, "DataArray" );
          std::string arrayName;
@@ -247,7 +247,7 @@ protected:
    }
 
    VariantVector
-   readDataArray( const noaTinyxml2::XMLElement* elem, std::string arrayName ) const
+   readDataArray( const noa::tinyxml2::XMLElement* elem, std::string arrayName ) const
    {
       verifyElement( elem, "DataArray" );
       const char* block = elem->GetText();
@@ -286,14 +286,14 @@ protected:
    VariantVector
    readPointOrCellData( std::string sectionName, std::string arrayName )
    {
-      const noaTinyxml2::XMLElement* piece = getChildSafe( datasetElement, "Piece" );
+      const noa::tinyxml2::XMLElement* piece = getChildSafe( datasetElement, "Piece" );
       if( piece->NextSiblingElement( "Piece" ) )
          // ambiguity - throw error, we don't know which piece to parse
          throw MeshReaderError( "XMLVTK", "the dataset element <" + fileType + "> contains more than one <Piece> element" );
-      const noaTinyxml2::XMLElement* pointData = getChildSafe( piece, sectionName.c_str() );
+      const noa::tinyxml2::XMLElement* pointData = getChildSafe( piece, sectionName.c_str() );
       if( pointData->NextSiblingElement( sectionName.c_str() ) )
          throw MeshReaderError( "XMLVTK", "the <Piece> element contains more than one <" + sectionName + "> element" );
-      const noaTinyxml2::XMLElement* dataArray = getDataArrayByName( pointData, arrayName.c_str() );
+      const noa::tinyxml2::XMLElement* dataArray = getDataArrayByName( pointData, arrayName.c_str() );
       return readDataArray( dataArray, arrayName.c_str() );
    }
 #endif
@@ -316,7 +316,7 @@ public:
    void openVTKFile()
    {
 #ifdef HAVE_TINYXML2
-      using namespace noaTinyxml2;
+      using namespace noa::tinyxml2;
 
       namespace fs = std::filesystem;
       if( ! fs::exists( fileName ) )
@@ -325,7 +325,7 @@ public:
          throw MeshReaderError( "XMLVTK", "path '" + fileName + "' is a directory" );
 
       // load and verify XML
-      noaTinyxml2::XMLError status = dom.LoadFile( fileName.c_str() );
+      noa::tinyxml2::XMLError status = dom.LoadFile( fileName.c_str() );
       if( status != XML_SUCCESS )
          throw MeshReaderError( "XMLVTK", "failed to parse the file " + fileName + " as an XML document." );
 
@@ -403,13 +403,13 @@ protected:
 
 #ifdef HAVE_TINYXML2
    // internal attribute representing the whole XML file
-   noaTinyxml2::XMLDocument dom;
+   noa::tinyxml2::XMLDocument dom;
 
    // pointer to the main XML element (e.g. <UnstructuredGrid>)
-   const noaTinyxml2::XMLElement* datasetElement = nullptr;
+   const noa::tinyxml2::XMLElement* datasetElement = nullptr;
 #endif
 };
 
 } // namespace Readers
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

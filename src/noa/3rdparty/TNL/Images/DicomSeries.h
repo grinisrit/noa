@@ -25,7 +25,7 @@
 #include <dirent.h>
 #include <string>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Images {
 
 struct WindowCenterWidth
@@ -111,7 +111,7 @@ class DicomSeries : public Image< int >
 };
 
 } // namespace Images
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Images//DicomSeries_impl.h>
 

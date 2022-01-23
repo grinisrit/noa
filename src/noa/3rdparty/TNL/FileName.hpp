@@ -15,7 +15,7 @@
 
 #include "FileName.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 
 inline FileName::FileName()
 : index( 0 ), digitsCount( 5 )
@@ -110,4 +110,4 @@ inline String removeFileNameExtension( String fileName )
    return fileName;
 }
 
-} // namespace noaTNL
+} // namespace noa::TNL

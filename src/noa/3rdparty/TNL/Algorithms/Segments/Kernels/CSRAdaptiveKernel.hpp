@@ -14,13 +14,13 @@
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/CSRScalarKernel.h>
 #include <noa/3rdparty/TNL/Algorithms/Segments/Kernels/details/CSRAdaptiveKernelBlockDescriptor.h>
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
 
 template< typename Index,
           typename Device >
-noaTNL::String
+noa::TNL::String
 CSRAdaptiveKernel< Index, Device >::
 getKernelType()
 {
@@ -154,7 +154,7 @@ void
 CSRAdaptiveKernel< Index, Device >::
 initValueSize( const Offsets& offsets )
 {
-   using HostOffsetsType = noaTNL::Containers::Vector< typename Offsets::IndexType, noaTNL::Devices::Host, typename Offsets::IndexType >;
+   using HostOffsetsType = noa::TNL::Containers::Vector< typename Offsets::IndexType, noa::TNL::Devices::Host, typename Offsets::IndexType >;
    HostOffsetsType hostOffsets( offsets );
    const Index rows = offsets.getSize();
    Index start( 0 ), nextStart( 0 );
@@ -171,7 +171,7 @@ initValueSize( const Offsets& offsets )
       if( type == detail::Type::LONG )
       {
          const Index blocksCount = inBlocks.size();
-         const Index warpsPerCudaBlock = detail::CSRAdaptiveKernelParameters< SizeOfValue >::CudaBlockSize() / noaTNL::Cuda::getWarpSize();
+         const Index warpsPerCudaBlock = detail::CSRAdaptiveKernelParameters< SizeOfValue >::CudaBlockSize() / noa::TNL::Cuda::getWarpSize();
          Index warpsLeft = roundUpDivision( blocksCount, warpsPerCudaBlock ) * warpsPerCudaBlock - blocksCount;
          if( warpsLeft == 0 )
             warpsLeft = warpsPerCudaBlock;
@@ -193,4 +193,4 @@ initValueSize( const Offsets& offsets )
 
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

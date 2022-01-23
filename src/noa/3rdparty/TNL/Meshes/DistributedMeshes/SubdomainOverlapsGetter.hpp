@@ -10,7 +10,7 @@
 #include <noa/3rdparty/TNL/Assert.h>
 #include <noa/3rdparty/TNL/Meshes/Grid.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -191,4 +191,4 @@ getOverlaps( const DistributedMeshType* distributedMesh,
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

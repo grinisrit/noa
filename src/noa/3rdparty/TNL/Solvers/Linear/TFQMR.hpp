@@ -10,7 +10,7 @@
 
 #include "TFQMR.h"
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Solvers {
 namespace Linear {
 
@@ -127,4 +127,4 @@ void TFQMR< Matrix > :: setSize( const VectorViewType& x )
 
 } // namespace Linear
 } // namespace Solvers
-} // namespace noaTNL
+} // namespace noa::TNL

@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid2D.h>
 #include <noa/3rdparty/TNL/Meshes/GridDetails/Grid3D.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 
 /****
@@ -489,4 +489,4 @@ class GridEntityGetter< Meshes::Grid< 3, Real, Device, Index >, GridEntity, 0 >
 };
 
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL

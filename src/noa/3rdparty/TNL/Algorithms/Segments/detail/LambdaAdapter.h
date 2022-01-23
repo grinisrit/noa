@@ -8,7 +8,7 @@
 
 #include "CheckLambdas.h"
 
-namespace noaTNL {
+namespace noa::TNL {
    namespace Algorithms {
       namespace Segments {
          namespace detail {
@@ -49,4 +49,4 @@ struct FetchLambdaAdapter< Index, Lambda, false >
          } // namespace detail
       } // namespace Segments
    }  // namespace Algorithms
-} // namespace noaTNL
+} // namespace noa::TNL

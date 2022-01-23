@@ -11,7 +11,7 @@
 #include <noa/3rdparty/TNL/Functions/Domain.h>
 #include <noa/3rdparty/TNL/Pointers/SharedPointer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Functions {
 
 template< typename Mesh,
@@ -125,6 +125,6 @@ template< typename Mesh,
 std::ostream& operator << ( std::ostream& str, const MeshFunction< Mesh, MeshEntityDimension, Real >& f );
 
 } // namespace Functions
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Functions/MeshFunction.hpp>

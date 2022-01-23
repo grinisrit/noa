@@ -14,7 +14,7 @@
 #include <noa/3rdparty/TNL/Matrices/DenseMatrix.h>
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Meshes {
 namespace DistributedMeshes {
 
@@ -503,6 +503,6 @@ protected:
 
 } // namespace DistributedMeshes
 } // namespace Meshes
-} // namespace noaTNL
+} // namespace noa::TNL
 
 #include <noa/3rdparty/TNL/Meshes/DistributedMeshes/DistributedGridSynchronizer.h>

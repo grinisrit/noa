@@ -16,7 +16,7 @@
 #include <noa/3rdparty/TNL/MPI/Wrappers.h>
 #include <noa/3rdparty/TNL/Timer.h>
 
-namespace noaTNL {
+namespace noa::TNL {
 namespace Containers {
 
 enum class SyncDirection : std::uint8_t {
@@ -446,4 +446,4 @@ public:
 };
 
 } // namespace Containers
-} // namespace noaTNL
+} // namespace noa::TNL
