@@ -28,9 +28,9 @@
 
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 
-namespace noa::pumas {
+namespace noa {
 
 #include "noa/3rdparty/_pumas/pumas.h"
 

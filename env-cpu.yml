@@ -11,3 +11,4 @@ dependencies:
   - pip:
     - pythreejs
     - pyvista
+    - meshio
