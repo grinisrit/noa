@@ -89,11 +89,11 @@ problems arising in computational fluid dynamics.
 When referring to this library in scientific work please cite
 
 ```
-@article{grinis2021diffprog,
+@article{grinis2022diffprog,
   title={Differentiable programming for particle physics simulations},
   author={Roland Grinis},
-  journal={preprint arXiv:2108.10245 to appear in JETP},
-  year={2021}
+  journal={JETP Vol. 161 (2)},
+  year={2022}
 }
 ```
 

@@ -1,11 +1,13 @@
 #include <noa/utils/meshes.hh>
-#include <noa/3rdparty/pumas.hh>
+#include <noa/pms/pumas.hh>
 
 #include <gflags/gflags.h>
 
 
 DEFINE_string(materials, "pumas-materials", "Path to PUMAS materials data");
-DEFINE_string(mesh, "noa-test-data/meshes/mesh.vtu", "Path to tetrahedron mesh");
+DEFINE_string(mesh, "mesh.vtu", "Path to tetrahedron mesh");
+
+using namespace noa;
 
 
 auto main(int argc, char **argv) -> int {
@@ -14,14 +16,13 @@ auto main(int argc, char **argv) -> int {
 
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    auto meshOpt = noa::utils::meshes::load_tetrahedron_mesh(FLAGS_mesh);
-    if (!meshOpt.has_value()){
-        return 1;
-    }
-    auto& mesh = meshOpt.value();
-    std::cout << mesh.getMeshDimension() << "\n";
+    auto meshOpt = utils::meshes::load_tetrahedron_mesh(FLAGS_mesh);
 
-    std::cout << noa::PUMAS_MODE_BACKWARD << std::endl;
+    const auto material_dir = utils::Path{FLAGS_materials};
+    const auto mdf_file = material_dir / "mdf" / "examples" / "standard.xml";
+    const auto dedx_dir = material_dir / "dedx";
+
+    const auto modelOpt = pms::pumas::MuonModel::load_from_mdf(mdf_file, dedx_dir);
 
     gflags::ShutDownCommandLineFlags();
 
