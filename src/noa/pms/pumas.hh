@@ -37,6 +37,7 @@ namespace noa::pms::pumas {
         using PhysicsModelOpt = std::optional<PhysicsModel>;
         using MDFPath = utils::Path;
         using DEDXPath = utils::Path;
+        using DumpPath = utils::Path;
 
         friend ParticleModel;
 
@@ -55,13 +56,6 @@ namespace noa::pms::pumas {
         }
 
     public:
-        inline static PhysicsModelOpt load_from_mdf(
-                const MDFPath &mdf_path,
-                const DEDXPath &dedx_path) {
-            auto model = ParticleModel{};
-            const auto status = model.create_physics(mdf_path, dedx_path);
-            return status ? PhysicsModelOpt{std::move(model)} : PhysicsModelOpt{};
-        }
 
         PhysicsModel(const PhysicsModel &other) = delete;
 
@@ -83,6 +77,28 @@ namespace noa::pms::pumas {
             pumas_physics_destroy(&physics);
             physics = nullptr;
         }
+
+        inline utils::Status save_binary(const DumpPath &dump_path) const {
+
+            auto handle = fopen(dump_path.c_str(), "wb");
+            if (handle != nullptr) {
+                pumas_physics_dump(physics, handle);
+                fclose(handle);
+            } else {
+                std::cerr << "Failed to open " << dump_path << "\n";
+                return false;
+            }
+            return true;
+        }
+
+        inline static PhysicsModelOpt load_from_mdf(
+                const MDFPath &mdf_path,
+                const DEDXPath &dedx_path) {
+            auto model = ParticleModel{};
+            const auto status = model.create_physics(mdf_path, dedx_path);
+            return status ? PhysicsModelOpt{std::move(model)} : PhysicsModelOpt{};
+        }
+
     };
 
     class MuonModel : public PhysicsModel<MuonModel> {

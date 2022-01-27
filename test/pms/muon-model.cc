@@ -5,6 +5,7 @@
 
 
 DEFINE_string(materials, "pumas-materials", "Path to PUMAS materials data");
+DEFINE_string(binary_model, "materials.pumas", "Pre-computed PUMAS materials model");
 DEFINE_string(mesh, "mesh.vtu", "Path to tetrahedron mesh");
 
 using namespace noa;
@@ -23,6 +24,10 @@ auto main(int argc, char **argv) -> int {
     const auto dedx_dir = material_dir / "dedx";
 
     const auto modelOpt = pms::pumas::MuonModel::load_from_mdf(mdf_file, dedx_dir);
+    if (!modelOpt.has_value()) return 1;
+
+    const auto &model = modelOpt.value();
+    model.save_binary(FLAGS_binary_model);
 
     gflags::ShutDownCommandLineFlags();
 
