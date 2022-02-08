@@ -84,7 +84,7 @@ in the passage of particles through matter simulations.
 * [CFD](docs/cfd) implements adjoint sensitivity models for a variety 
 problems arising in computational fluid dynamics.
 * [QUANT](docs/quant) is a sensitivity analysis framework for derivative 
-pricing models
+pricing models.
 
 ## Acknowledgments
 
