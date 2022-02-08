@@ -17,7 +17,7 @@ pipelines, as well as portfolio and margin optimisation platforms.
 
 :warning: This component is under active development.
 
-Hands-on the `noa::quant` component:
+Hands-on tutorials:
 
 * [Introduction: the BSM model](bsm.ipynb) is great place to start 
 providing even newcomers with the necessary option pricing background.
