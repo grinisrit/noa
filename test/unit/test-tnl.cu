@@ -1,7 +1,10 @@
 #define HAVE_CUDA
 
+#include "test-tnl.hh"
+
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/Containers/ArrayView.h>
+#include <noa/3rdparty/TNL/Timer.h>
 #include <torch/torch.h>
 
 #include <gtest/gtest.h>
@@ -22,4 +25,8 @@ TEST(TNL, TensorBlobCUDA) {
 
     ASSERT_EQ(tnl_view.getElement(1), 10.f);
     ASSERT_EQ(tnl_view.getElement(2), 5.f);
+}
+
+TEST(TNL, MapReduceCUDA) {
+    map_reduce_test<float, Devices::Cuda>(torch::dtype<float>().device(torch::kCUDA,0));
 }

@@ -1,5 +1,8 @@
+#include "test-tnl.hh"
+
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/Containers/ArrayView.h>
+
 #include <torch/torch.h>
 
 #include <gtest/gtest.h>
@@ -19,4 +22,8 @@ TEST(TNL, TensorBlob){
 
     ASSERT_EQ(tnl_view.getElement(1), 10.0);
     ASSERT_EQ(tnl_view.getElement(2), 5.0);
+}
+
+TEST(TNL, MapReduce){
+    map_reduce_test<float, Devices::Host>(torch::dtype<float>());
 }
