@@ -1,6 +1,7 @@
+#pragma once
+
 #include <noa/3rdparty/TNL/Containers/Vector.h>
 #include <noa/3rdparty/TNL/Algorithms/reduce.h>
-#include <noa/3rdparty/TNL/Timer.h>
 
 #include <torch/torch.h>
 #include <gtest/gtest.h>

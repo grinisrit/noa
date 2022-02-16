@@ -4,7 +4,7 @@
 
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/Containers/ArrayView.h>
-#include <noa/3rdparty/TNL/Timer.h>
+
 #include <torch/torch.h>
 
 #include <gtest/gtest.h>
