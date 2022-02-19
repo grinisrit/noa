@@ -48,6 +48,18 @@ namespace noa::pms::dcs {
     }
 
     template<typename DCSFunc>
+    inline auto map(const DCSFunc &dcs_func) {
+        return [&dcs_func](const Energies &kinetic_energies,
+                           const Energies &recoil_energies,
+                           const AtomicElement &element,
+                           const AtomicMass &mass) {
+            const auto result = torch::zeros_like(kinetic_energies);
+            vmap(dcs_func)(result, kinetic_energies, recoil_energies, element, mass);
+            return result;
+        };
+    }
+
+    template<typename DCSFunc>
     inline auto pvmap(const DCSFunc &dcs_func) {
         return [&dcs_func](const Calculation &result,
                            const Energies &kinetic_energies,
@@ -59,6 +71,18 @@ namespace noa::pms::dcs {
                     kinetic_energies,
                     [&](const int64_t i, const auto &k) { return dcs_func(k, recoil_energy[i], element, mass); },
                     result);
+        };
+    }
+
+    template<typename DCSFunc>
+    inline auto pmap(const DCSFunc &dcs_func) {
+        return [&dcs_func](const Energies &kinetic_energies,
+                           const Energies &recoil_energies,
+                           const AtomicElement &element,
+                           const AtomicMass &mass) {
+            const auto result = torch::zeros_like(kinetic_energies);
+            pvmap(dcs_func)(result, kinetic_energies, recoil_energies, element, mass);
+            return result;
         };
     }
 
@@ -981,6 +1005,12 @@ namespace noa::pms::dcs {
 
         void vmap_bremsstrahlung(
                 const Calculation &result,
+                const Energies &kinetic_energies,
+                const Energies &recoil_energies,
+                const AtomicElement &element,
+                const ParticleMass &mass);
+
+        Calculation map_bremsstrahlung(
                 const Energies &kinetic_energies,
                 const Energies &recoil_energies,
                 const AtomicElement &element,

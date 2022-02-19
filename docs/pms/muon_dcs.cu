@@ -6,9 +6,7 @@ using namespace noa::pms;
 using namespace noa::utils;
 
 inline torch::Tensor bremsstrahlung(torch::Tensor kinetic_energies, torch::Tensor recoil_energies) {
-    const auto result = torch::zeros_like(kinetic_energies);
-    dcs::cuda::vmap_bremsstrahlung(result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
-    return result;
+    return dcs::cuda::map_bremsstrahlung(kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
 }
 
 
