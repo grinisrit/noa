@@ -30,3 +30,7 @@ TEST(TNL, TensorBlobCUDA) {
 TEST(TNL, MapReduceCUDA) {
     map_reduce_test<float, Devices::Cuda>(torch::dtype<float>().device(torch::kCUDA,0));
 }
+
+TEST(TNL, SparseCSRCUDA){
+    create_csr_matrix<float, Devices::Cuda>(torch::dtype<float>().device(torch::kCUDA,0));
+}
