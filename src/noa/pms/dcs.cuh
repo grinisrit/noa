@@ -39,3 +39,13 @@ void noa::pms::dcs::cuda::vmap_bremsstrahlung(
     };
     utils::cuda::vmapi<Scalar>(kinetic_energies, brems, result);
 }
+
+noa::pms::Calculation noa::pms::dcs::cuda::map_bremsstrahlung(
+        const Energies &kinetic_energies,
+        const Energies &recoil_energies,
+        const AtomicElement &element,
+        const ParticleMass &mass) {
+    const auto result = torch::zeros_like(kinetic_energies);
+    vmap_bremsstrahlung(result, kinetic_energies, recoil_energies, element, mass);
+    return result;
+}

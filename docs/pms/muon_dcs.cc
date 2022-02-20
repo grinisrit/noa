@@ -6,31 +6,24 @@ using namespace noa::pms;
 using namespace noa::utils;
 
 inline Tensor bremsstrahlung(Tensor kinetic_energies, Tensor recoil_energies) {
-    const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap(dcs::bremsstrahlung)(
-            result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
-    return result;
+    return dcs::map(dcs::bremsstrahlung)(
+        kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
+  
 }
 
 inline Tensor pair_production(Tensor kinetic_energies, Tensor recoil_energies) {
-    const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap(dcs::pair_production)(
-            result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
-    return result;
+    return dcs::map(dcs::pair_production)(
+        kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
 }
 
 inline Tensor photonuclear(Tensor kinetic_energies, Tensor recoil_energies) {
-    const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap(dcs::photonuclear)(
-            result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
-    return result;
+    return dcs::map(dcs::photonuclear)(
+        kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
 }
 
 inline Tensor ionisation(Tensor kinetic_energies, Tensor recoil_energies) {
-    const auto result = torch::zeros_like(kinetic_energies);
-    dcs::vmap(dcs::ionisation)(
-            result, kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
-    return result;
+    return dcs::map(dcs::ionisation)(
+        kinetic_energies, recoil_energies, STANDARD_ROCK, MUON_MASS);
 }
 
 inline void serialise(Tensor tensor, std::string path) {
