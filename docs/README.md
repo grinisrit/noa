@@ -11,12 +11,21 @@ and usage cases are discussed, for each component:
   in the passage of particles through matter simulations.
 * [CFD](cfd/README.md) implements adjoint sensitivity models for a variety
   problems arising in computational fluid dynamics.
-* [QUANT](quant/README.md) is a sensitivity analysis framework for derivative
-  pricing models.
+* [QUANT](quant/README.md) a differentiable derivative
+  pricing library.
 
 ## Notebooks set-up
 
 Many examples are provided as `python` jupyter notebooks. 
+
+We provide a `conda` environment [docs.yml](../docs.yml) 
+containing all the required dependencies:
+
+```
+$ conda env create -f docs.yml
+$ conda activate noa-docs
+```
+
 If you want to run them on
 [Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb)
 or [Datalore](https://datalore.jetbrains.com/notebooks)

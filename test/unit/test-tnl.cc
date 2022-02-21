@@ -3,6 +3,7 @@
 #include <noa/3rdparty/TNL/Containers/Array.h>
 #include <noa/3rdparty/TNL/Containers/ArrayView.h>
 
+
 #include <torch/torch.h>
 
 #include <gtest/gtest.h>
@@ -26,4 +27,8 @@ TEST(TNL, TensorBlob){
 
 TEST(TNL, MapReduce){
     map_reduce_test<float, Devices::Host>(torch::dtype<float>());
+}
+
+TEST(TNL, SparseCSR){
+    create_csr_matrix<float, Devices::Host>(torch::dtype<float>());
 }

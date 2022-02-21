@@ -4,13 +4,7 @@ channels:
   - pytorch
 dependencies:
   - cmake
-  - jupyter
+  - ninja
   - python=3.9
   - pytorch
   - cpuonly # CPU only version for LibTorch
-  - seaborn
-  - pip:
-    - pythreejs
-    - pyvista
-    - meshio
-    - dqc
