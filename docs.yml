@@ -1,0 +1,15 @@
+name: noa-docs
+channels:
+  - defaults
+dependencies:
+  - cmake
+  - jupyter
+  - ninja
+  - python=3.9
+  - pip
+  - seaborn
+  - pip:
+      - torch
+      - pythreejs
+      - pyvista
+      - meshio

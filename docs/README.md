@@ -17,6 +17,15 @@ and usage cases are discussed, for each component:
 ## Notebooks set-up
 
 Many examples are provided as `python` jupyter notebooks. 
+
+We provide a `conda` environment [docs.yml](../docs.yml) 
+containing all the required dependencies:
+
+```
+$ conda env create -f docs.yml
+$ conda activate noa-docs
+```
+
 If you want to run them on
 [Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb)
 or [Datalore](https://datalore.jetbrains.com/notebooks)
