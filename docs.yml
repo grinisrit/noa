@@ -2,8 +2,10 @@ name: noa-docs
 channels:
   - defaults
 dependencies:
+  - blas
   - cmake
   - jupyter
+  - mkl
   - ninja
   - python=3.9
   - pip
