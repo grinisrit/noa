@@ -4,6 +4,7 @@ channels:
   - pytorch
 dependencies:
   - cmake
+  - ninja
   - python=3.9
   - pytorch
   - cpuonly # CPU only version for LibTorch
