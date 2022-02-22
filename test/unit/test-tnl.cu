@@ -24,3 +24,7 @@ TEST(TNL, DenseMatTransferCUDA){
 TEST(TNL, SparseCSRTransferCUDA){
     create_csr_matrix<float, Devices::Cuda>(torch::dtype<float>().device(torch::kCUDA,0));
 }
+
+TEST(TNL, JacobiSolverCUDA){
+    jacobi_test<float, Devices::Cuda>(torch::dtype<float>().device(torch::kCUDA,0));
+}

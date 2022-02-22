@@ -21,6 +21,10 @@ TEST(TNL, DenseMatTransfer){
     create_dense_matrix<float, Devices::Host>(torch::dtype<float>());
 }
 
-TEST(TNL, SparseTransferCSR){
+TEST(TNL, SparseCSRTransfer){
     create_csr_matrix<float, Devices::Host>(torch::dtype<float>());
+}
+
+TEST(TNL, JacobiSolver){
+    jacobi_test<float, Devices::Host>(torch::dtype<float>());
 }
