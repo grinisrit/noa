@@ -81,7 +81,7 @@ template< typename DistributedNDArray,
 class DistributedNDArraySynchronizer
 {
 private:
-   // NOTE: noaAsync::threadpool has alignment requirements, which causes problems:
+   // NOTE: async::threadpool has alignment requirements, which causes problems:
    //  - it may become misaligned in derived classes, see e.g.
    //    https://stackoverflow.com/a/46475498
    //    solution: specify it as the first member of the base class
@@ -90,7 +90,7 @@ private:
    //    solution: relaxed alignment requirements to not exceed the value of
    //    alignof(std::max_align_t), which is the strongest alignment supported
    //    by plain new. See https://github.com/d36u9/async/pull/2
-   noaAsync::threadpool tp;
+   async::threadpool tp;
 
    int gpu_id = 0;
 
