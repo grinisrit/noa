@@ -12,6 +12,21 @@ using namespace noa::TNL::Algorithms;
 using namespace noa::TNL::Matrices;
 
 template<typename Dtype, typename Device>
+void tensor_blob_test(const torch::TensorOptions &tensor_opt){
+    // Array
+    Array< Dtype, Device > tnl_array( 3 );
+    tnl_array = 5.0;
+
+    const auto tensor = torch::from_blob(tnl_array.getData(), {3}, tensor_opt);
+
+    ArrayView<Dtype, Device> tnl_view(tensor.template data_ptr<Dtype>(),3);
+    tensor[1] = (Dtype) 10.0;
+
+    ASSERT_EQ(tnl_view.getElement(1), 10.0);
+    ASSERT_EQ(tnl_view.getElement(2), 5.0);
+}
+
+template<typename Dtype, typename Device>
 Dtype map_reduce(const VectorView<Dtype, Device> &u_view) {
     auto fetch = [=] __cuda_callable__(int i) -> Dtype {
         return u_view[2 * i];
@@ -29,6 +44,15 @@ void map_reduce_test(const torch::TensorOptions &tensor_opts) {
 }
 
 template<typename Dtype, typename Device>
+void create_dense_matrix(const torch::TensorOptions &tensor_opts) {
+
+    const auto tensor = torch::randn({3,3}, tensor_opts);
+    const auto matrix = wrapDenseMatrix<Device>(3, 3, tensor.data_ptr<Dtype>());
+    tensor[1][1] = (Dtype) 10.0;
+    ASSERT_EQ(matrix.getElement(1, 1), (Dtype) 10.0);
+}
+
+template<typename Dtype, typename Device>
 void create_csr_matrix(const torch::TensorOptions &tensor_opts) {
     const auto crow_indices = torch::tensor({0, 2, 4},
                                             torch::dtype(torch::kInt32).device(tensor_opts.device()));
@@ -40,5 +64,8 @@ void create_csr_matrix(const torch::TensorOptions &tensor_opts) {
                                            values.data_ptr<Dtype>(),
                                            col_indices.data_ptr<int>());
 
-    ASSERT_EQ(csr.getElement(0, 1), 2.0);
+    ASSERT_EQ(csr.getElement(0, 1), (Dtype) 2.0);
+
+    values[1] = (Dtype) 10.0;
+    ASSERT_EQ(csr.getElement(0, 1), (Dtype) 10.0);
 }
