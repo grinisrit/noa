@@ -104,6 +104,7 @@ void jacobi_test(const torch::TensorOptions &tensor_opts) {
     matrix->vectorProduct(x0, b);
 
     auto solver = Jacobi<SparseMatrixView<Dtype, Device>>{};
+    solver.setOmega(0.75);
     solver.setMatrix(matrix);
     solver.solve(b, x);
 
