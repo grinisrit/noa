@@ -62,10 +62,10 @@ void create_csr_matrix(const torch::TensorOptions &tensor_opts) {
     const auto col_indices = torch::tensor({0, 1, 0, 1},
                                            torch::dtype(torch::kInt32).device(tensor_opts.device()));
     const auto values = torch::tensor({1, 2, 3, 4}, tensor_opts);
-    const auto csr = wrapCSRMatrix<Device>(2, 2,
-                                           crow_indices.data_ptr<int>(),
-                                           values.data_ptr<Dtype>(),
-                                           col_indices.data_ptr<int>());
+    auto csr = wrapCSRMatrix<Device>(2, 2,
+                                     crow_indices.data_ptr<int>(),
+                                     values.data_ptr<Dtype>(),
+                                     col_indices.data_ptr<int>());
 
     ASSERT_EQ(csr.getElement(0, 1), (Dtype) 2.0);
 
@@ -78,48 +78,35 @@ void jacobi_test(const torch::TensorOptions &tensor_opts) {
 
     const int size = 5;
 
-    auto matrix_ptr = std::make_shared< SparseMatrix< Dtype, Device>>();
-    matrix_ptr->setDimensions( size, size );
-    const auto rowCapacities_t = torch::tensor({ 1, 2, 3, 4, 5 }, tensor_opts);
-    const auto rowCapacities = VectorView<Dtype, Device>{rowCapacities_t.data_ptr<Dtype>(), size};
-    matrix_ptr->setRowCapacities( rowCapacities );
+    const auto crow_indices = torch::tensor({0, 2, 5, 8, 11, 13},
+                                            torch::dtype(torch::kInt32).device(tensor_opts.device()));
+    const auto col_indices = torch::tensor({0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4},
+                                           torch::dtype(torch::kInt32).device(tensor_opts.device()));
+    const auto values =
+            torch::tensor({2.5000, -1.5000, -0.5000, 2.5000, -1.5000, -0.5000,
+                           2.5000, -1.5000, -0.5000, 2.5000, -1.5000, -0.5000,
+                           2.5000}, tensor_opts);
+    auto matrix = std::make_shared<SparseMatrixView<Dtype, Device>>(
+            wrapCSRMatrix<Device>(size, size,
+                                  crow_indices.data_ptr<int>(),
+                                  values.data_ptr<Dtype>(),
+                                  col_indices.data_ptr<int>()));
 
-    auto f = [=] __cuda_callable__ ( typename SparseMatrix< Dtype, Device>::RowView& row ) mutable {
-        const int rowIdx = row.getRowIndex();
-        if( rowIdx == 0 )
-        {
-            row.setElement( 0, rowIdx,    2.5 );    // diagonal element
-            row.setElement( 1, rowIdx+1, -1 );      // element above the diagonal
-        }
-        else if( rowIdx == size - 1 )
-        {
-            row.setElement( 0, rowIdx-1, -1.0 );    // element below the diagonal
-            row.setElement( 1, rowIdx,    2.5 );    // diagonal element
-        }
-        else
-        {
-            row.setElement( 0, rowIdx-1, -1.0 );    // element below the diagonal
-            row.setElement( 1, rowIdx,    2.5 );    // diagonal element
-            row.setElement( 2, rowIdx+1, -1.0 );    // element above the diagonal
-        }
-    };
 
-    matrix_ptr->forAllRows( f );
+    const auto tensor_x0 = torch::ones({size}, tensor_opts);
+    const auto tensor_x = torch::zeros({size}, tensor_opts);
+    const auto tensor_b = torch::zeros({size}, tensor_opts);
 
-    const auto tensor_x0 = torch::ones({5}, tensor_opts);
-    const auto tensor_x = torch::zeros({5}, tensor_opts);
-    const auto tensor_b = torch::zeros({5}, tensor_opts);
+    const auto x0 = VectorView<Dtype, Device>{tensor_x0.data_ptr<Dtype>(), size};
+    const auto x = VectorView<Dtype, Device>{tensor_x.data_ptr<Dtype>(), size};
+    auto b = VectorView<Dtype, Device>{tensor_b.data_ptr<Dtype>(), size};
 
-    const auto x0 = VectorView<Dtype, Device>{tensor_x0.data_ptr<Dtype>(), 5};
-    const auto x = VectorView<Dtype, Device>{tensor_x.data_ptr<Dtype>(), 5};
-    auto b = VectorView<Dtype, Device>{tensor_b.data_ptr<Dtype>(), 5};
+    matrix->vectorProduct(x0, b);
 
-    matrix_ptr->vectorProduct(x0, b);
+    auto solver = Jacobi<SparseMatrixView<Dtype, Device>>{};
+    solver.setMatrix(matrix);
+    solver.solve(b, x);
 
-    auto solver = Jacobi<SparseMatrix< Dtype, Device>>{};
-    solver.setMatrix(matrix_ptr);
-    solver.solve( b, x );
-
-    ASSERT_NEAR(torch::dist(tensor_x0,tensor_x).item<Dtype>(), 0.f, 1e-5f);
+    ASSERT_NEAR(torch::dist(tensor_x0, tensor_x).item<Dtype>(), 0.f, 1e-5f);
 
 }
