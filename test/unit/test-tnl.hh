@@ -73,8 +73,8 @@ void create_csr_matrix(const torch::TensorOptions &tensor_opts) {
     ASSERT_EQ(csr.getElement(0, 1), (Dtype) 10.0);
 }
 
-template<typename Dtype, typename Device>
-void jacobi_test(const torch::TensorOptions &tensor_opts) {
+template<typename Dtype, typename Device, typename Solver>
+void linear_test(const torch::TensorOptions &tensor_opts, Solver &solver) {
 
     const int size = 5;
 
@@ -103,10 +103,15 @@ void jacobi_test(const torch::TensorOptions &tensor_opts) {
 
     matrix->vectorProduct(x0, b);
 
-    auto solver = Jacobi<SparseMatrixView<Dtype, Device>>{};
     solver.setMatrix(matrix);
     solver.solve(b, x);
 
     ASSERT_NEAR(torch::dist(tensor_x0, tensor_x).item<Dtype>(), 0.f, 1e-5f);
+}
 
+template<typename Dtype, typename Device>
+void jacobi_test(const torch::TensorOptions &tensor_opts) {
+    auto solver = Jacobi<SparseMatrixView<Dtype, Device>>{};
+    solver.setOmega(0.75);
+    linear_test<Dtype, Device>(tensor_opts, solver);
 }
