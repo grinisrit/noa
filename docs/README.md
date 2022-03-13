@@ -13,6 +13,7 @@ and usage cases are discussed, for each component:
   problems arising in computational fluid dynamics.
 * [QUANT](quant/README.md) a differentiable derivative
   pricing library.
+* [Numerics](numerics/README.md) various numerical recipes 
 
 ## Notebooks set-up
 
