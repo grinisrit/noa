@@ -1,0 +1,3 @@
+[submodule "src/noa/3rdparty/tnl-noa"]
+	path = src/noa/3rdparty/tnl-noa
+	url = git@github.com:GregTheMadMonk/tnl-noa.git
