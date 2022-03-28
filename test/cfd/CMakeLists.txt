@@ -14,7 +14,7 @@ find_package(ZLIB)
 
 # Main executables
 add_executable(mass_lumping main.cc)
-set_target_properties(muon_model PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(mass_lumping PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Link libraries
 target_include_directories(mass_lumping PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
