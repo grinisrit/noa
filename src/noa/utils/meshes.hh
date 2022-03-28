@@ -25,9 +25,9 @@
 
 #include <noa/utils/common.hh>
 
-#include <noa/3rdparty/TNL/Meshes/DefaultConfig.h>
-#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
-#include <noa/3rdparty/TNL/Meshes/Readers/VTUReader.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/DefaultConfig.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Readers/VTUReader.h>
 
 
 namespace noa::utils::meshes {
