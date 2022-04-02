@@ -24,6 +24,6 @@ if(NOT TARGET gflags)
     endif()
 
     # Compatibility with LibTorch cxx11 ABI
-    target_compile_definitions(gflags_nothreads_static PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    target_compile_definitions(gflags_nothreads_static PUBLIC _GLIBCXX_USE_CXX11_ABI=${TORCH_USE_CXX11_ABI})
 
 endif()

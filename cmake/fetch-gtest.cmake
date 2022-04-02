@@ -20,5 +20,5 @@ if(NOT TARGET googletest)
     endif()
 
     # Compatibility with LibTorch cxx11 ABI
-    target_compile_definitions(gtest PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    target_compile_definitions(gtest PUBLIC _GLIBCXX_USE_CXX11_ABI=${TORCH_USE_CXX11_ABI})
 endif()
