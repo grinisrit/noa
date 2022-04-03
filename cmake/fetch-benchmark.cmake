@@ -4,7 +4,7 @@ if(NOT TARGET benchmark)
     FetchContent_Declare(
         benchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        v1.5.2)
+        GIT_TAG        v1.6.1)
 
     FetchContent_GetProperties(benchmark)
 
