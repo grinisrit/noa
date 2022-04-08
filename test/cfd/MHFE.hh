@@ -112,7 +112,7 @@ void initDomain(DOMAIN_TYPE& domain) {
 	});
 }
 
-template <DOMAIN_TARGS>
+template <typename DeltaFunctor, typename LumpingFunctor, typename RightFunctor, DOMAIN_TARGS>
 void solverStep(DOMAIN_TYPE& domain,
 		const Real& tau,
 		const std::string& solverName = "gmres",
@@ -178,14 +178,23 @@ void solverStep(DOMAIN_TYPE& domain,
 				local = lei;
 
 		for (LocalIndex lei = cellEdges - 1; lei >= 0; --lei) {
-			const Real delta = a * (mBinv.getElement(local, lei) - a / l / l / beta);
-			const auto lumping = 0;
+			const Real delta	= DeltaFunctor::template get<CellTopology, Real>(alpha_i, alpha,
+										lambda, beta,
+										a, c, l,
+										mBinv.getElement(local, lei));
+			const Real lumping	= LumpingFunctor::template get<CellTopology, Real>(alpha_i, alpha,
+										lambda, beta,
+										a, c, l,
+										mBinv.getElement(local, lei));
 			const auto gEdge = domain.getMesh().template getSubentityIndex<dimCell, dimEdge>(cell, lei);
 			mView.addElement(edge, gEdge, delta);
 			if (lei == local) mView.addElement(edge, gEdge, lumping);
 		}
 
-		rightView[edge] += right + a * lambda / l / beta * PPrevView[cell];
+		rightView[edge] += right + RightFunctor::template get<CellTopology, Real>(alpha_i, alpha,
+										lambda, beta,
+										a, c, l,
+										PPrevView[cell]);
 	};
 
 	domain.getMesh().template forAll<dimEdge>([&] (GlobalIndex edge) {
