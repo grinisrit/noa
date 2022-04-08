@@ -26,6 +26,7 @@ enum Layer : std::size_t {
 	P_PREV		= 1,
 	A		= 2,
 	C		= 3,
+	L		= 4,
 	// Edge layers
 	DIRICHLET	= 0,
 	NEUMANN		= 1,
@@ -51,6 +52,7 @@ void prepareDomain(DOMAIN_TYPE& domain) {
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 1, P_PREV
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 2, A
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 3, C
+	domain.getLayers(dimCell).template add<Real>(0);	// Index 4, l - cached values
 
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 0, DIRICHLET
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 1, NEUMANN
@@ -82,14 +84,14 @@ void initDomain(DOMAIN_TYPE& domain) {
 
 	const auto dMask = domain.getLayers(dimEdge).template get<int>(Layer::DIRICHLET_MASK).getConstView();
 	const auto nMask = domain.getLayers(dimEdge).template get<int>(Layer::NEUMANN_MASK).getConstView();
-	auto capacities = domain.getLayers(dimEdge).template get<GlobalIndex>(Layer::ROW_CAPACITIES).getView();
 
 	checkDomain(domain);
 
 	const auto& mesh = domain.getMesh();
 
 	// Fill capacities
-	domain.getMesh().template forAll<dimEdge>([&] (GlobalIndex edge) {
+	auto capacities = domain.getLayers(dimEdge).template get<GlobalIndex>(Layer::ROW_CAPACITIES).getView();
+	domain.getMesh().template forAll<dimEdge>([&] (const GlobalIndex& edge) {
 		capacities[edge] = 1;
 		if ((dMask[edge] != 0) && (nMask(edge) == 0)) return;
 
@@ -99,6 +101,14 @@ void initDomain(DOMAIN_TYPE& domain) {
 			const auto gCellIdx = mesh.template getSuperentityIndex<dimEdge, dimCell>(edge, cell);
 			capacities[edge] += mesh.template getSubentitiesCount<dimCell, dimEdge>(gCellIdx) - 1;
 		}
+	});
+
+	// Fill l
+	auto ls = domain.getLayers(dimCell).template get<Real>(Layer::L).getView();
+	domain.getMesh().template forAll<dimCell>([&] (const GlobalIndex& cell) {
+		const auto cellEntity = mesh.template getEntity<dimCell>(cell);
+		const Real mes = TNL::Meshes::getEntityMeasure(mesh, cellEntity);
+		ls[cell] = lGet(domain, cell, mes);
 	});
 }
 
@@ -137,6 +147,8 @@ void solverStep(DOMAIN_TYPE& domain,
 	const auto aView = domain.getLayers(dimCell).template get<Real>(Layer::A).getConstView();
 	const auto cView = domain.getLayers(dimCell).template get<Real>(Layer::C).getConstView();
 
+	const auto lView = domain.getLayers(dimCell).template get<Real>(Layer::L).getConstView();
+
 	// Reset the right-part vector
 	rightView.forAllElements([] (GlobalIndex i, Real& v) { v = 0; });
 
@@ -149,8 +161,8 @@ void solverStep(DOMAIN_TYPE& domain,
 
 		const Real lambda = c * mes / tau;
 
-		// TODO: l and Binv could be cached because they depend only on geometry
-		const auto l = lGet(domain, cell, mes);
+		// TODO: Binv could be cached because they depend only on geometry
+		const auto l = lView[cell];
 
 		const auto cellEdges = domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(cell);
 		TNL::Matrices::DenseMatrix<Real, Device, LocalIndex> mBinv(cellEdges, cellEdges);
@@ -217,7 +229,7 @@ void solverStep(DOMAIN_TYPE& domain,
 
 		const Real lambda = c * mes / tau;
 
-		const auto l = lGet(domain, cell, mes); // TODO: Cache l
+		const auto l = lView[cell];
 		const auto alpha_i = 1 / l;
 		const auto alpha = cellEdges * alpha_i;
 		const auto beta = lambda + a * alpha;
