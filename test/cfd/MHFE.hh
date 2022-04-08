@@ -181,10 +181,12 @@ void solverStep(DOMAIN_TYPE& domain,
 			const Real delta	= DeltaFunctor::template get<CellTopology, Real>(alpha_i, alpha,
 										lambda, beta,
 										a, c, l,
+										mes, tau,
 										mBinv.getElement(local, lei));
 			const Real lumping	= LumpingFunctor::template get<CellTopology, Real>(alpha_i, alpha,
 										lambda, beta,
 										a, c, l,
+										mes, tau,
 										mBinv.getElement(local, lei));
 			const auto gEdge = domain.getMesh().template getSubentityIndex<dimCell, dimEdge>(cell, lei);
 			mView.addElement(edge, gEdge, delta);
@@ -194,7 +196,8 @@ void solverStep(DOMAIN_TYPE& domain,
 		rightView[edge] += right + RightFunctor::template get<CellTopology, Real>(alpha_i, alpha,
 										lambda, beta,
 										a, c, l,
-										PPrevView[cell]);
+										mes, tau,
+										PPrevView[cell], TPView[edge]);
 	};
 
 	domain.getMesh().template forAll<dimEdge>([&] (GlobalIndex edge) {
