@@ -19,17 +19,8 @@ pipelines, as well as portfolio and margin optimisation platforms.
 
 Hands-on tutorials:
 
-* [Introduction: the BSM model](bsm.ipynb) is great place to start 
+* [Introduction: the BSM model](bsm.ipynb) is a great place to start 
 providing even newcomers with the necessary option pricing background.
-* [SABR and the volatility smile](sabr.ipynb) discusses 
-Hagan's formula, its corrections, and the heat kernel asymptotic expansions, 
-together with the Levenberg–Marquardt (LM) method for calibration.
-* [Heston model for the volatility surface](heston.ipynb) describes recent 
-advances in sensitivity analysis for the Heston characteristic function 
-which enables efficient LM calibration.
-* [Differentiable LSM algorithm](lsm.ipynb) presents an adjoint sensitivity
-model for the Longstaff and Schwartz method over 
-Andersen's exact Heston Monte-Carlo simulation scheme.
  
 
 (c) 2022 GrinisRIT ltd.
