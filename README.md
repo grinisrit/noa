@@ -23,8 +23,16 @@ which require separable compilation.
 
 ### CMake project
 The core of the library depends on 
-[LibTorch Pre-cxx11 ABI](https://pytorch.org/get-started/locally) 
+[LibTorch](https://pytorch.org/get-started/locally) 
 (which is also distributed via `pip` and `conda`).
+
+You can specify whether torch was compiled with C++11 ABI 
+setting `TORCH_USE_CXX11_ABI` to 0 or 1. 
+If we manage to fetch the value of `_GLIBCXX_USE_CXX11_ABI`
+during configuration, your choice will be overwritten.
+By default, this variable is 0.
+
+
 For additional configuration needed by some applications
 please refer to the documentation [below](#applications).
 

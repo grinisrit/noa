@@ -4,7 +4,7 @@ if(NOT TARGET googletest)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        v1.10.x)
+        GIT_TAG        release-1.11.0)
 
     FetchContent_GetProperties(googletest)
 
@@ -20,5 +20,5 @@ if(NOT TARGET googletest)
     endif()
 
     # Compatibility with LibTorch cxx11 ABI
-    target_compile_definitions(gtest PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    target_compile_definitions(gtest PUBLIC _GLIBCXX_USE_CXX11_ABI=${TORCH_USE_CXX11_ABI})
 endif()

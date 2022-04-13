@@ -12,8 +12,7 @@ and usage cases are discussed, for each component:
 * [CFD](cfd/README.md) implements adjoint sensitivity models for a variety
   problems arising in computational fluid dynamics.
 * [QUANT](quant/README.md) a differentiable derivative
-  pricing library.
-* [Numerics](numerics/README.md) various numerical recipes 
+  pricing library. 
 
 ## Notebooks set-up
 
