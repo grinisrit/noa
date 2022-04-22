@@ -5,11 +5,13 @@
 #include <filesystem>
 
 #include "MHFE.hh"
+#include "Func.hh"
 
 // DEFINE_string(mesh, "mesh.vtu", "Path to tetrahedron mesh");
 DEFINE_string(outputDir, "./saved", "Directory to output the result to");
 
 using namespace std;
+using namespace noa::MHFE::Func;
 
 auto main(int argc, char **argv) -> int {
 
@@ -60,7 +62,7 @@ auto main(int argc, char **argv) -> int {
 	do {
 		cout << "\r[" << setw(10) << left << t << "/" << right << T << "]";
 		cout.flush();
-		noa::MHFE::solverStep(domain, tau);
+		noa::MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
 		t += tau;
 
 		domain.write(FLAGS_outputDir + "/" + std::to_string(t) + ".vtu");
