@@ -38,6 +38,14 @@ namespace jnoa {
     using VoidHandle = void *;
     using AdamOptim = torch::optim::Adam;
     using AdamOptimOpts = torch::optim::AdamOptions;
+    using RmsOptim = torch::optim::RMSprop;
+    using RmsOptimOpts = torch::optim::RMSpropOptions;
+    using AdamWOptim = torch::optim::AdamW;
+    using AdamWOptimOpts = torch::optim::AdamWOptions;
+    using AdagradOptim = torch::optim::Adagrad;
+    using AdagradOptimOpts = torch::optim::AdagradOptions;
+    using SgdOptim = torch::optim::SGD;
+    using SgdOptimOpts = torch::optim::SGDOptions;
 
     struct JitModule {
         torch::jit::Module jit_module;
@@ -268,3 +276,4 @@ namespace jnoa {
             };
 
 } // namespace jnoa
+
