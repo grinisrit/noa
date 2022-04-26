@@ -14,7 +14,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> generate_
     const auto y_val = torch::sin(x_val);
 
     const auto x_train = torch::linspace(-3.54f, 3.54f, n_tr).view({-1, 1});
-    const auto y_train = torch::sin(x_train) + 0.1f * torch::randn_like(x_train);
+    const auto y_train = torch::sin(x_train) + 0.3f * torch::randn_like(x_train);
 
     return std::make_tuple(x_train, y_train, x_val, y_val);
 }

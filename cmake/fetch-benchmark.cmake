@@ -4,7 +4,7 @@ if(NOT TARGET benchmark)
     FetchContent_Declare(
         benchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        v1.5.2)
+        GIT_TAG        v1.6.1)
 
     FetchContent_GetProperties(benchmark)
 
@@ -21,5 +21,5 @@ if(NOT TARGET benchmark)
     endif()
 
     # Compatibility with LibTorch cxx11 ABI
-    target_compile_definitions(benchmark PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    target_compile_definitions(benchmark PUBLIC _GLIBCXX_USE_CXX11_ABI=${TORCH_USE_CXX11_ABI})
 endif()
