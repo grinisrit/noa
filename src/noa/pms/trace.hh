@@ -113,12 +113,27 @@ namespace noa::pms::trace {
         }
 
     public:
+        /// Intersection structure
         struct Intersection {
+            /// Index of the first triangle on the ray
             Index nearest_face_global_index = -1;
+
+            /// Distance to first triangle from ray origin
             Real distance = -1;
+
+            /// Flag of intersection with a triangle:
+            /// True -- if distance between first triangle on the ray and second triangle less than epsilon,
+            /// False -- if otherwise
             bool is_intersection_with_triangle = true;
         };
 
+        /// Get next tetrahedron after intersection
+        /// \param mesh_pointer Pointer to device mesh
+        /// \param intersection Intersection structure from get_first_border_in_tetrahedron function
+        /// \param origin New ray origin (intersection point)
+        /// \param direction New ray direction
+        /// \param ray_offset Offset along ray for check if point (= origin + direction * ray_offset) is inside of a tetrahedron
+        /// \return {Next tetrahedron in ray} -- if success, {} - if otherwise
         __cuda_callable__
         static std::optional<Index> get_next_tetrahedron(
             const Mesh* mesh_pointer,
@@ -154,6 +169,15 @@ namespace noa::pms::trace {
             return {};
         }
 
+
+        /// Calculate the triangle the ray hits
+        /// \param mesh_pointer Pointer to device mesh
+        /// \param tetrahedron_global_index Current tetrahedron global index in mesh (origin located here)
+        /// \param origin Ray origin
+        /// \param direction Ray direction
+        /// \param epsilon Threshold distinguishing between intersections between a triangle and a line segment
+        ///                (The distance between the first intersection with the plane and the second is checked)
+        /// \return Intersection structure: triangle global index, distance from origin, (triangle)/(line or point) flag (see Intersection)
         __cuda_callable__
         static Intersection get_first_border_in_tetrahedron(
             const Mesh* mesh_pointer,
