@@ -30,6 +30,7 @@ inline void test_get_first_border_in_tetrahedron() {
         PointDevice direction = PointDevice(0, 0, 1);
         direction /= sqrt(dot(direction, direction));
         PointDevice origin = PointDevice(0.1, 0.11, 0.1);
+
         while (true) {
             TNL_ASSERT_TRUE(i < 8, "incorrect index");
             TNL_ASSERT_EQ(expected[i], index, "wrong tetrahedron");
@@ -95,4 +96,23 @@ inline void test_get_first_border_in_tetrahedron() {
         TNL_ASSERT_TRUE(i == 7, "incorrect number of elements in test with corners");
     };
     Algorithms::ParallelFor<DeviceType>::exec(0, 1, check_back_corner_ray_kernel);
+}
+
+template <class DeviceType>
+inline void test_get_current_tetrahedron() {
+    using DeviceMesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, DeviceType>;
+    using PointHost = typename HostMesh::PointType;
+
+    HostMeshOpt mesh_opt = load_tetrahedron_host_test_mesh();
+    TNL_ASSERT_TRUE((bool)mesh_opt, "mesh don't loaded");
+    HostMesh host_mesh = *mesh_opt;
+    DeviceMesh device_mesh = host_mesh;
+    Pointers::DevicePointer<const DeviceMesh> mesh_device_pointer(device_mesh);
+    const DeviceMesh *mesh_pointer = &mesh_device_pointer.template getData<typename DeviceMesh::DeviceType>();
+
+    PointHost point = PointHost(0.1, 0.1, 0.1);
+    int index = 1;
+    auto result = Tracer<DeviceType>::get_current_tetrahedron(mesh_pointer, host_mesh.template getEntitiesCount<3>(), point);
+    TNL_ASSERT_TRUE((bool)result, "wrong result (cell not found)");
+    TNL_ASSERT_EQ(index, *result, "wrong result");
 }
