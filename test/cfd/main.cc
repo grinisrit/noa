@@ -4,14 +4,17 @@
 #include <iostream>
 #include <filesystem>
 
+#include "main.hh"
 #include "MHFE.hh"
 #include "Func.hh"
 
 // Set up GFlags
-// DEFINE_string(mesh, "mesh.vtu", "Path to tetrahedron mesh");
+DEFINE_bool(clear, false, "Clear the outputDir (WARNING: if outputDir is a file, remove it!)");
+DEFINE_bool(precise, false, "Should the saved mesh include precise problem solution");
 DEFINE_string(outputDir, "./saved", "Directory to output the result to");
 DEFINE_double(T, 10, "Time length of calculations");
 DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
+DEFINE_int32(density, 1, "Grid density multiplier");
 
 using namespace std;
 using namespace noa;
@@ -24,6 +27,8 @@ auto main(int argc, char **argv) -> int {
 
 	// Process outputDir, perform necessary checks
 	cout << "Output directory set to " << FLAGS_outputDir << endl;
+	if (std::filesystem::exists(FLAGS_outputDir) && FLAGS_clear)
+		std::filesystem::remove_all(FLAGS_outputDir);
 	if (!std::filesystem::exists(FLAGS_outputDir))
 		std::filesystem::create_directory(FLAGS_outputDir);
 	if (!std::filesystem::is_directory(FLAGS_outputDir))
@@ -38,8 +43,9 @@ auto main(int argc, char **argv) -> int {
 	DomainType domain;
 
 	// Generate domain grid & prepare it for initialization
-	MHFE::Storage::generate2DGrid(domain, 20, 10, 1, 1);
-	MHFE::prepareDomain(domain);
+	MHFE::Storage::generate2DGrid(domain, 20 * FLAGS_density, 10 * FLAGS_density,
+						1.0 / FLAGS_density, 1.0 / FLAGS_density);
+	MHFE::prepareDomain(domain, true);
 
 	auto& cellLayers = domain.getLayers(cellD);
 	auto& edgeLayers = domain.getLayers(edgeD);
@@ -61,7 +67,7 @@ auto main(int argc, char **argv) -> int {
 					x1v = 1;
 					break;
 				case 2:
-					if (((p1 + r / 2)[1] > 2) && ((p1 + r / 2)[1] < 8)) x1v = 1;
+					if (((p1 + r / 2)[1] > 1) && ((p1 + r / 2)[1] < 9)) x1v = 1;
 					else x1v = 0;
 					break;
 			}
@@ -87,6 +93,7 @@ auto main(int argc, char **argv) -> int {
 		cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
 		cout.flush();
 		MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
+		if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
 		t += tau;
 
 		domain.write(FLAGS_outputDir + "/" + std::to_string(t) + ".vtu");
