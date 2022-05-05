@@ -27,6 +27,7 @@ enum Layer : std::size_t {
 	A		= 2,
 	C		= 3,
 	L		= 4,
+	PRECISE		= 5,
 	// Edge layers
 	DIRICHLET	= 0,
 	NEUMANN		= 1,
@@ -39,7 +40,7 @@ enum Layer : std::size_t {
 
 // Prepare domain to work with the solver
 template <DOMAIN_TARGS>
-void prepareDomain(DOMAIN_TYPE& domain) {
+void prepareDomain(DOMAIN_TYPE& domain, const bool& allocatePrecise = false) {
 	if (domain.isClean()) throw std::runtime_error("Cannot prepare an empty domain!");
 
 	constexpr auto dimCell = domain.getMeshDimension();
@@ -53,6 +54,8 @@ void prepareDomain(DOMAIN_TYPE& domain) {
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 2, A
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 3, C
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 4, l - cached values
+	if (allocatePrecise)
+		domain.getLayers(dimCell).template add<Real>(0);// Index 5, PRECISE
 
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 0, DIRICHLET
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 1, NEUMANN
@@ -250,6 +253,28 @@ void solverStep(DOMAIN_TYPE& domain,
 
 		for (auto lei = cellEdges - 1; lei >= 0; --lei)
 			PCell += a * TPView[domain.getMesh().template getSubentityIndex<dimCell, dimEdge>(cell, lei)] / beta / l;
+	});
+}
+
+template <typename SolFunc, DOMAIN_TARGS>
+void writePrecise(DOMAIN_TYPE& domain, SolFunc& solution, const Real& t) {
+	// TODO, FIXME: this will only work for 2D
+	constexpr auto dimCell = domain.getMeshDimension();
+
+	auto preciseLayer = domain.getLayers(dimCell).template get<Real>(Layer::PRECISE).getView();
+	const auto aView = domain.getLayers(dimCell).template get<Real>(Layer::A).getConstView();
+	const auto cView = domain.getLayers(dimCell).template get<Real>(Layer::C).getConstView();
+	const auto& mesh = domain.getMesh();
+
+	mesh.template forAll<dimCell>([&t, &solution, &aView, &cView, &mesh, &preciseLayer] (GlobalIndex cell) {
+			const auto cellEntity = mesh.template getEntity<dimCell>(cell);
+
+			const auto verts = mesh.template getSubentitiesCount<dimCell, 0>(cell);
+			typename DOMAIN_TYPE::MeshType::PointType midpoint{0, 0};
+			for (GlobalIndex vert = 0; vert < verts; ++vert)
+				midpoint += mesh.getPoint(mesh.template getSubentityIndex<dimCell, 0>(cell, vert));
+			preciseLayer[cell] = solution(midpoint[0] / verts, midpoint[1] / verts, t,
+							aView[cell], cView[cell]);
 	});
 }
 
