@@ -11,6 +11,7 @@
 // DEFINE_string(mesh, "mesh.vtu", "Path to tetrahedron mesh");
 DEFINE_string(outputDir, "./saved", "Directory to output the result to");
 DEFINE_double(T, 10, "Time length of calculations");
+DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
 
 using namespace std;
 using namespace noa;
@@ -54,8 +55,18 @@ auto main(int argc, char **argv) -> int {
 		if (r[0] == 0) { // Vertical boundary (x = const)
 			edgeLayers.template get<int>(MHFE::Layer::DIRICHLET_MASK)[edge]	= 1;
 			// x = 0 -> TP = 1; x = 1 -> TP = 0; x = p1[0]
-			edgeLayers.template get<float>(MHFE::Layer::DIRICHLET)[edge]	= (p1[0] == 0) * 1;
-			edgeLayers.template get<float>(MHFE::Layer::TP)[edge]		= (p1[0] == 0) * 1;
+			float x1v = 0;
+			switch (FLAGS_condition) {
+				case 1:
+					x1v = 1;
+					break;
+				case 2:
+					if (((p1 + r / 2)[1] > 2) && ((p1 + r / 2)[1] < 8)) x1v = 1;
+					else x1v = 0;
+					break;
+			}
+			edgeLayers.template get<float>(MHFE::Layer::DIRICHLET)[edge]	= (p1[0] == 0) * x1v;
+			edgeLayers.template get<float>(MHFE::Layer::TP)[edge]		= (p1[0] == 0) * x1v;
 		} else if (r[1] == 0) { // Horizontal boundary (y = const)
 			edgeLayers.template get<int>(MHFE::Layer::NEUMANN_MASK)[edge]	= 1;
 			edgeLayers.template get<float>(MHFE::Layer::NEUMANN)[edge]	= 0;
