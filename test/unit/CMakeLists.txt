@@ -21,12 +21,14 @@ set(NOA_TEST_SRC
         test-ghmc-sampler.cc
         test-dcs-calc.cc
         test-tnl.cc
-        test-trace.cc)
+        #test-trace.cc#
+        )
 
 # Main test executables
 if (BUILD_NOA_CUDA)
     set(NOA_TEST_SRC_CUDA
-            "test-ghmc-sampler-cuda.cc;test-dcs-calc-cuda.cc;test-tnl.cu;test-trace.cu;${NOA_ROOT_DIR}/test/kernels.cu")
+            "test-ghmc-sampler-cuda.cc;test-dcs-calc-cuda.cc;test-tnl.cu;${NOA_ROOT_DIR}/test/kernels.cu")
+            #test-trace.cu;${NOA_ROOT_DIR}/test/kernels.cu")
 else ()
     set(NOA_TEST_SRC_CUDA "")
 endif ()
