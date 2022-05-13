@@ -304,7 +304,7 @@ Real testCellSensitivityAt(DOMAIN_TYPE domain, // Layer will be altered, need a 
 	simulateTo<DeltaFunc, LumpingFunc, RightFunc>(domain2, T, tau);
 
 	// Now calculate tester over two domains and return the sensitivity
-	return (TestFunc::calc(domain2, dataLayer) - TestFunc::calc(domain, dataLayer)) / delta;
+	return TestFunc::calc(domain2, dataLayer) - TestFunc::calc(domain, dataLayer);
 }
 
 } // <-- namespace noa::MHFE
