@@ -11,8 +11,11 @@
 // Set up GFlags
 DEFINE_bool(clear, false, "Clear the outputDir (WARNING: if outputDir is a file, remove it!)");
 DEFINE_bool(precise, false, "Should the saved mesh include precise problem solution");
+DEFINE_bool(sensitivity, false, "Perform a sensitibity test");
+DEFINE_bool(suite, false, "Perform multiple tests, make an output file");
 DEFINE_string(outputDir, "./saved", "Directory to output the result to");
 DEFINE_double(T, 10, "Time length of calculations");
+DEFINE_double(delta, 0.1, "Sensitivity test delta");
 DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
 DEFINE_int32(density, 1, "Grid density multiplier");
 
@@ -88,19 +91,39 @@ auto main(int argc, char **argv) -> int {
 	// Init domain not that the layers are initialized
 	MHFE::initDomain(domain);
 
-	// Simulation loop
-	float t = 0;		// Current sim time
-	float tau = .005;	// Time step
-	do {
-		cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
-		cout.flush();
-		MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
-		if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
-		t += tau;
+	if (FLAGS_sensitivity) {
+		float delta = FLAGS_delta;
+		ofstream dat;
+		if (FLAGS_suite) {
+			delta = 0;
+			dat.open(FLAGS_outputDir + "/sensitivity.dat");
+		}
+		do {
+			cout << "Performing a sensitivity test at t=" << FLAGS_T << " with delta " << delta << endl;
+			const auto sens = MHFE::testCellSensitivityAt<LMHFEDelta, LMHFELumping, LMHFERight, IntegralOver>(
+						domain,
+						MHFE::Layer::P, MHFE::Layer::A,
+						delta, (float)FLAGS_T);
+			cout << "Solution sensitivity: " << sens << " at delta " << delta << endl;
+			if (FLAGS_suite) dat << delta << " " << sens << endl;
+			delta += FLAGS_delta / 250;
+		} while (delta <= FLAGS_delta);
+		if (FLAGS_suite) dat.close();
+	} else {
+		// Simulation loop
+		float t = 0;		// Current sim time
+		float tau = .005;	// Time step
+		do {
+			cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
+			cout.flush();
+			MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
+			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
+			t += tau;
 
-		domain.write(FLAGS_outputDir + "/" + std::to_string(t) + ".vtu");
-	} while (t <= FLAGS_T);
-	cout << endl << "DONE" << endl;
+			domain.write(FLAGS_outputDir + "/" + std::to_string(t) + ".vtu");
+		} while (t <= FLAGS_T);
+		cout << " DONE" << endl;
+	}
 
 	gflags::ShutDownCommandLineFlags();
 

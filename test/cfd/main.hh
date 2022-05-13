@@ -2,6 +2,9 @@
 
 #include <cmath>
 
+#include "Macros.hh"
+#include "MHFE.hh"
+
 // Precise solution to a second set of border conditions
 template <typename Real>
 inline Real cond2Solution(const Real& x, const Real& y, const Real& t, const Real& a, const Real& c) {
@@ -35,3 +38,19 @@ inline Real cond2Solution(const Real& x, const Real& y, const Real& t, const Rea
 	};
 	return (x / sqrt(16 * M_PI * a)) * integrate(int_core, .01, 0, t);
 }
+
+struct IntegralOver {
+	template <DOMAIN_TARGS>
+	inline static Real calc(const DOMAIN_TYPE& domain, const noa::MHFE::Layer& layer) {
+		Real sum = 0; // For now just make a sum
+		constexpr auto dimCell = domain.getMeshDimension();
+		const auto lView = domain.getLayers(dimCell).template get<Real>(layer).getConstView();
+		const auto& mesh = domain.getMesh();
+		mesh.template forAll<dimCell>([&sum, &mesh, dimCell, lView] (const GlobalIndex& cell) {
+			const auto cellE = mesh.template getEntity<dimCell>(cell);
+			const Real mes = noa::TNL::Meshes::getEntityMeasure(mesh, cellE);
+			sum += lView[cell] * mes;
+		});
+		return sum;
+	}
+};
