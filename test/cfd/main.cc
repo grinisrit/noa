@@ -27,8 +27,10 @@ auto main(int argc, char **argv) -> int {
 
 	// Process outputDir, perform necessary checks
 	cout << "Output directory set to " << FLAGS_outputDir << endl;
-	if (std::filesystem::exists(FLAGS_outputDir) && FLAGS_clear)
+	if (std::filesystem::exists(FLAGS_outputDir) && FLAGS_clear) {
+		cout << "Clearing output location..." << endl;
 		std::filesystem::remove_all(FLAGS_outputDir);
+	}
 	if (!std::filesystem::exists(FLAGS_outputDir))
 		std::filesystem::create_directory(FLAGS_outputDir);
 	if (!std::filesystem::is_directory(FLAGS_outputDir))

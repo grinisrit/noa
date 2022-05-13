@@ -6,6 +6,10 @@
 template <typename Real>
 inline Real cond2Solution(const Real& x, const Real& y, const Real& t, const Real& a, const Real& c) {
 	constexpr auto int_core = [] (const Real& tau, const Real& x, const Real& y, const Real& a) -> Real {
+		if (tau == 0) {
+			if ((x == 0) && (y >= 1) && (y <= 9)) return 1;
+			return 0;
+		}
 		return pow(tau, -1.5)
 			* (erf((4 + y) / sqrt(4 * a * tau)) + erf((4 - y) / sqrt(4 * a * tau)))
 			* exp(-pow(x / sqrt(4 * a * tau), 2));
@@ -18,9 +22,15 @@ inline Real cond2Solution(const Real& x, const Real& y, const Real& t, const Rea
 			sign = -1;
 			std::swap(from, to);
 		}
+		// Simpson integration
 		Real integral = 0;
-		for (Real tau = from + step/2; tau <= to; tau += step) integral += func(tau, x, y - 5, a) * step;
-		// Simple rects
+		Real delta = 0;
+		for (Real tau = from; tau < to; tau += step) {
+			delta =	func(tau,		x, y - 5, a);
+			delta +=func(tau + step/2,	x, y - 5, a) * 4;
+			delta +=func(tau + step,	x, y - 5, a);
+			integral += delta * step / 6;
+		}
 		return integral * sign;
 	};
 	return (x / sqrt(16 * M_PI * a)) * integrate(int_core, .01, 0, t);
