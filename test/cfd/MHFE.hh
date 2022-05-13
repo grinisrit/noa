@@ -278,4 +278,33 @@ void writePrecise(DOMAIN_TYPE& domain, SolFunc& solution, const Real& t) {
 	});
 }
 
+template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, DOMAIN_TARGS>
+void simulateTo(DOMAIN_TYPE& domain, const Real& T, const Real& tau = .005) {
+	Real t = 0;
+	do {
+		std::cout << "\r[" << std::setw(10) << std::left << t << "/" << std::right << T << "]";
+		std::cout.flush();
+		MHFE::solverStep<DeltaFunc, LumpingFunc, RightFunc>(domain, tau);
+		t += tau;
+	} while (t < T);
+	std::cout << " DONE" << std::endl;
+}
+
+template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, typename TestFunc, DOMAIN_TARGS>
+Real testCellSensitivityAt(DOMAIN_TYPE domain, // Layer will be altered, need a copy of a domain
+			const Layer& dataLayer, // A cell layer that tester function will use
+			const Layer& sensorLayer, // A cell layer that will be altered
+			const Real& delta, // How much will the value be altered?
+			const Real& T, const Real& tau = .005) {
+	auto domain2 = domain; // Create another copy of the domain
+	simulateTo<DeltaFunc, LumpingFunc, RightFunc>(domain, T, tau);
+	constexpr auto cellDim = domain2.getMeshDimension();
+	auto sensorView = domain2.getLayers(cellDim).template get<Real>(sensorLayer).getView();
+	sensorView.forAllElements([&delta] (GlobalIndex i, Real& v) { v += delta; });
+	simulateTo<DeltaFunc, LumpingFunc, RightFunc>(domain2, T, tau);
+
+	// Now calculate tester over two domains and return the sensitivity
+	return (TestFunc::calc(domain2, dataLayer) - TestFunc::calc(domain, dataLayer)) / delta;
+}
+
 } // <-- namespace noa::MHFE
