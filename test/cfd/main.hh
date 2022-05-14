@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "Macros.hh"
 #include "MHFE.hh"
 
 // Precise solution to a second set of border conditions
@@ -40,8 +39,8 @@ inline Real cond2Solution(const Real& x, const Real& y, const Real& t, const Rea
 }
 
 struct IntegralOver {
-	template <DOMAIN_TARGS>
-	inline static Real calc(const DOMAIN_TYPE& domain, const noa::MHFE::Layer& layer) {
+	template <__domain_targs__>
+	inline static Real calc(const __DomainType__& domain, const noa::MHFE::Layer& layer) {
 		Real sum = 0; // For now just make a sum
 		constexpr auto dimCell = domain.getMeshDimension();
 		const auto lView = domain.getLayers(dimCell).template get<Real>(layer).getConstView();

@@ -13,7 +13,6 @@
 // Local headers
 #include "Domain.hh"
 #include "Geometry.hh"
-#include "Macros.hh"
 
 // Still TNL but needs to be included after Mesh.h
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Geometry/getEntityMeasure.h>
@@ -39,8 +38,8 @@ enum Layer : std::size_t {
 }; // <-- enum Layer
 
 // Prepare domain to work with the solver
-template <DOMAIN_TARGS>
-void prepareDomain(DOMAIN_TYPE& domain, const bool& allocatePrecise = false) {
+template <__domain_targs__>
+void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) {
 	if (domain.isClean()) throw std::runtime_error("Cannot prepare an empty domain!");
 
 	constexpr auto dimCell = domain.getMeshDimension();
@@ -66,8 +65,8 @@ void prepareDomain(DOMAIN_TYPE& domain, const bool& allocatePrecise = false) {
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 6, RIGHT
 }
 
-template <DOMAIN_TARGS>
-void checkDomain(DOMAIN_TYPE& domain) {
+template <__domain_targs__>
+void checkDomain(__DomainType__& domain) {
 	constexpr auto dimCell = domain.getMeshDimension();
 	constexpr auto dimEdge = dimCell - 1;
 
@@ -80,8 +79,8 @@ void checkDomain(DOMAIN_TYPE& domain) {
 	});
 }
 
-template <DOMAIN_TARGS>
-void initDomain(DOMAIN_TYPE& domain) {
+template <__domain_targs__>
+void initDomain(__DomainType__& domain) {
 	constexpr auto dimCell = domain.getMeshDimension();
 	constexpr auto dimEdge = dimCell - 1;
 
@@ -115,8 +114,8 @@ void initDomain(DOMAIN_TYPE& domain) {
 	});
 }
 
-template <typename DeltaFunctor, typename LumpingFunctor, typename RightFunctor, DOMAIN_TARGS>
-void solverStep(DOMAIN_TYPE& domain,
+template <typename DeltaFunctor, typename LumpingFunctor, typename RightFunctor, __domain_targs__>
+void solverStep(__DomainType__& domain,
 		const Real& tau,
 		const std::string& solverName = "gmres",
 		const std::string& preconditionerName = "diagonal") {
@@ -256,8 +255,8 @@ void solverStep(DOMAIN_TYPE& domain,
 	});
 }
 
-template <typename SolFunc, DOMAIN_TARGS>
-void writePrecise(DOMAIN_TYPE& domain, SolFunc& solution, const Real& t) {
+template <typename SolFunc, __domain_targs__>
+void writePrecise(__DomainType__& domain, SolFunc& solution, const Real& t) {
 	// TODO, FIXME: this will only work for 2D
 	constexpr auto dimCell = domain.getMeshDimension();
 
@@ -270,7 +269,7 @@ void writePrecise(DOMAIN_TYPE& domain, SolFunc& solution, const Real& t) {
 			const auto cellEntity = mesh.template getEntity<dimCell>(cell);
 
 			const auto verts = mesh.template getSubentitiesCount<dimCell, 0>(cell);
-			typename DOMAIN_TYPE::MeshType::PointType midpoint{0, 0};
+			typename __DomainType__::MeshType::PointType midpoint{0, 0};
 			for (GlobalIndex vert = 0; vert < verts; ++vert)
 				midpoint += mesh.getPoint(mesh.template getSubentityIndex<dimCell, 0>(cell, vert));
 			preciseLayer[cell] = solution(midpoint[0] / verts, midpoint[1] / verts, t,
@@ -278,8 +277,8 @@ void writePrecise(DOMAIN_TYPE& domain, SolFunc& solution, const Real& t) {
 	});
 }
 
-template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, DOMAIN_TARGS>
-void simulateTo(DOMAIN_TYPE& domain, const Real& T, const Real& tau = .005) {
+template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, __domain_targs__>
+void simulateTo(__DomainType__& domain, const Real& T, const Real& tau = .005) {
 	Real t = 0;
 	do {
 		std::cout << "\r[" << std::setw(10) << std::left << t << "/" << std::right << T << "]";
@@ -290,8 +289,8 @@ void simulateTo(DOMAIN_TYPE& domain, const Real& T, const Real& tau = .005) {
 	std::cout << " DONE" << std::endl;
 }
 
-template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, typename TestFunc, DOMAIN_TARGS>
-Real testCellSensitivityAt(DOMAIN_TYPE domain, // Layer will be altered, need a copy of a domain
+template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, typename TestFunc, __domain_targs__>
+Real testCellSensitivityAt(__DomainType__ domain, // Layer will be altered, need a copy of a domain
 			const Layer& dataLayer, // A cell layer that tester function will use
 			const Layer& sensorLayer, // A cell layer that will be altered
 			const Real& delta, // How much will the value be altered?
