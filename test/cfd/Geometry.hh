@@ -9,14 +9,13 @@
 
 // Local headers
 #include "Domain.hh"
-#include "Macros.hh"
 
 namespace noa::MHFE {
 
 using TNL::Meshes::Topologies::Triangle;
 
-template <DOMAIN_TARGS>
-Real lGet(const DOMAIN_TYPE& domain,
+template <__domain_targs__>
+Real lGet(const __DomainType__& domain,
 		const GlobalIndex& cell,
 		const Real& measure) {
 	throw std::runtime_error("lGet is not implemented for selected topology!");
@@ -46,8 +45,8 @@ Real lGet(const Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>
 	return sqSum / 48.0 / measure;
 }
 
-template <DOMAIN_TARGS, typename MatrixType>
-void Binv(const DOMAIN_TYPE& domain,
+template <__domain_targs__, typename MatrixType>
+void Binv(const __DomainType__& domain,
 		MatrixType& matrix,
 		const GlobalIndex& cell,
 		const Real& measure,

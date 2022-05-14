@@ -16,6 +16,12 @@
 #include "ConfigTagPermissive.hh"
 #include "LayerManager.hh"
 
+// Macros definition
+#define __domain_targs__ \
+	typename CellTopology, typename Device, typename Real, typename GlobalIndex, typename LocalIndex
+#define __DomainType__	\
+	noa::MHFE::Storage::Domain<CellTopology, Device, Real, GlobalIndex, LocalIndex>
+
 namespace noa::MHFE::Storage {
 
 // struct Domain
