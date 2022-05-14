@@ -30,14 +30,14 @@ auto main(int argc, char **argv) -> int {
 
 	// Process outputDir, perform necessary checks
 	cout << "Output directory set to " << FLAGS_outputDir << endl;
-	if (std::filesystem::exists(FLAGS_outputDir) && FLAGS_clear) {
+	if (filesystem::exists(FLAGS_outputDir) && FLAGS_clear) {
 		cout << "Clearing output location..." << endl;
-		std::filesystem::remove_all(FLAGS_outputDir);
+		filesystem::remove_all(FLAGS_outputDir);
 	}
-	if (!std::filesystem::exists(FLAGS_outputDir))
-		std::filesystem::create_directory(FLAGS_outputDir);
-	if (!std::filesystem::is_directory(FLAGS_outputDir))
-		throw std::runtime_error(FLAGS_outputDir + " is not a directory");
+	if (!filesystem::exists(FLAGS_outputDir))
+		filesystem::create_directory(FLAGS_outputDir);
+	if (!filesystem::is_directory(FLAGS_outputDir))
+		throw runtime_error(FLAGS_outputDir + " is not a directory");
 
 	using CellTopology	= TNL::Meshes::Topologies::Triangle; // 2D
 	using DomainType	= MHFE::Storage::Domain<CellTopology>;
@@ -120,7 +120,7 @@ auto main(int argc, char **argv) -> int {
 			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
 			t += tau;
 
-			domain.write(FLAGS_outputDir + "/" + std::to_string(t) + ".vtu");
+			domain.write(FLAGS_outputDir + "/" + to_string(t) + ".vtu");
 		} while (t <= FLAGS_T);
 		cout << " DONE" << endl;
 	}
