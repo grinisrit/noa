@@ -47,10 +47,6 @@ namespace noa::utils {
     using OutputLeaf = Tensor;
     using InputLeaves = Tensors;
     using ADGraph = std::tuple<OutputLeaf, InputLeaves>;
-    using CSRValues = Tensor;
-    using CrowIndices = Tensor;
-    using ColIndices = Tensor;
-    using CSRMatrix = std::tuple<CSRValues, CrowIndices, ColIndices>;
 
     constexpr double_t TOLERANCE = 1E-6;
     constexpr int32_t SEED = 987654;
