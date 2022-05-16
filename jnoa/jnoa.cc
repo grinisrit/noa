@@ -1257,6 +1257,118 @@ JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradAdamOptim
     cast<AdamOptim>(adam_optim_handle).zero_grad();
 }
 
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_rmsOptim
+        (JNIEnv *, jclass, jlong jit_module_handle, jdouble learning_rate, jdouble alpha, 
+        jdouble eps, jdouble weight_decay, jdouble momentum, jboolean centered) {
+    return (long) new RmsOptim(get_rms_optim<RmsOptim, RmsOptimOpts>(
+            cast<JitModule>(jit_module_handle), learning_rate, alpha, 
+            eps, weight_decay, momentum, centered));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeRmsOptim
+        (JNIEnv *, jclass, jlong rms_optim_handle) {
+    if (rms_optim_handle != 0L)
+        dispose<RmsOptim>(rms_optim_handle);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_stepRmsOptim
+        (JNIEnv *env, jclass, jlong rms_optim_handle) {
+    safe_run(env,
+             [](RmsOptim &rms_optim) {
+                 rms_optim.step();
+             },
+             cast<RmsOptim>(rms_optim_handle));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradRmsOptim
+        (JNIEnv *, jclass, jlong rms_optim_handle) {
+    cast<RmsOptim>(rms_optim_handle).zero_grad();
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_adamWOptim
+        (JNIEnv *, jclass, jlong jit_module_handle, jdouble learning_rate, jdouble beta1,
+        jdouble beta2, jdouble eps, jdouble weight_decay, jboolean amsgrad) {
+    return (long) new AdamWOptim(get_adamw_optim<AdamWOptim, AdamWOptimOpts>(
+            cast<JitModule>(jit_module_handle), learning_rate, beta1,
+            beta2, eps, weight_decay, amsgrad));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeAdamWOptim
+        (JNIEnv *, jclass, jlong adamW_optim_handle) {
+    if (adamW_optim_handle != 0L)
+        dispose<AdamWOptim>(adamW_optim_handle);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_stepAdamWOptim
+        (JNIEnv *env, jclass, jlong adamW_optim_handle) {
+    safe_run(env,
+             [](AdamWOptim &adamW_optim) {
+                 adamW_optim.step();
+             },
+             cast<AdamWOptim>(adamW_optim_handle));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradAdamWOptim
+        (JNIEnv *, jclass, jlong adamW_optim_handle) {
+    cast<AdamWOptim>(adamW_optim_handle).zero_grad();
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_adagradOptim
+        (JNIEnv *, jclass, jlong jit_module_handle, jdouble learning_rate, jdouble weight_decay,
+        jdouble lr_decay, jdouble initial_accumulator_value, jdouble eps) {
+    return (long) new AdagradOptim(get_adagrad_optim<AdagradOptim, AdagradOptimOpts>(
+            cast<JitModule>(jit_module_handle), learning_rate, weight_decay,
+        lr_decay, initial_accumulator_value, eps));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeAdagradOptim
+        (JNIEnv *, jclass, jlong adagrad_optim_handle) {
+    if (adagrad_optim_handle != 0L)
+        dispose<AdagradOptim>(adagrad_optim_handle);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_stepAdagradOptim
+        (JNIEnv *env, jclass, jlong adagrad_optim_handle) {
+    safe_run(env,
+             [](AdagradOptim &adagrad_optim) {
+                 adagrad_optim.step();
+             },
+             cast<AdagradOptim>(adagrad_optim_handle));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradAdagradOptim
+        (JNIEnv *, jclass, jlong adagrad_optim_handle) {
+    cast<AdagradOptim>(adagrad_optim_handle).zero_grad();
+}
+
+JNIEXPORT jlong JNICALL Java_space_kscience_kmath_noa_JNoa_sgdOptim
+        (JNIEnv *, jclass, jlong jit_module_handle, jdouble learning_rate, jdouble momentum,
+        jdouble dampening, jdouble weight_decay, jboolean nesterov) {
+    return (long) new SgdOptim(get_sgd_optim<SgdOptim, SgdOptimOpts>(
+            cast<JitModule>(jit_module_handle), learning_rate, momentum,
+            dampening, weight_decay, nesterov));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_disposeSgdOptim
+        (JNIEnv *, jclass, jlong sgd_optim_handle) {
+    if (sgd_optim_handle != 0L)
+        dispose<SgdOptim>(sgd_optim_handle);
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_stepSgdOptim
+        (JNIEnv *env, jclass, jlong sgd_optim_handle) {
+    safe_run(env,
+             [](SgdOptim &sgd_optim) {
+                 sgd_optim.step();
+             },
+             cast<SgdOptim>(sgd_optim_handle));
+}
+
+JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_zeroGradSgdOptim
+        (JNIEnv *, jclass, jlong sgd_optim_handle) {
+    cast<SgdOptim>(sgd_optim_handle).zero_grad();
+}
+
 JNIEXPORT void JNICALL Java_space_kscience_kmath_noa_JNoa_swapTensors
         (JNIEnv *, jclass, jlong lhs_handle, jlong rhs_handle) {
     std::swap(cast<Tensor>(lhs_handle), cast<Tensor>(rhs_handle));
