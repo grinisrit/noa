@@ -45,11 +45,11 @@ namespace noa::pms::trace {
 
         __cuda_callable__
         static Real get_ray_plane_intersection(
-            const Point &point0,
-            const Point &point1,
-            const Point &point2,
-            const Point &origin,
-            const Point &direction) {
+                const Point &point0,
+                const Point &point1,
+                const Point &point2,
+                const Point &origin,
+                const Point &direction) {
             Point edge1 = point1 - point0;
             Point edge2 = point2 - point0;
 
@@ -73,11 +73,11 @@ namespace noa::pms::trace {
 
         __cuda_callable__
         static bool check_points_in_one_side(
-            const Point& plane_point0,
-            const Point& plane_point1,
-            const Point& plane_point2,
-            const Point& point0,
-            const Point& point1) {
+                const Point &plane_point0,
+                const Point &plane_point1,
+                const Point &plane_point2,
+                const Point &point0,
+                const Point &point1) {
             Point edge0 = plane_point1 - plane_point0;
             Point edge1 = plane_point2 - plane_point0;
 
@@ -91,10 +91,11 @@ namespace noa::pms::trace {
 
         __cuda_callable__
         static bool check_point_in_tetrahedron(
-            const Mesh* mesh_pointer,
-            const Index tetrahedron_global_index,
-            const Point& point) {
-            const typename Mesh::Cell &tetrahedron = mesh_pointer->template getEntity<Mesh::getMeshDimension()>(tetrahedron_global_index);
+                const Mesh *mesh_pointer,
+                const Index tetrahedron_global_index,
+                const Point &point) {
+            const typename Mesh::Cell &tetrahedron = mesh_pointer->template getEntity<Mesh::getMeshDimension()>(
+                    tetrahedron_global_index);
 
             TNL_ASSERT_EQ(tetrahedron.template getSubentitiesCount<0>(), 4, "wrong number of vertices");
             Point points[4] = {};
@@ -133,18 +134,19 @@ namespace noa::pms::trace {
         /// \param origin New ray origin (intersection point)
         /// \param direction New ray direction
         /// \param ray_offset Offset along ray for check if point (= origin + direction * ray_offset) is inside of a tetrahedron
-        /// \return {Next tetrahedron in ray} -- if success, {} - if otherwise
+        /// \return {Next tetrahedron in ray} -- if success, {} - if otherwise (tetrahedron not found)
         __cuda_callable__
         static std::optional<Index> get_next_tetrahedron(
-            const Mesh* mesh_pointer,
-            const Intersection& intersection,
-            const Point& origin,
-            const Point& direction,
-            Real ray_offset) {
+                const Mesh *mesh_pointer,
+                const Intersection &intersection,
+                const Point &origin,
+                const Point &direction,
+                Real ray_offset) {
             Point point_with_offset = origin + direction * ray_offset;
 
             const auto &face = mesh_pointer->template getEntity<2>(intersection.nearest_face_global_index);
-            for (LocalIndex tetrahedron_id = 0; tetrahedron_id < face.template getSuperentitiesCount<3>(); tetrahedron_id++) {
+            for (LocalIndex tetrahedron_id = 0;
+                 tetrahedron_id < face.template getSuperentitiesCount<3>(); tetrahedron_id++) {
                 Index tetrahedron_global_index = face.template getSuperentityIndex<3>(tetrahedron_id);
                 if (check_point_in_tetrahedron(mesh_pointer, tetrahedron_global_index, point_with_offset)) {
                     return tetrahedron_global_index;
@@ -158,7 +160,8 @@ namespace noa::pms::trace {
             for (LocalIndex point_id = 0; point_id < face.template getSubentitiesCount<0>(); point_id++) {
                 Index point_global_index = face.template getSubentityIndex<0>(point_id);
                 const auto &point = mesh_pointer->template getEntity<0>(point_global_index);
-                for (LocalIndex tetrahedron_id = 0; tetrahedron_id < point.template getSuperentitiesCount<3>(); tetrahedron_id++) {
+                for (LocalIndex tetrahedron_id = 0;
+                     tetrahedron_id < point.template getSuperentitiesCount<3>(); tetrahedron_id++) {
                     Index tetrahedron_global_index = point.template getSuperentityIndex<3>(tetrahedron_id);
                     if (check_point_in_tetrahedron(mesh_pointer, tetrahedron_global_index, point_with_offset)) {
                         return tetrahedron_global_index;
@@ -168,7 +171,6 @@ namespace noa::pms::trace {
 
             return {};
         }
-
 
         /// Calculate the triangle the ray hits
         /// \param mesh_pointer Pointer to device mesh
@@ -180,13 +182,14 @@ namespace noa::pms::trace {
         /// \return Intersection structure: triangle global index, distance from origin, (triangle)/(line or point) flag (see Intersection)
         __cuda_callable__
         static Intersection get_first_border_in_tetrahedron(
-            const Mesh* mesh_pointer,
-            const Index tetrahedron_global_index,
-            const Point& origin,
-            const Point& direction,
-            Real epsilon) {
+                const Mesh *mesh_pointer,
+                const Index tetrahedron_global_index,
+                const Point &origin,
+                const Point &direction,
+                Real epsilon) {
             TNL_ASSERT_EQ(Mesh::getMeshDimension(), 3, "wrong mesh dimension");
-            const typename Mesh::Cell &tetrahedron = mesh_pointer->template getEntity<Mesh::getMeshDimension()>(tetrahedron_global_index);
+            const typename Mesh::Cell &tetrahedron = mesh_pointer->template getEntity<Mesh::getMeshDimension()>(
+                    tetrahedron_global_index);
 
             Intersection result;
             result.distance = std::numeric_limits<Real>::max();
@@ -224,6 +227,35 @@ namespace noa::pms::trace {
             }
 
             return result;
+        }
+
+        /// Get tetrahedron with point
+        /// \param mesh_pointer Pointer to device mesh
+        /// \param mesh_size Number of tetrahedrons in mesh
+        /// \param point Point for test
+        /// \return Tetrahedron global index - if point is inside mesh, {} - if otherwise
+        static std::optional<Index> get_current_tetrahedron(const Mesh *mesh_pointer, Index mesh_size, const Point &point)
+        {
+            Array<std::optional<Index>, DeviceType> device_array(mesh_size);
+            auto view = device_array.getView();
+
+            Algorithms::ParallelFor<DeviceType>::exec(0, mesh_size, [=] __cuda_callable__ (Index i) mutable {
+                std::optional<Index> result{};
+                if (check_point_in_tetrahedron(mesh_pointer, i, point)) {
+                    result = i;
+                }
+                view[i] = result;
+            });
+
+            auto fetch = [=] __cuda_callable__ (Index i) {
+                return view[i];
+            };
+
+            auto reduction = [=] __cuda_callable__ (std::optional<Index> x, std::optional<Index> y) {
+                return x ? x : y;
+            };
+
+            return Algorithms::reduce<DeviceType>(0, mesh_size, fetch, reduction, std::optional<Index>{});
         }
     };
 }
