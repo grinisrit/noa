@@ -18,7 +18,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
 /**
- * Implemented by: Roland Grinis
+ * Implemented by: Roland Grinis, Anastasia Golovina
  */
 
 #include "jnoa.hh"
