@@ -1,5 +1,7 @@
 #pragma once
 
+#include "test-data.hh"
+
 #include <noa/pms/trace.hh>
 
 #include <gtest/gtest.h>
@@ -9,16 +11,12 @@ using namespace noa::pms::trace;
 using HostMesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, Devices::Host>;
 using HostMeshOpt = std::optional<HostMesh>;
 
-HostMeshOpt load_tetrahedron_host_test_mesh();
-
 template <class DeviceType>
 inline void test_get_first_border_in_tetrahedron() {
     using DeviceMesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, DeviceType>;
     using PointDevice = typename DeviceMesh::PointType;
 
-    HostMeshOpt mesh_opt = load_tetrahedron_host_test_mesh();
-    TNL_ASSERT_TRUE((bool) mesh_opt, "mesh don't loaded");
-    HostMesh host_mesh = *mesh_opt;
+    HostMesh host_mesh = MeshData::get_tmesh();
     DeviceMesh device_mesh = host_mesh;
     Pointers::DevicePointer<const DeviceMesh> mesh_device_pointer(device_mesh);
     const DeviceMesh *mesh_pointer = &mesh_device_pointer.template getData<typename DeviceMesh::DeviceType>();
@@ -103,9 +101,7 @@ inline void test_get_current_tetrahedron() {
     using DeviceMesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, DeviceType>;
     using PointHost = typename HostMesh::PointType;
 
-    HostMeshOpt mesh_opt = load_tetrahedron_host_test_mesh();
-    TNL_ASSERT_TRUE((bool)mesh_opt, "mesh don't loaded");
-    HostMesh host_mesh = *mesh_opt;
+    HostMesh host_mesh = MeshData::get_tmesh();
     DeviceMesh device_mesh = host_mesh;
     Pointers::DevicePointer<const DeviceMesh> mesh_device_pointer(device_mesh);
     const DeviceMesh *mesh_pointer = &mesh_device_pointer.template getData<typename DeviceMesh::DeviceType>();
@@ -122,9 +118,7 @@ inline void check_side_cases() {
     using DeviceMesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, DeviceType>;
     using PointDevice = typename DeviceMesh::PointType;
 
-    HostMeshOpt mesh_opt = load_tetrahedron_host_test_mesh();
-    TNL_ASSERT_TRUE((bool)mesh_opt, "mesh don't loaded");
-    HostMesh host_mesh = *mesh_opt;
+    HostMesh host_mesh = MeshData::get_tmesh();
     DeviceMesh device_mesh = host_mesh;
     Pointers::DevicePointer<const DeviceMesh> mesh_device_pointer(device_mesh);
     const DeviceMesh *mesh_pointer = &mesh_device_pointer.template getData<typename DeviceMesh::DeviceType>();
