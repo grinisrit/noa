@@ -56,7 +56,11 @@
 #endif
 
 #ifndef PUMAS_VERSION_MINOR
-#define PUMAS_VERSION_MINOR 1
+#define PUMAS_VERSION_MINOR 2
+#endif
+
+#ifndef PUMAS_VERSION_PATCH
+#define PUMAS_VERSION_PATCH 0
 #endif
 
 /* Some tuning factors as macros. */
@@ -86,11 +90,10 @@
  */
 #define DEFAULT_ELASTIC_RATIO 5E-02
 /**
- * Exponents of the differential cross section approximation in Backward
+ * Exponent of the differential cross section approximation in Backward
  * Monte-Carlo (BMC).
  */
-#define RMC_ALPHA_LOW 2.5
-#define RMC_ALPHA_HIGH 1.4
+#define BMC_ALPHA 2.0
 /**
  * Maximum path length for Elastic Hard Scattering (EHS) events, in kg/m^-2.
  */
@@ -2789,10 +2792,11 @@ error:
             PUMAS_RETURN_IO_ERROR, "could not write to stream");
 }
 
-void pumas_version(int * major, int * minor)
+void pumas_version(int * major, int * minor, int * patch)
 {
         if (major != NULL) *major = PUMAS_VERSION_MAJOR;
         if (minor != NULL) *minor = PUMAS_VERSION_MINOR;
+        if (patch != NULL) *patch = PUMAS_VERSION_PATCH;
 }
 
 /* Public library functions: recorder handling. */
@@ -3167,6 +3171,15 @@ enum pumas_return pumas_context_transport(struct pumas_context * context,
                 return ERROR_FORMAT(PUMAS_RETURN_ACCURACY_ERROR,
                     "bad accuracy value (expected a value in ]0,1], got %g)",
                     context->accuracy);
+        }
+
+        if ((context->mode.direction == PUMAS_MODE_BACKWARD) &&
+            (context->mode.energy_loss > PUMAS_MODE_CSDA) &&
+            (physics->cutoff < 1E-02)) {
+                return ERROR_FORMAT(PUMAS_RETURN_ACCURACY_ERROR,
+                    "bad cutoff value for backward transport (expected a "
+                    "value greater than or equal to 0.01, got %g)",
+                    physics->cutoff);
         }
 
         /* Get the start medium. */
@@ -6033,18 +6046,18 @@ polar_function_t * del_randomise_reverse(const struct pumas_physics * physics,
             (kf >= kt * (1. - physics->cutoff)) ? physics->cutoff : 1. - kf / kt;
 
         /* Randomise the initial energy with a bias model. */
-        double xmax, alpha;
+        double xmax;
         const double m1 = physics->mass - ELECTRON_MASS;
         if (state->energy < 0.5 * m1 * m1 / ELECTRON_MASS) {
                 const double m2 = physics->mass + ELECTRON_MASS;
                 xmax = 2. * ELECTRON_MASS *
                     (state->energy + 2. * physics->mass) / (m2 * m2);
                 if (xmax < xf) return NULL;
-                alpha = RMC_ALPHA_LOW;
+                else if (xmax > 1.) xmax = 1.;
         } else {
-                alpha = RMC_ALPHA_HIGH;
                 xmax = 1.;
         }
+        const double alpha = BMC_ALPHA;
 
         double r, w_bias;
         del_randomise_power_law(context, alpha, xf, xmax, &r, &w_bias);
