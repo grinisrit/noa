@@ -1,0 +1,42 @@
+group IO
+{
+   string input-file                    [Input file name.];
+   string output-file                   [Output file name.];
+   string log-file("twoface-flow.log")  [File name for the log.];
+},[Arguments describing input and output data.];
+
+group Problem
+{
+   string problem-name(!)               [Problem to solve. It can be riser, cavity,...];
+   real max-inflow-velocity(1.0)        [];
+   real max-outflow-velocity(0.8)       [];
+   real start-up(0.0)                   [Start-up time of the riser.];
+   real mu(!)                           [Viscosity.];
+   real p0(!)                           [Pressure for the initial condition.];
+   real gamma(!)                        [Heat capacity ratio.];
+   real T(!)                            [Temperature.];
+   real R(!)                            [Gas constant.]; 
+   real gravity(9.81)                   [Gravity force.];
+},[Setting up the problem we solve.];
+
+group Geometry
+{
+   string mesh( "mesh.tnl" )        [The mesh file.];
+   real riser-gas-inflow-width[0.2] [Width of the gas inflow on the bottom of the riser.];
+},[Parameters describing the geometry of the problem.];
+
+group Solver
+{
+   string real-type( "double" )           [Precision of the floating point arithmetics. Can be float, double, long-double.];
+   string index-type( "int" )             [Indexing type for arrays, vectors, matrices etc. Can be int or long-int.];
+   string device( "host" )                [Device to use for the computations. Can be host or cuda.];
+   string discrete-solver(!)              [The main solver for the discretised problem.];
+   real merson-adaptivity(1.0e-4)         [Parameter controling adaptivity of the Runge-Kutta-Merson solver.];
+   real initial-tau(1.0e-5)               [Initial time step for the time dependent PDE solver. It can be changed if an adaptive solver is used.];
+   real snapshot-period(!)                [Time period for writing a state of the time dependent problem to a file.];
+   real final-time(!)                     [Stop time of the time dependent simulation.];
+   string scheme(!)                       [Numerical scheme for the space discretisation.];
+   string time-discretisation("explicit") [Time discretisation of the problem. Can be only explicit for now.];
+   integer verbose(1)                     [Set the verbose mode. The higher number the more messages are generated.]; 
+},[Parameters of the solver];
+

@@ -1,0 +1,3 @@
+*.o
+quad-test
+quad-test-conf.h

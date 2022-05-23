@@ -1,0 +1,38 @@
+# Documentation: https://clang.llvm.org/extra/clang-tidy/
+---
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle:      file
+User:             user
+Checks:           'readability-*,
+                  -readability-else-after-return,
+                  -readability-named-parameter,
+                  modernize-*,
+                  -modernize-avoid-c-arrays,
+                  -modernize-use-trailing-return-type,
+                  -modernize-raw-string-literal,
+                  performance-*,
+                  mpi-*'
+WarningsAsErrors: 'performance-*,mpi-*'
+CheckOptions:
+  - key:             readability-braces-around-statements.ShortStatementLines
+    value:           99
+  - key:             readability-function-size.LineThreshold
+    value:           64
+  - key:             readability-function-size.ParameterThreshold
+    value:           15
+  - key:             readability-magic-numbers.IgnoreAllFloatingPointValues
+    value:           true
+  - key:             readability-magic-numbers.IgnorePowersOf2IntegerValues
+    value:           true
+
+  - key:             modernize-use-default-member-init.UseAssignment
+    value:           true
+  - key:             modernize-use-auto.MinTypeNameLength
+    value:           10
+
+  - key:             cppcoreguidelines-pro-type-member-init.UseAssignment
+    value:           true
+
+...
+# vim: ft=yaml

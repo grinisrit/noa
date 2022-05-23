@@ -1,0 +1,5 @@
+   const RealType& hxSquareInverse = entity.getMesh().template getSpaceStepsProducts< -2 >(); 
+   const IndexType& center = entity.getIndex(); 
+   const IndexType& east = neighborEntities.template getEntityIndex< 1 >(); 
+   const IndexType& west = neighborEntities.template getEntityIndex< -1 >(); 
+   return ( u[ west ] - 2.0 * u[ center ]  + u[ east ] ) * hxSquareInverse;

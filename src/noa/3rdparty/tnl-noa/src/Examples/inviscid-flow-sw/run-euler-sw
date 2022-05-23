@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+tnl-grid-setup --dimensions 2 \
+               --origin-x 0.0 \
+               --origin-y 0.0 \
+               --proportions-x 1.0 \
+               --proportions-y 1.0 \
+               --size-x 100 \
+               --size-y 100
+
+tnl-init --test-function sin-wave \
+         --output-file init.tnl
+tnl-euler-2d --initial-condition riemann-problem \
+             --discontinuity-placement-0 0.3 \
+             --discontinuity-placement-1 0.3 \
+             --discontinuity-placement-2 0.3 \
+             --time-discretisation explicit \
+             --boundary-conditions-type neumann \
+             --boundary-conditions-constant 0 \
+             --discrete-solver euler \
+             --time-step 0.0001 \
+             --snapshot-period 0.01 \
+             --final-time 1.0
+
+tnl-view --mesh mesh.tnl --input-files *tnl     

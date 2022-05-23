@@ -1,0 +1,470 @@
+#!/bin/bash
+
+dimensions="1D 2D"
+initial_conditions="square circle"
+viscosities="0.25 0.5 1.0"
+entities_counts="50 100 200 400 800 1600" 
+
+setupGrid()
+{
+   if test $dimension = 1D;
+   then
+   tnl-grid-setup --dimensions 1 \
+                  --origin-x 0.0 \
+                  --proportions-x 1.0 \
+                  --size-x ${entities_count}
+   fi
+
+   if test $dimension = 2D;
+   then
+   tnl-grid-setup --dimensions 2 \
+                  --origin-x 0.0 \
+                  --origin-y 0.0 \
+                  --proportions-x 1.0 \
+                  --proportions-y 1.0 \
+                  --size-x ${entities_count} \
+                  --size-y ${entities_count}
+   fi
+
+   if test $dimension = 3D;
+   then
+   tnl-grid-setup --dimensions 3 \
+                  --origin-x 0.0 \
+                  --origin-y 0.0 \
+                  --origin-z 0.0 \
+                  --proportions-x 1.0 \
+                  --proportions-y 1.0 \
+                  --proportions-z 1.0 \
+                  --size-x ${entities_count} \
+                  --size-y ${entities_count} \
+                  --size-z ${entities_count}
+   fi
+}
+
+tnlViewTest()
+{
+   tnl-view --mesh mesh.tnl --input-files *tnl 
+}
+
+setInitialCondition()
+{
+if test $dimension = 1D;
+   then
+   if test $initial_condition = square;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file init.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+   fi
+
+   if test $initial_condition = circle;
+      then
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file init.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+   fi
+fi
+
+if test $dimension = 2D;
+then
+   if test $initial_condition = square;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file init.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+   fi
+
+   if test $initial_condition = circle;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file init.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+   fi
+fi
+
+if test $dimension = 3D;
+then
+   if test $initial_condition = square;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file init.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-center-2 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+   fi
+
+   if test $initial_condition = circle;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file init.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-center-2 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+   fi
+fi
+}
+
+setAnalyticSolution()
+{
+if test $dimension = 1D;
+   then
+   if test $initial_condition = square;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00000.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00001.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.55 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00002.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.65 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+   fi
+
+   if test $initial_condition = circle;
+      then
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00000.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00001.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.55 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00002.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.65 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+   fi
+fi
+
+if test $dimension = 2D;
+then
+   if test $initial_condition = square;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00000.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00001.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.55 \
+               --vector-norm-center-1 0.55 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00002.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.65 \
+               --vector-norm-center-1 0.65 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+   fi
+
+   if test $initial_condition = circle;
+      then
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00000.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00001.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.55 \
+               --vector-norm-center-1 0.55 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00002.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.65 \
+               --vector-norm-center-1 0.65 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+   fi
+fi
+
+if test $dimension = 3D;
+then
+   if test $initial_condition = square;
+      then
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00000.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-center-2 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00001.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.55 \
+               --vector-norm-center-1 0.55 \
+               --vector-norm-center-2 0.55 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+      tnl-init --test-function heaviside-of-vector-norm \
+               --output-file a-00002.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.65 \
+               --vector-norm-center-1 0.65 \
+               --vector-norm-center-2 0.65 \
+               --vector-norm-radius 0.2 \
+               --vector-norm-power 0.6 \
+               --vector-norm-max-norm true \
+               --vector-norm-multiplicator -1.0
+
+   fi
+
+   if test $initial_condition = circle;
+      then
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00000.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.45 \
+               --vector-norm-center-1 0.45 \
+               --vector-norm-center-2 0.45 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00001.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.55 \
+               --vector-norm-center-1 0.55 \
+               --vector-norm-center-2 0.55 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+      tnl-init --test-function smooth-heaviside-of-vector-norm \
+               --output-file a-00002.tnl \
+               --coefficient -1.0 \
+               --vector-norm-center-0 0.65 \
+               --vector-norm-center-1 0.65 \
+               --vector-norm-center-2 0.65 \
+               --vector-norm-radius 0.1 \
+               --vector-norm-power 2.0 \
+               --vector-norm-max-norm false \
+               --vector-norm-multiplicator -1.0 \
+               --smooth-heaviside-sharpness 10.0
+
+   fi
+fi
+}
+
+compute()
+
+{
+timestep=$(echo "scale=8;(1/${entities_count})" |bc -l)
+tnl-transport-equation --device host \
+                       --initial-condition init.tnl \
+                       --time-discretisation explicit \
+                       --time-step $timestep \
+                       --boundary-conditions-constant 0.0 \
+                       --discrete-solver euler \
+                       --snapshot-period 1.0 \
+                       --final-time 2.0 \
+                       --numerical-viscosity ${viscosity} \
+                       --velocity-field-0-constant 0.1 \
+                       --velocity-field-1-constant 0.1 \
+                       --velocity-field-2-constant 0.1
+}
+
+computeError()
+{
+   tnl-diff --mesh mesh.tnl \
+            --input-files a-*.tnl u-*.tnl \
+            --mode halves \
+            --snapshot-period 1.0 \
+            --output-file errors.txt \
+            --write-difference yes
+}
+
+runTest()
+{
+   mv computation-in-progress computation-done
+   for dimension in ${dimensions};
+   do
+      mkdir -p ${dimension}
+      cd ${dimension}
+
+         for initial_condition in ${initial_conditions};
+         do
+            mkdir -p ${initial_condition}
+            cd ${initial_condition}
+
+               for viscosity in ${viscosities};
+               do
+                  mkdir -p ${viscosity}
+                  cd ${viscosity}
+
+                     for entities_count in ${entities_counts};
+                     do
+                        lastSize=""
+                        mkdir -p ${entities_count}
+                        cd ${entities_count}
+
+                           echo ""
+                           echo ""
+                           echo ""
+                           if test ! -f computation-done;
+                           then
+                              touch computation-in-progress
+                              echo "========================================================================="
+                              echo "===                   SETTING UP THE GRID                             ==="
+                              echo "========================================================================="
+                              setupGrid 
+                              echo "========================================================================="
+                              echo "===                WRITING THE EXACT SOLUTION                         ==="
+                              echo "========================================================================="
+                              setInitialCondition
+                              echo "========================================================================="
+                              echo "===                   STARTING THE SOLVER                             ==="
+                              echo "========================================================================="
+                              compute
+                              setAnalyticSolution
+                              mv computation-in-progress computation-done
+                            fi            
+                           echo "========================================================================="
+                           echo "===                   COMPUTING THE ERROR                             ==="
+                           echo "========================================================================="
+                           computeError
+                           echo "========================================================================="
+                           echo "===                     COMPUTING THE EOC                             ==="            
+                           echo "========================================================================="
+                           if test ! $lastSize = $entities_count;
+                           then
+                              tnl-err2eoc ../$lastSize/errors.txt errors.txt
+                           fi
+                           echo "========================================================================="
+                           echo "===                     COMPUTATION DONE                              ==="            
+                           echo "========================================================================="
+                 
+                        cd ..
+                        lastSize=$entities_count
+                     done
+                  cd ..
+
+               done
+            cd .. 
+
+         done
+      cd ..
+      
+   done   
+}
+
+runTest
+ 

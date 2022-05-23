@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# exit as soon as there is an error
+set -e
+
+PREFIX=${HOME}/.local
+for option in "$@"; do
+    case $option in
+        --prefix=*) PREFIX="${option#*=}" ;;
+    esac
+done
+
+pkgname=tinyxml2
+pkgver=9.0.0
+url="https://github.com/leethomason/$pkgname/archive/$pkgver/$pkgname-$pkgver.tar.gz"
+sha256sum='cc2f1417c308b1f6acc54f88eb70771a0bf65f76282ce5c40e54cfe52952702c'
+
+# prepare
+mkdir -p "build-$pkgname"
+pushd "build-$pkgname"
+
+if [[ ! -f "$pkgver.tar.gz" ]]; then
+    if [[ $(command -v curl) ]]; then
+        curl -gqb "" -fLC - --retry 3 --retry-delay 3 -o "$pkgver.tar.gz" "$url"
+    elif [[ $(command -v wget) ]]; then
+        wget -q --no-glob --no-config --continue --tries=3 --waitretry=3 -O "$pkgver.tar.gz" "$url"
+    else
+        echo "Error: none of curl and wget is available, cannot proceed." >&2
+        echo "You can install either curl or wget in your system and try again." >&2
+        echo "(Or install the tinyxml2 library (libtinyxml2-dev on Ubuntu) so that using this script is not necessary.)" >&2
+        exit 1
+    fi
+fi
+echo -e "$sha256sum\t$pkgver.tar.gz" > "$pkgname.checksum"
+sha256sum --check "$pkgname.checksum"
+tar -xf "$pkgver.tar.gz"
+
+# build and install
+cmake ./$pkgname-$pkgver \
+   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+   -DCMAKE_INSTALL_LIBDIR=lib \
+   -DCMAKE_BUILD_TYPE=Release
+make
+make install

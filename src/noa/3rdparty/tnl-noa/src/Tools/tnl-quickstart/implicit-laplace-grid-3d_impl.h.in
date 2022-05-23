@@ -1,0 +1,17 @@
+   const RealType& lambdaX = tau * entity.getMesh().template getSpaceStepsProducts< -2,  0,  0 >(); 
+   const RealType& lambdaY = tau * entity.getMesh().template getSpaceStepsProducts<  0, -2,  0 >(); 
+   const RealType& lambdaZ = tau * entity.getMesh().template getSpaceStepsProducts<  0,  0, -2 >(); 
+   const IndexType& center = entity.getIndex(); 
+   const IndexType& east  = neighborEntities.template getEntityIndex<  1,  0,  0 >(); 
+   const IndexType& west  = neighborEntities.template getEntityIndex< -1,  0,  0 >(); 
+   const IndexType& north = neighborEntities.template getEntityIndex<  0,  1,  0 >(); 
+   const IndexType& south = neighborEntities.template getEntityIndex<  0, -1,  0 >();         
+   const IndexType& up    = neighborEntities.template getEntityIndex<  0,  0,  1 >(); 
+   const IndexType& down  = neighborEntities.template getEntityIndex<  0,  0, -1 >();                 
+   matrixRow.setElement( 0, down,   -lambdaZ );
+   matrixRow.setElement( 1, south,  -lambdaY );
+   matrixRow.setElement( 2, west,   -lambdaX );
+   matrixRow.setElement( 3, center, 2.0 * ( lambdaX + lambdaY + lambdaZ ) );
+   matrixRow.setElement( 4, east,   -lambdaX );
+   matrixRow.setElement( 5, north,  -lambdaY );
+   matrixRow.setElement( 6, up,     -lambdaZ );

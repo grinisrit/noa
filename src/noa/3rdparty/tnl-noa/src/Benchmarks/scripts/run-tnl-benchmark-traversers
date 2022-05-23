@@ -1,0 +1,5 @@
+#!/bin/bash
+
+tnl-benchmark-traversers --dimension 1 --loops 1 --min-size 16 --max-size 100000 --min-time 1
+tnl-benchmark-traversers --dimension 2 --loops 1 --min-size 16 --max-size 10000 --min-time 1 --output-mode append
+tnl-benchmark-traversers --dimension 3 --loops 1 --min-size 16 --max-size 1000 --min-time 1 --output-mode append

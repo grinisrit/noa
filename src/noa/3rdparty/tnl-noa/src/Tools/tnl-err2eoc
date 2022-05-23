@@ -1,0 +1,168 @@
+#!/usr/bin/env python2
+
+import sys, string, math
+
+arguments = sys. argv[1:]
+format = "txt"
+output_file_name = "eoc.txt"
+input_files = []
+verbose = 1
+refinement = 2
+
+i = 0
+while i < len( arguments ):
+   if arguments[ i ] == "--refinement":
+      refinement = float( arguments[ i + 1 ] )
+      i = i + 2
+      continue
+   if arguments[ i ] == "--output-file":
+      output_file_name = arguments[ i + 1 ]
+      i = i + 2
+      continue      
+   if arguments[ i ] == "--verbose":
+       verbose = float( arguments[ i + 1 ] )
+       i = i +2
+       continue       
+   input_files. append( arguments[ i ] )
+   i = i + 1
+
+if len( input_files ) != 2:
+    print "Two input files are required."
+    exit()
+
+if not verbose == 0:
+   print "Writing to " + output_file_name + "..."
+
+errors = {}
+snapshots = []
+fileIdx = 1
+
+for file_name in input_files:
+   if not verbose == 0:
+       print "Processing file " + file_name
+   file = open( file_name, "r" )
+   snapshotIdx = 0
+   
+   for line in file. readlines():
+      if line[ 0:1 ] != "#":
+         data = string. split( line )
+         if fileIdx == 1:
+             snapshots.append( float( data[ 0 ] ) )
+         errors[ fileIdx, snapshotIdx, "L1" ] = float( data[ 1 ] ) 
+         errors[ fileIdx, snapshotIdx, "L2" ] =  float( data[ 2 ] )
+         errors[ fileIdx, snapshotIdx, "max" ] =  float( data[ 3 ] )
+         errors[ fileIdx, snapshotIdx, "totalL1" ] = float( data[ 4 ] ) 
+         errors[ fileIdx, snapshotIdx, "totalL2" ] =  float( data[ 5 ] )
+         errors[ fileIdx, snapshotIdx, "totalMax" ] =  float( data[ 6 ] )
+         snapshotIdx = snapshotIdx + 1;
+         #if not verbose == 0:
+         #   print line
+   file. close()
+   fileIdx = fileIdx + 1
+
+snapshotIdx = 1
+logRefinement = math.log( refinement )
+time_width = 12
+err_width = 16
+file = open( output_file_name, "w" )
+file.write( "#       Time          L1 EOC          L2 EOC         Max.EOC    Total L1 EOC    Total L2 EOC  Total Max. EOC \n" )
+#                        .               .               .               .               .               .               .
+while snapshotIdx < len( snapshots ):
+    l1Eoc = math.log( errors[ 1, snapshotIdx, "L1"] / errors[ 2, snapshotIdx, "L1" ] ) / logRefinement;
+    l2Eoc = math.log( errors[ 1, snapshotIdx, "L2"] / errors[ 2, snapshotIdx, "L2" ] ) / logRefinement;
+    maxEoc = math.log( errors[ 1, snapshotIdx, "max"] / errors[ 2, snapshotIdx, "max" ] ) / logRefinement;
+    totalL1Eoc = math.log( errors[ 1, snapshotIdx, "totalL1"] / errors[ 2, snapshotIdx, "totalL1" ] ) / logRefinement;
+    totalL2Eoc = math.log( errors[ 1, snapshotIdx, "totalL2"] / errors[ 2, snapshotIdx, "totalL2" ] ) / logRefinement;
+    totalMaxEoc = math.log( errors[ 1, snapshotIdx, "totalMax"] / errors[ 2, snapshotIdx, "totalMax" ] ) / logRefinement;
+    file.write( string. rjust( str( snapshots[ snapshotIdx ] ), time_width ) )
+    file.write( string. rjust( str( "%0.3f" % l1Eoc ), err_width ) )
+    file.write( string. rjust( str( "%0.3f" % l2Eoc ), err_width ) )
+    file.write( string. rjust( str( "%0.3f" % maxEoc ), err_width ) )
+    file.write( string. rjust( str( "%0.3f" % totalL1Eoc ), err_width ) )
+    file.write( string. rjust( str( "%0.3f" % totalL2Eoc ), err_width ) )
+    file.write( string. rjust( str( "%0.3f" % totalMaxEoc ), err_width ) )
+    file.write( "\n" )
+    snapshotIdx = snapshotIdx + 1
+    
+file.close()
+exit()       
+
+
+file = open( output_file_name, "w" )
+if format == "latex":
+      file. write( "\\begin{tabular}{|r|l|l|l|l|l|l|}\\hline\n" )
+      file. write( "\\raisebox{-1ex}[0ex]{$h$}& \n" )
+      file. write( "\\multicolumn{2}{|c|}{\\raisebox{1ex}[3.5ex]{$\\left\| \\cdot \\right\\|_{L_1\\left(\\omega_h;\\left[0,T\\right]\\right)}^{h,\\tau}$}}& \n" )
+      file. write( "\\multicolumn{2}{|c|}{\\raisebox{1ex}[3.5ex]{$\\left\| \\cdot \\right\\|_{L_2\\left(\\omega_h;\left[0,T\\right]\\right)}^{h,\\tau}$}}& \n" )
+      file. write( "\\multicolumn{2}{|c|}{\\raisebox{1ex}[3.5ex]{$\\left\| \\cdot \\right\\|_{L_\\infty\\left(\\omega_h;\\left[0,T\\right]\\right)}^{h,\\tau}$}}\\\\ \\cline{2-7} \n" )
+      file. write( " " + string. rjust( " ", h_width ) + "&" +
+                string. rjust( "Error", err_width ) + "&" +
+                string. rjust( "{\\bf EOC}", err_width ) + "&" +
+                string. rjust( "Error", err_width ) + "&" +
+                string. rjust( "{\\bf EOC}", err_width ) + "&" +
+                string. rjust( "Error.", err_width ) + "&" +
+                string. rjust( "{\\bf EOC}", err_width ) +
+                "\\\\ \\hline \\hline \n")
+if format == "txt":
+    file. write( "+--------------+----------------+----------------+----------------+----------------+----------------+----------------+\n" )
+    file. write( "|       h      |     L1 Err.    |     L1 EOC.    |     L2 Err.    |      L2 EOC    |    MAX Err.    |     MAX EOC    |\n" )
+    file. write( "+==============+================+================+================+================+================+================+\n" )
+                  
+
+i = 0
+while i < items:
+   if i == 0:
+      if format == "latex":
+         file. write( " " + string. ljust( str( h_list[ i ] ), h_width ) + "&" +
+                      string. rjust( "%.2g" % l1_norm_list[ i ], err_width ) + "&" + 
+                      string. rjust( " ", err_width ) + "&"+ 
+                      string. rjust( "%.2g" % l2_norm_list[ i ], err_width ) + "&" +
+                      string. rjust( " ", err_width ) + "&" +
+                      string. rjust( "%.2g" % max_norm_list[ i ], err_width ) + "&" +
+                      string. rjust( " ", err_width ) + "\\\\\n" )
+      if format == "txt":
+         file. write( "| " + string. ljust( str( h_list[ i ] ), h_width ) + " |" + 
+                      string. rjust( "%.2g" % l1_norm_list[ i ], err_width ) + " |" +
+                      string. rjust( " ", err_width ) + " |" +
+                      string. rjust( "%.2g" % l2_norm_list[ i ], err_width ) + " |" +
+                      string. rjust( " ", err_width ) + " |" +
+                      string. rjust( "%.2g" % max_norm_list[ i ], err_width ) + " |" +
+                      string. rjust( " ", err_width ) + " |\n" )
+         file. write( "+--------------+----------------+----------------+----------------+----------------+----------------+----------------+\n" )
+      i = i + 1;
+      continue
+   if h_list[ i ] == h_list[ i - 1 ]:
+      print "Unable to count eoc since h[ " + \
+      str( i ) + " ] = h[ " + str( i - 1 ) + \
+      " ] = " + str( h_list[ i ] ) + ". \n"
+      file. write( " eoc error:  h[ " + \
+      str( i ) + " ] = h[ " + str( i - 1 ) + \
+      " ] = " + str( h_list[ i ] ) + ". \n" )
+   else:
+      h_ratio = math. log( h_list[ i ] / h_list[ i - 1 ] )
+      l1_ratio = math. log( l1_norm_list[ i ] / l1_norm_list[ i - 1 ] )
+      l2_ratio = math. log( l2_norm_list[ i ] / l2_norm_list[ i - 1 ] )
+      max_ratio = math. log( max_norm_list[ i ] / max_norm_list[ i - 1 ] )
+      if format == "latex":
+         file. write( " " + string. ljust( str( h_list[ i ] ), h_width ) + "&" +
+                      string. rjust( "%.2g" % l1_norm_list[ i ], err_width ) + "&" +
+                      string. rjust( "{\\bf " + "%.2g" % ( l1_ratio / h_ratio ) + "}", err_width ) + "&" +
+                      string. rjust( "%.2g" % l2_norm_list[ i ], err_width ) + "&" +
+                      string. rjust( "{\\bf " + "%.2g" % ( l2_ratio / h_ratio ) + "}", err_width ) + "&" +
+                      string. rjust( "%.2g" % max_norm_list[ i ], err_width ) + "&" +
+                      string. rjust( "{\\bf " + "%.2g" % ( max_ratio / h_ratio ) + "}", err_width ) + "\\\\\n" )
+      if format == "txt":
+         file. write( "| " + string. ljust( str( h_list[ i ] ), h_width ) + " |" +
+                      string. rjust( "%.2g" % l1_norm_list[ i ], err_width ) + " |" +
+                      string. rjust( "**" + "%.2g" % ( l1_ratio / h_ratio ) + "**", err_width ) + " |" +
+                      string. rjust( "%.2g" % l2_norm_list[ i ], err_width ) + " |" +
+                      string. rjust( "**" + "%.2g" % ( l2_ratio / h_ratio ) + "**", err_width ) + " |" +
+                      string. rjust( "%.2g" % max_norm_list[ i ], err_width ) + " |" +
+                      string. rjust( "**" + "%.2g" % ( max_ratio / h_ratio ) + "**", err_width ) + " |\n" )
+         file. write( "+--------------+----------------+----------------+----------------+----------------+----------------+----------------+\n" )
+   i = i + 1
+
+if format == "latex":
+   file. write( "\\hline \n" )
+   file. write( "\\end{tabular} \n" )
+    

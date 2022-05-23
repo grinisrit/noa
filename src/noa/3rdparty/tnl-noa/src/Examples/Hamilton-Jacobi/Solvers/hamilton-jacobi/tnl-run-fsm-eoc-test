@@ -1,0 +1,228 @@
+#!/bin/bash
+
+device="host"
+#dimensions="2D 3D"
+dimensions="2D"
+sizes1D="16 32 64 128 256 512 1024 2048 4096"
+#sizes1D="256"
+sizes2D="16 32 64 128 256 512 1024 2048 4096"
+#sizes2D="16"
+sizes3D="8 16 32 64 128 256"
+#sizes3D="128 256"
+testFunctions="paraboloid"
+#testFunctions="sin-wave-sdf"
+#testFunctions="sin-bumps-sdf"
+snapshotPeriod=0.1
+finalTime=1.5
+realType="double"
+#mpiRun="mpirun -np 4 -oversubscribe "
+mpiRun=""
+
+## CAREFULL: If you set LocalCopy of MPI, you have to start with mpiRun even tnl-init
+## 	     This isnt problem with MpiIO.
+## CAREFULL: For smoothly calculated error, you have to choose the right output function which
+##           is for both MpiIO, LocalCopy different.
+
+solverName=${mpiRun}"tnl-direct-eikonal-solver"
+#solverName="gdb --args "${mpiRun}"tnl-direct-eikonal-solver-dbg --catch-exceptions no --mpi-gdb-debug false"
+#scale=2.0
+#finalSdf="aux-0.tnl aux-1.tnl"
+finalSdf="aux-final.tnl"
+
+setupTestFunction()
+{
+   testFunction=$1
+#   if test x${testFunction} = "xexp-bump";
+#   then
+      origin=-1.0
+      proportions=2.0
+#      origin=-1.0
+#      proportions=2.0
+      amplitude=1.0
+      waveLength=0.4
+      waveLengthX=0.5
+      waveLengthY=0.5
+      waveLengthZ=0.5
+      wavesNumber=1.25
+      wavesNumberX=0.5      wavesNumberY=2.0
+      wavesNumberZ=3.0
+      phase=-1.5
+      phaseX=0.0
+      phaseY=0.0
+      phaseZ=0.0
+      sigma=0.5
+      radius=0.5
+#   fi
+}
+
+setupGrid()
+{
+   dimensions=$1
+   gridSize=$2
+   #scale=$3
+   tnl-grid-setup --dimensions ${dimensions} \
+                  --origin-x ${origin} \
+                  --origin-y ${origin} \
+                  --origin-z ${origin} \
+                  --proportions-x ${proportions} \
+                  --proportions-y ${proportions} \
+                  --proportions-z ${proportions} \
+                  --size-x ${gridSize} \
+                  --size-y ${gridSize} \
+	    	  --real-type ${realType} \
+                  --size-z ${gridSize}
+#$((2*${gridSize})) 
+}
+
+setInitialCondition()
+{
+   testFunction=$1
+   tnl-init --test-function ${testFunction} \
+	    		 --real-type ${realType} \
+            		 --output-file initial-u.tnl \
+            		 --amplitude ${amplitude} \
+            		 --wave-length ${waveLength} \
+            		 --wave-length-x ${waveLengthX} \
+            		 --wave-length-y ${waveLengthY} \
+            		 --wave-length-z ${waveLengthZ} \
+            		 --waves-number ${wavesNumber} \
+            		 --waves-number-x ${wavesNumberX} \
+            		 --waves-number-y ${wavesNumberY} \
+            		 --waves-number-z ${wavesNumberZ} \
+            		 --phase ${phase} \
+            		 --phase-x ${phaseX} \
+            		 --phase-y ${phaseY} \
+            		 --phase-z ${phaseZ} \
+            		 --sigma ${sigma} \
+            		 --radius ${radius}
+   
+   tnl-init --test-function ${testFunction}-sdf \
+	    		 --real-type ${realType} \
+            		 --output-file exact-u.tnl \
+            		 --amplitude ${amplitude} \
+            		 --wave-length ${waveLength} \
+            		 --wave-length-x ${waveLengthX} \
+            		 --wave-length-y ${waveLengthY} \
+            		 --wave-length-z ${waveLengthZ} \
+            		 --waves-number ${wavesNumber} \
+            		 --waves-number-x ${wavesNumberX} \
+            		 --waves-number-y ${wavesNumberY} \
+            		 --waves-number-z ${wavesNumberZ} \
+            		 --phase ${phase} \
+            		 --phase-x ${phaseZ} \
+            		 --phase-y ${phaseZ} \
+            		 --phase-z ${phaseZ} \
+            		 --sigma ${sigma} \
+            		 --radius ${radius} \
+
+}
+
+solve()
+{
+   timeDiscretisation=$1
+   discreteSolver=$2
+   ${solverName} --device ${device} \
+                 --mesh mesh.tnl \
+                 --input-file initial-u.tnl \
+                 --time-discretisation ${timeDiscretisation} \
+                 --time-step 10 \
+                 --time-step-order 2 \
+                 --discrete-solver ${discreteSolver} \
+                 --min-iterations 20 \
+                 --convergence-residue 1.0e-12 \
+                 --snapshot-period ${snapshotPeriod} \
+		 --real-type ${realType} \
+                 --final-time ${finalTime}
+}
+               
+computeError()
+{
+for sweep in ${finalSdf}
+do
+   tnl-diff --mesh mesh.tnl \
+	    --input-files exact-u.tnl u-00000.tnl \
+            --mode sequence \
+            --snapshot-period ${snapshotPeriod} \
+            --output-file errors.txt \
+            --write-difference yes
+#aux-final.tnl \
+done
+}
+
+runTest()
+{
+   for testFunction in ${testFunctions};
+   do
+      mkdir -p ${testFunction}
+      cd ${testFunction}
+      setupTestFunction ${testFunction}
+      
+      for dim in ${dimensions};
+      do
+         mkdir -p $dim
+         cd ${dim}
+         if test $dim = 1D;
+         then 
+            sizes=$sizes1D
+         fi
+         if test $dim = 2D;
+         then 
+            sizes=$sizes2D
+         fi
+         if test $dim = 3D;
+         then 
+            sizes=$sizes3D
+         fi
+         
+         lastSize=""
+         for size in $sizes;
+         do
+            mkdir -p $size
+            cd $size
+            echo ""
+            echo ""
+            echo ""
+            if test ! -f computation-done;
+            then
+               touch computation-in-progress
+               echo "========================================================================="
+               echo "===                   SETTING UP THE GRID                             ==="
+               echo "========================================================================="
+               setupGrid $dim $size 
+               echo "========================================================================="
+               echo "===                WRITING THE EXACT SOLUTION                         ==="
+               echo "========================================================================="
+               setInitialCondition $testFunction
+               echo "========================================================================="
+               echo "===                   STARTING THE SOLVER                             ==="
+               echo "========================================================================="
+               #solve explicit merson
+               solve semi-implicit cg
+               mv computation-in-progress computation-done
+            fi            
+            echo "========================================================================="
+            echo "===                   COMPUTING THE ERROR                             ==="
+            echo "========================================================================="
+            computeError
+            echo "========================================================================="
+            echo "===                     COMPUTING THE EOC                             ==="            
+            echo "========================================================================="
+            if test ! x$lastSize = x;
+            then
+               tnl-err2eoc ../$lastSize/errors.txt errors.txt
+            fi
+            echo "========================================================================="
+            echo "===                     COMPUTATION DONE                              ==="            
+            echo "========================================================================="
+            cd ..
+            lastSize=$size
+         done
+
+         cd ..
+      done
+      cd ..
+   done
+}
+
+runTest
+ 

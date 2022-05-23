@@ -1,0 +1,1 @@
+#include "VectorOfStaticVectorsTest.h"

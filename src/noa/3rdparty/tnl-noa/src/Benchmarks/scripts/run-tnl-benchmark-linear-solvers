@@ -1,0 +1,97 @@
+#! /bin/bash
+
+# exit whenever a command fails
+set -e
+
+shopt -s extglob            # enable extended pattern-matching features
+shopt -s globstar           # recursive globbing
+
+function get_cpu_count() {
+    echo $(( $(grep -c ^processor /proc/cpuinfo) / 2 ))
+}
+
+function get_cpu_affinity() {
+#    echo $(python3 -c "print(','.join(str(i) for i in range(0, 2*$omp_threads, 2)))")
+    echo $(python3 -c "print(','.join(str(i) for i in range(0, $omp_threads)))")
+}
+
+function run_benchmark() {
+    echo "==> omp_threads = $omp_threads, matrix = $bench_name"
+
+    log_file=${log_file:=tnl-benchmark-linear-solvers.mtx.log}
+
+    gmresRestartingMax=${gmresRestartingMax:=30}
+    gmresRestartingMin=${gmresRestartingMin:=3}
+    gmresRestartingStepMax=${gmresRestartingStepMax:=4}
+    gmresRestartingStepMin=${gmresRestartingStepMin:=2}
+
+    # set number of OpenMP threads
+    omp_threads=${omp_threads:=1}
+    if [[ "$omp_threads" == "1" ]]; then
+        omp_enabled=false
+    else
+        omp_enabled=true
+    fi
+
+#    mpirun -np 1 -H localhost:4 ${solver} \
+#    ${solver} \
+    taskset -c $(get_cpu_affinity) ${solver} \
+        --verbose 1 \
+        --loops 10 \
+        --log-file "$log_file" \
+        --output-mode "append" \
+        --name "$bench_name" \
+        --redirect-mpi-output "false" \
+        --devices "$devices" \
+        --openmp-enabled "$omp_enabled" \
+        --openmp-max-threads "$omp_threads" \
+        --input-matrix "$bench_matrix" \
+        --convergence-residue 1e-11 \
+        --max-iterations 10000 \
+        --gmres-restarting-max $gmresRestartingMax \
+        --gmres-restarting-min $gmresRestartingMin \
+        --gmres-restarting-step-max $gmresRestartingStepMax \
+        --gmres-restarting-step-min $gmresRestartingStepMin \
+        --ilut-threshold 1e-4 \
+        --ilut-p 8 \
+        --solvers "$solvers" \
+        --gmres-variants "$gmresVariants" \
+        --preconditioners "$preconditioners" \
+        --with-preconditioner-update "true" \
+    || true
+}
+
+devices="all"
+
+#max_omp_threads=1
+max_omp_threads=$(get_cpu_count)
+
+#solver="tnl-benchmark-linear-solvers"
+solver="tnl-benchmark-linear-solvers-cuda"
+
+solvers="gmres,bicgstab,bicgstab-ell,tfqmr"
+#solvers="gmres"
+#solvers="tfqmr,bicgstab"
+#solvers="bicgstab-ell"
+#solvers="bicgstab"
+gmresVariants="CGS,CGSR,MGS,MGSR,CWY"
+preconditioners="jacobi,ilu0,ilut"
+
+matrices_base_path="./mtx_matrices"
+
+if [[ ! -d "$matrices_base_path" ]]; then
+    echo "The path '$matrices_base_path' does not exist." >&2
+    exit 1
+fi
+
+for bench_matrix in "$matrices_base_path"/**/*.mtx; do
+    bench_name=$(realpath --relative-to="$matrices_base_path" "$bench_matrix")
+    for (( omp_threads=1; omp_threads<=$max_omp_threads; omp_threads++ )); do
+        if [[ "$omp_threads" == "1" ]]; then
+            devices="all"
+        else
+            devices="host"
+        fi
+        run_benchmark
+    done
+done

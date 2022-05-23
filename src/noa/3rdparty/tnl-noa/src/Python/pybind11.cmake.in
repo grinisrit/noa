@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 2.8.12)
+
+project(pybind11-download)
+include(ExternalProject)
+
+ExternalProject_Add(pybind11
+  GIT_REPOSITORY    https://github.com/pybind/pybind11.git
+  GIT_TAG           master
+  SOURCE_DIR        "${CMAKE_BINARY_DIR}/pybind11-src"
+  BINARY_DIR        "${CMAKE_BINARY_DIR}/pybind11-build"
+  CMAKE_ARGS -DPYBIND11_TEST=FALSE
+  # Do not install pybind11 in the system or user's home directory
+  INSTALL_COMMAND   ""
+  # Disable update of the external project in an offline build
+  # reference: https://stackoverflow.com/a/40423683
+  UPDATE_DISCONNECTED ${OFFLINE_BUILD}
+)
