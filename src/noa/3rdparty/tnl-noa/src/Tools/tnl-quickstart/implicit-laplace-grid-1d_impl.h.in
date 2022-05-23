@@ -1,0 +1,7 @@
+   const RealType& lambdaX = tau * entity.getMesh().template getSpaceStepsProducts< -2 >(); 
+   const IndexType& center = entity.getIndex(); 
+   const IndexType& east = neighborEntities.template getEntityIndex< 1 >(); 
+   const IndexType& west = neighborEntities.template getEntityIndex< -1 >(); 
+   matrixRow.setElement( 0, west,   - lambdaX );
+   matrixRow.setElement( 1, center, 2.0 * lambdaX );
+   matrixRow.setElement( 2, east,   - lambdaX );

@@ -18,6 +18,7 @@ drop the `src/noa` folder into your project.
 :warning: However, beyond `C++17` source code, the project contains:
 * `C99` sources in `noa/kernels.h` 
 * `CUDA` sources in `noa/kernels.cuh`
+* `C++` third-party sources in `noa/kernels.hh`
 
 which require separable compilation.
 
@@ -75,7 +76,7 @@ target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 `NOA` is exposed within the `kotlin` library
 [KMath](https://github.com/mipt-npm/kmath) as a dedicated module
 [kmath-noa](https://github.com/mipt-npm/kmath/tree/feature/noa/kmath-noa).
-To build the [JNI wrapper](jnoa) you need to add `-DBUILD_JNOA=ON`. 
+To build the [JNI wrapper](jnoa) you need to add `-DBUILD_JNOA=ON` setting `-DJAVA_HOME=<...>` if necessary. 
 This will produce the shared library `jnoa` to which
 you should point the `java.library.path` for the `JVM` to load it.
 

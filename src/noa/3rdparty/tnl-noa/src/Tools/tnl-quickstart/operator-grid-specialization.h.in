@@ -1,0 +1,43 @@
+template< typename MeshReal,
+          typename Device,
+          typename MeshIndex,
+          typename Real,
+          typename Index >
+class {operatorName}< TNL::Meshes::Grid< {meshDimension}, MeshReal, Device, MeshIndex >, Real, Index >
+{{
+   public:
+      typedef TNL::Meshes::Grid< {meshDimension}, MeshReal, Device, MeshIndex > MeshType;
+      typedef typename MeshType::CoordinatesType CoordinatesType;
+      typedef Real RealType;
+      typedef Device DeviceType;
+      typedef Index IndexType;
+      typedef TNL::Functions::MeshFunction< MeshType > MeshFunctionType;
+      enum {{ Dimension = MeshType::getMeshDimension() }};
+
+      template< typename MeshFunction, typename MeshEntity >
+      __cuda_callable__
+      Real operator()( const MeshFunction& u,
+                       const MeshEntity& entity,
+                       const RealType& time = 0.0 ) const;
+
+      template< typename MeshEntity >    
+      __cuda_callable__
+      Index getLinearSystemRowLength( const MeshType& mesh,
+                                      const IndexType& index,
+                                      const MeshEntity& entity ) const;
+
+
+      template< typename PreimageFunction,
+                typename MeshEntity,
+                typename Matrix,
+                typename Vector >
+      __cuda_callable__
+      inline void setMatrixElements( const PreimageFunction& u,
+                                     const MeshEntity& entity,
+                                     const RealType& time,
+                                     const RealType& tau,
+                                     Matrix& matrix,
+                                     Vector& b ) const;
+}};
+    
+

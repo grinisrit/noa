@@ -1,0 +1,48 @@
+set( COMMON_EXAMPLES
+   BinarySparseMatrixExample
+   DenseMatrixExample_reduceRows_maxNorm
+   DenseMatrixExample_reduceRows_vectorProduct
+   DenseMatrixViewExample_data_encapsulation
+   SparseMatrixExample_reduceRows_vectorProduct
+   SymmetricSparseMatrixExample
+)
+
+####
+# The following examples/benchmarks run for very long time
+# We just build them and do not run automatically.
+set( LONG_EXAMPLES
+   DenseMatrixSetup_Benchmark
+   MultidiagonalMatrixSetup_Benchmark
+   SparseMatrixSetup_Benchmark
+)
+
+if( BUILD_CUDA )
+   foreach( target IN ITEMS ${COMMON_EXAMPLES} )
+      cuda_add_executable( ${target}-cuda ${target}.cu OPTIONS )
+      add_custom_command( COMMAND ${target}-cuda > ${TNL_DOCUMENTATION_OUTPUT_SNIPPETS_PATH}/${target}.out OUTPUT ${target}.out )
+      set( CUDA_OUTPUTS ${CUDA_OUTPUTS} ${target}.out )
+   endforeach()
+   foreach( target IN ITEMS ${LONG_EXAMPLES} )
+      cuda_add_executable( ${target}-cuda ${target}.cu OPTIONS )
+      #add_custom_command( COMMAND ${target}-cuda > ${TNL_DOCUMENTATION_OUTPUT_SNIPPETS_PATH}/${target}.out OUTPUT ${target}.out )
+      #set( CUDA_OUTPUTS ${CUDA_OUTPUTS} ${target}.out )
+   endforeach()
+else()
+   foreach( target IN ITEMS ${COMMON_EXAMPLES} )
+      add_executable( ${target} ${target}.cpp )
+      add_custom_command( COMMAND ${target} > ${TNL_DOCUMENTATION_OUTPUT_SNIPPETS_PATH}/${target}.out OUTPUT ${target}.out )
+      set( HOST_OUTPUTS ${HOST_OUTPUTS} ${target}.out )
+   endforeach()
+   foreach( target IN ITEMS ${LONG_EXAMPLES} )
+      add_executable( ${target} ${target}.cpp )
+      #add_custom_command( COMMAND ${target} > ${TNL_DOCUMENTATION_OUTPUT_SNIPPETS_PATH}/${target}.out OUTPUT ${target}.out )
+      #set( HOST_OUTPUTS ${HOST_OUTPUTS} ${target}.out )
+   endforeach()
+endif()
+
+
+IF( BUILD_CUDA )
+   ADD_CUSTOM_TARGET( RunTutorialsMatricesExamples-cuda ALL DEPENDS ${CUDA_OUTPUTS} )
+ELSE()
+   ADD_CUSTOM_TARGET( RunTutorialsMatricesExamples ALL DEPENDS ${HOST_OUTPUTS} )
+ENDIF()

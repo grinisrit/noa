@@ -1,0 +1,1 @@
+LambdaMatrixExample_reduceAllRows.cpp

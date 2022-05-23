@@ -1,0 +1,91 @@
+#pragma once
+
+#include <TNL/Problems/PDEProblem.h>
+#include <TNL/Functions/MeshFunction.h>
+#include <TNL/Solvers/PDE/ExplicitUpdater.h>
+#include <TNL/Solvers/PDE/LinearSystemAssembler.h>
+#include <TNL/Solvers/PDE/BackwardTimeDiscretisation.h>
+
+
+template< typename Mesh,
+          typename BoundaryCondition,
+          typename RightHandSide,
+          typename DifferentialOperator >
+class {problemBaseName}Problem:
+   public TNL::Problems::PDEProblem< Mesh,
+                                     typename DifferentialOperator::RealType,
+                                     typename Mesh::DeviceType,
+                                     typename Mesh::IndexType >
+{{
+   public:
+
+      typedef typename DifferentialOperator::RealType RealType;
+      typedef typename Mesh::DeviceType DeviceType;
+      typedef typename Mesh::IndexType IndexType;
+      typedef TNL::Functions::MeshFunction< Mesh, Mesh::getMeshDimension(), RealType > MeshFunctionType;
+      typedef TNL::Problems::PDEProblem< Mesh, RealType, DeviceType, IndexType > BaseType;
+      typedef TNL::Pointers::SharedPointer< MeshFunctionType > MeshFunctionPointer;
+      typedef TNL::Pointers::SharedPointer< DifferentialOperator > DifferentialOperatorPointer;
+      typedef TNL::Pointers::SharedPointer< BoundaryCondition > BoundaryConditionPointer;
+      typedef TNL::Pointers::SharedPointer< RightHandSide, DeviceType > RightHandSidePointer;
+
+      using typename BaseType::MeshType;
+      using typename BaseType::MeshPointer;
+      using typename BaseType::DofVectorType;
+      using typename BaseType::DofVectorPointer;
+
+      TNL::String getPrologHeader() const;
+
+      void writeProlog( TNL::Logger& logger,
+                        const TNL::Config::ParameterContainer& parameters ) const;
+
+      bool setup( const TNL::Config::ParameterContainer& parameters,
+                  const TNL::String& prefix );
+
+
+      bool setInitialCondition( const TNL::Config::ParameterContainer& parameters,
+                                DofVectorPointer& dofs );
+
+      template< typename MatrixPointer >
+      bool setupLinearSystem( MatrixPointer& matrixPointer );
+
+      bool makeSnapshot( const RealType& time,
+                         const IndexType& step,
+                         DofVectorPointer& dofs );
+
+      IndexType getDofs() const;
+
+      void bindDofs( DofVectorPointer& dofs );
+
+      void getExplicitUpdate( const RealType& time,
+                              const RealType& tau,
+                              DofVectorPointer& _u,
+                              DofVectorPointer& _fu );
+
+      template< typename MatrixPointer >
+      void assemblyLinearSystem( const RealType& time,
+                                 const RealType& tau,
+                                 DofVectorPointer& dofs,
+                                 MatrixPointer& matrixPointer,
+                                 DofVectorPointer& rightHandSide );
+
+   protected:
+
+      DifferentialOperatorPointer differentialOperator;
+
+      BoundaryConditionPointer boundaryCondition;
+
+      RightHandSidePointer rightHandSide;
+
+      TNL::Solvers::PDE::ExplicitUpdater< Mesh, MeshFunctionType, DifferentialOperator, BoundaryCondition, RightHandSide > explicitUpdater;
+
+      TNL::Solvers::PDE::LinearSystemAssembler< Mesh,
+                                                MeshFunctionType,
+                                                DifferentialOperator,
+                                                BoundaryCondition,
+                                                RightHandSide,
+                                                TNL::Solvers::PDE::BackwardTimeDiscretisation,
+                                                DofVectorType > systemAssembler;
+}};
+
+#include "{problemBaseName}Problem_impl.h"

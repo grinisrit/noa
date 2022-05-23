@@ -1,6 +1,6 @@
-/**
+/*
  * Copyright 2018-2021 KMath contributors.
- * Use of this source code is governed by the Apache 2.0 license
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.noa;
@@ -315,6 +315,42 @@ class JNoa {
     public static native void stepAdamOptim(long adamOptHandle);
 
     public static native void zeroGradAdamOptim(long adamOptHandle);
+
+    public static native long rmsOptim(long jitModuleHandle, double learningRate, double alpha, 
+        double eps, double weight_decay, double momentum, boolean centered);
+
+    public static native void disposeRmsOptim(long rmsOptHandle);
+
+    public static native void stepRmsOptim(long rmsOptHandle);
+
+    public static native void zeroGradRmsOptim(long rmsOptHandle);
+
+    public static native long adamWOptim(long jitModuleHandle, double learningRate, double beta1,
+        double beta2, double eps, double weight_decay, boolean amsgrad);
+
+    public static native void disposeAdamWOptim(long adamWOptHandle);
+
+    public static native void stepAdamWOptim(long adamWOptHandle);
+
+    public static native void zeroGradAdamWOptim(long adamWOptHandle);
+
+    public static native long adagradOptim(long jitModuleHandle, double learningRate, double weight_decay,
+        double lr_decay, double initial_accumulator_value, double eps);
+
+    public static native void disposeAdagradOptim(long adagradOptHandle);
+
+    public static native void stepAdagradOptim(long adagradOptHandle);
+
+    public static native void zeroGradAdagradOptim(long adagradOptHandle);
+
+    public static native long sgdOptim(long jitModuleHandle, double learningRate, double momentum,
+        double dampening, double weight_decay, boolean nesterov);
+
+    public static native void disposeSgdOptim(long sgdOptHandle);
+
+    public static native void stepSgdOptim(long sgdOptHandle);
+
+    public static native void zeroGradSgdOptim(long sgdOptHandle);
 
     public static native void swapTensors(long lhsHandle, long rhsHandle);
 

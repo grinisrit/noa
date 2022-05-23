@@ -25,9 +25,9 @@
 
 #include <noa/utils/common.hh>
 
-#include <noa/3rdparty/TNL/Meshes/DefaultConfig.h>
-#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
-#include <noa/3rdparty/TNL/Meshes/Readers/VTUReader.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/DefaultConfig.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Readers/VTUReader.h>
 
 
 namespace noa::utils::meshes {
@@ -43,8 +43,8 @@ namespace noa::utils::meshes {
             try {
                 reader.loadMesh(mesh);
             }
-            catch (...) {
-                std::cerr << "Failed to load tetrahedron mesh from " << path << "\n";
+            catch (const std::exception &exc) {
+                std::cerr << "Failed to load tetrahedron mesh from " << path << "\n" << exc.what() << "\n";
                 return std::nullopt;
             }
             return std::make_optional(mesh);

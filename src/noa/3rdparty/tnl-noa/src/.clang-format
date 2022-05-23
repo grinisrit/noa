@@ -1,0 +1,162 @@
+# Documentation: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+---
+Language: Cpp
+Standard: c++14
+#BasedOnStyle: Mozilla
+
+# max line length
+ColumnLimit: 128
+
+IndentWidth: 3
+ContinuationIndentWidth: 3
+IndentAccessModifiers: false
+AccessModifierOffset: -3
+IndentCaseLabels: true
+IndentCaseBlocks: true
+IndentGotoLabels: false
+IndentPPDirectives: BeforeHash
+IndentExternBlock: NoIndent
+IndentWrappedFunctionNames: false
+
+NamespaceIndentation: None
+FixNamespaceComments: true
+CompactNamespaces: false
+#ShortnamespaceLines: 10  # Clang 14
+
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+SpacesInParentheses: true
+SpacesInSquareBrackets: true
+SpacesInAngles: Always
+SpacesInConditionalStatement: true
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+BitFieldColonSpacing: Both
+SpaceBeforeParens: Never
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+
+SpacesBeforeTrailingComments: 2
+Cpp11BracedListStyle: false
+
+#PackConstructorInitializers: Never  # Clang 14
+AllowAllConstructorInitializersOnNextLine: false  # deprecated
+ConstructorInitializerAllOnOneLineOrOnePerLine: false  # deprecated
+ConstructorInitializerIndentWidth: 0
+
+AlwaysBreakAfterReturnType: All
+AlwaysBreakBeforeMultilineStrings: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterClass:      true
+  AfterControlStatement: MultiLine
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  false
+  AfterStruct:     true
+  AfterUnion:      true
+  AfterExternBlock: true
+  BeforeLambdaBody: true
+  BeforeCatch:     true
+  BeforeElse:      true
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+BreakInheritanceList: BeforeColon
+BreakConstructorInitializers: BeforeColon
+#BreakBeforeConceptDeclarations: true
+#BreakStringLiterals: true
+
+AlwaysBreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: false
+
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: None
+AlignConsecutiveMacros: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignEscapedNewlines: Left
+AlignOperands:   AlignAfterOperator
+AlignTrailingComments: true
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+
+# statement macros are typically formatted on their own lines
+StatementMacros:
+  - __global__
+  - __host__
+  - __device__
+  - __cuda_callable__
+
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortEnumsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+
+#CommentPragmas:  '^ IWYU pragma:'
+
+#IncludeBlocks:   Preserve
+#IncludeCategories:
+#  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
+#    Priority:        2
+#    SortPriority:    0
+#    CaseSensitive:   false
+#  - Regex:           '^(<|"(gtest|gmock|isl|json)/)'
+#    Priority:        3
+#    SortPriority:    0
+#    CaseSensitive:   false
+#  - Regex:           '.*'
+#    Priority:        1
+#    SortPriority:    0
+#    CaseSensitive:   false
+#IncludeIsMainRegex: '(Test)?$'
+#IncludeIsMainSourceRegex: ''
+#PenaltyBreakAssignment: 2
+#PenaltyBreakBeforeFirstCallParameter: 19
+#PenaltyBreakComment: 300
+#PenaltyBreakFirstLessLess: 120
+#PenaltyBreakString: 1000
+#PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 500
+#PenaltyIndentedWhitespace: 0
+#PPIndentWidth:   -1
+#SortIncludes:    CaseSensitive
+#SortUsingDeclarations: true
+
+# FIXME: sorting includes causes a lot of breakage due to cyclic inclusion problems
+SortIncludes: Never
+
+# NOTE: disabling this option breaks indentation of comments, see https://github.com/llvm/llvm-project/issues/53425
+ReflowComments:  true
+
+...
+# vim: ft=yaml

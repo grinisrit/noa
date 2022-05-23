@@ -1,0 +1,395 @@
+
+        * tnlBoundaryConditionsSetter was implemented 
+           - it allows to set boundary conditions to given function
+           - in explicit solvers, it must be called explicitly now after calling tnlExplicitUpdater
+
+2015-12-25 Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+        * significant changes in grids
+            - the central structure is now grid entity rather than grid itself
+            - specialization of cells for cross stencils was implemented -- they store indexes of neighbhour cells
+            - it currently does not work with nvcc compiler
+            - grid traversers takes entity type instead of entity dimensions as a templated argument
+        * mesh function was implemented
+        * boundary conditions were refactored a simplified
+            - there is no need to have analytic and discrete types of boundary conditions
+        * tnl-quickstart does not generate correct code now
+
+2012-10-05  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+ 
+	* src/mesh/detail/container.h:
+	  replacing Array for m_data with tnlArrayManager     
+	* tests/mesh/main.cpp (main):
+	  re-defining i/o files w.r.t. the project directory structure 
+
+2012-07-09  oberhuber  <oberhuber@yvonne>
+
+	* src/core/tnlVectorBase.h: Removed.
+	* src/core/tnlArrayManager.h: New file.
+	* src/core/tnlArrayManagerBase.h: New file.
+	* src/core/tnlArrayManagerCUDA.h: New file.
+	* src/core/tnlArrayManagerHost.h: New file.
+	* tests/unit-tests/core/tnlArrayManagerTester.h: New file.
+	  - adding tnlArrayManager for basic operations with arrays - allocation/deallocation, load/save from/to file
+	* CMakeLists.txt:
+	  - fixing problem with linking of TNL, it is build as one library 
+	* src/core/CMakeLists.txt: 
+	* src/core/tnlCommunicator.h: 
+	* src/core/tnlObject.h (tnlObject): 
+	* src/core/tnlVector.h: 
+	  - refactoring tnlVector - some methods were moved to tnlArrayManager
+	* src/core/tnlVectorCUDA.h: 
+	* src/core/tnlVectorHost.h: 
+	* TODO: 
+
+2011-06-29  oberhuber  <oberhuber@yvonne>
+
+	* cmake/AddCompilerFlag.cmake: New file.
+	* cmake/MacroEnsureVersion.cmake: New file.
+	* cmake/OptimizeForArchitecture.cmake: New file.
+	* src/matrix/.tnlRgCSRMatrix.h.swp: New file.
+	* src/matrix/tnlAdaptiveRgCSRMatrix.h: 
+	 - optimizing Adaptive Rg CSR format by adding break to SpMV loop.
+
+2011-06-15  oberhuber  <oberhuber@yvonne>
+
+	* src/core/tnlCudaSupport.cpp: Removed.
+	* CMakeLists.txt: 
+	* src/core/CMakeLists.txt: 
+	* src/core/tnlCudaSupport.h (checkCUDAError):
+	  - adding new error codes 
+	* src/core/tnlLongVectorCUDA.h: 
+	* src/matrix/tnlRgCSRMatrix.h:
+	  - fixing copying to device - useAdaptiveGroupSize was not copied 
+	* tests/benchmarks/sparse-matrix-benchmark.h: 
+	* tests/benchmarks/tnlSpmvBenchmark.h: 
+	* tests/benchmarks/tnlSpmvBenchmarkRgCSRMatrix.h: 
+	* tnlConfig.h.in:
+	  - adding prefix TNL to CONFIG_DIRECTORY 
+	* tools/src/tnl-err-norms.cpp: 
+	* tools/src/tnl-grid-view.cpp: 
+	* tools/src/tnl-matrix-convert.cpp: 
+	* tools/src/tnlcurve2gnuplot.cpp: 
+
+
+2011-06-12  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+    The following chages reflects conversion of the project
+    from the autools to CMake. 
+
+	* src/diff/mdiff-config.h: Removed.
+	* tests/tnl-sparse-matrix-check.cfg.desc: Removed.
+	* tests/tnl-sparse-matrix-test: Removed.
+	* tools/share/mgrid-view.cfg.desc: Removed.
+	* tools/src/bin2gnuplot.cpp: Removed.
+	* tools/src/compare-files.h: Removed.
+	* tools/src/debug.h: Removed.
+	* tools/src/diff-norm.cpp: Removed.
+	* tools/src/functions-benchmark-cuda.cu.h: Removed.
+	* tools/src/mdiff-err-norms.cpp: Removed.
+	* tools/src/mgrid2gnuplot.cpp: Removed.
+	* tools/src/read-file.h: Removed.
+	* src/core/low-level/CMakeLists.txt: New file.
+	* src/dummy.cpp: New file.
+	* tests/sparse-matrix-benchmark.cu: New file.
+	* tnlConfig.h.in: New file.
+	* tools/share/tnl-grid-view.cfg.desc: New file.
+	* buildAll: 
+	* CMakeLists.txt: 
+	* src/CMakeLists.txt: 
+	* src/config/CMakeLists.txt: 
+	* src/core/CMakeLists.txt: 
+	* src/core/tnlFile.cpp: 
+	* src/core/tnlFile.h: 
+	* src/core/tnlString.cpp: 
+	* src/core/tnlTimerCPU.cpp: 
+	* src/core/tnlTimerRT.cpp: 
+	* src/debug/CMakeLists.txt: 
+	* src/debug/parse.cc: 
+	* src/debug/tnlDebugParserbase.h: 
+	* src/debug/tnlDebugScanner.cpp: 
+	* src/debug/tnlDebugScanner.l: 
+	* src/diff/CMakeLists.txt: 
+	* src/matrix/CMakeLists.txt: 
+	* src/matrix/tnlAdaptiveRgCSRMatrix.h: 
+	* src/matrix/tnlFastCSRMatrix.h: 
+	* src/matrix/tnlMatrix.h: 
+	* src/matrix/tnlRgCSRMatrix.h: 
+	* src/mesh/CMakeLists.txt: 
+	* src/solver/CMakeLists.txt: 
+	* tests/CMakeLists.txt: 
+	* tests/sparse-matrix-benchmark.cpp: 
+	* tests/sparse-matrix-benchmark.h (main): 
+	* tests/tnlSpmvBenchmark.h: 
+	* tests/tnlSpmvBenchmarkAdaptiveRgCSRMatrix.h: 
+	* tests/tnlSpmvBenchmarkCSRMatrix.h: 
+	* tests/tnlSpmvBenchmarkHybridMatrix.h: 
+	* tests/tnlSpmvBenchmarkRgCSRMatrix.h: 
+	* tests/unit-tests/core/tnlCommunicatorTester.h: 
+	* tools/share/CMakeLists.txt: 
+	* tools/share/Makefile.am: 
+	* tools/src/CMakeLists.txt: 
+	* tools/src/tnl-err-norms.cpp (WriteHeader): 
+	(main): 
+	* tools/src/tnl-grid-view.cpp (main): 
+	* tools/src/tnl-matrix-convert.cpp (main): 
+	* tools/src/tnlcurve2gnuplot.cpp (main): 
+
+2011-06-09  oberhuber  <oberhuber@yvonne>
+
+	* src/matrix/tnlCSRMatrix.h: 
+	* src/matrix/tnlRgCSRMatrix.h: 
+	* tests/sparse-matrix-benchmark.h: 
+	* tests/tnlSpmvBenchmarkHybridMatrix.h: 
+	* tests/tnlSpmvBenchmarkRgCSRMatrix.h:
+	 - working on the adaptive groups 
+
+2011-06-05  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/matrix/tnlAdaptiveRgCSRMatrix.h: 
+	   - better threads to rows distribution for smaller chunks 
+	* tests/matrix-formats-test.h: 
+	* tests/sparse-matrix-benchmark.h: 
+	* tests/tnlSpmvBenchmarkAdaptiveRgCSRMatrix.h: 
+
+2011-05-29  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* tests/cusp-test.cu: Removed.
+	* tests/draw-matrices: New file.
+	  - creating script for drawing testing matrices
+	* src/core/tnlLongVectorCUDA.h:
+	  - fixing problem of initiliazing the type Real by 0.0 which does not work for general types 
+	* src/core/tnlString.cpp (tnlString::operator +):  
+	* src/core/tnlString.h (tnlString): 
+	  - adding operator + for const char*
+	* src/matrix/tnlAdaptiveRgCSRMatrix.h: 
+	* src/matrix/tnlCSRMatrix.h: 
+	* src/matrix/tnlMatrix.h (printOut): 
+	* src/matrix/tnlRgCSRMatrix.h:
+	  - implementing drawing of matrices in Postscript 
+	* tests/run-sparse-matrix-benchmark: 
+	* tests/sparse-matrix-benchmark.cfg.desc: 
+	* tests/sparse-matrix-benchmark.cpp (main): 
+	* tests/sparse-matrix-benchmark.h: 
+	* tests/tnlSpmvBenchmark.h: 
+	* tests/tnlSpmvBenchmarkAdaptiveRgCSRMatrix.h: 
+	* tests/tnlSpmvBenchmarkHybridMatrix.h: 
+	* tests/tnlSpmvBenchmarkRgCSRMatrix.h: 
+	* tools/share/mgrid-view.cfg.desc:
+	  - adding new command line arguments for drawing matrices 
+	* tools/src/tnl-grid-view.cpp (main): 
+	* tools/src/tnl-grid-view.h:
+	  - implementing drawing of matrices 
+
+2011-05-18  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/matrix/tnlAdaptiveRgCSRMatrix.h:
+	  - implementing getElement method  
+	* src/matrix/tnlRgCSRMatrix.h:  
+	* tests/matrix-formats-test.cpp (main): 
+	* tests/matrix-formats-test.h: 
+	  - adding test of tnlAdaptiveRgCSRMatrix
+	* tests/run-matrix-formats-test: 
+	* tests/unit-tests/Makefile.am: 
+	* tests/unit-tests/matrix/tnlAdaptiveRgCSRMatrixTester.h (triDiagonalMatrixTest): 
+	(upperTriangularMatrixTest): 
+	(diagonalMatrixTest): 
+	(suite): 
+	* tests/unit-tests/tnl-unit-tests.cpp (main):
+	  - adding tests of tnlAdaptiveRgCSRMatrix 
+
+2011-05-17  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* tests/unit-tests/matrix/tnlAdaptiveRgCSRMatrixTester.h: New file.
+	* src/matrix/tnlAdaptiveRgCSRMatrix.h: 
+	  - conversion from CSR format
+	  - SpMV operation
+	* tests/run-sparse-matrix-benchmark: 
+	* tests/sparse-matrix-benchmark.h:
+	  - changed benchmarks of the RgCSR format with variable group size   
+	* tests/unit-tests/tnl-unit-tests.cpp (main):
+	  - added test of tnlAdaptiveRgCSRMatrix
+
+2011-05-15  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* tests/cusp-test.h: Removed.
+	* tests/tnlSpmvBenchmark.h: New file.
+	* tests/tnlSpmvBenchmarkCSRMatrix.h: New file.
+	* tests/tnlSpmvBenchmarkHybridMatrix.h: New file.
+	* tests/tnlSpmvBenchmarkRgCSRMatrix.h: New file.
+	* src/core/tnlLongVectorCUDA.h: Adding operator =, denying copy constructors
+	* src/core/tnlLongVectorHost.h: Adding operator =, denying copy constructors 
+	* src/matrix/tnlCSRMatrix.h: Adding reorderRows
+	* src/matrix/tnlMatrix.h: Adding sortRowsDecreasignly
+	* src/matrix/tnlRgCSRMatrix.h:  
+	* tests/Makefile.am:  
+	* tests/matrix-formats-test.h: 
+	* tests/run-sparse-matrix-benchmark: Adding debug
+	* tests/sparse-matrix-benchmark.cpp (main): 
+	* tests/sparse-matrix-benchmark.h: refactoring
+	* tests/unit-tests/Makefile.am:  
+	* tests/unit-tests/matrix/tnlRgCSRMatrixTester.h (triDiagonalMatrixTest): 
+	(diagonalMatrixTest): 
+
+2011-03-09  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* configure.ac: 
+	* src/core/tnlArray.h: 
+	* src/core/tnlCommunicator.h: 
+	* src/core/tnlCriticalSection.cpp: 
+	* src/core/tnlSharedMemory.h: 
+	* src/debug/Makefile.am: 
+	* src/matrix/tnlRgCSRMatrix.h (bindRgCSRMatrixCUDATexture):
+	 - fixing binding vector x to texture
+	* tests/convert-matrices: 
+	* tests/florida-matrix-market: 
+	* tests/Makefile.am: 
+	* tests/unit-tests/core/tnlCommunicatorTester.h (testCommunicatorBroadcastLongVector): 
+	(testCommunicatorBroadcast): 
+	(testCommunicatorScatter): 
+	(testCommunicatorGather): 
+	(testCommunicatorSendReceive): 
+	(testCommunicatorSendReceiveOnLongVector): 
+	(testCommunicatorBarrier): 
+	(testCommunicatorReduction): 
+	* tests/unit-tests/Makefile.am: 
+
+2011-02-27  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/core/tnlCoordinates.h: New file.
+	* src/mesh/tnlDistributedGrid.h: New file.
+	* src/core/Makefile.am: 
+	* src/core/tnlCommunicator.h (getGoupSize<3>): 
+	(getGoupSize<2>): 
+	(getGoupSize<1>): 
+	* src/core/tnlCriticalSection.cpp (tnlCriticalSection::leave): 
+	(tnlCriticalSection::tnlCriticalSection): 
+	(tnlCriticalSection::enter): 
+	* src/core/tnlCriticalSection.h (tnlCriticalSection): 
+	* src/debug/tnlDebugStructure.cpp (tnlDebugStructure::Debug): 
+	* src/mesh/Makefile.am: 
+	* src/mesh/tnlGrid.h: 
+	* tests/unit-tests/core/tnlCommunicatorTester.h (testCommunicatorBroadcastLongVector): 
+	(testCommunicatorBroadcast): 
+	(testCommunicatorScatter): 
+	(testCommunicatorGather): 
+	(suite): 
+	(testCommunicatorBarrier): 
+	(testCommunicatorReduction): 
+	* tests/unit-tests/tnl-unit-tests.cpp: 
+
+2011-02-23  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/core/tnlCommunicator.h: 
+	   - implementing method broadcast
+	* src/core/tnlSharedMemory.h: 
+	   - fixing bug with missing deletion of the shared memory
+	* tests/unit-tests/core/tnlCommunicatorTester.h (testCommunicatorSendReceiveOnLongVector): 
+	* tests/unit-tests/core/tnlSharedMemoryTester.h (testSharedMemory): 
+	* tests/unit-tests/tnl-unit-tests.cpp: 
+
+2011-02-22  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* tests/unit-tests/core/tnlSharedMemoryTester.h: New file.
+	* src/core/tnlCommunicator.h:
+	 - rewriting non-vector send and receive using tnlSharedMemory 
+	* src/core/tnlSharedMemory.h: 
+	 - finishing implementation
+	* tests/unit-tests/core/tnlCommunicatorTester.h (testCommunicatorSendReceiveOnLongVector): 
+	* tests/unit-tests/tnl-unit-tests.cpp (main): 
+
+2011-02-22  oberhuber  <oberhuber@yvonne>
+
+	* src/core/tnlSharedMemory.h: New file.
+	 - starting implementation of the shared memory 
+	* src/core/tnlCommunicator.h: 
+
+2011-02-20  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/core/tnlCriticalSection.cpp: New file.
+	* src/core/tnlCriticalSection.h: New file.
+	  - implementing tnlCriticalSection
+	* src/core/Makefile.am: 
+	* src/core/tnlCommunicator.h: 
+	  - rewriting the old code using tnlCriticalSection
+	  - implementing send and receive for vectors
+	* src/debug/tnlDebug.h: 
+	* tests/unit-tests/core/tnlCommunicatorTester.h (testCommunicatorSendReceiveOnLongVector): 
+	(suite): 
+
+2011-02-19  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/core/tnlCommunicator.h: 
+	 - implementing methods start, send and receive
+	* tests/unit-tests/core/tnlCommunicatorTester.h (testCommunicatorInitiation): 
+	(testCommunicatorSendReceive): 
+	(suite): 
+
+2011-02-09  oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* configure.ac: 
+	* src/config/Makefile.in: 
+	* src/core/low-level/cuda-long-vector-kernels.h: 
+	 - changing number of threads per block for the CUDA reduction to get occupancy 1.0
+	* src/matrix/tnlCSRMatrix.h: 
+	* src/solver/tnlMersonSolver.h: 
+	 - optimizing the updating kernel to get occupancy 1.0 
+
+2011-02-06  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+	* src/core/debug.h: Removed.
+	* src/diff/debug.h: Removed.
+	* src/diff/mdiff-debug.h: Removed.
+	* tools/src/debug.h: Removed.
+	* src/config/Makefile.am: 
+	   - removing debug.h 
+	* src/config/tnlConfigDescriptionParser.cpp: 
+	* src/core/Makefile.am:
+	   - removing debug.h 
+	* src/core/tnlObject.cpp:
+	   - replacing debug.h with tnlDebug.h 
+	* src/core/tnlString.cpp:
+	   - replacing debug.h with tnlDebug.h 
+	* src/debug/Makefile.am:
+	   - removing debug.h 
+	* src/debug/tnlDebug.cpp (tnlInitDebug):
+	   - the flag debug is set to yes even if the parsing fails 
+	* src/debug/tnlDebug.h: 
+	   - adding prefix #TNLDBG# to all printouts
+	* src/diff/Makefile.am:
+	   - removing debug.h 
+	* tools/src/Makefile.am:
+	  - removing debug.h 
+
+2011-02-05  Tomas Oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+
+    * src/core/tnlComminucator.h New file.
+       - starting implementation of the CUDA/OpenCL/MPI communication framework
+	* src/matrix/tnlCSRMatrix.h: 
+	   - implementing method performSORIteration
+	* src/solver/tnlMatrixSolver.h: 
+	   - adding method getResidue (moved from the tnlSORSolver.h)
+	* src/solver/tnlSORSolver.h:
+	   - refactoring the solver to work with the new system o templates  
+
+
+
+December 2010 oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+* Explicit solvers now have device where the data are stored as a parameter too.
+* tnlGrid  is now a template with dimensions as parameter.
+  This avoids classes like tnlGrid1D, tnlGrid2D etc.
+  The device where the grid lives is also template parameter.
+* Implemented some basic operations lika Saxpy norms evaluation etc. on tnlLongVector.
+* Implemented tnlLongVector having the device where it lives as parameter.
+  At this moment it only supports CUDA. This should unified code for CPU and GPU
+  as much as possible.
+
+November 2010 oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+* Implemented tnlFile. It supports bzip2 compression transparently.
+  It makes all I/O operation simpler. It also allows to save data directly
+  from GPU devices - also for simplifing use of large numerical structures.
+
+July 2010 oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+* Implementing sparse matrices in CUDA - Coalesced CSR format. 
+
+December 2009 oberhuber  <tomas.oberhuber@fjfi.cvut.cz>
+* Starting implementation of the CUDA support.

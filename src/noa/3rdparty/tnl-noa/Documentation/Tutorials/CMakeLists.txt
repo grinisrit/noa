@@ -1,0 +1,8 @@
+add_subdirectory( GeneralConcepts )
+add_subdirectory( Arrays )
+add_subdirectory( Vectors )
+add_subdirectory( ReductionAndScan )
+add_subdirectory( Pointers )
+add_subdirectory( Matrices )
+add_subdirectory( Meshes )
+add_subdirectory( Solvers )
