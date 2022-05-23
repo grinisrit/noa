@@ -25,10 +25,10 @@
 
 #include <noa/utils/common.hh>
 
-#include <noa/3rdparty/TNL/Meshes/DefaultConfig.h>
-#include <noa/3rdparty/TNL/Meshes/Topologies/Tetrahedron.h>
-#include <noa/3rdparty/TNL/Meshes/Mesh.h>
-#include <noa/3rdparty/TNL/Containers/StaticArray.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/DefaultConfig.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Topologies/Tetrahedron.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Mesh.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Containers/StaticArray.h>
 
 namespace noa::pms::trace {
     using namespace noa::TNL;

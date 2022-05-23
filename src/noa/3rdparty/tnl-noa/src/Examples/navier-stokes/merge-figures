@@ -1,0 +1,10 @@
+#!/bin/bash
+
+for file in ${1}*.png;
+do
+   numbers=${file//[^0-9]/}
+   echo -ne "montage $file ${2}${numbers}.png ${3}${numbers}.png -tile 3x1 -geometry +10+10 ${4}${numbers}.png  \r"
+   montage $file ${2}${numbers}.png ${3}${numbers}.png -tile 3x1 -geometry +10+10 ${4}${numbers}.png
+
+
+done

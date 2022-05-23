@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# $1 - base file name
+# $2 - xrange
+# $3 - yrange
+# $4 - cbrange
+# $5 - vector field skipping along x
+# $6 - vector field skipping along y 
+
+function processFile()
+{
+   file=${1}
+         
+   gnuplotcommand="
+   set terminal png giant size 1280,1280 crop;
+   set output '`basename $file ".gplt"`.png';
+   set pm3d map;
+   set palette defined(0.0 0.5 1.0 0, 0.02 \"light-goldenrod\", 0.04 \"yellow\", 0.08 \"red\", 0.4 \"light-blue\", 1.0 \"blue\");
+   unset key;
+   set size ratio -1;
+   set pointsize 0.4;"
+    
+   if ! test x$2 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set xrange [0:$2];"
+   fi
+   if ! test x$3 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set yrange [0:$3];"
+   fi
+   if ! test x$4 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set cbrange [0:$4];"
+   fi
+      
+   gnuplotcommand="${gnuplotcommand} splot '$file' using 1:2:(sqrt(\$3**2 + \$4**2)) w pm3d title '${1}';"     
+   echo ${gnuplotcommand} | gnuplot
+   
+   
+   gnuplotcommand="
+   set terminal png giant size 1280,1280 crop;
+   set output 'vec-`basename $file ".gplt"`.png';
+   set palette defined(0.0 0.5 1.0 0, 0.02 \"light-goldenrod\", 0.04 \"yellow\", 0.08 \"red\", 0.4 \"light-blue\", 1.0 \"blue\");
+   unset key;
+   set size ratio -1;
+   set pointsize 0.4;"
+    
+   if ! test x$2 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set xrange [0:$2];"
+   fi
+   if ! test x$3 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set yrange [0:$3];"
+   fi
+   if ! test x$4 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set cbrange [0:$4];"
+   fi
+      
+   gnuplotcommand="${gnuplotcommand} plot '$file' every ${5}:${6} using 1:2:3:4:(sqrt($3**2+$4**2)) with vectors linecolor palette z title '${1}';"
+   echo ${gnuplotcommand} | gnuplot
+}  
+
+for file in ${1}*.gplt
+do
+   png_file="`basename $file ".gplt"`.png"
+   if test -e ${png_file};
+   then
+      echo -ne "Skipping:   ${png_file}    \r"
+   else
+      echo -ne "Creating:   ${png_file}    \r"
+      processFile ${file} ${2} ${3} ${4} ${5} ${6}
+   fi
+done

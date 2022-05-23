@@ -1,0 +1,17 @@
+#pragma once
+
+#include <TNL/Containers/Vector.h>
+#include <TNL/Meshes/Grid.h>
+
+template< typename Mesh,
+          typename Real = typename Mesh::RealType,
+          typename Index = typename Mesh::IndexType >
+class {operatorName}
+{{
+}};
+
+{operatorGridSpecializationHeader_1D}
+{operatorGridSpecializationHeader_2D}
+{operatorGridSpecializationHeader_3D}
+
+#include "{operatorName}_impl.h"

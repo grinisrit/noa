@@ -1,0 +1,38 @@
+#!/bin/bash
+
+function processFile()
+{
+   file=${1}
+         
+   gnuplotcommand="
+   set terminal png giant size 1280,1280 crop;
+   set output '`basename $file ".gplt"`.png';
+   set pm3d map;
+   set palette defined(0.0 0.5 1.0 0, 0.02 \"light-goldenrod\", 0.04 \"yellow\", 0.08 \"red\", 0.4 \"light-blue\", 1.0 \"blue\");
+   unset key;
+   set size ratio -1;
+   set pointsize 0.4;"
+    
+   if ! test x$2 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set xrange [0:$2];"
+   fi
+   if ! test x$3 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set yrange [0:$3];"
+   fi
+   if ! test x$4 = x;
+   then
+     gnuplotcommand="${gnuplotcommand} set cbrange [0:$4];"
+   fi
+   
+   gnuplotcommand="${gnuplotcommand} splot '$file' w pm3d title '${1}';"
+   
+   echo ${gnuplotcommand} | gnuplot
+}  
+
+for file in ${1}*.gplt
+do
+   echo -ne "Creating: `basename $file ".gplt"`.png     \r"
+   processFile ${file} ${2} ${3} ${4}
+done

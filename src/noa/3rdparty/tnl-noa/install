@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -e
+
+BUILDS=(Debug Release)
+OPTIONS=""
+
+for option in "$@"; do
+    case $option in
+        --no-debug)
+            # remove Debug from builds
+            BUILDS=("${BUILDS[@]/Debug}")
+            ;;
+        --no-release)
+            # remove Release from builds
+            BUILDS=("${BUILDS[@]/Release}")
+            ;;
+        --build=*)
+            # replace builds with the supplied argument
+            BUILDS=("${option#*=}")
+            ;;
+        *)
+            OPTIONS="${OPTIONS} ${option}"
+            ;;
+    esac
+done
+
+for build in "${BUILDS[@]}"; do
+    # skip empty strings that were left in the array after deleting prefixes
+    if [[ -z "$build" ]]; then
+        continue
+    fi
+    if ! ./build --build="$build" --install=yes ${OPTIONS}; then
+        echo "$build build failed."
+        exit 1
+    fi
+done
+
+
+PREFIX=${HOME}/.local
+for option in "$@"; do
+    case $option in
+        --prefix=*) PREFIX="${option#*=}" ;;
+    esac
+done
+
+
+if [[ ! "$PATH" =~ "$PREFIX/bin" ]]; then
+    cat << EOF
+
+WARNING !!!
+
+Your system does not see TNL which was installed right now.
+You need to add it to your system variables PATH and LD_LIBRARY_PATH.
+Add the following to your .bashrc file:
+
+export PATH="\${PATH}:${PREFIX}/bin"
+export LD_LIBRARY_PATH="\${LD_LIBRARY_PATH}:${PREFIX}/lib"
+EOF
+fi

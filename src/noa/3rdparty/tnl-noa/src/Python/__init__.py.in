@@ -1,0 +1,2 @@
+__install_prefix__ = "@CMAKE_INSTALL_PREFIX@"
+__version__ = "@tnlVersion@"

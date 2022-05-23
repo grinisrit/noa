@@ -1,0 +1,247 @@
+#!/bin/bash
+
+device="host"
+sizes="64"
+initFunctions="pseudoSquare"
+snapshotPeriod=0.001
+finalTime=0.1
+solverName="mean-curvature-flow"
+boundaryCondition="neumann"
+boundaryValue=0
+minZ=-3
+maxZ=6
+contourHeight=0
+numberOfContours=8
+numberOfInterpolations=10
+eps=0.00001
+
+setupInitFunction()
+{
+   initFunction=$1
+      origin=-2
+      proportions=4
+      amplitude=1.0
+      waveLength=1.0
+      waveLengthX=1.0
+      waveLengthY=1.0
+      waveLengthZ=1.0
+      wavesNumber=0.0
+      wavesNumberX=0.0
+      wavesNumberY=0.0
+      wavesNumberZ=0.0
+      phase=0.0
+      phaseX=0.0
+      phaseY=0.0
+      phaseZ=0.0
+      sigma=1.0
+      diameter=0.6
+      height=1.2
+}
+
+setupGrid()
+{
+   gridSize=$1
+   tnl-grid-setup --dimensions 2 \
+                  --origin-x ${origin} \
+                  --origin-y ${origin} \
+                  --origin-z ${origin} \
+                  --proportions-x ${proportions} \
+                  --proportions-y ${proportions} \
+                  --proportions-z ${proportions} \
+                  --size-x ${gridSize} \
+                  --size-y ${gridSize} \
+                  --size-z ${gridSize} 
+}
+
+setInitialCondition()
+{
+   initFunction=$1
+   tnl-init --test-function ${initFunction} \
+	    --output-file initial.tnl \
+            --amplitude ${amplitude} \
+            --wave-length ${waveLength} \
+            --wave-length-x ${waveLengthX} \
+            --wave-length-y ${waveLengthY} \
+            --wave-length-z ${waveLengthZ} \
+            --waves-number ${wavesNumber} \
+            --waves-number-x ${wavesNumberX} \
+            --waves-number-y ${wavesNumberY} \
+            --waves-number-z ${wavesNumberZ} \
+            --phase ${phase} \
+            --phase-x ${phaseX} \
+            --phase-y ${phaseY} \
+            --phase-z ${phaseZ} \
+            --sigma ${sigma} \
+	    --diameter ${diameter} \
+	    --height ${height} \
+            --time-dependence none
+}
+
+solve()
+{
+   timeDiscretisation=$1
+   discreteSolver=$2
+   ${solverName} --device ${device} \
+                 --mesh mesh.tnl \
+                 --initial-condition initial.tnl \
+		--snapshot-period ${snapshotPeriod} \
+                 --time-discretisation ${timeDiscretisation} \
+                 --time-step 1 \
+                 --time-step-order 2 \
+                 --discrete-solver ${discreteSolver} \
+                 --merson-adaptivity 1.0e-7 \
+                 --sor-omega 1.95 \
+                 --gmres-restarting 20 \
+                 --min-iterations 20 \
+                 --convergence-residue 1.0e-12 \
+		 --boundary-conditions-type ${boundaryCondition} \
+		 --boundary-conditions-constant ${boundaryValue} \
+		 --eps ${eps} \
+		 --final-time ${finalTime}
+}
+
+view()
+{
+   tnl-view --input-files u-*.tnl
+   tnl-view --input-files initial.tnl
+}
+
+generate3DVid()
+{
+domainEnd=$( expr ${origin}+${proportions} | bc | sed 's/^\./0./' | sed 's/^-\./-0./' )
+
+seznam=`ls u-*.gplt`
+step=0
+for fname in $seznam ; do
+time=$(expr $step*$snapshotPeriod | bc | sed 's/^\./0./')
+echo "Drawing $fname"
+gnuplot << EOF
+set output '$fname.png'
+set xrange [${1}:${domainEnd}]
+set yrange [${1}:${domainEnd}]
+set zrange [${minZ}:${maxZ}]    
+set pm3d
+unset surface
+set terminal png size 1200,600
+set cbrange [-1:1]
+set view 22,33,0.8,3
+set title 'Numerical solution - T: ${time}'
+set pm3d interpolate ${numberOfInterpolations},${numberOfInterpolations}
+splot '$fname' with pm3d notitle
+EOF
+step=$((${step}+1))
+done
+
+mencoder "mf://u-*.png" -mf fps=4 -o mean_curvature_$size.avi -ovc lavc -lavcopts vcodec=mpeg4
+rm *.png
+
+seznam=`ls u-*.gplt`
+step=0
+for fname in $seznam ; do
+time=$(expr $step*$snapshotPeriod | bc | sed 's/^\./0./')
+echo "Drawing map $fname"
+gnuplot << EOF
+set output '${fname}.png'
+set xrange [${1}:${domainEnd}]
+set yrange [${1}:${domainEnd}]
+set zrange [${minZ}:${maxZ}]    
+set pm3d
+unset surface
+set terminal png size 1200,600
+set cbrange [-1:1]
+set view map
+set title 'Numerical solution - map - T: ${time}'
+set pm3d interpolate 100,100
+set size square
+set contour base
+set cntrparam levels ${numberOfContours}
+splot '$fname' with pm3d notitle
+EOF
+step=$((${step}+1))
+done
+
+mencoder "mf://u-*.png" -mf fps=4 -o mean_curvature_map_$size.avi -ovc lavc -lavcopts vcodec=mpeg4
+rm *.png
+
+seznam=`ls u-*.gplt`
+step=0
+for fname in $seznam ; do
+time=$(expr $step*$snapshotPeriod | bc | sed 's/^\./0./')
+echo "Drawing contour $fname"
+gnuplot << EOF
+set output '${fname}.png'
+set xrange [${1}:${domainEnd}]
+set yrange [${1}:${domainEnd}]
+set zrange [${minZ}:${maxZ}]    
+unset surface
+set terminal png size 1200,600
+set view map
+set title 'Numerical solution - contour in height ${contourHeight} - T: ${time}'
+set pm3d interpolate 100,100
+set size square
+set contour base
+unset colorbox
+set cntrparam levels discrete ${contourHeight}
+splot '$fname' with pm3d notitle
+EOF
+step=$((${step}+1))
+done
+
+mencoder "mf://u-*.png" -mf fps=4 -o mean_curvature_contour_${contourHeight}_$size.avi -ovc lavc -lavcopts vcodec=mpeg4
+
+rm *.png
+rm *.tnl         
+rm *.gplt 
+rm mesh.asy
+rm computation-done
+     
+}
+
+runTest()
+{
+   for initFunction in ${initFunctions};
+   do
+      mkdir -p ${initFunction}-videos
+      cd ${initFunction}-videos
+      setupInitFunction ${initFunction}
+         
+      for size in $sizes;
+      do
+          mkdir -p $size
+          cd $size
+          echo ""
+          echo ""
+          echo ""
+          if test ! -f computation-done;
+          then
+             touch computation-in-progress
+             echo "========================================================================="
+             echo "===                   SETTING UP THE GRID                             ==="
+             echo "========================================================================="
+             setupGrid $size 
+             echo "========================================================================="
+             echo "===                WRITING THE EXACT SOLUTION                         ==="
+             echo "========================================================================="
+             setInitialCondition $initFunction
+             echo "========================================================================="
+             echo "===                   STARTING THE SOLVER                             ==="
+             echo "========================================================================="
+             solve explicit merson
+             #solve semi-implicit gmres
+             mv computation-in-progress computation-done
+             echo "========================================================================="
+             echo "===                     COMPUTATION DONE                              ==="            
+             echo "========================================================================="
+	     view
+	     generate3DVid $origin $proportions
+             cd ..
+             lastSize=$size
+          fi
+         cd ..
+      done
+      cd ..
+   done
+}
+
+runTest
+ 

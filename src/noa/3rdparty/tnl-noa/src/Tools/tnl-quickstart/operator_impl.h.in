@@ -1,0 +1,7 @@
+#pragma once
+
+{operatorGridSpecializationImplementation_1D}
+
+{operatorGridSpecializationImplementation_2D}
+
+{operatorGridSpecializationImplementation_3D}

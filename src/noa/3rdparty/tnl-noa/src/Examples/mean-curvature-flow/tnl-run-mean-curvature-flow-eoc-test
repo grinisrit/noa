@@ -1,0 +1,198 @@
+#!/bin/bash
+
+device="host"
+dimensions="3D"
+sizes3D="16 32 64"
+testFunctions="exp-bump sin-wave sin-bumps"
+snapshotPeriod=0.001
+finalTime=0.01
+timeDependence="cosine"
+solverName="mean-curvature-flow-eoc"
+#solverName="gdb --args tnl-heat-equation-eoc-test-dbg"
+
+setupTestFunction()
+{
+   testFunction=$1
+#   if test x${testFunction} = "xexp-bump";
+#   then
+      origin=2
+      proportions=2
+      amplitude=1.0
+      waveLength=1.0
+      waveLengthX=1.0
+      waveLengthY=1.0
+      waveLengthZ=1.0
+      wavesNumber=0.0
+      wavesNumberX=0.0
+      wavesNumberY=0.0
+      wavesNumberZ=0.0
+      phase=0.0
+      phaseX=0.0
+      phaseY=0.0
+      phaseZ=0.0
+      sigma=1
+#   fi
+}
+
+setupGrid()
+{
+   dimensions=$1
+   gridSize=$2
+   tnl-grid-setup --dimensions ${dimensions} \
+                  --origin-x ${origin} \
+                  --origin-y ${origin} \
+                  --origin-z ${origin} \
+                  --proportions-x ${proportions} \
+                  --proportions-y ${proportions} \
+                  --proportions-z ${proportions} \
+                  --size-x ${gridSize} \
+                  --size-y ${gridSize} \
+                  --size-z ${gridSize} 
+}
+
+setInitialCondition()
+{
+   testFunction=$1
+   tnl-init --test-function ${testFunction} \
+            --output-file exact-u.tnl \
+            --amplitude ${amplitude} \
+            --wave-length ${waveLength} \
+            --wave-length-x ${waveLengthX} \
+            --wave-length-y ${waveLengthY} \
+            --wave-length-z ${waveLengthZ} \
+            --waves-number ${wavesNumber} \
+            --waves-number-x ${wavesNumberX} \
+            --waves-number-y ${wavesNumberY} \
+            --waves-number-z ${wavesNumberZ} \
+            --phase ${phase} \
+            --phase-x ${phaseX} \
+            --phase-y ${phaseY} \
+            --phase-z ${phaseZ} \
+            --sigma ${sigma} \
+            --time-dependence ${timeDependence} \
+            --snapshot-period ${snapshotPeriod} \
+            --final-time ${finalTime}
+}
+
+solve()
+{
+   timeDiscretisation=$1
+   discreteSolver=$2
+   ${solverName} --device ${device} \
+                 --mesh mesh.tnl \
+                 --initial-condition exact-u-00000.tnl \
+                 --time-discretisation ${timeDiscretisation} \
+                 --time-step 1 \
+                 --time-step-order 2 \
+                 --discrete-solver ${discreteSolver} \
+                 --merson-adaptivity 1.0e-10 \
+                 --sor-omega 1.95 \
+                 --gmres-restarting 20  \
+                 --min-iterations 50 \
+                 --convergence-residue 1.0e-14 \
+                 --test-function ${testFunction}\
+                 --amplitude ${amplitude} \
+                 --wave-length ${waveLength} \
+                 --wave-length-x ${waveLengthX} \
+                 --wave-length-y ${waveLengthY} \
+                 --wave-length-z ${waveLengthZ} \
+                 --waves-number ${wavesNumber} \
+                 --waves-number-x ${wavesNumberX} \
+                 --waves-number-y ${wavesNumberY} \
+                 --waves-number-z ${wavesNumberZ} \
+                 --phase ${phase} \
+                 --phase-x ${phaseX} \
+                 --phase-y ${phaseY} \
+                 --phase-z ${phaseZ} \
+                 --sigma ${sigma} \
+                 --time-dependence ${timeDependence} \
+                 --snapshot-period ${snapshotPeriod} \
+                 --final-time ${finalTime}
+}
+               
+computeError()
+{
+   tnl-diff --mesh mesh.tnl \
+            --input-files exact-u-*.tnl u-*.tnl \
+            --mode halves \
+            --snapshot-period ${snapshotPeriod} \
+            --output-file errors.txt \
+            --write-difference yes
+}
+
+runTest()
+{
+   for testFunction in ${testFunctions};
+   do
+      mkdir -p ${testFunction}
+      cd ${testFunction}
+      setupTestFunction ${testFunction}
+      
+      for dim in ${dimensions};
+      do
+         mkdir -p $dim
+         cd ${dim}
+         if test $dim = 1D;
+         then 
+            sizes=$sizes1D
+         fi
+         if test $dim = 2D;
+         then 
+            sizes=$sizes2D
+         fi
+         if test $dim = 3D;
+         then 
+            sizes=$sizes3D
+         fi
+         
+         lastSize=""
+         for size in $sizes;
+         do
+            mkdir -p $size
+            cd $size
+            echo ""
+            echo ""
+            echo ""
+            if test ! -f computation-done;
+            then
+               touch computation-in-progress
+               echo "========================================================================="
+               echo "===                   SETTING UP THE GRID                             ==="
+               echo "========================================================================="
+               setupGrid $dim $size 
+               echo "========================================================================="
+               echo "===                WRITING THE EXACT SOLUTION                         ==="
+               echo "========================================================================="
+               setInitialCondition $testFunction
+               echo "========================================================================="
+               echo "===                   STARTING THE SOLVER                             ==="
+               echo "========================================================================="
+               #solve explicit merson
+               solve semi-implicit gmres
+               mv computation-in-progress computation-done
+            fi            
+            echo "========================================================================="
+            echo "===                   COMPUTING THE ERROR                             ==="
+            echo "========================================================================="
+            computeError
+            echo "========================================================================="
+            echo "===                     COMPUTING THE EOC                             ==="            
+            echo "========================================================================="
+            if test ! x$lastSize = x;
+            then
+               tnl-err2eoc ../$lastSize/errors.txt errors.txt
+            fi
+            echo "========================================================================="
+            echo "===                     COMPUTATION DONE                              ==="            
+            echo "========================================================================="
+            cd ..
+            lastSize=$size
+         done
+
+         cd ..
+      done
+      cd ..
+   done
+}
+
+runTest

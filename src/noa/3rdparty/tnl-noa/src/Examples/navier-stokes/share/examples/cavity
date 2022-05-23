@@ -1,0 +1,61 @@
+#!/bin/bash
+
+MAX_INFLOW_VELOCITIES="1 2 3 4 5 6 7 8 9 10"
+MAX_INFLOW_VELOCITIES="1"
+
+MU="10 1 0.1 0.01 0.001 2.3263e-5"
+
+max_outflow_velocity="2"
+
+for max_inflow_velocity in $MAX_INFLOW_VELOCITIES;
+do
+
+   mkdir v-${max_inflow_velocity}
+   cd v-${max_inflow_velocity}
+
+   for mu in ${MU};
+   do
+      mkdir mu-${mu}
+      cd mu-${mu}
+      
+      tnl-grid-setup --dimensions 2 \
+                     --proportions-x 1 \
+                     --proportions-y 1 \
+                     --size-x 51 \
+                     --size-y 51
+      
+      navier-stokes --problem-name cavity \
+                    --max-inflow-velocity ${max_inflow_velocity} \
+                    --max-outflow-velocity ${max_outflow_velocity} \
+                    --start-up 1 \
+                    --mu ${mu} \
+                    --R 287.4 \
+                    --T 400.0 \
+                    --p0 101325.0 \
+                    --gamma 1.39 \
+                    --final-time 10.0 \
+                    --snapshot-period 0.04 \
+                    --scheme lax-fridrichs \
+                    --discrete-solver merson \
+                    --initial-tau 2.0e-6 \
+                    --merson-adaptivity 1.0e-4 \
+                    --verbose 2 \
+                    --device host
+
+      tnl-view --mesh mesh.tnl --check-output-file yes --input-files u*tnl
+
+      make-png-vectors-from-gnuplot u 1 1 1.5 1 1
+      
+      rm *.gplt
+
+      mencoder "mf://u-*.png" -mf fps=25 -o u.avi -ovc lavc -lavcopts vcodec=mpeg4
+      mencoder "mf://vec-u-*.png" -mf fps=25 -o vec-u.avi -ovc lavc -lavcopts vcodec=mpeg4      
+      
+      rm *.png
+      
+      cd ..
+
+   done
+
+   cd ..
+done

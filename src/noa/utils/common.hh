@@ -305,7 +305,7 @@ namespace noa::utils {
                 return torch::jit::load(jit_module_pt);
             }
             catch (const std::exception &exc) {
-                std::cerr << "Failed to load JIT module from " << jit_module_pt << "\n" << exc.what() << "\n";
+                std::cerr << "Failed to load JIT module from " << jit_module_pt << "\n"<< exc.what() << "\n";
                 return std::nullopt;
             }
         } else {

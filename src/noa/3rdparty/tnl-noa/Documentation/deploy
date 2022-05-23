@@ -1,0 +1,35 @@
+#!/bin/bash
+
+OUTPUTDIR=./html
+SSH_USER=tnl-doc
+SSH_HOST=mmg-gitlab.fjfi.cvut.cz
+SSH_PORT=22
+SSH_TARGET_DIR=/srv/http/doc/tnl
+
+set -e
+
+# Run from this directory
+cd ${0%/*}
+
+[[ ! -d "$OUTPUTDIR" ]] && ./build
+
+# set default arguments for ssh
+SSH_ARGS="-p $SSH_PORT"
+
+# When the script is run from continuous integration, the ssh key should be
+# specified by this environment variable. We need to put it into a temporary
+# file and pass it to ssh.
+if [[ "$TNL_DOC_DEPLOY_KEY" != "" ]]; then
+   tempfile=$(mktemp)
+   trap "rm -f $tempfile" EXIT
+   echo "$TNL_DOC_DEPLOY_KEY" | base64 -d > "$tempfile"
+   SSH_ARGS="$SSH_ARGS -i $tempfile"
+fi
+if [[ "$TNL_DOC_DEPLOY_HOSTKEY" != "" ]]; then
+   tempfile=$(mktemp)
+   trap "rm -f $tempfile" EXIT
+   echo "$TNL_DOC_DEPLOY_HOSTKEY" | base64 -d > "$tempfile"
+   SSH_ARGS="$SSH_ARGS -o UserKnownHostsFile=$tempfile"
+fi
+
+rsync -e "ssh $SSH_ARGS" -P -rvzc --cvs-exclude --delete "$OUTPUTDIR/" "$SSH_USER@$SSH_HOST:$SSH_TARGET_DIR"

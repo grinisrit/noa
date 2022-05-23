@@ -1,0 +1,1 @@
+cuda_array = host_aray;

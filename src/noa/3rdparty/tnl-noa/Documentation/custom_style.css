@@ -1,0 +1,6 @@
+div.toc
+{
+    float: none;
+    width: unset;
+    max-width: max-content;
+}

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+tnl-grid-setup --dimensions 2 \
+               --origin-x 0.0 \
+               --origin-x 0.0 \
+               --proportions-x 1.0 \
+               --proportions-y 1.0 \
+               --size-x 100 \
+               --size-y 100 
+ 
+tnl-init --test-function heaviside-of-vector-norm \
+         --output-file init.tnl \
+         --coefficient -1.0 \
+         --vector-norm-center-0 0.5 \
+         --vector-norm-center-1 0.5 \
+         --vector-norm-center-2 0.5 \
+         --vector-norm-radius 0.2 \
+         --vector-norm-power 0.6 \
+         --vector-norm-max-norm false
+
+tnl-transport-equation --device host \
+                       --initial-condition init.tnl \
+                       --time-discretisation explicit \
+                       --time-step 1.0e-5 \
+                       --boundary-conditions-constant 0.0 \
+                       --discrete-solver euler \
+                       --snapshot-period 0.005 \
+                       --final-time 0.1 \
+                       --numerical-viscosity 1.0 \
+                       --velocity-field-0-constant 1.0 \
+                       --velocity-field-1-constant 1.0 \
+                       --velocity-field-2-constant 1.0
+
+tnl-view --mesh mesh.tnl --input-files *tnl     

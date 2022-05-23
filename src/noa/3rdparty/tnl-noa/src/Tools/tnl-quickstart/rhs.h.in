@@ -1,0 +1,29 @@
+#pragma once
+
+#include <TNL/Functions/Domain.h>
+
+template< typename Mesh, typename Real >
+class {problemBaseName}Rhs
+  : public TNL::Functions::Domain< Mesh::getMeshDimension(), TNL::Functions::MeshDomain >
+{{
+   public:
+
+      typedef Mesh MeshType;
+      typedef Real RealType;
+
+      bool setup( const TNL::Config::ParameterContainer& parameters,
+                  const TNL::String& prefix = "" )
+      {{
+         return true;
+      }}
+
+      template< typename MeshEntity >   
+      __cuda_callable__
+      Real operator()( const MeshEntity& entity,
+                       const Real& time = 0.0 ) const    
+      {{   
+         typedef typename MeshEntity::MeshType::PointType PointType;
+         PointType p = entity.getCenter();        
+         return 0.0;    
+      }}
+}};
