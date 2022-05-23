@@ -67,8 +67,8 @@ namespace noa::utils {
             try {
                 torch::load(tensor, path);
             }
-            catch (...) {
-                std::cerr << "Failed to load tensor from " << path << "\n";
+            catch (const std::exception &exc) {
+                std::cerr << "Failed to load tensor from " << path << "\n" << exc.what() << "\n";
                 return std::nullopt;
             }
             return std::make_optional(tensor);
@@ -304,8 +304,8 @@ namespace noa::utils {
             try {
                 return torch::jit::load(jit_module_pt);
             }
-            catch (...) {
-                std::cerr << "Failed to load JIT module from " << jit_module_pt << "\n";
+            catch (const std::exception &exc) {
+                std::cerr << "Failed to load JIT module from " << jit_module_pt << "\n" << exc.what() << "\n";
                 return std::nullopt;
             }
         } else {

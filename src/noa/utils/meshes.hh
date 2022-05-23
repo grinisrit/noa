@@ -43,8 +43,8 @@ namespace noa::utils::meshes {
             try {
                 reader.loadMesh(mesh);
             }
-            catch (...) {
-                std::cerr << "Failed to load tetrahedron mesh from " << path << "\n";
+            catch (const std::exception &exc) {
+                std::cerr << "Failed to load tetrahedron mesh from " << path << "\n" << exc.what() << "\n";
                 return std::nullopt;
             }
             return std::make_optional(mesh);
