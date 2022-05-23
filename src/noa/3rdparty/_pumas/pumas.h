@@ -720,6 +720,9 @@ struct pumas_physics_settings {
          * to be used i.e. 5% which is a good compromise between speed and
          * accuracy for transporting a continuous spectrumm, see e.g.  [Sokalski
          * et al.](https://doi.org/10.1103/PhysRevD.64.074015)
+         *
+         * __Warning__ : In backward mode, with mixed or straggled energy loss,
+         * cutoff values lower than 1% are not currently supported.
          */
         double cutoff;
         /** Ratio of the mean free path for hard elastic events to the smallest
@@ -1069,11 +1072,13 @@ PUMAS_API enum pumas_return pumas_physics_print(
  *
  * @param major    The major version number or `NULL`.
  * @param minor    The minor version number or `NULL`.
+ * @param patch    The patch version number or `NULL`.
  *
- * The PUMAS library version is given as MAJOR.MINOR. If *major* or *minor* is
- * not required the corresponding pointer can be set to `NULL`.
+ * The PUMAS library version is given as MAJOR.MINOR.PATCH. If *major*, *minor*
+ * or *patch* is not required, then the corresponding pointer can be set to
+ * `NULL`.
  */
-PUMAS_API void pumas_version(int * major, int * minor);
+PUMAS_API void pumas_version(int * major, int * minor, int * patch);
 
 /**
  * Get information on the transported particle.
