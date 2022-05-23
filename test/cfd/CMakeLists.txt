@@ -13,7 +13,7 @@ find_package(ZLIB)
 
 
 # Main executables
-add_executable(mass_lumping main.cc)
+add_executable(mass_lumping main.cc ${NOA_ROOT_DIR}/test/kernels.cc)
 set_target_properties(mass_lumping PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Link libraries
