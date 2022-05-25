@@ -92,7 +92,7 @@ from higher-dimensional probability distributions.
 in the passage of particles through matter simulations. 
 * [CFD](docs/cfd) implements adjoint sensitivity models for a variety 
 problems arising in computational fluid dynamics.
-* [QC](docs/qc) differentiable quantum chemistry platform for materials design.
+* [QC](docs/qc) is a differentiable quantum chemistry platform for materials design.
 * [QUANT](docs/quant) a differentiable derivative 
 pricing library.
 

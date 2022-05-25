@@ -1,4 +1,4 @@
-# Quantum Chemistry (QT)
+# Quantum Chemistry (QC)
 
 :warning: This component is under active development.
 
