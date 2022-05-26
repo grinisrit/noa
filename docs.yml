@@ -14,5 +14,6 @@ dependencies:
       - torch
       - pythreejs
       - pyvista
+      - pyscf
       - meshio
       - dqc
