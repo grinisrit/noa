@@ -166,7 +166,7 @@ template <typename Device = TNL::Devices::Host, typename Index = int>
 struct LayerManager {
 	/* ----- PUBLIC TYPE ALIASES ----- */
 	using LayerType = Layer<Device, Index>;
-	template <typename DataType> using Vector = typename LayerType::Vector<DataType>;
+	template <typename DataType> using Vector = typename LayerType::template Vector<DataType>;
 
 	protected:
 	/* ----- PROTECTED DATA MEMBERS ----- */

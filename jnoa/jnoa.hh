@@ -18,7 +18,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
 /**
- * Implemented by: Roland Grinis
+ * Implemented by: Roland Grinis, Anastasia Golovina
  */
 
 #pragma once
@@ -38,6 +38,14 @@ namespace jnoa {
     using VoidHandle = void *;
     using AdamOptim = torch::optim::Adam;
     using AdamOptimOpts = torch::optim::AdamOptions;
+    using RmsOptim = torch::optim::RMSprop;
+    using RmsOptimOpts = torch::optim::RMSpropOptions;
+    using AdamWOptim = torch::optim::AdamW;
+    using AdamWOptimOpts = torch::optim::AdamWOptions;
+    using AdagradOptim = torch::optim::Adagrad;
+    using AdagradOptimOpts = torch::optim::AdagradOptions;
+    using SgdOptim = torch::optim::SGD;
+    using SgdOptimOpts = torch::optim::SGDOptions;
 
     struct JitModule {
         torch::jit::Module jit_module;
@@ -106,6 +114,34 @@ namespace jnoa {
     template<typename Optim, typename OptimOptions, typename... Options>
     Optim get_optim(JitModule &module, Options &&... opts) {
         return Optim{parameters(module.jit_module, false), OptimOptions(std::forward<Options>(opts)...)};
+    }
+
+    template<typename Optim, typename OptimOptions>
+    Optim get_rms_optim(JitModule &module, double learningRate, double alpha, 
+        double eps, double weightDecay, double momentum, bool centered) {
+        return Optim{parameters(module.jit_module, false), 
+        OptimOptions(learningRate).alpha(alpha).eps(eps).weight_decay(weightDecay).momentum(momentum).centered(centered)};
+    }
+
+    template<typename Optim, typename OptimOptions>
+    Optim get_adamw_optim(JitModule &module, double learningRate, double beta1,
+        double beta2, double eps, double weightDecay, bool amsgrad) {
+        return Optim{parameters(module.jit_module, false), 
+        OptimOptions(learningRate).betas(std::tuple<double,double>(beta1, beta2)).eps(eps).weight_decay(weightDecay).amsgrad(amsgrad)};
+    }
+
+    template<typename Optim, typename OptimOptions>
+    Optim get_adagrad_optim(JitModule &module, double learningRate, double weightDecay,
+        double lrDecay, double initialAccumulatorValue, double eps) {
+        return Optim{parameters(module.jit_module, false), 
+        OptimOptions(learningRate).weight_decay(weightDecay).lr_decay(lrDecay).initial_accumulator_value(initialAccumulatorValue).eps(eps)};
+    }
+
+    template<typename Optim, typename OptimOptions>
+    Optim get_sgd_optim(JitModule &module, double learningRate, double momentum,
+        double dampening, double weightDecay, bool nesterov) {
+        return Optim{parameters(module.jit_module, false), 
+        OptimOptions(learningRate).momentum(momentum).dampening(dampening).weight_decay(weightDecay).nesterov(nesterov)};
     }
 
     inline int device_to_int(const Tensor &tensor) {

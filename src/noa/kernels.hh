@@ -23,8 +23,5 @@
 
 #pragma once
 
-#include "noa/3rdparty/_tinyxml2/tinyxml2.h"
-
-#ifndef HAVE_TINYXML2
-#define HAVE_TINYXML2
-#endif
+#include "noa/3rdparty/tinyxml2.hh"
+#include "noa/3rdparty/_tinyxml2/tinyxml2.cpp"
