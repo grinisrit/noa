@@ -19,6 +19,9 @@ class DQCAdapter(AbstractAdapter):
         # copy density matrix:
         self.__dm = qc._dm.detach().clone()
 
+        # copy overlap matrix:
+        self.__overlap = qc.get_system().get_hamiltonian().get_overlap()._fullmatrix()
+
         # copy fockian:
         self.__fockian = qc._engine.dm2scp(self.__dm).clone()
 
@@ -44,6 +47,9 @@ class DQCAdapter(AbstractAdapter):
 
     def get_density_matrix(self):
         return self.__dm
+
+    def get_overlap_matrix(self):
+        return self.__overlap
 
     def get_number_of_occupied_orbitals(self):
         return self.__noccorb
