@@ -1,4 +1,4 @@
-import AbstractAdapter
+from AbstractAdapter import AbstractAdapter
 import torch
 from typing import Union
 import xitorch as xt
@@ -42,6 +42,9 @@ class DQCAdapter(AbstractAdapter):
         # copy 4D tensor of electron-electron repulsion
         self.__four_center_elrep_tensor = qc._engine.hamilton.el_mat.detach().clone()
 
+    def get_density_matrix(self):
+        return self.__dm
+
     def get_number_of_occupied_orbitals(self):
         return self.__noccorb
 
@@ -66,7 +69,7 @@ class DQCAdapter(AbstractAdapter):
     def get_four_center_elrep_tensor(self):
         return self.__four_center_elrep_tensor
 
-    def __eigendecomposition(self, hf_engine) -> Union[(torch.Tensor, torch.Tensor), (SpinParam[torch.Tensor], SpinParam[torch.Tensor])]:
+    def __eigendecomposition(self, hf_engine):
         if not hf_engine._polarized:
             fock = xt.LinearOperator.m(_symm(self.__fockian), is_hermitian=True)
             return hf_engine.diagonalize(fock, self.__noccorb)
@@ -76,25 +79,25 @@ class DQCAdapter(AbstractAdapter):
             return hf_engine.diagonalize(hf_engine, SpinParam(u=fock_u, d=fock_d))
 
     def __construct_vxc_derivative_tensor(self, hamiltonian, dm):
-        densinfo = SpinParam.apply_fcn(lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # value: (*BD, nr)
+        densinfo = SpinParam.apply_fcn(lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # value: (*BD, ngrid)
         # print("density info\n", densinfo)
-        derivative_of_potinfo_wrt_ro = self.__get_dvxc_wrt_dro_xc(hamiltonian.xc, densinfo)  # value: (*BD, nr)
+        derivative_of_potinfo_wrt_ro = self.__get_dvxc_wrt_dro_xc(hamiltonian.xc, densinfo)  # value: (*BD, ngrid)
         # print("derivative of potential info wrt density\n", derivative_of_potinfo_wrt_ro)
         dvxc_wrt_dro = self.__get_dvxc_wrt_dro_from_derivative_of_potinfo_wrt_ro(hamiltonian,
                                                                                  derivative_of_potinfo_wrt_ro)
-        return dvxc_wrt_dro # (nao, nao, nao, nao)
+        return dvxc_wrt_dro # (nallorb, nallorb, nallorb, nallorb)
 
     def __get_dvxc_wrt_dro_xc(self, xc, densinfo):
         """
         calculating values of dvxc_wrt_dro at all points of grid
-        :param densinfo: (*BD, nr)
-        :return: derivative_of_potinfo_wrt_ro: (*BD, nr)
+        :param densinfo: (*BD, ngrid)
+        :return: derivative_of_potinfo_wrt_ro: (*BD, ngrid)
         """
 
         # mark the densinfo components as requiring grads
         with xc._enable_grad_densinfo(densinfo):
             with torch.enable_grad():
-                edensity = xc.get_edensityxc(densinfo)  # (*BD, nr)
+                edensity = xc.get_edensityxc(densinfo)  # (*BD, ngrid)
             grad_outputs = torch.ones_like(edensity)
             grad_enabled = torch.is_grad_enabled()
 
@@ -102,10 +105,11 @@ class DQCAdapter(AbstractAdapter):
                 raise NotImplementedError("polarized case is not implemented")
             else:  # unpolarized case
                 if xc.family == 1:  # LDA
+                    # TODO: compare numerical V_XC and dV_XC/dro with concrete analytical values
                     potinfo, = torch.autograd.grad(
                         edensity, densinfo.value, create_graph=grad_enabled,
                         grad_outputs=grad_outputs)
-                    print("potential info\n", potinfo)
+                    # print("potential info\n", potinfo)
                     derivative_of_potinfo_wrt_ro, = torch.autograd.grad(
                         potinfo, densinfo.value, create_graph=grad_enabled,
                         grad_outputs=grad_outputs)
@@ -113,11 +117,11 @@ class DQCAdapter(AbstractAdapter):
                 else:  # GGA and others
                     raise NotImplementedError("Default dvxc wrt dro for this family is not implemented")
 
-    def __get_dvxc_wrt_dro_from_derivative_of_potinfo_wrt_ro(self, hamiltonian, derivative_of_potinfo_wrt_ro: ValGrad) -> xt.LinearOperator:
+    def __get_dvxc_wrt_dro_from_derivative_of_potinfo_wrt_ro(self, hamiltonian, derivative_of_potinfo_wrt_ro: ValGrad):
         """
         Calculate 4D tensor of derivative of V_XC with respect to density.
-        :param derivative_of_potinfo_wrt_ro: (*BD, nr), basis: (nr, nao)
-        :return: (nao, nao, nao, nao)
+        :param derivative_of_potinfo_wrt_ro: (ngrid), basis: (ngrid, nallorb)
+        :return: (nallorb, nallorb, nallorb, nallorb)
         """
 
         # TODO: do here the same stuff as DQC did
