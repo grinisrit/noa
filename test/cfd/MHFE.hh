@@ -119,9 +119,11 @@ void solverStep(__DomainType__& domain,
 		const Real& tau,
 		const std::string& solverName = "gmres",
 		const std::string& preconditionerName = "diagonal") {
+	// Alias dimensions
 	constexpr auto dimCell = domain.getMeshDimension();
 	constexpr auto dimEdge = dimCell - 1;
 
+	// Get edges count
 	const auto edges = domain.getMesh().template getEntitiesCount<dimEdge>();
 
 	// Copy the previous solution
@@ -129,7 +131,7 @@ void solverStep(__DomainType__& domain,
 	auto& PPrev = domain.getLayers(dimCell).template get<Real>(Layer::P_PREV);
 	PPrev = P;
 
-	// System matrix
+	// System matrix - initialize and zero
 	using Matrix = TNL::Matrices::SparseMatrix<Real, Device, GlobalIndex>;
 	auto m = std::make_shared<Matrix>(edges, edges);
 	m->setRowCapacities(domain.getLayers(dimEdge).template get<GlobalIndex>(Layer::ROW_CAPACITIES));
@@ -151,9 +153,10 @@ void solverStep(__DomainType__& domain,
 
 	const auto lView = domain.getLayers(dimCell).template get<Real>(Layer::L).getConstView();
 
-	// Reset the right-part vector
+	// Reset the right-hand vector
 	rightView.forAllElements([] (GlobalIndex i, Real& v) { v = 0; });
 
+	// Calculate system matrix and right-hand vector
 	const auto Q_part = [&] (const GlobalIndex& cell, const GlobalIndex& edge, const Real& right = 0) {
 		const auto a = aView[cell];
 		const auto c = cView[cell];
