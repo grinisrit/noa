@@ -45,6 +45,15 @@ class DQCAdapter(AbstractAdapter):
         # copy 4D tensor of electron-electron repulsion
         self.__four_center_elrep_tensor = qc._engine.hamilton.el_mat.detach().clone()
 
+        # number of model parameters:
+        self.__number_of_parameters = qc._engine.hamilton.xc.number_of_parameters
+
+        # construct derivatives from Exc with respect to all thetas
+        self.__contruct_all_dexc_wrt_dtheta_tensors(qc._engine.hamilton, self.__dm)
+
+        # construct derivatives from vxc with respect to all thetas
+        self.__contruct_all_dvxc_wrt_dtheta_tensors(qc._engine.hamilton, self.__dm)
+
     def get_density_matrix(self):
         return self.__dm
 
@@ -75,6 +84,15 @@ class DQCAdapter(AbstractAdapter):
     def get_four_center_elrep_tensor(self):
         return self.__four_center_elrep_tensor
 
+    def get_number_of_parameters(self):
+        return self.__number_of_parameters
+
+    def get_derivative_of_exc_wrt_theta(self):
+        return self.__dexc_wrt_dtheta
+
+    def get_derivative_of_vxc_wrt_theta(self):
+        return self.__dvxc_wrt_dtheta
+
     def __eigendecomposition(self, hf_engine):
         if not hf_engine._polarized:
             fock = xt.LinearOperator.m(_symm(self.__fockian), is_hermitian=True)
@@ -83,6 +101,69 @@ class DQCAdapter(AbstractAdapter):
             fock_u = xt.LinearOperator.m(_symm(self.__fockian[0]), is_hermitian=True)
             fock_d = xt.LinearOperator.m(_symm(self.__fockian[1]), is_hermitian=True)
             return hf_engine.diagonalize(hf_engine, SpinParam(u=fock_u, d=fock_d))
+
+    # calculate partitial derivative of (full) energy with respect to parameters of xc-functional
+    def __construct_dexc_wrt_dtheta(self, hamiltonian, dm: Union[torch.Tensor, SpinParam[torch.Tensor]],
+                            parameter_number) -> torch.Tensor:
+        densinfo = SpinParam.apply_fcn(
+            lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # (spin) value: (*BD, nr)
+        edens_derivative = hamiltonian.xc.get_edensityxc_derivative(densinfo, parameter_number)  # (*BD, nr)
+        return torch.sum(hamiltonian.grid.get_dvolume() * edens_derivative, dim=-1)
+
+    def __contruct_all_dexc_wrt_dtheta_tensors(self, hamiltonian, dm):
+        number_of_parameters = hamiltonian.xc.number_of_parameters
+        list_of_tensors = []
+        for parameter_number in range(number_of_parameters):
+            current_tensor = self.__construct_dexc_wrt_dtheta(hamiltonian, dm, parameter_number)
+            list_of_tensors.append(current_tensor.unsqueeze(-1))
+        self.__dexc_wrt_dtheta = torch.cat(list_of_tensors, 0)
+
+    def __get_dvxc_wrt_dtheta(self, xc, densinfo, parameter_number):
+        """
+        Returns the ValGrad for the xc potential given the density info
+        for unpolarized case.
+        """
+        # This is the default implementation of vxc if there is no implementation
+        # in the specific class of XC.
+
+        # densinfo.value & lapl: (*BD, nr)
+        # densinfo.grad: (*BD, ndim, nr)
+        # return:
+        # potentialinfo.value & lapl: (*BD, nr)
+        # potentialinfo.grad: (*BD, ndim, nr)
+
+        # mark the densinfo components as requiring grads
+        with xc._enable_grad_densinfo(densinfo):
+            with torch.enable_grad():
+                edensity_derivative = xc.get_edensityxc_derivative(densinfo, parameter_number)  # (*BD, nr)
+            grad_outputs = torch.ones_like(edensity_derivative)
+            grad_enabled = torch.is_grad_enabled()
+
+            if not isinstance(densinfo, ValGrad):  # polarized case
+                raise NotImplementedError("polarized case is not implemented")
+            else:  # unpolarized case
+                if xc.family == 1:  # LDA
+                    dedn, = torch.autograd.grad(
+                        edensity_derivative, densinfo.value, create_graph=grad_enabled,
+                        grad_outputs=grad_outputs)
+
+                    return ValGrad(value=dedn)
+                else:  # GGA and others
+                    raise NotImplementedError("Default dvxc wrt dro for this family is not implemented")
+
+    def __contruct_dvxc_wrt_dtheta(self, hamiltonian, dm, parameter_number):
+        densinfo = SpinParam.apply_fcn(lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # value: (*BD, nr)
+        potinfo = self.__get_dvxc_wrt_dtheta(hamiltonian.xc, densinfo, parameter_number)  # value: (*BD, nr)
+        vxc_linop = hamiltonian._get_vxc_from_potinfo(potinfo)
+        return vxc_linop
+
+    def __contruct_all_dvxc_wrt_dtheta_tensors(self, hamiltonian, dm):
+        number_of_parameters = hamiltonian.xc.number_of_parameters
+        list_of_tensors = []
+        for parameter_number in range(number_of_parameters):
+            current_tensor = self.__contruct_dvxc_wrt_dtheta(hamiltonian, dm, parameter_number)
+            list_of_tensors.append(current_tensor.fullmatrix().unsqueeze(-1))
+        self.__dvxc_wrt_dtheta = torch.cat(list_of_tensors, 2)
 
     def __construct_vxc_derivative_tensor(self, hamiltonian, dm):
         densinfo = SpinParam.apply_fcn(lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # value: (*BD, ngrid)
@@ -111,7 +192,7 @@ class DQCAdapter(AbstractAdapter):
                 raise NotImplementedError("polarized case is not implemented")
             else:  # unpolarized case
                 if xc.family == 1:  # LDA
-                    # TODO: compare numerical V_XC and dV_XC/dro with concrete analytical values
+                    # Here we are taking autograd.grad derivative twice:
                     potinfo, = torch.autograd.grad(
                         edensity, densinfo.value, create_graph=grad_enabled,
                         grad_outputs=grad_outputs)
