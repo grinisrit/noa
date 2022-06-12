@@ -87,6 +87,8 @@ class DQCAdapter(AbstractAdapter):
         self._dnorm_wrt_dtheta = None
         self._dY_wrt_dtheta = None
         self._derivative = None
+        self._dX_wrt_dY = None
+        self._chain = None
 
         self.__compute_adjoint()
         self.__compute_derivative()
@@ -212,7 +214,7 @@ class DQCAdapter(AbstractAdapter):
 
     def __construct_vxc_derivative_tensor(self, hamiltonian, dm):
         densinfo = SpinParam.apply_fcn(lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # value: (*BD, ngrid)
-        #print(f'density info {densinfo.value.shape}')
+        print(f'density info {densinfo.value.shape}')
         derivative_of_potinfo_wrt_ro = self.__get_dvxc_wrt_dro_xc(hamiltonian.xc, densinfo)  # value: (*BD, ngrid)
         dvxc_wrt_dro = self.__get_dvxc_wrt_dro_from_derivative_of_potinfo_wrt_ro(hamiltonian,
                                                                                  derivative_of_potinfo_wrt_ro)
@@ -261,6 +263,7 @@ class DQCAdapter(AbstractAdapter):
                            hamiltonian.basis,
                            hamiltonian.basis_dvolume)
         """
+        print(f'started the four term integral computation for {hamiltonian.basis.shape}...')
         mat = _four_term_integral(derivative_of_potinfo_wrt_ro.value.numpy(),hamiltonian.basis.numpy(), hamiltonian.basis_dvolume.numpy())
         return torch.from_numpy(mat)
 
@@ -330,10 +333,16 @@ class DQCAdapter(AbstractAdapter):
                 self._N, self.__number_of_parameters),
             self._dnorm_wrt_dtheta),0)
 
-        print(f'partial g: {self.__dexc_wrt_dtheta}')
-        print(f'adjoint: {torch.norm(self._adjoint)}')
-        print(f'partial f: {torch.norm(self._dY_wrt_dtheta)}')
-        print(f'product: {torch.matmul(self._adjoint, self._dY_wrt_dtheta)}')
+        print(f'g_p: {self.__dexc_wrt_dtheta}')
+        print(f'g_x^t norm: {self._dE_wrt_dX.abs().sum()}')
+        print(f'lambda norm: {self._adjoint.abs().sum()}')
+        print(f'f_p norm: {self._dY_wrt_dtheta.abs().sum()}')
+        print(f'lambda_t * f_p: {torch.matmul(self._adjoint, self._dY_wrt_dtheta)}')
+        self._dX_wrt_dY = torch.linalg.inv(self._dY_wrt_dX )
+        print(f'f_x^-t norm: {self._dX_wrt_dY.abs().sum()}') 
+        self._chain = torch.matmul(self._dX_wrt_dY.t(), self._dY_wrt_dtheta)
+        print(f'f_x^-1 * f_p norm: {self._chain.abs().sum()}') 
+        print(f'g_x^t * f_x^-1 * f_p: {torch.matmul(self._dE_wrt_dX, self._chain)}') 
 
         self._derivative = self.__dexc_wrt_dtheta - \
             torch.matmul(self._adjoint, self._dY_wrt_dtheta)
