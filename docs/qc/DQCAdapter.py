@@ -330,5 +330,10 @@ class DQCAdapter(AbstractAdapter):
                 self._N, self.__number_of_parameters),
             self._dnorm_wrt_dtheta),0)
 
+        print(f'partial g: {self.__dexc_wrt_dtheta}')
+        print(f'adjoint: {torch.norm(self._adjoint)}')
+        print(f'partial f: {torch.norm(self._dY_wrt_dtheta)}')
+        print(f'product: {torch.matmul(self._adjoint, self._dY_wrt_dtheta)}')
+
         self._derivative = self.__dexc_wrt_dtheta - \
             torch.matmul(self._adjoint, self._dY_wrt_dtheta)
