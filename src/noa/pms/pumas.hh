@@ -60,12 +60,14 @@ namespace noa::pms::pumas {
         inline utils::Status load_physics(const BinaryPath &binary_path) {
             if (utils::check_path_exists(binary_path)) {
                 auto handle = fopen(binary_path.c_str(), "rb");
-                if (handle != nullptr) {
-                    const auto status =
-                            pumas_physics_load(&physics, handle);
-                    fclose(handle);
-                    return status == PUMAS_RETURN_SUCCESS;
-                } else std::cerr << "Failed to open " << binary_path << "\n";
+                if (handle == nullptr) {
+                        perror(binary_path.string().c_str());
+                        return false;
+                }
+                const auto status =
+                        pumas_physics_load(&physics, handle);
+                fclose(handle);
+                return status == PUMAS_RETURN_SUCCESS;
             }
             return false;
         }
@@ -93,6 +95,23 @@ namespace noa::pms::pumas {
         ~PhysicsModel() {
             pumas_physics_destroy(&physics);
             physics = nullptr;
+        }
+
+        inline std::optional<int> get_material_index(const std::string& mat_name) const {
+                int retval;
+                switch (pumas_physics_material_index(this->physics, mat_name.c_str(), &retval)) {
+                        case PUMAS_RETURN_SUCCESS:
+                                return retval;
+                        case PUMAS_RETURN_PHYSICS_ERROR:
+                                std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
+                                return std::nullopt;
+                        case PUMAS_RETURN_UNKNOWN_MATERIAL:
+                                std::cerr << __FUNCTION__ << ": The material is not defined!" << std::endl;
+                                return std::nullopt;
+                        default:
+                                std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
+                                return std::nullopt;
+                }
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
