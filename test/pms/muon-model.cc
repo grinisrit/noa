@@ -1,4 +1,3 @@
-#include <cfloat>
 #include <iostream>
 #include <limits>
 
@@ -113,15 +112,15 @@ int main(int argc, char* argv[]) {
 			step = -1;
 		} else if (z < FLAGS_rock_thickness) {
 			if (medium_ptr != nullptr) *medium_ptr = model->get_medium(matNameRock);
-			if (uz > FLT_EPSILON) // Upgoing muon, next boundary is rock->air
+			if (uz > numeric_limits<double>::epsilon()) // Upgoing muon, next boundary is rock->air
 				step = (FLAGS_rock_thickness - z) / uz;
-			else if (uz < -FLT_EPSILON) // Next boundary is rock->nothing
+			else if (uz < -numeric_limits<double>::epsilon()) // Next boundary is rock->nothing
 				step = -z / uz;
 		} else if (z < primary_altitude) {
 			if (medium_ptr != nullptr) *medium_ptr = model->get_medium(matNameAir);
-			if (uz > FLT_EPSILON) // Next boundary is air->nothing
+			if (uz > numeric_limits<double>::epsilon()) // Next boundary is air->nothing
 				step = (primary_altitude - z) / uz;
-			else if (uz < -FLT_EPSILON) // Next boundary is air->rock
+			else if (uz < -numeric_limits<double>::epsilon()) // Next boundary is air->rock
 				step = (FLAGS_rock_thickness - z) / uz;
 		} else {
 			// Outside of sim area
@@ -171,8 +170,8 @@ int main(int argc, char* argv[]) {
 		};
 
 		const double energyThreshold = FLAGS_kenergy_max * 1e3;
-		while (state.energy < energyThreshold - FLT_EPSILON) {
-			if (state.energy < 1e2 - FLT_EPSILON) {
+		while (state.energy < energyThreshold - numeric_limits<double>::epsilon()) {
+			if (state.energy < 1e2 - numeric_limits<double>::epsilon()) {
 				modelContext->mode.energy_loss = pms::pumas::PUMAS_MODE_STRAGGLED;
 				modelContext->mode.scattering = pms::pumas::PUMAS_MODE_MIXED;
 				modelContext->limit.energy = 1e2;
@@ -186,7 +185,7 @@ int main(int argc, char* argv[]) {
 			pms::pumas::Event event = model->do_transport(&state, medium);
 
 			if ((event == pms::pumas::PUMAS_EVENT_MEDIUM) && (medium[1] == nullptr)) {
-				if (state.position[2] >= primary_altitude - FLT_EPSILON) {
+				if (state.position[2] >= primary_altitude - numeric_limits<double>::epsilon()) {
 					const double wi = state.weight * pms::pumas::flux_gccly(-state.direction[2], state.energy, state.charge);
 					w += wi;
 					w2 += wi * wi;
