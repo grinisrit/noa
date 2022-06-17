@@ -73,6 +73,7 @@ namespace noa::pms::pumas {
         }
 
     public:
+        pumas_context *context{nullptr};
 
         PhysicsModel(
                 const PhysicsModel &other) = delete;
@@ -93,6 +94,7 @@ namespace noa::pms::pumas {
         }
 
         ~PhysicsModel() {
+            this->destroy_context();
             pumas_physics_destroy(&physics);
             physics = nullptr;
         }
@@ -112,6 +114,30 @@ namespace noa::pms::pumas {
                                 std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
                                 return std::nullopt;
                 }
+        }
+
+        inline pumas_context * create_context(const int &extra_memory = 0) {
+                if (this->context != nullptr) {
+                        std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
+                        return nullptr;
+                }
+                switch (pumas_context_create(&this->context, this->physics, extra_memory)) {
+                        case PUMAS_RETURN_SUCCESS:
+                                return this->context;
+                        case PUMAS_RETURN_MEMORY_ERROR:
+                                std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
+                                return nullptr;
+                        case PUMAS_RETURN_PHYSICS_ERROR:
+                                std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
+                                return nullptr;
+                        default:
+                                std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
+                                return nullptr;
+                }
+        }
+
+        inline void destroy_context() {
+                pumas_context_destroy(&this->context);
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
