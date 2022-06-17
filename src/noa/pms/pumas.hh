@@ -44,6 +44,8 @@ namespace noa::pms::pumas {
         pumas_particle particle{PUMAS_PARTICLE_MUON};
         pumas_physics *physics{nullptr};
 
+        std::vector<pumas_medium> media{};
+
         explicit PhysicsModel(pumas_particle particle_) : particle{particle_} {}
 
         inline utils::Status create_physics(
@@ -100,44 +102,57 @@ namespace noa::pms::pumas {
         }
 
         inline std::optional<int> get_material_index(const std::string& mat_name) const {
-                int retval;
-                switch (pumas_physics_material_index(this->physics, mat_name.c_str(), &retval)) {
-                        case PUMAS_RETURN_SUCCESS:
-                                return retval;
-                        case PUMAS_RETURN_PHYSICS_ERROR:
-                                std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
-                                return std::nullopt;
-                        case PUMAS_RETURN_UNKNOWN_MATERIAL:
-                                std::cerr << __FUNCTION__ << ": The material is not defined!" << std::endl;
-                                return std::nullopt;
-                        default:
-                                std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
-                                return std::nullopt;
-                }
+            int retval;
+            switch (pumas_physics_material_index(this->physics, mat_name.c_str(), &retval)) {
+                case PUMAS_RETURN_SUCCESS:
+                    return retval;
+                case PUMAS_RETURN_PHYSICS_ERROR:
+                    std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
+                    return std::nullopt;
+                case PUMAS_RETURN_UNKNOWN_MATERIAL:
+                    std::cerr << __FUNCTION__ << ": The material is not defined!" << std::endl;
+                    return std::nullopt;
+                default:
+                    std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
+                    return std::nullopt;
+            }
         }
 
         inline pumas_context * create_context(const int &extra_memory = 0) {
-                if (this->context != nullptr) {
-                        std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
-                        return nullptr;
-                }
-                switch (pumas_context_create(&this->context, this->physics, extra_memory)) {
-                        case PUMAS_RETURN_SUCCESS:
-                                return this->context;
-                        case PUMAS_RETURN_MEMORY_ERROR:
-                                std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
-                                return nullptr;
-                        case PUMAS_RETURN_PHYSICS_ERROR:
-                                std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
-                                return nullptr;
-                        default:
-                                std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
-                                return nullptr;
-                }
+            if (this->context != nullptr) {
+                    std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
+                    return nullptr;
+            }
+            switch (pumas_context_create(&this->context, this->physics, extra_memory)) {
+                case PUMAS_RETURN_SUCCESS:
+                    return this->context;
+                case PUMAS_RETURN_MEMORY_ERROR:
+                    std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
+                    return nullptr;
+                case PUMAS_RETURN_PHYSICS_ERROR:
+                    std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
+                    return nullptr;
+                default:
+                    std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
+                    return nullptr;
+            }
         }
 
         inline void destroy_context() {
-                pumas_context_destroy(&this->context);
+            pumas_context_destroy(&this->context);
+        }
+
+        inline std::optional<std::size_t> add_medium(const std::string& mat_name, pumas_locals_cb* locals_func) {
+            const auto mat_idx_opt = this->get_material_index(mat_name);
+            if (!mat_idx_opt.has_value()) return {};
+            const auto& mat_idx = mat_idx_opt.value();
+
+            this->media.push_back({ mat_idx, locals_func });
+            return this->media.size() - 1;
+        }
+
+        inline void clear_media() {
+            this->media.clear();
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
