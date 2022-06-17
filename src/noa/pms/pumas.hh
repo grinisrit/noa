@@ -31,6 +31,15 @@ namespace noa::pms::pumas {
 
 #include "noa/3rdparty/_pumas/pumas.h"
 
+    // PUMAS type aliases
+    using Physics       = pumas_physics;
+    using Context       = pumas_context;
+    using Particle      = pumas_particle;
+    using Medium        = pumas_medium;
+    using State         = pumas_state;
+    using Locals        = pumas_locals;
+    using LocalsCb      = pumas_locals_cb;
+
     template<typename ParticleModel>
     class PhysicsModel {
 
@@ -41,12 +50,12 @@ namespace noa::pms::pumas {
 
         friend ParticleModel;
 
-        pumas_particle particle{PUMAS_PARTICLE_MUON};
-        pumas_physics *physics{nullptr};
+        Particle particle{PUMAS_PARTICLE_MUON};
+        Physics *physics{nullptr};
 
-        std::vector<pumas_medium> media{};
+        std::vector<Medium> media{};
 
-        explicit PhysicsModel(pumas_particle particle_) : particle{particle_} {}
+        explicit PhysicsModel(Particle particle_) : particle{particle_} {}
 
         inline utils::Status create_physics(
                 const MDFPath &mdf_path,
@@ -75,7 +84,7 @@ namespace noa::pms::pumas {
         }
 
     public:
-        pumas_context *context{nullptr};
+        Context *context{nullptr};
 
         PhysicsModel(
                 const PhysicsModel &other) = delete;
@@ -118,7 +127,7 @@ namespace noa::pms::pumas {
             }
         }
 
-        inline pumas_context * create_context(const int &extra_memory = 0) {
+        inline Context * create_context(const int &extra_memory = 0) {
             if (this->context != nullptr) {
                     std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
                     return nullptr;
@@ -142,7 +151,7 @@ namespace noa::pms::pumas {
             pumas_context_destroy(&this->context);
         }
 
-        inline std::optional<std::size_t> add_medium(const std::string& mat_name, pumas_locals_cb* locals_func) {
+        inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCb* locals_func) {
             const auto mat_idx_opt = this->get_material_index(mat_name);
             if (!mat_idx_opt.has_value()) return {};
             const auto& mat_idx = mat_idx_opt.value();
