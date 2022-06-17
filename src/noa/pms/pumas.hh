@@ -40,6 +40,7 @@ namespace noa::pms::pumas {
     using Locals        = pumas_locals;
     using LocalsCb      = pumas_locals_cb;
     using Step          = pumas_step;
+    using Event         = pumas_event;
 
     template<typename ParticleModel>
     class PhysicsModel {
@@ -136,6 +137,7 @@ namespace noa::pms::pumas {
             }
             switch (pumas_context_create(&this->context, this->physics, extra_memory)) {
                 case PUMAS_RETURN_SUCCESS:
+                    this->update_context();
                     return this->context;
                 case PUMAS_RETURN_MEMORY_ERROR:
                     std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
@@ -147,6 +149,11 @@ namespace noa::pms::pumas {
                     std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
                     return nullptr;
             }
+        }
+
+        inline void update_context() {
+                if (this->context == nullptr) return;
+                this->context->medium = this->medium_callback;
         }
 
         inline void destroy_context() {
@@ -176,6 +183,12 @@ namespace noa::pms::pumas {
 
         inline void clear_media() {
             this->media.clear();
+        }
+
+        inline Event do_transport(State *state, Medium *medium[2]) {
+                Event ret;
+                pumas_context_transport(this->context, state, &ret, medium);
+                return ret;
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
