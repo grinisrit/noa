@@ -39,6 +39,7 @@ namespace noa::pms::pumas {
     using State         = pumas_state;
     using Locals        = pumas_locals;
     using LocalsCb      = pumas_locals_cb;
+    using Step          = pumas_step;
 
     template<typename ParticleModel>
     class PhysicsModel {
@@ -85,6 +86,7 @@ namespace noa::pms::pumas {
 
     public:
         Context *context{nullptr};
+        Step (*medium_callback)(Context *context, State *state, Medium **medium_ptr, double *step_ptr);
 
         PhysicsModel(
                 const PhysicsModel &other) = delete;
@@ -158,6 +160,18 @@ namespace noa::pms::pumas {
 
             this->media.push_back({ mat_idx, locals_func });
             return this->media.size() - 1;
+        }
+
+        inline Medium * get_medium(const int& mat_index) {
+                for (std::size_t i = 0; i < this->media.size(); ++i)
+                        if (this->media.at(i).material == mat_index) return &this->media.at(i);
+                return nullptr;
+        }
+
+        inline Medium * get_medium(const std::string& mat_name) {
+                const auto mat_index_opt = this->get_material_index(mat_name);
+                if (!mat_index_opt.has_value()) return nullptr;
+                return this->get_medium(mat_index_opt.value());
         }
 
         inline void clear_media() {
