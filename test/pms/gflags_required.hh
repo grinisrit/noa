@@ -1,3 +1,5 @@
+#pragma once
+
 constexpr double doubleNaN = std::numeric_limits<double>::quiet_NaN();
 
 static bool validateRequiredDoubleFlag(const char* flagname, double value) {
