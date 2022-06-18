@@ -44,6 +44,21 @@ namespace noa::pms::pumas {
 
     template<typename ParticleModel>
     class PhysicsModel {
+	/* There is a problem in writing a C++ wrapper for a C API with
+	 * passing C++-styled callbacks (functors, lambdas etc.) to it.
+	 * C API would accept only functions and capture-less lambdas.
+	 * There are workarounds for this, but all of them require C API
+	 * to use callback signatures with a `void* data` pointer as an
+	 * argument, which PUMAS does not do. Our workaround will rely on PUMAS
+	 * callbacks operating with argument by-pointer instead of by-reference.
+	 * Hence, our task is to arrange data that is passed to a PUMAS callback
+	 * in memory in such a way that an original PhysicsModel object could
+	 * be traced back via simple (deterministic) pointer arithmetic.
+	 * This way, a captureless lambda would be able to access member data
+	 * (and run member functions/functors) just from the pointer arguments it
+	 * recieves
+	 */
+	// TODO: Implement this workaround
 
         using PhysicsModelOpt = std::optional<PhysicsModel>;
         using MDFPath = utils::Path;
