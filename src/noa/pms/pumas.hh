@@ -42,6 +42,9 @@ namespace noa::pms::pumas {
     using Step          = pumas_step;
     using Event         = pumas_event;
 
+    using MediumCb      = pumas_medium_cb;
+    using MediumCbFunc  = std::function<MediumCb>;
+
     template<typename ParticleModel>
     class PhysicsModel {
 	/* There is a problem in writing a C++ wrapper for a C API with
@@ -100,9 +103,14 @@ namespace noa::pms::pumas {
             return false;
         }
 
+        static Step medium_callback_caller(Context* context, State* state, Medium **medium_ptr, double *step_ptr) {
+                auto self = *(PhysicsModel**)context->user_data;
+                return self->medium_callback(context, state, medium_ptr, step_ptr);
+        }
+
     public:
         Context *context{nullptr};
-        Step (*medium_callback)(Context *context, State *state, Medium **medium_ptr, double *step_ptr);
+        MediumCbFunc medium_callback;
 
         PhysicsModel(
                 const PhysicsModel &other) = delete;
@@ -150,8 +158,10 @@ namespace noa::pms::pumas {
                     std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
                     return nullptr;
             }
-            switch (pumas_context_create(&this->context, this->physics, extra_memory)) {
+            switch (pumas_context_create(&this->context, this->physics, extra_memory + sizeof(this))) {
+                // We asked to allocate extra space for one pointer, that will point to this object
                 case PUMAS_RETURN_SUCCESS:
+                    *((PhysicsModel**)this->context->user_data) = this;
                     this->update_context();
                     return this->context;
                 case PUMAS_RETURN_MEMORY_ERROR:
@@ -168,7 +178,7 @@ namespace noa::pms::pumas {
 
         inline void update_context() {
                 if (this->context == nullptr) return;
-                this->context->medium = this->medium_callback;
+                this->context->medium = this->medium_callback_caller;
         }
 
         inline void destroy_context() {

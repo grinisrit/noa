@@ -26,8 +26,6 @@ constexpr auto matNameRock = "StandardRock";
 
 constexpr double primary_altitude = 1e3;
 
-pms::pumas::PhysicsModel<pms::pumas::MuonModel>* model;
-
 int main(int argc, char* argv[]) {
 	// Set up gflags
 	gflags::SetUsageMessage("A re-implementation of PUMAS 'geometry' example in C++ for NOA\n"
@@ -55,7 +53,7 @@ int main(int argc, char* argv[]) {
 		if (FLAGS_create_dump) modelOpt.value().save_binary(FLAGS_dump_file);
 	}
 
-	model = &modelOpt.value();
+	auto model = &modelOpt.value();
 
 	cout << "Material indices: " << endl;
 	cout << "\tStandardRock:\t" << model->get_material_index(matNameRock).value() << endl;
@@ -96,7 +94,7 @@ int main(int argc, char* argv[]) {
 			}
 		);
 
-	model->medium_callback = [] (pms::pumas::Context *context, pms::pumas::State *state, pms::pumas::Medium **medium_ptr, double *step_ptr) -> pms::pumas::Step {
+	model->medium_callback = [&model] (pms::pumas::Context *context, pms::pumas::State *state, pms::pumas::Medium **medium_ptr, double *step_ptr) -> pms::pumas::Step {
 		if ((medium_ptr == nullptr) && (step_ptr == nullptr))
 			return pms::pumas::PUMAS_STEP_RAW;
 
