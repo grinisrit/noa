@@ -160,12 +160,13 @@ int main(int argc, char* argv[]) {
 		const double cf = (modelContext->random(modelContext) > 0.5) ? 1 : -1;
 		wf *= 2;
 
-		pms::pumas::State state = {
-			.charge = cf,
-			.energy = kf,
-			.weight = wf,
-			.direction = { -sin_theta, 0, -cos_theta }
-		};
+		pms::pumas::State state{};
+		state.charge = cf;
+		state.energy = kf;
+		state.weight = wf,
+		state.direction[0] = -sin_theta;
+		state.direction[1] = 0;
+		state.direction[2] = -cos_theta;
 
 		const double energyThreshold = FLAGS_kenergy_max * 1e3;
 		while (state.energy < energyThreshold - numeric_limits<double>::epsilon()) {
