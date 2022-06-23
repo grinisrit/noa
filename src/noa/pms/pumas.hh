@@ -31,8 +31,37 @@ namespace noa::pms::pumas {
 
 #include "noa/3rdparty/_pumas/pumas.h"
 
+    // PUMAS type aliases
+    using Physics       = pumas_physics;
+    using Context       = pumas_context;
+    using Particle      = pumas_particle;
+    using Medium        = pumas_medium;
+    using State         = pumas_state;
+    using Locals        = pumas_locals;
+    using LocalsCb      = pumas_locals_cb;
+    using Step          = pumas_step;
+    using Event         = pumas_event;
+
+    using MediumCb      = pumas_medium_cb;
+    using MediumCbFunc  = std::function<MediumCb>;
+
     template<typename ParticleModel>
     class PhysicsModel {
+	/* There is a problem in writing a C++ wrapper for a C API with
+	 * passing C++-styled callbacks (functors, lambdas etc.) to it.
+	 * C API would accept only functions and capture-less lambdas.
+	 * There are workarounds for this, but all of them require C API
+	 * to use callback signatures with a `void* data` pointer as an
+	 * argument, which PUMAS does not do. Our workaround will rely on PUMAS
+	 * callbacks operating with argument by-pointer instead of by-reference.
+	 * Hence, our task is to arrange data that is passed to a PUMAS callback
+	 * in memory in such a way that an original PhysicsModel object could
+	 * be traced back via simple (deterministic) pointer arithmetic.
+	 * This way, a captureless lambda would be able to access member data
+	 * (and run member functions/functors) just from the pointer arguments it
+	 * recieves
+	 */
+	// TODO: Implement this workaround
 
         using PhysicsModelOpt = std::optional<PhysicsModel>;
         using MDFPath = utils::Path;
@@ -41,10 +70,12 @@ namespace noa::pms::pumas {
 
         friend ParticleModel;
 
-        pumas_particle particle{PUMAS_PARTICLE_MUON};
-        pumas_physics *physics{nullptr};
+        Particle particle{PUMAS_PARTICLE_MUON};
+        Physics *physics{nullptr};
 
-        explicit PhysicsModel(pumas_particle particle_) : particle{particle_} {}
+        std::vector<Medium> media{};
+
+        explicit PhysicsModel(Particle particle_) : particle{particle_} {}
 
         inline utils::Status create_physics(
                 const MDFPath &mdf_path,
@@ -60,17 +91,26 @@ namespace noa::pms::pumas {
         inline utils::Status load_physics(const BinaryPath &binary_path) {
             if (utils::check_path_exists(binary_path)) {
                 auto handle = fopen(binary_path.c_str(), "rb");
-                if (handle != nullptr) {
-                    const auto status =
-                            pumas_physics_load(&physics, handle);
-                    fclose(handle);
-                    return status == PUMAS_RETURN_SUCCESS;
-                } else std::cerr << "Failed to open " << binary_path << "\n";
+                if (handle == nullptr) {
+                        perror(binary_path.string().c_str());
+                        return false;
+                }
+                const auto status =
+                        pumas_physics_load(&physics, handle);
+                fclose(handle);
+                return status == PUMAS_RETURN_SUCCESS;
             }
             return false;
         }
 
+        static Step medium_callback_caller(Context* context, State* state, Medium **medium_ptr, double *step_ptr) {
+                auto self = *(PhysicsModel**)context->user_data;
+                return self->medium_callback(context, state, medium_ptr, step_ptr);
+        }
+
     public:
+        Context *context{nullptr};
+        MediumCbFunc medium_callback;
 
         PhysicsModel(
                 const PhysicsModel &other) = delete;
@@ -91,8 +131,89 @@ namespace noa::pms::pumas {
         }
 
         ~PhysicsModel() {
+            this->destroy_context();
             pumas_physics_destroy(&physics);
             physics = nullptr;
+        }
+
+        inline std::optional<int> get_material_index(const std::string& mat_name) const {
+            int retval;
+            switch (pumas_physics_material_index(this->physics, mat_name.c_str(), &retval)) {
+                case PUMAS_RETURN_SUCCESS:
+                    return retval;
+                case PUMAS_RETURN_PHYSICS_ERROR:
+                    std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
+                    return std::nullopt;
+                case PUMAS_RETURN_UNKNOWN_MATERIAL:
+                    std::cerr << __FUNCTION__ << ": The material is not defined!" << std::endl;
+                    return std::nullopt;
+                default:
+                    std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
+                    return std::nullopt;
+            }
+        }
+
+        inline Context * create_context(const int &extra_memory = 0) {
+            if (this->context != nullptr) {
+                    std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
+                    return nullptr;
+            }
+            switch (pumas_context_create(&this->context, this->physics, extra_memory + sizeof(this))) {
+                // We asked to allocate extra space for one pointer, that will point to this object
+                case PUMAS_RETURN_SUCCESS:
+                    *((PhysicsModel**)this->context->user_data) = this;
+                    this->update_context();
+                    return this->context;
+                case PUMAS_RETURN_MEMORY_ERROR:
+                    std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
+                    return nullptr;
+                case PUMAS_RETURN_PHYSICS_ERROR:
+                    std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
+                    return nullptr;
+                default:
+                    std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
+                    return nullptr;
+            }
+        }
+
+        inline void update_context() {
+                if (this->context == nullptr) return;
+                this->context->medium = this->medium_callback_caller;
+        }
+
+        inline void destroy_context() {
+            pumas_context_destroy(&this->context);
+        }
+
+        inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCb* locals_func) {
+            const auto mat_idx_opt = this->get_material_index(mat_name);
+            if (!mat_idx_opt.has_value()) return {};
+            const auto& mat_idx = mat_idx_opt.value();
+
+            this->media.push_back({ mat_idx, locals_func });
+            return this->media.size() - 1;
+        }
+
+        inline Medium * get_medium(const int& mat_index) {
+                for (std::size_t i = 0; i < this->media.size(); ++i)
+                        if (this->media.at(i).material == mat_index) return &this->media.at(i);
+                return nullptr;
+        }
+
+        inline Medium * get_medium(const std::string& mat_name) {
+                const auto mat_index_opt = this->get_material_index(mat_name);
+                if (!mat_index_opt.has_value()) return nullptr;
+                return this->get_medium(mat_index_opt.value());
+        }
+
+        inline void clear_media() {
+            this->media.clear();
+        }
+
+        inline Event do_transport(State *state, Medium *medium[2]) {
+                Event ret;
+                pumas_context_transport(this->context, state, &ret, medium);
+                return ret;
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
