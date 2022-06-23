@@ -33,17 +33,114 @@ namespace noa::pms::pumas {
 
     // PUMAS type aliases
     using Physics       = pumas_physics;
-    using Context       = pumas_context;
     using Particle      = pumas_particle;
     using Medium        = pumas_medium;
-    using State         = pumas_state;
     using Locals        = pumas_locals;
     using LocalsCb      = pumas_locals_cb;
     using Step          = pumas_step;
     using Event         = pumas_event;
 
     using MediumCb      = pumas_medium_cb;
-    using MediumCbFunc  = std::function<MediumCb>;
+    using MediumCbFunc  = std::function<Step(class Context*, class State*, Medium**, double*)>;
+
+    // A wrapper class for pumas_state
+    class State {
+            friend class Context; // State could only be constructed from a Context instance
+
+            pumas_state         state{};
+            class Context       *owner{nullptr};
+
+            State(class Context* creator) : owner(creator) {}
+            public:
+            // Access state fields via ->
+            inline pumas_state * operator->() {
+                    return &state;
+            }
+            // Or via get()
+            inline pumas_state & get() {
+                    return state;
+            }
+            // Const version
+            inline const pumas_state & get() const {
+                    return state;
+            }
+    };
+
+    // A wrapper class for pumas_context
+    class Context {
+        template <Particle default_particle> friend class PhysicsModel;
+
+        pumas_context *context{nullptr};
+
+        // Context is only create-able via PhysicsModel
+        Context(Physics* physics) {
+            switch (pumas_context_create(&this->context, physics, sizeof(this))) {
+                case PUMAS_RETURN_SUCCESS:
+                    *((Context**)this->context->user_data) = this;
+                    this->context->medium = &Context::medium_callback;
+                    return;
+                case PUMAS_RETURN_MEMORY_ERROR:
+                    std::cerr << "pumas_context_create: could not allocate memory!" << std::endl;
+                    break;
+                case PUMAS_RETURN_PHYSICS_ERROR:
+                    std::cerr << "pumas_context_create: the physics is not initialized!" << std::endl;
+                    break;
+                default:
+                    std::cerr << "pumas_context_create: unexpected error!" << std::endl;
+                    break;
+            }
+            throw std::runtime_error("pumas_context_create failure!");
+        }
+
+        static Step medium_callback(
+                pumas_context* context,
+                pumas_state* state,
+                Medium** medium_ptr,
+                double* step_ptr) {
+            auto* self = *((Context**)context->user_data);
+            return self->medium(
+                        self,
+                        (State*)state, // We expect state to be wrapped in State
+                        medium_ptr,
+                        step_ptr);
+        }
+
+        public:
+        MediumCbFunc medium{nullptr};
+
+        ~Context() {
+            this->destroy();
+        }
+
+        Context(Context &&other) : medium(std::move(other.medium)) {
+            this->context = other.context;
+            *((Context**)this->context->user_data) = this;
+            other.context = nullptr;
+        }
+
+        Context(const Context &other)               = delete;
+        Context & operator=(const Context &other)   = delete;
+        Context & operator=(Context &&other)        = delete;
+
+        inline void destroy() {
+            if (this->context != nullptr) pumas_context_destroy(&this->context);
+        }
+
+        inline Event do_transport(State &state, Medium *medium[2]) {
+            Event ret;
+            pumas_context_transport(this->context, &state.get(), &ret, medium);
+            return ret;
+        }
+
+        inline State create_state() {
+            return State(this);
+        }
+
+        inline pumas_context * operator->() { return this->context; }
+
+        inline auto rnd() { return this->context->random(this->context); }
+    };
+    using ContextOpt = std::optional<Context>;
 
     template<Particle default_particle = PUMAS_PARTICLE_MUON>
     class PhysicsModel {
@@ -86,13 +183,7 @@ namespace noa::pms::pumas {
             return false;
         }
 
-        static Step medium_callback_caller(Context* context, State* state, Medium **medium_ptr, double *step_ptr) {
-                auto self = *(PhysicsModel**)context->user_data;
-                return self->medium_callback(context, state, medium_ptr, step_ptr);
-        }
-
     public:
-        Context *context{nullptr};
         MediumCbFunc medium_callback;
 
         PhysicsModel() = default;
@@ -116,7 +207,6 @@ namespace noa::pms::pumas {
         }
 
         ~PhysicsModel() {
-            this->destroy_context();
             pumas_physics_destroy(&physics);
             physics = nullptr;
         }
@@ -138,36 +228,12 @@ namespace noa::pms::pumas {
             }
         }
 
-        inline Context * create_context(const int &extra_memory = 0) {
-            if (this->context != nullptr) {
-                    std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
-                    return nullptr;
+        inline ContextOpt create_context() {
+            try {
+                return ContextOpt{Context(this->physics)};
+            } catch (const std::runtime_error& e) {
+                return std::nullopt;
             }
-            switch (pumas_context_create(&this->context, this->physics, extra_memory + sizeof(this))) {
-                // We asked to allocate extra space for one pointer, that will point to this object
-                case PUMAS_RETURN_SUCCESS:
-                    *((PhysicsModel**)this->context->user_data) = this;
-                    this->update_context();
-                    return this->context;
-                case PUMAS_RETURN_MEMORY_ERROR:
-                    std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
-                    return nullptr;
-                case PUMAS_RETURN_PHYSICS_ERROR:
-                    std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
-                    return nullptr;
-                default:
-                    std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
-                    return nullptr;
-            }
-        }
-
-        inline void update_context() {
-                if (this->context == nullptr) return;
-                this->context->medium = this->medium_callback_caller;
-        }
-
-        inline void destroy_context() {
-            pumas_context_destroy(&this->context);
         }
 
         inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCb* locals_func) {
@@ -193,12 +259,6 @@ namespace noa::pms::pumas {
 
         inline void clear_media() {
             this->media.clear();
-        }
-
-        inline Event do_transport(State *state, Medium *medium[2]) {
-                Event ret;
-                pumas_context_transport(this->context, state, &ret, medium);
-                return ret;
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
