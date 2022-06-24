@@ -7,22 +7,24 @@ from dqc.utils.datastruct import AtomCGTOBasis, ValGrad, SpinParam, DensityFitIn
 import numba as nb
 import numpy as np
 
+
 def _symm(scp: torch.Tensor):
     # forcely symmetrize the tensor
     return (scp + scp.transpose(-2, -1)) * 0.5
 
 
 @nb.njit(parallel=True)
-def _four_term_integral(m, b, bv):
-    n = b.shape[1]
-    N = m.shape[0]
-    res = np.zeros((n,n,n,n))
-    for i in nb.prange(n):
-        for j in range(n):
-            for k in range(n):
-                for l in range(n):
-                    for r in range(N):
-                        res[i,j,k,l] += m[r] * b[r,i] * b[r,j] * b[r,k] * bv[r,l]
+def _four_term_integral(m, b, o, bv):
+    N = b.shape[1]  # size of basis set
+    n = o.shape[1]  # number of occupied orbitals
+    R = m.shape[0]  # size of grid
+    res = np.zeros((N, n, N, n))
+    for i in nb.prange(N):
+        for a in range(n):
+            for k in range(N):
+                for c in range(n):
+                    for r in range(R):
+                        res[i, a, k, c] += m[r] * b[r, i] * o[r, a] * bv[r, k] * o[r, c]
     return res
 
 
@@ -58,8 +60,11 @@ class DQCAdapter(AbstractAdapter):
         # construct 4D tensor of dXC/dro
         self.__four_center_xc_tensor = self.__construct_vxc_derivative_tensor(qc._engine.hamilton, self.__dm)
 
-        # copy 4D tensor of electron-electron repulsion
-        self.__four_center_elrep_tensor = qc._engine.hamilton.el_mat.detach().clone()
+        # construct 4D tensor of electron-electron repulsion
+        self.__four_center_elrep_tensor = torch.einsum("ijkl,lc,ja->iakc",
+                                                       qc._engine.hamilton.el_mat.detach().clone(),
+                                                       self.get_orbital_coefficients(),
+                                                       self.get_orbital_coefficients())
 
         # number of model parameters:
         self.__number_of_parameters = qc._engine.hamilton.xc.number_of_parameters
@@ -93,14 +98,12 @@ class DQCAdapter(AbstractAdapter):
         self.__compute_adjoint()
         self.__compute_derivative()
 
-    
     def get_derivative(self):
         return self._derivative
 
-
     def get_adjoint(self):
         return self._adjoint
-    
+
     def get_density_matrix(self):
         return self.__dm
 
@@ -151,7 +154,7 @@ class DQCAdapter(AbstractAdapter):
 
     # calculate partitial derivative of (full) energy with respect to parameters of xc-functional
     def __construct_dexc_wrt_dtheta(self, hamiltonian, dm: Union[torch.Tensor, SpinParam[torch.Tensor]],
-                            parameter_number) -> torch.Tensor:
+                                    parameter_number) -> torch.Tensor:
         densinfo = SpinParam.apply_fcn(
             lambda dm_: hamiltonian._dm2densinfo(dm_), dm)  # (spin) value: (*BD, nr)
         edens_derivative = hamiltonian.xc.get_edensityxc_derivative(densinfo, parameter_number).detach()  # (*BD, nr)
@@ -218,7 +221,7 @@ class DQCAdapter(AbstractAdapter):
         derivative_of_potinfo_wrt_ro = self.__get_dvxc_wrt_dro_xc(hamiltonian.xc, densinfo)  # value: (*BD, ngrid)
         dvxc_wrt_dro = self.__get_dvxc_wrt_dro_from_derivative_of_potinfo_wrt_ro(hamiltonian,
                                                                                  derivative_of_potinfo_wrt_ro)
-        return dvxc_wrt_dro # (nallorb, nallorb, nallorb, nallorb)
+        return dvxc_wrt_dro  # (nallorb, noccorb, nallorb, noccorb)
 
     def __get_dvxc_wrt_dro_xc(self, xc, densinfo):
         """
@@ -232,7 +235,7 @@ class DQCAdapter(AbstractAdapter):
             with torch.enable_grad():
                 edensity = xc.get_edensityxc(densinfo)  # (*BD, ngrid)
             grad_outputs = torch.ones_like(edensity)
-            #print(f'edensity {edensity.shape}')
+            # print(f'edensity {edensity.shape}')
             grad_enabled = torch.is_grad_enabled()
 
             if not isinstance(densinfo, ValGrad):  # polarized case
@@ -243,7 +246,7 @@ class DQCAdapter(AbstractAdapter):
                     potinfo, = torch.autograd.grad(
                         edensity, densinfo.value, create_graph=grad_enabled,
                         grad_outputs=grad_outputs)
-                    #print(f'potinfo {potinfo.shape}')
+                    # print(f'potinfo {potinfo.shape}')
                     derivative_of_potinfo_wrt_ro, = torch.autograd.grad(
                         potinfo, densinfo.value, grad_outputs=grad_outputs)
                     return ValGrad(value=derivative_of_potinfo_wrt_ro)
@@ -264,85 +267,87 @@ class DQCAdapter(AbstractAdapter):
                            hamiltonian.basis_dvolume)
         """
         print(f'started the four term integral computation for {hamiltonian.basis.shape}...')
-        mat = _four_term_integral(derivative_of_potinfo_wrt_ro.value.numpy(),hamiltonian.basis.numpy(), hamiltonian.basis_dvolume.numpy())
+        molecular_orbitals_at_grid = hamiltonian.basis @ self.get_orbital_coefficients()
+        mat = _four_term_integral(derivative_of_potinfo_wrt_ro.value.numpy(),
+                                  hamiltonian.basis.numpy(),
+                                  molecular_orbitals_at_grid.numpy(),
+                                  hamiltonian.basis_dvolume.numpy())
         return torch.from_numpy(mat)
 
     def __compute_adjoint(self):
-        self._dE_wrt_dC = 2 * torch.einsum("b,ib,ij->bj", 
-            self.__orboccs, self.__coefficients, self.__fockian)
+        self._dE_wrt_dC = 2 * torch.einsum("b,ib,ij->bj",
+                                           self.__orboccs, self.__coefficients, self.__fockian)
 
         self._dE_wrt_depsilon = torch.zeros(self.__noccorb)
 
         occupied_orbitals_kronecker = torch.eye(self.__noccorb)
 
-        self._dnorm_wrt_dC = 2 * torch.einsum("ac,kc->kac", 
-            occupied_orbitals_kronecker, self.__coefficients)
+        self._dnorm_wrt_dC = 2 * torch.einsum("ac,kc->kac",
+                                              occupied_orbitals_kronecker, self.__coefficients)
 
         self._dnorm_wrt_depsilon = torch.zeros((
-            self.__noccorb, self.__noccorb)) 
-        
+            self.__noccorb, self.__noccorb))
+
         all_orbitals_kronecker = torch.eye(self.__nallorb)
 
-        self._dRoothan_wrt_dC_first_term = torch.einsum("ik,ac->iakc", 
-        self.__fockian, occupied_orbitals_kronecker)
-        self._dRoothan_wrt_dC_first_term -= torch.einsum("c,ik,ac->iakc", 
-            self.__energies, 
-            all_orbitals_kronecker, 
-            occupied_orbitals_kronecker)
+        self._dRoothan_wrt_dC_first_term = torch.einsum("ik,ac->iakc",
+                                                        self.__fockian, occupied_orbitals_kronecker)
+        self._dRoothan_wrt_dC_first_term -= torch.einsum("c,ik,ac->iakc",
+                                                         self.__energies,
+                                                         all_orbitals_kronecker,
+                                                         occupied_orbitals_kronecker)
 
         fourDtensor = self.get_four_center_elrep_tensor() + \
-            self.get_four_center_xc_tensor()
-        
+                      self.get_four_center_xc_tensor()
+
         self._dRoothan_wrt_dC_second_term = 2 * torch.einsum(
-            "c,ijkl,lc,ja->iakc", 
-            self.__orboccs, fourDtensor, 
-            self.__coefficients, self.__coefficients)
+            "c,iakc->iakc",
+            self.__orboccs, fourDtensor)
 
         self._dRoothan_wrt_dC = self._dRoothan_wrt_dC_first_term + \
-             self._dRoothan_wrt_dC_second_term
+                                self._dRoothan_wrt_dC_second_term
 
-        self._dRoothan_wrt_depsilon = -1 * torch.einsum("ac,ia->iac", 
-            occupied_orbitals_kronecker, self.__coefficients)
+        self._dRoothan_wrt_depsilon = -1 * torch.einsum("ac,ia->iac",
+                                                        occupied_orbitals_kronecker, self.__coefficients)
 
-        self._dE_wrt_dX = torch.cat((self._dE_wrt_dC, 
-            self._dE_wrt_depsilon.unsqueeze(-1)), 1)\
-                .t().reshape(-1,)
+        self._dE_wrt_dX = torch.cat((self._dE_wrt_dC,
+                                     self._dE_wrt_depsilon.unsqueeze(-1)), 1) \
+            .t().reshape(-1, )
 
-        self._N = self.__nallorb*self.__noccorb
+        self._N = self.__nallorb * self.__noccorb
         upper = torch.cat((
-            self._dRoothan_wrt_dC.reshape((self._N ,self._N )), 
-            self._dRoothan_wrt_depsilon.reshape((self._N , self.__noccorb))), 1)
+            self._dRoothan_wrt_dC.reshape((self._N, self._N)),
+            self._dRoothan_wrt_depsilon.reshape((self._N, self.__noccorb))), 1)
         lower = torch.cat((
-            self._dnorm_wrt_dC.reshape(self._N , self.__noccorb).t(), 
+            self._dnorm_wrt_dC.reshape(self._N, self.__noccorb).t(),
             self._dnorm_wrt_depsilon), 1)
 
         self._dY_wrt_dX = torch.cat((upper, lower), 0)
 
-        self._adjoint =  torch.linalg.solve(self._dY_wrt_dX , self._dE_wrt_dX) 
-
+        self._adjoint = torch.linalg.solve(self._dY_wrt_dX, self._dE_wrt_dX)
 
     def __compute_derivative(self):
-        self._dRoothan_wrt_dtheta = torch.einsum("ijt,ja->iat", 
-            self.__dvxc_wrt_dtheta, self.__coefficients)
+        self._dRoothan_wrt_dtheta = torch.einsum("ijt,ja->iat",
+                                                 self.__dvxc_wrt_dtheta, self.__coefficients)
 
         self._dnorm_wrt_dtheta = torch.zeros(
             self.__noccorb, self.__number_of_parameters)
 
-        self._dY_wrt_dtheta =  torch.cat((
+        self._dY_wrt_dtheta = torch.cat((
             self._dRoothan_wrt_dtheta.reshape(
                 self._N, self.__number_of_parameters),
-            self._dnorm_wrt_dtheta),0)
+            self._dnorm_wrt_dtheta), 0)
 
         print(f'g_p: {self.__dexc_wrt_dtheta}')
         print(f'g_x^t norm: {self._dE_wrt_dX.abs().sum()}')
         print(f'lambda norm: {self._adjoint.abs().sum()}')
         print(f'f_p norm: {self._dY_wrt_dtheta.abs().sum()}')
         print(f'lambda_t * f_p: {torch.matmul(self._adjoint, self._dY_wrt_dtheta)}')
-        self._dX_wrt_dY = torch.linalg.inv(self._dY_wrt_dX )
-        print(f'f_x^-t norm: {self._dX_wrt_dY.abs().sum()}') 
+        self._dX_wrt_dY = torch.linalg.inv(self._dY_wrt_dX)
+        print(f'f_x^-t norm: {self._dX_wrt_dY.abs().sum()}')
         self._chain = torch.matmul(self._dX_wrt_dY.t(), self._dY_wrt_dtheta)
-        print(f'f_x^-1 * f_p norm: {self._chain.abs().sum()}') 
-        print(f'g_x^t * f_x^-1 * f_p: {torch.matmul(self._dE_wrt_dX, self._chain)}') 
+        print(f'f_x^-1 * f_p norm: {self._chain.abs().sum()}')
+        print(f'g_x^t * f_x^-1 * f_p: {torch.matmul(self._dE_wrt_dX, self._chain)}')
 
         self._derivative = self.__dexc_wrt_dtheta - \
-            torch.matmul(self._adjoint, self._dY_wrt_dtheta)
+                           torch.matmul(self._adjoint, self._dY_wrt_dtheta)
