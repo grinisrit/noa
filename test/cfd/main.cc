@@ -40,7 +40,7 @@ auto main(int argc, char **argv) -> int {
 		throw runtime_error(FLAGS_outputDir + " is not a directory");
 
 	using CellTopology	= TNL::Meshes::Topologies::Triangle; // 2D
-	using DomainType	= MHFE::Storage::Domain<CellTopology>;
+	using DomainType	= utils::domain::Domain<CellTopology>;
 	using GlobalIndex	= typename DomainType::GlobalIndexType;
 	constexpr auto cellD	= DomainType::getMeshDimension();	// 2 -> 2D cell
 	constexpr auto edgeD	= DomainType::getMeshDimension() - 1;	// 1 -> 2D cell edge
@@ -48,7 +48,7 @@ auto main(int argc, char **argv) -> int {
 	DomainType domain;
 
 	// Generate domain grid & prepare it for initialization
-	MHFE::Storage::generate2DGrid(domain, 20 * FLAGS_density, 10 * FLAGS_density,
+	utils::domain::generate2DGrid(domain, 20 * FLAGS_density, 10 * FLAGS_density,
 						1.0 / FLAGS_density, 1.0 / FLAGS_density);
 	MHFE::prepareDomain(domain, true);
 
