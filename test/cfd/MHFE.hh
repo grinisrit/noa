@@ -11,7 +11,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/LinearSolverTypeResolver.h>
 
 // Local headers
-#include "Domain.hh"
+#include <noa/utils/domain/domain.hh>
 #include "Geometry.hh"
 
 // Still TNL but needs to be included after Mesh.h

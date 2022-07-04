@@ -8,10 +8,11 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Geometry/getOutwardNormalVector.h>
 
 // Local headers
-#include "Domain.hh"
+#include <noa/utils/domain/domain.hh>
 
 namespace noa::MHFE {
 
+using noa::utils::domain::Domain;
 using TNL::Meshes::Topologies::Triangle;
 
 template <__domain_targs__>
@@ -22,7 +23,7 @@ Real lGet(const __DomainType__& domain,
 }
 
 template <typename Device, typename Real, typename GlobalIndex, typename LocalIndex>
-Real lGet(const Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
+Real lGet(const Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
 		const GlobalIndex& cell,
 		const Real& measure) {
 	constexpr auto dimCell = 2;
@@ -55,12 +56,12 @@ void Binv(const __DomainType__& domain,
 }
 
 template <typename Device, typename Real, typename GlobalIndex, typename LocalIndex, typename MatrixType>
-void Binv(const Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
+void Binv(const Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
 		MatrixType& matrix,
 		const GlobalIndex& cell,
 		const Real& measure,
 		const Real& l) {
-	using DomainType = Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>;
+	using DomainType = Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>;
 	using PointType = typename DomainType::MeshType::PointType;
 	PointType r1(0, 0), r2(0, 0);
 
