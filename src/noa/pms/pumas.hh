@@ -165,7 +165,7 @@ namespace noa::pms::pumas {
         Physics *physics{nullptr};
 
         std::vector<MediumU> media{};
-	std::vector<LocalsCbFunc> media_locals;
+        std::vector<LocalsCbFunc> media_locals;
 
         explicit PhysicsModel(Particle particle_) : particle{particle_} {}
 
@@ -195,13 +195,13 @@ namespace noa::pms::pumas {
             return false;
         }
 
-	static double locals_callback(Medium* medium, pumas_state* state, Locals* locals) {
-		const auto* meta = (MediumU::Meta*)(medium + 1);
-		const auto& idx = meta->medium_index;
-		const auto* model = (PhysicsModel*)(meta->model_ptr);
+        static double locals_callback(Medium* medium, pumas_state* state, Locals* locals) {
+                const auto* meta = (MediumU::Meta*)(medium + 1);
+                const auto& idx = meta->medium_index;
+                const auto* model = (PhysicsModel*)(meta->model_ptr);
 
-		return model->media_locals.at(idx / 2)(medium, (State*)state, locals);
-	}
+                return model->media_locals.at(idx / 2)(medium, (State*)state, locals);
+        }
 
     public:
         MediumCbFunc medium_callback;
@@ -265,7 +265,7 @@ namespace noa::pms::pumas {
             MediumU::Meta meta{ this->media.size(), this };
             this->media.push_back(MediumU{ .medium = medium });
             this->media.push_back(MediumU{ .meta = meta });
-	    this->media_locals.push_back(locals_func);
+            this->media_locals.push_back(locals_func);
 
             return this->media.size() - 2;
         }
