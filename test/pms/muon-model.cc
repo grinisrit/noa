@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 		matNameAir,
 		[] (
 			pms::pumas::Medium* medium,
-			pms::pumas::pumas_state* state,
+			pms::pumas::State* state,
 			pms::pumas::Locals* locals
 		) -> double {
 			// Assume uniform magnetic field
@@ -82,11 +82,11 @@ int main(int argc, char* argv[]) {
 			// Atmosphere density
 			constexpr double rho0 = 1.205;
 			constexpr double h = 12e+3;
-			locals->density = rho0 * exp(-state->position[2] / h);
+			locals->density = rho0 * exp(-(*state)->position[2] / h);
 
 			// Local stepping distance proposed
 			constexpr double eps = 5e-2;
-			const double uz = fabs(state->direction[2]);
+			const double uz = fabs((*state)->direction[2]);
 			return h / ((uz <= eps) ? eps : uz);
 		}
 	);
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 		matNameRock,
 		[] (
 			pms::pumas::Medium* medium,
-			pms::pumas::pumas_state* state,
+			pms::pumas::State* state,
 			pms::pumas::Locals* locals
 		) -> double {
 			locals->density = 2.65e3;

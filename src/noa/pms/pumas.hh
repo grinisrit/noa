@@ -32,16 +32,27 @@ namespace noa::pms::pumas {
 #include "noa/3rdparty/_pumas/pumas.h"
 
     // PUMAS type aliases
+    using Medium        = pumas_medium;
     using Physics       = pumas_physics;
     using Particle      = pumas_particle;
-    using Medium        = pumas_medium;
     using Locals        = pumas_locals;
-    using LocalsCb      = pumas_locals_cb;
     using Step          = pumas_step;
     using Event         = pumas_event;
 
+    using LocalsCb      = pumas_locals_cb;
+    using LocalsCbFunc  = std::function<double(Medium*, class State*, Locals*)>;
+
     using MediumCb      = pumas_medium_cb;
     using MediumCbFunc  = std::function<Step(class Context*, class State*, Medium**, double*)>;
+
+    // A wrapper for pumas_medium
+    union MediumU {
+            pumas_medium medium;
+            struct Meta {
+                std::size_t     medium_index;
+                void*           model_ptr;
+            } meta;
+    };
 
     // A wrapper class for pumas_state
     class State {
@@ -153,7 +164,8 @@ namespace noa::pms::pumas {
         Particle particle{default_particle};
         Physics *physics{nullptr};
 
-        std::vector<Medium> media{};
+        std::vector<MediumU> media{};
+	std::vector<LocalsCbFunc> media_locals;
 
         explicit PhysicsModel(Particle particle_) : particle{particle_} {}
 
@@ -182,6 +194,14 @@ namespace noa::pms::pumas {
             }
             return false;
         }
+
+	static double locals_callback(Medium* medium, pumas_state* state, Locals* locals) {
+		const auto* meta = (MediumU::Meta*)(medium + 1);
+		const auto& idx = meta->medium_index;
+		const auto* model = (PhysicsModel*)(meta->model_ptr);
+
+		return model->media_locals.at(idx / 2)(medium, (State*)state, locals);
+	}
 
     public:
         MediumCbFunc medium_callback;
@@ -236,18 +256,23 @@ namespace noa::pms::pumas {
             }
         }
 
-        inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCb* locals_func) {
+        inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCbFunc locals_func) {
             const auto mat_idx_opt = this->get_material_index(mat_name);
             if (!mat_idx_opt.has_value()) return {};
             const auto& mat_idx = mat_idx_opt.value();
 
-            this->media.push_back({ mat_idx, locals_func });
-            return this->media.size() - 1;
+            pumas_medium medium{ mat_idx, locals_callback };
+            MediumU::Meta meta{ this->media.size(), this };
+            this->media.push_back(MediumU{ .medium = medium });
+            this->media.push_back(MediumU{ .meta = meta });
+	    this->media_locals.push_back(locals_func);
+
+            return this->media.size() - 2;
         }
 
         inline Medium * get_medium(const int& mat_index) {
-                for (std::size_t i = 0; i < this->media.size(); ++i)
-                        if (this->media.at(i).material == mat_index) return &this->media.at(i);
+                for (std::size_t i = 0; i < this->media.size(); i += 2)
+                        if (this->media.at(i).medium.material == mat_index) return &this->media.at(i).medium;
                 return nullptr;
         }
 
