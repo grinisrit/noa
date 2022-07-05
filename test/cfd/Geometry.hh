@@ -8,22 +8,22 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Geometry/getOutwardNormalVector.h>
 
 // Local headers
-#include "Domain.hh"
-#include "Macros.hh"
+#include <noa/utils/domain/domain.hh>
 
 namespace noa::MHFE {
 
+using noa::utils::domain::Domain;
 using TNL::Meshes::Topologies::Triangle;
 
-template <DOMAIN_TARGS>
-Real lGet(const DOMAIN_TYPE& domain,
+template <__domain_targs__>
+Real lGet(const __DomainType__& domain,
 		const GlobalIndex& cell,
 		const Real& measure) {
 	throw std::runtime_error("lGet is not implemented for selected topology!");
 }
 
 template <typename Device, typename Real, typename GlobalIndex, typename LocalIndex>
-Real lGet(const Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
+Real lGet(const Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
 		const GlobalIndex& cell,
 		const Real& measure) {
 	constexpr auto dimCell = 2;
@@ -46,8 +46,8 @@ Real lGet(const Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>
 	return sqSum / 48.0 / measure;
 }
 
-template <DOMAIN_TARGS, typename MatrixType>
-void Binv(const DOMAIN_TYPE& domain,
+template <__domain_targs__, typename MatrixType>
+void Binv(const __DomainType__& domain,
 		MatrixType& matrix,
 		const GlobalIndex& cell,
 		const Real& measure,
@@ -56,12 +56,12 @@ void Binv(const DOMAIN_TYPE& domain,
 }
 
 template <typename Device, typename Real, typename GlobalIndex, typename LocalIndex, typename MatrixType>
-void Binv(const Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
+void Binv(const Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>& domain,
 		MatrixType& matrix,
 		const GlobalIndex& cell,
 		const Real& measure,
 		const Real& l) {
-	using DomainType = Storage::Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>;
+	using DomainType = Domain<Triangle, Device, Real, GlobalIndex, LocalIndex>;
 	using PointType = typename DomainType::MeshType::PointType;
 	PointType r1(0, 0), r2(0, 0);
 
