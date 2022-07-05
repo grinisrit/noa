@@ -204,8 +204,6 @@ namespace noa::pms::pumas {
         }
 
     public:
-        MediumCbFunc medium_callback;
-
         PhysicsModel() = default;
 
         PhysicsModel(
