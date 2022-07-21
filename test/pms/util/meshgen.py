@@ -1,6 +1,5 @@
 #!/bin/env python3
 import pyvista as vista
-import tetgen
 import argparse
 
 def main():
@@ -19,12 +18,6 @@ def main():
     output = output.cast_to_unstructured_grid()
     if args.T:
         output = output.delaunay_3d(alpha = 0)
-    # output = output.extract_all_edges()
-    #if args.T:
-        #tgen = tetgen.TetGen(output)
-        #nodes, elem = tgen.tetrahedralize()
-        #output = tgen.grid
-    # output = output.cast_to_unstructured_grid()
     output = output.cell_data_to_point_data()
     output.points[:,0] -= args.Nx * args.dx / 2
     output.points[:,1] -= args.Ny * args.dy / 2
