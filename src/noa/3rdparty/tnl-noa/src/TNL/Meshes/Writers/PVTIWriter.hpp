@@ -9,7 +9,7 @@
 #pragma once
 
 #include <memory>  // std::unique_ptr
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Writers/PVTIWriter.h>
 
@@ -161,7 +161,7 @@ PVTIWriter< Grid >::addPiece( const std::string& mainFileName,
                               const typename Grid::CoordinatesType& globalBegin,
                               const typename Grid::CoordinatesType& globalEnd )
 {
-   namespace fs = std::experimental::filesystem;
+   namespace fs = std::filesystem;
 
    // get the basename of the main file (filename without extension)
    const fs::path mainPath = mainFileName;

@@ -67,7 +67,9 @@ namespace noa::pms::pumas {
             inline pumas_state * operator->() {
                     return &state;
             }
-            // Or via get()
+            inline const pumas_state * operator->() const {
+                    return &state;
+            }
             inline pumas_state & get() {
                     return state;
             }
@@ -128,10 +130,15 @@ namespace noa::pms::pumas {
             *((Context**)this->context->user_data) = this;
             other.context = nullptr;
         }
+        Context & operator=(Context &&other) {
+            medium = std::move(other.medium);
+            this->context = other.context;
+            *((Context**)this->context->user_data) = this;
+            other.context = nullptr;
+        }
 
         Context(const Context &other)               = delete;
         Context & operator=(const Context &other)   = delete;
-        Context & operator=(Context &&other)        = delete;
 
         inline void destroy() {
             if (this->context != nullptr) pumas_context_destroy(&this->context);
@@ -148,6 +155,7 @@ namespace noa::pms::pumas {
         }
 
         inline pumas_context * operator->() { return this->context; }
+        inline const pumas_context * operator->() const { return this->context; }
 
         inline auto rnd() { return this->context->random(this->context); }
     };
@@ -254,7 +262,7 @@ namespace noa::pms::pumas {
             }
         }
 
-        inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCbFunc locals_func) {
+        inline std::optional<std::size_t> add_medium(const std::string& mat_name, const LocalsCbFunc& locals_func) {
             const auto mat_idx_opt = this->get_material_index(mat_name);
             if (!mat_idx_opt.has_value()) return {};
             const auto& mat_idx = mat_idx_opt.value();
@@ -273,8 +281,18 @@ namespace noa::pms::pumas {
                         if (this->media.at(i).medium.material == mat_index) return &this->media.at(i).medium;
                 return nullptr;
         }
+        inline const Medium * get_medium(const int& mat_index) const {
+                for (std::size_t i = 0; i < this->media.size(); i += 2)
+                        if (this->media.at(i).medium.material == mat_index) return &this->media.at(i).medium;
+                return nullptr;
+        }
 
         inline Medium * get_medium(const std::string& mat_name) {
+                const auto mat_index_opt = this->get_material_index(mat_name);
+                if (!mat_index_opt.has_value()) return nullptr;
+                return this->get_medium(mat_index_opt.value());
+        }
+        inline const Medium * get_medium(const std::string& mat_name) const {
                 const auto mat_index_opt = this->get_material_index(mat_name);
                 if (!mat_index_opt.has_value()) return nullptr;
                 return this->get_medium(mat_index_opt.value());

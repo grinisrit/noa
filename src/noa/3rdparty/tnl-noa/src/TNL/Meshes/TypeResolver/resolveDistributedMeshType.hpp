@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/resolveDistributedMeshType.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/resolveMeshType.h>
@@ -71,7 +71,7 @@ loadDistributedMesh( DistributedMeshes::DistributedMesh< Mesh >& distributedMesh
                      const std::string& fileFormat,
                      const MPI::Comm& communicator )
 {
-   namespace fs = std::experimental::filesystem;
+   namespace fs = std::filesystem;
    std::string format = fileFormat;
    if( format == "auto" ) {
       format = fs::path( fileName ).extension();
