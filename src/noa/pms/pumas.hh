@@ -32,48 +32,148 @@ namespace noa::pms::pumas {
 #include "noa/3rdparty/_pumas/pumas.h"
 
     // PUMAS type aliases
-    using Physics       = pumas_physics;
-    using Context       = pumas_context;
-    using Particle      = pumas_particle;
     using Medium        = pumas_medium;
-    using State         = pumas_state;
+    using Physics       = pumas_physics;
+    using Particle      = pumas_particle;
     using Locals        = pumas_locals;
-    using LocalsCb      = pumas_locals_cb;
     using Step          = pumas_step;
     using Event         = pumas_event;
 
-    using MediumCb      = pumas_medium_cb;
-    using MediumCbFunc  = std::function<MediumCb>;
+    using LocalsCb      = pumas_locals_cb;
+    using LocalsCbFunc  = std::function<double(Medium*, class State*, Locals*)>;
 
-    template<typename ParticleModel>
+    using MediumCb      = pumas_medium_cb;
+    using MediumCbFunc  = std::function<Step(class Context*, class State*, Medium**, double*)>;
+
+    // A wrapper for pumas_medium
+    union MediumU {
+            pumas_medium medium;
+            struct Meta {
+                std::size_t     medium_index;
+                void*           model_ptr;
+            } meta;
+    };
+
+    // A wrapper class for pumas_state
+    class State {
+            friend class Context; // State could only be constructed from a Context instance
+
+            pumas_state         state{};
+            class Context       *owner{nullptr};
+
+            State(class Context* creator) : owner(creator) {}
+            public:
+            // Access state fields via ->
+            inline pumas_state * operator->() {
+                    return &state;
+            }
+            inline const pumas_state * operator->() const {
+                    return &state;
+            }
+            inline pumas_state & get() {
+                    return state;
+            }
+            // Const version
+            inline const pumas_state & get() const {
+                    return state;
+            }
+    };
+
+    // A wrapper class for pumas_context
+    class Context {
+        template <Particle default_particle> friend class PhysicsModel;
+
+        pumas_context *context{nullptr};
+
+        // Context is only create-able via PhysicsModel
+        Context(Physics* physics) {
+            switch (pumas_context_create(&this->context, physics, sizeof(this))) {
+                case PUMAS_RETURN_SUCCESS:
+                    *((Context**)this->context->user_data) = this;
+                    this->context->medium = &Context::medium_callback;
+                    return;
+                case PUMAS_RETURN_MEMORY_ERROR:
+                    std::cerr << "pumas_context_create: could not allocate memory!" << std::endl;
+                    break;
+                case PUMAS_RETURN_PHYSICS_ERROR:
+                    std::cerr << "pumas_context_create: the physics is not initialized!" << std::endl;
+                    break;
+                default:
+                    std::cerr << "pumas_context_create: unexpected error!" << std::endl;
+                    break;
+            }
+            throw std::runtime_error("pumas_context_create failure!");
+        }
+
+        static Step medium_callback(
+                pumas_context* context,
+                pumas_state* state,
+                Medium** medium_ptr,
+                double* step_ptr) {
+            auto* self = *((Context**)context->user_data);
+            return self->medium(
+                        self,
+                        (State*)state, // We expect state to be wrapped in State
+                        medium_ptr,
+                        step_ptr);
+        }
+
+        public:
+        MediumCbFunc medium{nullptr};
+
+        ~Context() {
+            this->destroy();
+        }
+
+        Context(Context &&other) : medium(std::move(other.medium)) {
+            this->context = other.context;
+            *((Context**)this->context->user_data) = this;
+            other.context = nullptr;
+        }
+        Context & operator=(Context &&other) {
+            medium = std::move(other.medium);
+            this->context = other.context;
+            *((Context**)this->context->user_data) = this;
+            other.context = nullptr;
+        }
+
+        Context(const Context &other)               = delete;
+        Context & operator=(const Context &other)   = delete;
+
+        inline void destroy() {
+            if (this->context != nullptr) pumas_context_destroy(&this->context);
+        }
+
+        inline Event do_transport(State &state, Medium *medium[2]) {
+            Event ret;
+            pumas_context_transport(this->context, &state.get(), &ret, medium);
+            return ret;
+        }
+
+        inline State create_state() {
+            return State(this);
+        }
+
+        inline pumas_context * operator->() { return this->context; }
+        inline const pumas_context * operator->() const { return this->context; }
+
+        inline auto rnd() { return this->context->random(this->context); }
+    };
+    using ContextOpt = std::optional<Context>;
+
+    template<Particle default_particle = PUMAS_PARTICLE_MUON>
     class PhysicsModel {
-	/* There is a problem in writing a C++ wrapper for a C API with
-	 * passing C++-styled callbacks (functors, lambdas etc.) to it.
-	 * C API would accept only functions and capture-less lambdas.
-	 * There are workarounds for this, but all of them require C API
-	 * to use callback signatures with a `void* data` pointer as an
-	 * argument, which PUMAS does not do. Our workaround will rely on PUMAS
-	 * callbacks operating with argument by-pointer instead of by-reference.
-	 * Hence, our task is to arrange data that is passed to a PUMAS callback
-	 * in memory in such a way that an original PhysicsModel object could
-	 * be traced back via simple (deterministic) pointer arithmetic.
-	 * This way, a captureless lambda would be able to access member data
-	 * (and run member functions/functors) just from the pointer arguments it
-	 * recieves
-	 */
-	// TODO: Implement this workaround
 
         using PhysicsModelOpt = std::optional<PhysicsModel>;
         using MDFPath = utils::Path;
         using DEDXPath = utils::Path;
         using BinaryPath = utils::Path;
 
-        friend ParticleModel;
-
-        Particle particle{PUMAS_PARTICLE_MUON};
+        Particle particle{default_particle};
         Physics *physics{nullptr};
 
-        std::vector<Medium> media{};
+        std::vector<MediumU> media{};
+        std::vector<LocalsCbFunc> media_locals;
 
         explicit PhysicsModel(Particle particle_) : particle{particle_} {}
 
@@ -103,14 +203,16 @@ namespace noa::pms::pumas {
             return false;
         }
 
-        static Step medium_callback_caller(Context* context, State* state, Medium **medium_ptr, double *step_ptr) {
-                auto self = *(PhysicsModel**)context->user_data;
-                return self->medium_callback(context, state, medium_ptr, step_ptr);
+        static double locals_callback(Medium* medium, pumas_state* state, Locals* locals) {
+                const auto* meta = (MediumU::Meta*)(medium + 1);
+                const auto& idx = meta->medium_index;
+                const auto* model = (PhysicsModel*)(meta->model_ptr);
+
+                return model->media_locals.at(idx / 2)(medium, (State*)state, locals);
         }
 
     public:
-        Context *context{nullptr};
-        MediumCbFunc medium_callback;
+        PhysicsModel() = default;
 
         PhysicsModel(
                 const PhysicsModel &other) = delete;
@@ -131,7 +233,6 @@ namespace noa::pms::pumas {
         }
 
         ~PhysicsModel() {
-            this->destroy_context();
             pumas_physics_destroy(&physics);
             physics = nullptr;
         }
@@ -153,50 +254,36 @@ namespace noa::pms::pumas {
             }
         }
 
-        inline Context * create_context(const int &extra_memory = 0) {
-            if (this->context != nullptr) {
-                    std::cerr << __FUNCTION__ << ": Context is not free!" << std::endl;
-                    return nullptr;
-            }
-            switch (pumas_context_create(&this->context, this->physics, extra_memory + sizeof(this))) {
-                // We asked to allocate extra space for one pointer, that will point to this object
-                case PUMAS_RETURN_SUCCESS:
-                    *((PhysicsModel**)this->context->user_data) = this;
-                    this->update_context();
-                    return this->context;
-                case PUMAS_RETURN_MEMORY_ERROR:
-                    std::cerr << __FUNCTION__ << ": Could not allocate memory!" << std::endl;
-                    return nullptr;
-                case PUMAS_RETURN_PHYSICS_ERROR:
-                    std::cerr << __FUNCTION__ << ": The physics is not initialized!" << std::endl;
-                    return nullptr;
-                default:
-                    std::cerr << __FUNCTION__ << ": Unexpected error!" << std::endl;
-                    return nullptr;
+        inline ContextOpt create_context() {
+            try {
+                return ContextOpt{Context(this->physics)};
+            } catch (const std::runtime_error& e) {
+                return std::nullopt;
             }
         }
 
-        inline void update_context() {
-                if (this->context == nullptr) return;
-                this->context->medium = this->medium_callback_caller;
-        }
-
-        inline void destroy_context() {
-            pumas_context_destroy(&this->context);
-        }
-
-        inline std::optional<std::size_t> add_medium(const std::string& mat_name, LocalsCb* locals_func) {
+        inline std::optional<std::size_t> add_medium(const std::string& mat_name, const LocalsCbFunc& locals_func) {
             const auto mat_idx_opt = this->get_material_index(mat_name);
             if (!mat_idx_opt.has_value()) return {};
             const auto& mat_idx = mat_idx_opt.value();
 
-            this->media.push_back({ mat_idx, locals_func });
-            return this->media.size() - 1;
+            pumas_medium medium{ mat_idx, locals_callback };
+            MediumU::Meta meta{ this->media.size(), this };
+            this->media.push_back(MediumU{ .medium = medium });
+            this->media.push_back(MediumU{ .meta = meta });
+            this->media_locals.push_back(locals_func);
+
+            return this->media.size() - 2;
         }
 
         inline Medium * get_medium(const int& mat_index) {
-                for (std::size_t i = 0; i < this->media.size(); ++i)
-                        if (this->media.at(i).material == mat_index) return &this->media.at(i);
+                for (std::size_t i = 0; i < this->media.size(); i += 2)
+                        if (this->media.at(i).medium.material == mat_index) return &this->media.at(i).medium;
+                return nullptr;
+        }
+        inline const Medium * get_medium(const int& mat_index) const {
+                for (std::size_t i = 0; i < this->media.size(); i += 2)
+                        if (this->media.at(i).medium.material == mat_index) return &this->media.at(i).medium;
                 return nullptr;
         }
 
@@ -205,15 +292,14 @@ namespace noa::pms::pumas {
                 if (!mat_index_opt.has_value()) return nullptr;
                 return this->get_medium(mat_index_opt.value());
         }
+        inline const Medium * get_medium(const std::string& mat_name) const {
+                const auto mat_index_opt = this->get_material_index(mat_name);
+                if (!mat_index_opt.has_value()) return nullptr;
+                return this->get_medium(mat_index_opt.value());
+        }
 
         inline void clear_media() {
             this->media.clear();
-        }
-
-        inline Event do_transport(State *state, Medium *medium[2]) {
-                Event ret;
-                pumas_context_transport(this->context, state, &ret, medium);
-                return ret;
         }
 
         inline utils::Status save_binary(const BinaryPath &binary_path) const {
@@ -232,30 +318,21 @@ namespace noa::pms::pumas {
         inline static PhysicsModelOpt load_from_mdf(
                 const MDFPath &mdf_path,
                 const DEDXPath &dedx_path) {
-            auto model = ParticleModel{};
+            auto model = PhysicsModel{};
             const auto status = model.create_physics(mdf_path, dedx_path);
             return status ? PhysicsModelOpt{std::move(model)} : PhysicsModelOpt{};
         }
 
         inline static PhysicsModelOpt load_from_binary(const BinaryPath &binary_path) {
-            auto model = ParticleModel{};
+            auto model = PhysicsModel{};
             const auto status = model.load_physics(binary_path);
             return status ? PhysicsModelOpt{std::move(model)} : PhysicsModelOpt{};
         }
 
     };
 
-    class MuonModel : public PhysicsModel<MuonModel> {
-        friend class PhysicsModel<MuonModel>;
-
-        MuonModel() : PhysicsModel<MuonModel>{PUMAS_PARTICLE_MUON} {}
-    };
-
-    class TauModel : public PhysicsModel<TauModel> {
-        friend class PhysicsModel<TauModel>;
-
-        TauModel() : PhysicsModel<TauModel>{PUMAS_PARTICLE_TAU} {}
-    };
+    using MuonModel     = PhysicsModel<PUMAS_PARTICLE_MUON>;
+    using TauModel      = PhysicsModel<PUMAS_PARTICLE_TAU>;
 
 
 }
