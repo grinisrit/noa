@@ -24,7 +24,7 @@ option(BUILD_JNOA "Build JNI bindings" OFF)
 set(CMAKE_CXX_STANDARD 17)
 
 # Warning flags
-set(W_FLAGS "-Wall;-Wextra;-Wpedantic")
+set(W_FLAGS "") #"-Wall;-Wextra;-Wpedantic")
 
 # Native optimisations
 set(NA_OPT_FLAGS "-march=native;-mtune=native")
