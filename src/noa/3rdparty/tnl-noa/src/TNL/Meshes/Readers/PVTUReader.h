@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <utility>
 
 #include <noa/3rdparty/tnl-noa/src/TNL/MPI/Comm.h>
@@ -25,7 +25,7 @@ class PVTUReader : public XMLVTK
    std::string
    getSourcePath( const std::string& source )
    {
-      namespace fs = std::experimental::filesystem;
+      namespace fs = std::filesystem;
       return fs::path( fileName ).parent_path() / source;
    }
 

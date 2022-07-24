@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Functions/Domain.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Devices/Cuda.h>
@@ -224,7 +224,7 @@ public:
          return false;
       }
 
-      namespace fs = std::experimental::filesystem;
+      namespace fs = std::filesystem;
       std::string format = fileFormat;
       if( format == "auto" ) {
          format = fs::path( fileName ).extension();
@@ -476,7 +476,7 @@ public:
          return false;
       }
 
-      namespace fs = std::experimental::filesystem;
+      namespace fs = std::filesystem;
       std::string format = fileFormat;
       if( format == "auto" ) {
          format = fs::path( fileName ).extension();
