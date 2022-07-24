@@ -4,6 +4,18 @@ Actually, the only part of it that concerns us is **src/TNL**.
 Changes include: removed dependancy on `mpark::variant`, changes to header file paths _as they are in **noa**_.
 This repo only exists to make the process of merging custom changes with upstream TNL easier.
 
+## To NOA mantainers
+To be used with NOA, TNL has to undergo some modifications, such as:
+1. Replacing TNL header paths with their locations in NOA
+2. Replacing `mpark::` and `experimental::` feature references with their standard C++17 implementation
+3. Renaming `TNL` namespace to `noa::TNL`
+4. Changing the locations of 3rdparty library headers to the ones used within NOA
+
+For this purpose, `noa-ize.sh` script exists.
+All changes that are made to TNL codebase should be automated (if possible) through this script to avoid doing these repetitive tasks manually every time.
+
+# Original README
+
 [![pipeline status](https://mmg-gitlab.fjfi.cvut.cz/gitlab/tnl/tnl-dev/badges/develop/pipeline.svg)](https://mmg-gitlab.fjfi.cvut.cz/gitlab/tnl/tnl-dev/commits/develop)
 
 # Template Numerical Library

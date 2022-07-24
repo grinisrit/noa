@@ -22,7 +22,6 @@
 
 #include <noa/3rdparty/tinyxml2.hh>
 
-
 namespace noa::TNL {
 namespace Meshes {
 namespace Readers {
