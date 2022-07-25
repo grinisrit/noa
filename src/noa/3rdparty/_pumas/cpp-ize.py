@@ -109,7 +109,7 @@ with open("pumas.c", "r") as pumas:
                     continue
 
                 name = rs.group(2)
-                pumasLines[lIdx] = f"struct {rs.group(1)} {name}{{}};\n"
+                pumasLines[lIdx] = f"struct {rs.group(1)} {name} = {{}};\n"
                 nameLine = lIdx
                 break
 

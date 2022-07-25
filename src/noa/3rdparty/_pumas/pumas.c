@@ -1987,7 +1987,7 @@ enum pumas_return pumas_physics_create(struct pumas_physics ** physics,
         }
 
         if (!data.overwrite) {
-struct mdf_buffer mdf{};
+struct mdf_buffer mdf = {};
 mdf.mdf_path = p->mdf_path;
 mdf.dry_mode = 1;
 
