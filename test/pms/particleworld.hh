@@ -107,10 +107,12 @@ class ParticleWorld {
 
                                 if (intersect.distance < 0)
                                         throw std::runtime_error("Intersection not found!");
+                                /*
                                 if (!intersect.is_intersection_with_triangle)
                                         std::cerr << "WARNING: Intersection not with triangle" << std::endl <<
                                                 "Distance " << intersect.distance << "; location " << loc <<
                                                 "; direction " << dir << std::endl;
+                                */
 
                                 // TODO: Maybe here we could check if the next tetrahedron contains
                                 // the same material and extend the step, but we'll skip it for now
