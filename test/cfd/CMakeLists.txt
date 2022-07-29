@@ -13,7 +13,7 @@ find_package(ZLIB)
 
 
 # Main executables
-add_executable(mass_lumping main.cc ${NOA_ROOT_DIR}/test/kernels.cc)
+add_executable(mass_lumping main.cc)
 
 
 # Link libraries

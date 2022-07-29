@@ -1,5 +1,9 @@
 #include <iostream>
 #include <limits>
+#include <fstream>
+
+#define NOA_3RDPARTY_PUMAS
+#include <noa/kernels.hh>
 
 #include "particleworld.hh"
 
@@ -12,6 +16,7 @@ DEFINE_double(kenergy_max, doubleNaN, "Maximal muon kinetic energy (optional, de
 DEFINE_string(dump_file, "materials.pumas", "Pre-computed PUMAS materials model");
 DEFINE_string(materials_dir, "pumas-materials", "Path to PUMAS materials data directory");
 DEFINE_string(mesh, "mesh.vtk", "Path to rock mesh");
+DEFINE_string(track_dump, "", "Path to particle track dump");
 DEFINE_bool(create_dump, false, "If possible, create a pre-computed PUMAS materials model when one is not available");
 
 namespace noa::pms::pumas {
@@ -35,7 +40,7 @@ int main(int argc, char* argv[]) {
 	// Max kinetic energy is optional: if not specified, it will be set to be the same as min energy
 	if (isnan(FLAGS_kenergy_max)) FLAGS_kenergy_max = FLAGS_kenergy_min;
 
-	test::pms::MuonWorld<float> world;
+	test::pms::MuonWorld<float> world{};
 	world.init(FLAGS_dump_file, FLAGS_materials_dir);
 
 	auto& context = world.get_context();
@@ -47,8 +52,8 @@ int main(int argc, char* argv[]) {
 	const auto rockIndex = model.get_material_index(matNameRock).value();
 
 	cout << "Material indices: " << endl;
-	cout << "\tStandardRock:\t" << airIndex << endl;
-	cout << "\tAir:\t" << rockIndex << endl;
+	cout << "\t" << matNameAir << ":\t" << airIndex << endl;
+	cout << "\t" << matNameRock << ":\t" << rockIndex << endl;
 
 	auto& rockDomain = world.add_domain();
 	rockDomain.loadFrom(FLAGS_mesh);
@@ -58,20 +63,29 @@ int main(int argc, char* argv[]) {
 
 	world.environment = [&airIndex, &model] (pms::pumas::Context* context_p, pms::pumas::State* state_p, pms::pumas::Medium** medium_p, double* step_p) -> pms::pumas::Step {
 		const auto& state = *state_p;
-		const double z = state->position[2];
-		const double uz = state->direction[2];
+		const auto& z = state->position[2];
+		const auto& uz = state->direction[2] * context_p->sgn();
+
+		double step = 1e3;
 
 		if (z < 0) {
 			if (medium_p != nullptr) *medium_p = nullptr;
-			if (step_p != nullptr) *step_p = -1;
+			step = -1;
 		} else if (z < primary_altitude) {
 			if (medium_p != nullptr)
 				*medium_p = const_cast<pms::pumas::Medium*>(model.get_medium(airIndex));
-			if (step_p != nullptr)
-				*step_p = primary_altitude / uz / 100;
+			if (uz > std::numeric_limits<float>::epsilon())
+				step = (primary_altitude - z) / uz;
+			if (uz < -std::numeric_limits<float>::epsilon())
+				step = - z / uz;
 		} else {
 			if (medium_p != nullptr) *medium_p = nullptr;
-			if (step_p != nullptr) *step_p = 1;
+			step = -1;
+		}
+
+		if (step_p != nullptr) {
+			*step_p = step;
+			if (*step_p > 0) *step_p += std::numeric_limits<float>::epsilon();
 		}
 
 		return pms::pumas::PUMAS_STEP_RAW;
@@ -113,6 +127,8 @@ int main(int argc, char* argv[]) {
 	);
 
 	// Mote-Carlo
+	std::ofstream particles;
+	if (FLAGS_track_dump != "") particles.open(FLAGS_track_dump);
 	const double cos_theta = cos((90. - FLAGS_elevation) / 180. * M_PI);
 	const double sin_theta = sqrt(1. - cos_theta * cos_theta);
 	const double rk = log(FLAGS_kenergy_max / FLAGS_kenergy_min);
@@ -121,6 +137,7 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < n; ++i) {
 		cout << "\rSimulating " << i;
 		cout.flush();
+		if (particles.is_open()) particles << "particle " << i << endl;
 		// Set the muon final state
 		double kf, wf;
 		if (rk) {
@@ -144,6 +161,10 @@ int main(int argc, char* argv[]) {
 
 		// Simulate muon trajectory with PUMAS
 		const double energyThreshold = FLAGS_kenergy_max * 1e3;
+		if (particles.is_open()) particles <<	state->position[0] << ", " <<
+							state->position[1] << ", " <<
+							state->position[2] << endl;
+
 		while (state->energy < energyThreshold - numeric_limits<double>::epsilon()) {
 			if (state->energy < 1e2 - numeric_limits<double>::epsilon()) {
 				context->mode.energy_loss = pms::pumas::PUMAS_MODE_STRAGGLED;
@@ -157,9 +178,16 @@ int main(int argc, char* argv[]) {
 
 			pms::pumas::Medium* medium[2];
 			pms::pumas::Event event = context.do_transport(state, medium);
+			if (particles.is_open()) particles <<	state->position[0] << ", " <<
+								state->position[1] << ", " <<
+								state->position[2] << endl;
 
 			if ((event == pms::pumas::PUMAS_EVENT_MEDIUM) && (medium[1] == nullptr)) {
 				if (state->position[2] >= primary_altitude - numeric_limits<double>::epsilon()) {
+					if (state->position[2] > primary_altitude * 1.1) {
+						cout << " Out of bounds by a lot!" << endl;
+						cout << "cf = " << cf << "; kf = " << kf << "; wf = " << wf << endl;
+					}
 					const double wi = state->weight * pms::pumas::flux_gccly(-state->direction[2], state->energy, state->charge);
 					w += wi;
 					w2 += wi * wi;
@@ -172,6 +200,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	cout << endl;
+	if (particles.is_open()) particles.close();
 
 	// Print the calculation result
 	w /= n;

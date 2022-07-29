@@ -79,12 +79,10 @@ class ParticleWorld {
                         PointType loc{};
                         for (std::size_t i = 0; i < 3; ++i) loc[i] = state->position[i];
                         PointType dir{};
-                        Real speed = 0;
                         for (std::size_t i = 0; i < 3; ++i) {
-                                dir[i] = state->direction[i];
-                                speed += dir[i] * dir[i];
+                                dir[i] = state->direction[i]; // * context_p->sgn();
                         }
-                        speed = std::sqrt(speed);
+                        auto speed = std::sqrt(TNL::dot(dir, dir));
 
                         for (const auto& domain : domains) {
                                 const auto& mesh = domain.getMesh();
@@ -105,13 +103,22 @@ class ParticleWorld {
                                                                         &mesh,
                                                                         t_index.value(),
                                                                         loc, dir,
-                                                                        std::numeric_limits<Real>::epsilon());
+                                                                        std::numeric_limits<float>::epsilon());
+
+                                if (intersect.distance < 0)
+                                        throw std::runtime_error("Intersection not found!");
+                                /*
+                                if (!intersect.is_intersection_with_triangle)
+                                        std::cerr << "WARNING: Intersection not with triangle" << std::endl <<
+                                                "Distance " << intersect.distance << "; location " << loc <<
+                                                "; direction " << dir << std::endl;
+                                */
 
                                 // TODO: Maybe here we could check if the next tetrahedron contains
                                 // the same material and extend the step, but we'll skip it for now
                                 if (step_p != nullptr) {
-                                        *step_p = intersect.distance / speed;
-                                        *step_p += std::numeric_limits<Real>::epsilon();
+                                        *step_p = intersect.distance / speed / 50;
+                                        *step_p += std::numeric_limits<float>::epsilon();
                                 }
 
                                 return pumas::PUMAS_STEP_RAW;
