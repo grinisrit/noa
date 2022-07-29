@@ -13,6 +13,7 @@ DEFINE_double(kenergy_max, doubleNaN, "Maximal muon kinetic energy (optional, de
 DEFINE_string(dump_file, "materials.pumas", "Pre-computed PUMAS materials model");
 DEFINE_string(materials_dir, "pumas-materials", "Path to PUMAS materials data directory");
 DEFINE_string(mesh, "mesh.vtk", "Path to rock mesh");
+DEFINE_string(track_dump, "", "Path to particle track dump");
 DEFINE_bool(create_dump, false, "If possible, create a pre-computed PUMAS materials model when one is not available");
 
 namespace noa::pms::pumas {
@@ -124,7 +125,7 @@ int main(int argc, char* argv[]) {
 
 	// Mote-Carlo
 	std::ofstream particles;
-	particles.open("trajectorydump.txt");
+	if (FLAGS_track_dump != "") particles.open(FLAGS_track_dump);
 	const double cos_theta = cos((90. - FLAGS_elevation) / 180. * M_PI);
 	const double sin_theta = sqrt(1. - cos_theta * cos_theta);
 	const double rk = log(FLAGS_kenergy_max / FLAGS_kenergy_min);
@@ -133,7 +134,7 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < n; ++i) {
 		cout << "\rSimulating " << i;
 		cout.flush();
-		particles << "particle " << i << endl;
+		if (particles.is_open()) particles << "particle " << i << endl;
 		// Set the muon final state
 		double kf, wf;
 		if (rk) {
@@ -157,7 +158,10 @@ int main(int argc, char* argv[]) {
 
 		// Simulate muon trajectory with PUMAS
 		const double energyThreshold = FLAGS_kenergy_max * 1e3;
-		particles << state->position[0] << ", " << state->position[1] << ", " << state->position[2] << endl;
+		if (particles.is_open()) particles <<	state->position[0] << ", " <<
+							state->position[1] << ", " <<
+							state->position[2] << endl;
+
 		while (state->energy < energyThreshold - numeric_limits<double>::epsilon()) {
 			if (state->energy < 1e2 - numeric_limits<double>::epsilon()) {
 				context->mode.energy_loss = pms::pumas::PUMAS_MODE_STRAGGLED;
@@ -171,7 +175,9 @@ int main(int argc, char* argv[]) {
 
 			pms::pumas::Medium* medium[2];
 			pms::pumas::Event event = context.do_transport(state, medium);
-			particles << state->position[0] << ", " << state->position[1] << ", " << state->position[2] << endl;
+			if (particles.is_open()) particles <<	state->position[0] << ", " <<
+								state->position[1] << ", " <<
+								state->position[2] << endl;
 
 			if ((event == pms::pumas::PUMAS_EVENT_MEDIUM) && (medium[1] == nullptr)) {
 				if (state->position[2] >= primary_altitude - numeric_limits<double>::epsilon()) {
@@ -191,7 +197,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	cout << endl;
-	particles.close();
+	if (particles.is_open()) particles.close();
 
 	// Print the calculation result
 	w /= n;
