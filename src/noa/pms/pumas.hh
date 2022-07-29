@@ -23,13 +23,12 @@
 
 #pragma once
 
+#include "noa/kernels.hh"
 #include "noa/utils/common.hh"
 
 #include <cstdio>
 
 namespace noa::pms::pumas {
-
-#include "noa/3rdparty/_pumas/pumas.h"
 
     // PUMAS type aliases
     using Medium        = pumas_medium;

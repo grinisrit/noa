@@ -2,6 +2,9 @@
 #include <limits>
 #include <fstream>
 
+#define NOA_3RDPARTY_PUMAS
+#include <noa/kernels.hh>
+
 #include "particleworld.hh"
 
 #include <gflags/gflags.h>
