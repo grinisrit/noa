@@ -1,3 +1,5 @@
+#define NOA_3RDPARTY_PUMAS
+#include <noa/kernels.hh>
 #include <noa/utils/meshes.hh>
 #include <noa/pms/pumas.hh>
 

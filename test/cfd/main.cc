@@ -1,4 +1,4 @@
-// Greg put your code there
+#include <noa/kernels.hh> // Instead of compiling alongside kernels.cc
 
 #include <gflags/gflags.h>
 #include <iostream>

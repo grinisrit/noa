@@ -23,13 +23,12 @@
 
 #pragma once
 
+#include "noa/kernels.hh"
 #include "noa/utils/common.hh"
 
 #include <cstdio>
 
 namespace noa::pms::pumas {
-
-#include "noa/3rdparty/_pumas/pumas.h"
 
     template<typename ParticleModel>
     class PhysicsModel {
