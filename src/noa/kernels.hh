@@ -24,4 +24,19 @@
 #pragma once
 
 #include "noa/3rdparty/tinyxml2.hh"
-#include "noa/3rdparty/_tinyxml2/tinyxml2.cpp"
+#ifndef NOA_3RDPARTY_TINYXML_NOIMPL
+        #define NOA_3RDPARTY_TINYXML_NOIMPL
+        #include "noa/3rdparty/_tinyxml2/tinyxml2.cpp"
+#endif
+
+#ifdef NOA_3RDPARTY_PUMAS
+namespace noa::pms::pumas {
+        #include "noa/3rdparty/_pumas/pumas.h" // This .h include is inside of the namespace and is to be used
+}
+#ifndef NOA_3RDPARTY_PUMAS_NOIMPL
+        #define NOA_3RDPARTY_PUMAS_NOIMPL
+        #undef pumas_h
+        #include "noa/3rdparty/_pumas/pumas.h" // This .h include is needed to compile PUMAS
+        #include "noa/3rdparty/_pumas/pumas.c"
+#endif
+#endif

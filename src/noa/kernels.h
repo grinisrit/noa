@@ -22,6 +22,3 @@
  */
 
 #pragma once
-
-#include "noa/3rdparty/_pumas/pumas.h"
-#include "noa/3rdparty/_pumas/pumas.c"
