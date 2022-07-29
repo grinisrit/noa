@@ -140,6 +140,9 @@ namespace noa::pms::pumas {
         Context(const Context &other)               = delete;
         Context & operator=(const Context &other)   = delete;
 
+        // Velocity sign (depends on mode direction FORWARD/BACKWARD)
+        inline int sgn() { return (this->context->mode.direction == PUMAS_MODE_FORWARD) ? 1 : -1; }
+
         inline void destroy() {
             if (this->context != nullptr) pumas_context_destroy(&this->context);
         }
