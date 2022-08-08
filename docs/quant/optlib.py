@@ -76,7 +76,7 @@ class Grid:
         self.xRight = xRight
         self.option = None
 
-        self.net = np.ones((self.xSteps + 1, self.tSteps + 1))
+        self.net = np.zeros((self.xSteps + 1, self.tSteps + 1))
         self.xGrid = np.linspace(self.xLeft, self.xRight, self.xSteps + 1)
         self.timeBorder = None
         self.tGrid = None
@@ -114,25 +114,27 @@ class Grid:
         for j in range(len(S_array)):
             self.net[j, 0] = max(S_array[j] - self.option.strike, 0)
 
-    def setBounds(self):
+    def setBoundsPut(self):
+        q = self.q
         for i in np.arange(self.tSteps + 1):
-            self.net[self.xSteps, i] = np.exp((self.q + 1) ** 2 * i * self.dt / 4) * max(0, np.exp((self.q - 1) * self.xRight / 2 - np.exp((self.q + 1) * self.xRight / 2)))
-            self.net[0, i] = np.exp((self.q + 1) ** 2 * i * self.dt / 4) * max(0, np.exp((self.q - 1) * self.xLeft / 2 - np.exp((self.q + 1) * self.xLeft / 2)))
+            self.net[self.xSteps, i] = g_func(q, self.tGrid[i], self.xGrid[-1])
+            self.net[0, i] = g_func(q, self.tGrid[i], self.xGrid[0])
         for i in np.arange(self.xSteps + 1):
-            self.net[i, 0] = max(0, np.exp((self.q - 1) * (self.xLeft + i * self.dx) / 2 - np.exp((self.q + 1) * (self.xLeft + i * self.dx) / 2)))
+            self.net[i, 0] = g_func(q, self.tGrid[0], self.xGrid[i])
 
     def toNormal(self, obj_mutation=False):
         tmpNet = self.net.copy()
-        for n in np.arange(self.tSteps + 1):
-            for k in np.arange(self.xSteps + 1):
-                tmpNet[k, n] *= self.option.strike * np.exp((1 - self.q) * self.xGrid[k] / 2 - ((self.q - 1) ** 2 / 4 + self.q) * self.tGrid[n])
+        for n in np.arange(len(self.tGrid)):
+            for k in np.arange(len(self.xGrid)):
+                tmpNet[k, n] = self.option.strike * np.exp((1 - self.q) * self.xGrid[k] / 2 - (((self.q - 1) ** 2) / 4 + self.q) * self.tGrid[n]) * tmpNet[k, n]
         t_array = np.array([self.option.maturity - 2 * t / self.option.Underlying.volatility ** 2 for t in self.tGrid])
         S_array = np.array([self.option.strike * np.exp(x) for x in self.xGrid])
         if obj_mutation:
             self.xGrid = S_array
             self.tGrid = t_array
             self.net = tmpNet
-        return S_array, t_array, tmpNet
+        else:
+            return S_array, t_array, tmpNet
 
     # add backward transformation toDefault
 
@@ -146,11 +148,19 @@ class Grid:
             fig.show()
         else:
             plt.style.use("Solarize_Light2")
-            plt.figure(figsize=(10, 8))
+            plt.figure(figsize=(15, 8))
             for i in np.linspace(0, len(self.tGrid) - 1, slice_num):
                 plt.plot(self.xGrid, self.net[:, int(i)], label=f"t = {self.tGrid[int(i)]}")
             plt.legend()
             plt.show()
+
+
+def g_func(q, t, x):
+    return np.exp(0.25 * t * (q + 1)**2) * max(0, np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
+
+
+def call_boundary_condition(q, t, x):
+    return np.exp((q + 1)**2 * t/4) * max(0, np.exp((q + 1)*x/2) - np.exp((q - 1)*x/2))
 
 
 def scalar_walk(A, B):
