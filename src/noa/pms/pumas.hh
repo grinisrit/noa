@@ -134,6 +134,7 @@ namespace noa::pms::pumas {
             this->context = other.context;
             *((Context**)this->context->user_data) = this;
             other.context = nullptr;
+            return *this;
         }
 
         Context(const Context &other)               = delete;
