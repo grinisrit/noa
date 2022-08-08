@@ -2,7 +2,7 @@
 
 constexpr double doubleNaN = std::numeric_limits<double>::quiet_NaN();
 
-static bool validateRequiredDoubleFlag(const char* flagname, double value) {
+inline bool validateRequiredDoubleFlag(const char* flagname, double value) {
 	if (std::isnan(value)) {
 		std::cerr << "Flag --" << flagname << " is not optional. Please specify it." << std::endl;
 		return false;

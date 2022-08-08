@@ -18,6 +18,8 @@ using namespace noa::pms;
 // meshes that alter environemnt physisc properties
 template <pumas::Particle default_particle = pumas::PUMAS_PARTICLE_MUON, typename Real = float>
 class ParticleWorld {
+        // Type aliases are public for utility
+        public:
         using CellTopology =    TNL::Meshes::Topologies::Tetrahedron;
         using DomainType =      utils::domain::Domain<CellTopology, TNL::Devices::Host, Real>;
         using MeshType =        typename DomainType::MeshType;
@@ -27,7 +29,8 @@ class ParticleWorld {
         using LocalsCbFunc =    pumas::LocalsCbFunc;
         using ContextOpt =      std::optional<pumas::Context>;
         using Tracer =          trace::Tracer<TNL::Devices::Host>;
-
+        
+        private:
         // World domains
         std::vector<DomainType> domains{};
 
