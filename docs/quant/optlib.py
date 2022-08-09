@@ -140,8 +140,20 @@ class Grid:
 
     def plot(self, slice_num=0):
         """ plotting 3D graph and slices by time """
+        K = self.option.strike
+        r = self.option.Underlying.interest
+        T = self.option.maturity
         if slice_num == 0:
-            fig = go.Figure(data=[go.Surface(z=self.net, x=self.tGrid, y=self.xGrid)])
+            surface = go.Surface(z=self.net, x=self.tGrid, y=self.xGrid)
+            curve = go.Scatter3d(z=[(1 - tau ** 1.4) * self.option.strike / 4 for tau in self.tGrid],
+                                 x=self.tGrid,
+                                 y=np.array(tuple(map(lambda tmp : early_exercise(K, r, T, tmp), self.tGrid))),
+                                 mode="markers",
+                                 marker=dict(
+                                     size=3,
+                                     color="green")
+                                 )
+            fig = go.Figure([surface, curve])
             fig.update_layout(title='V(S,t)', autosize=False,
                               width=800, height=500,
                               margin=dict(l=65, r=50, b=65, t=90))
@@ -151,6 +163,7 @@ class Grid:
             plt.figure(figsize=(15, 8))
             for i in np.linspace(0, len(self.tGrid) - 1, slice_num):
                 plt.plot(self.xGrid, self.net[:, int(i)], label=f"t = {self.tGrid[int(i)]}")
+                plt.axvline(early_exercise(K, r, T, self.tGrid[int(i)]), color='green')
             plt.legend()
             plt.show()
 
@@ -161,6 +174,10 @@ def g_func(q, t, x):
 
 def call_boundary_condition(q, t, x):
     return np.exp((q + 1)**2 * t/4) * max(0, np.exp((q + 1)*x/2) - np.exp((q - 1)*x/2))
+
+
+def early_exercise(K, r, T, time):
+    return K * np.exp(r*(-T + time))
 
 
 def scalar_walk(A, B):
