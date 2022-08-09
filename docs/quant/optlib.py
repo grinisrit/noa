@@ -98,21 +98,28 @@ class Grid:
         self._createGrid()
 
     def valuateBSM(self): # Надо разобраться с путом и ненулевой ставкой
-        t_array = np.array([self.option.maturity - 2 * t / self.option.Underlying.volatility ** 2 for t in self.tGrid])
-        S_array = np.array([self.option.strike * np.exp(x) for x in self.xGrid])
+        self.xGrid = np.linspace(self.xLeft, self.xRight, self.xSteps + 1)
+        self.tGrid = np.linspace(0, self.timeBorder, self.tSteps + 1)
+        self.net = np.zeros((self.xSteps + 1, self.tSteps + 1))
+        self.toNormal(True)
+        K = self.option.strike
+        vol = self.option.Underlying.volatility
+        r = self.option.Underlying.interest
+        T = self.option.maturity
+
         if self.option.call:
             p = 1
         else:
             p = -1
-        for i in range(1, len(t_array)):
-            for j in range(len(S_array)):
-                t = t_array[i]
-                S = S_array[j]
-                D1 = (np.log(S / self.option.strike) + (self.option.Underlying.volatility ** 2 / 2 + self.option.Underlying.interest) * (self.option.maturity - t)) / (self.option.Underlying.volatility * np.sqrt(self.option.maturity - t))
-                D2 = (np.log(S / self.option.strike) + (-self.option.Underlying.volatility ** 2 / 2 + self.option.Underlying.interest) * (self.option.maturity - t)) / (self.option.Underlying.volatility * np.sqrt(self.option.maturity - t))
-                self.net[j, i] = p * S * norm.cdf(p * D1) - p * self.option.strike * np.exp(self.option.Underlying.interest * (self.option.maturity - t)) * norm.cdf(p * D2)
-        for j in range(len(S_array)):
-            self.net[j, 0] = max(S_array[j] - self.option.strike, 0)
+        for i in range(1, len(self.tGrid)):
+            for j in range(len(self.xGrid)):
+                t = self.tGrid[i]
+                S = self.xGrid[j]
+                D1 = (np.log(S / K) + (vol ** 2 / 2 + r) * (T - t)) / (vol * np.sqrt(T - t))
+                D2 = (np.log(S / K) + (-vol ** 2 / 2 + r) * (T - t)) / (vol * np.sqrt(T - t))
+                self.net[j, i] = p * S * norm.cdf(p * D1) - p * K * np.exp(r * (t - T)) * norm.cdf(p * D2)
+        for j in range(len(self.xGrid)):
+            self.net[j, 0] = max(p*(self.xGrid[j] - K), 0)
 
     def setBoundsPut(self):
         q = self.q
