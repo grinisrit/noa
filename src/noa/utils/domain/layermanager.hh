@@ -99,6 +99,8 @@ struct Layer {
         Index size;             // Layer size
 
         public:
+        /* ----- PUBLIC DATA MEMBERS ----- */
+        std::string alias = ""; // Alternative layer name
         /* ----- PUBLIC CONSTRUCTOR ----- */
         template <typename DataType>
         Layer(const Index& newSize, const DataType& value = DataType()) {
@@ -157,25 +159,25 @@ struct Layer {
 
         // Write layer using a TNL mesh writer
         template <typename Writer>
-        void writeCellData(Writer& writer, const std::string& name) {
+        void writeCellData(Writer& writer, const std::string& fallback_name) {
                 const auto writeCellData_f = [&] (auto& v) {
-                        writer.writeCellData(v, name);
+                        writer.writeCellData(v, (alias.empty()) ? fallback_name : alias);
                 };
                 LVFOR(data, writeCellData_f);
         }
 
         template <typename Writer>
-        void writeDataArray(Writer& writer, const std::string& name) {
+        void writeDataArray(Writer& writer, const std::string& fallback_name) {
                 const auto writeDataArray_f = [&] (auto& v) {
-                        writer.writeDataArray(v, name);
+                        writer.writeDataArray(v, (alias.empty()) ? fallback_name : alias);
                 };
                 LVFOR(data, writeDataArray_f);
         }
 
         template <typename Writer>
-        void writePointData(Writer& writer, const std::string& name) {
+        void writePointData(Writer& writer, const std::string& fallback_name) {
                 const auto writePointData_f = [&] (auto& v) {
-                        writer.writePointData(v, name);
+                        writer.writePointData(v, (alias.empty()) ? fallback_name : alias);
                 };
                 LVFOR(data, writePointData_f);
         }

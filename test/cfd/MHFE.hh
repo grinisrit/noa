@@ -48,13 +48,18 @@ void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) 
 	domain.clearLayers();
 
 	// Set up the layers
+	const auto solLayer =
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 0, P
+	domain.getLayers(dimCell).getLayer(solLayer).alias = "Computed Solution";
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 1, P_PREV
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 2, A
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 3, C
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 4, l - cached values
-	if (allocatePrecise)
+	if (allocatePrecise) {
+		const auto preciseLayer =
 		domain.getLayers(dimCell).template add<Real>(0);// Index 5, PRECISE
+		domain.getLayers(dimCell).getLayer(preciseLayer).alias = "Precise Solution";
+	}
 
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 0, DIRICHLET
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 1, NEUMANN

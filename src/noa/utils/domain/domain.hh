@@ -55,7 +55,7 @@ template <typename CellTopology, typename Device = TNL::Devices::Host, typename 
 struct Domain {
         /* ----- PUBLIC TYPE ALIASES ----- */
         using MeshConfig        = TNL::Meshes::DefaultConfig<CellTopology, CellTopology::dimension, Real, GlobalIndex, LocalIndex>;
-        using MeshType          = TNL::Meshes::Mesh<MeshConfig>; // Meshes only seem to be implemented on Host
+        using MeshType          = TNL::Meshes::Mesh<MeshConfig>; // Meshes only seem to be implemented on Host (?)
         using MeshWriter        = TNL::Meshes::Writers::VTUWriter<MeshType>;
         using LayerManagerType  = LayerManager<Device, GlobalIndex>;
 
@@ -84,7 +84,7 @@ struct Domain {
         /* ----- PUBLIC METHODS ----- */
         // Constructor
         Domain() {
-                // If created by-itself, generate layers for each of meshes dimensions
+                // If default-constructed, generate layers for each of the meshes dimensions
                 layers = std::vector<LayerManagerType>(getMeshDimension() + 1);
         }
 
