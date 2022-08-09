@@ -124,12 +124,12 @@ namespace noa::pms::pumas {
             this->destroy();
         }
 
-        Context(Context &&other) : medium(std::move(other.medium)) {
+        Context(Context &&other) : medium(std::move(other.medium)) noexcept {
             this->context = other.context;
             *((Context**)this->context->user_data) = this;
             other.context = nullptr;
         }
-        Context & operator=(Context &&other) {
+        Context & operator=(Context &&other) noexcept {
             medium = std::move(other.medium);
             this->context = other.context;
             *((Context**)this->context->user_data) = this;
