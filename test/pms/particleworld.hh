@@ -18,6 +18,8 @@ using namespace noa::pms;
 // meshes that alter environemnt physisc properties
 template <pumas::Particle default_particle = pumas::PUMAS_PARTICLE_MUON, typename Real = float>
 class ParticleWorld {
+        // Type aliases are public for utility
+        public:
         using CellTopology =    TNL::Meshes::Topologies::Tetrahedron;
         using DomainType =      utils::domain::Domain<CellTopology, TNL::Devices::Host, Real>;
         using MeshType =        typename DomainType::MeshType;
@@ -27,7 +29,8 @@ class ParticleWorld {
         using LocalsCbFunc =    pumas::LocalsCbFunc;
         using ContextOpt =      std::optional<pumas::Context>;
         using Tracer =          trace::Tracer<TNL::Devices::Host>;
-
+        
+        private:
         // World domains
         std::vector<DomainType> domains{};
 
@@ -80,7 +83,7 @@ class ParticleWorld {
                         for (std::size_t i = 0; i < 3; ++i) loc[i] = state->position[i];
                         PointType dir{};
                         for (std::size_t i = 0; i < 3; ++i) {
-                                dir[i] = state->direction[i]; // * context_p->sgn();
+                                dir[i] = state->direction[i] * context_p->sgn();
                         }
                         auto speed = std::sqrt(TNL::dot(dir, dir));
 
@@ -88,9 +91,19 @@ class ParticleWorld {
                                 const auto& mesh = domain.getMesh();
                                 constexpr auto dim = domain.getMeshDimension(); // = 3
                                 const auto cells = mesh.template getEntitiesCount<dim>();
-                                const auto t_index = Tracer::get_current_tetrahedron(&mesh, cells, loc);
+                                /* PASEUDO-CODE
+                                std::optional<std::size_t> t_index;
+                                t_index = state.lastTetrahedronIndex;
+                                if (t_index.has_value()) {
+                                        if (!Trancer::check_in_tetrahedron(...)) t_index = std::nullopt;
+                                }
+                                // Search neighbours ...
+                                if (!t_index.has_value()) t_index = Tracer::get_current_tetrahedron(&mesh, cells, loc);
+                                state.lastTetrahedronIndex = t_index;
 
                                 if (!t_index.has_value()) continue;
+                                */
+                                const auto t_index = Tracer::get_current_tetrahedron(&mesh, cells, loc);
 
                                 const auto& cell_layers = domain.getLayers(dim);
                                 const auto& medium_layer_data = cell_layers.template get<int>(medium_layer);
