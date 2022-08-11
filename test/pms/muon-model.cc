@@ -48,7 +48,7 @@ constexpr auto usage = "A re-implementation of PUMAS 'geometry' example in C++ f
 			"but also std::function objects. This test also includes experimental implementation "
 			"of mesh-based world setup (see --mesh and --rock-thickness flags for two modes "
 			"of operation).\n"
-			"See https://github.com/niess/pumas/blob/master/examples/pumas/geometry.c";
+			"See https://github.com/niess/pumas/blob/master/examples/pumas/geometry.c\n";
 
 // Main function
 int main(int argc, char* argv[]) {
@@ -250,8 +250,8 @@ int main(int argc, char* argv[]) {
 							state->position[1] << ", " <<
 							state->position[2] << endl;
 
-		while (state->energy < energyThreshold - numeric_limits<double>::epsilon()) {
-			if (state->energy < 1e2 - numeric_limits<double>::epsilon()) {
+		while (state->energy < energyThreshold - numeric_limits<float>::epsilon()) {
+			if (state->energy < 1e2 - numeric_limits<float>::epsilon()) {
 				context->mode.energy_loss = pms::pumas::PUMAS_MODE_STRAGGLED;
 				context->mode.scattering = pms::pumas::PUMAS_MODE_MIXED;
 				context->limit.energy = 1e2;
