@@ -14,17 +14,25 @@ def _symm(scp: torch.Tensor):
 
 
 @nb.njit(parallel=True)
-def _four_term_integral(m, b, o, bv):
+def _four_term_integral(m, b, o):
     N = b.shape[1]  # size of basis set
     n = o.shape[1]  # number of occupied orbitals
     R = m.shape[0]  # size of grid
     res = np.zeros((N, n, N, n))
     for i in nb.prange(N):
         for a in range(n):
-            for k in range(N):
-                for c in range(n):
+            for k in range(i+1):
+                for c in range(a+1):
                     for r in range(R):
-                        res[i, a, k, c] += m[r] * b[r, i] * o[r, a] * bv[r, k] * o[r, c]
+                        value = m[r] * b[r, i] * o[r, a] * b[r, k] * o[r, c]
+                        res[i, a, k, c] += value
+                        if a != c:
+                            res[i, c, k, a] += value
+                            if i != k:
+                                res[k, a, i, c] += value
+                                res[k, c, i, a] += value
+                        elif i != k:
+                            res[k, a, i, c] += value
     return res
 
 
@@ -268,10 +276,10 @@ class DQCAdapter(AbstractAdapter):
         """
         print(f'started the four term integral computation for {hamiltonian.basis.shape}...')
         molecular_orbitals_at_grid = hamiltonian.basis @ self.get_orbital_coefficients()
-        mat = _four_term_integral(derivative_of_potinfo_wrt_ro.value.numpy(),
+        derivative_of_potinfo_wrt_ro_dvolume = derivative_of_potinfo_wrt_ro.value * hamiltonian.dvolume
+        mat = _four_term_integral(derivative_of_potinfo_wrt_ro_dvolume.numpy(),
                                   hamiltonian.basis.numpy(),
-                                  molecular_orbitals_at_grid.numpy(),
-                                  hamiltonian.basis_dvolume.numpy())
+                                  molecular_orbitals_at_grid.numpy())
         return torch.from_numpy(mat)
 
     def __compute_adjoint(self):
