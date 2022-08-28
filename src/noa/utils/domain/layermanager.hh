@@ -100,7 +100,8 @@ struct Layer {
 
         public:
         /* ----- PUBLIC DATA MEMBERS ----- */
-        std::string alias = ""; // Alternative layer name
+        std::string     alias = "";             // Alternative layer name
+        bool            exportHint = false;     // Should this Layer be saved (only a hint, all Layers could still be saved)
         /* ----- PUBLIC CONSTRUCTOR ----- */
         template <typename DataType>
         Layer(const Index& newSize, const DataType& value = DataType()) {
@@ -159,7 +160,7 @@ struct Layer {
 
         // Write layer using a TNL mesh writer
         template <typename Writer>
-        void writeCellData(Writer& writer, const std::string& fallback_name) {
+        void writeCellData(Writer& writer, const std::string& fallback_name) const {
                 const auto writeCellData_f = [&] (auto& v) {
                         writer.writeCellData(v, (alias.empty()) ? fallback_name : alias);
                 };
@@ -167,7 +168,7 @@ struct Layer {
         }
 
         template <typename Writer>
-        void writeDataArray(Writer& writer, const std::string& fallback_name) {
+        void writeDataArray(Writer& writer, const std::string& fallback_name) const {
                 const auto writeDataArray_f = [&] (auto& v) {
                         writer.writeDataArray(v, (alias.empty()) ? fallback_name : alias);
                 };
@@ -175,7 +176,7 @@ struct Layer {
         }
 
         template <typename Writer>
-        void writePointData(Writer& writer, const std::string& fallback_name) {
+        void writePointData(Writer& writer, const std::string& fallback_name) const {
                 const auto writePointData_f = [&] (auto& v) {
                         writer.writePointData(v, (alias.empty()) ? fallback_name : alias);
                 };

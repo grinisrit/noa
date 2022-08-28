@@ -154,12 +154,14 @@ struct Domain {
                 // Write layers
                 for (int dim = 0; dim <= getMeshDimension(); ++dim)
                         for (int i = 0; i < layers.at(dim).count(); ++i) {
+                                const auto& layer = layers.at(dim).getLayer(i);
+                                if (!layer.exportHint) continue;
                                 if (dim == getMeshDimension())
-                                        layers.at(dim).getLayer(i).writeCellData(writer, "cell_layer_" + std::to_string(i));
+                                        layer.writeCellData(writer, "cell_layer_" + std::to_string(i));
                                 else if (dim == 0)
-                                        layers.at(dim).getLayer(i).writePointData(writer, "point_layer_" + std::to_string(i));
+                                        layer.writePointData(writer, "point_layer_" + std::to_string(i));
                                 else
-                                        layers.at(dim).getLayer(i).writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(i));
+                                        layer.writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(i));
                         }
         }
 
