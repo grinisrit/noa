@@ -124,10 +124,8 @@ struct Domain {
                         throw std::runtime_error("Mesh file not found: " + filename.string() + "!");
 
                 auto loader = [&] (auto& reader, auto&& loadedMesh) {
-                        if (typeid(loadedMesh) != typeid(MeshType))
-                                throw std::runtime_error("Read mesh has a type that differs from expected!");
-
-                        mesh = *(MeshType*)&loadedMesh;
+                        // Correct mesh type is guranteed by a ConfigTag
+                        mesh = loadedMesh;
                         updateLayerSizes();
 
                         // TODO: Find a way to get data layers through the `reader`
@@ -135,7 +133,7 @@ struct Domain {
                         return true;
                 };
 
-                using ConfigTag = ConfigTagPermissive<CellTopology>;
+                using ConfigTag = ConfigTagPermissive<TNL::Meshes::Topologies::Tetrahedron>;
                 if (!TNL::Meshes::resolveAndLoadMesh<ConfigTag, TNL::Devices::Host>(loader, filename, "auto"))
                         throw std::runtime_error("Could not load mesh (resolveAndLoadMesh returned `false`)!");
         }

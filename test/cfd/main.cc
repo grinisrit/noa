@@ -15,6 +15,7 @@ DEFINE_bool(sensitivity, false, "Perform a sensitibity test");
 DEFINE_bool(suite, false, "Perform multiple tests, make an output file");
 DEFINE_string(outputDir, "./saved", "Directory to output the result to");
 DEFINE_double(T, 10, "Time length of calculations");
+DEFINE_double(tau, .005, "Time step for calculations");
 DEFINE_double(delta, 0.1, "Sensitivity test delta");
 DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
 DEFINE_int32(density, 1, "Grid density multiplier");
@@ -119,7 +120,7 @@ auto main(int argc, char **argv) -> int {
 	} else {
 		// Simulation loop
 		float t = 0;		// Current sim time
-		float tau = .005;	// Time step
+		float tau = FLAGS_tau;	// Time step
 		do {
 			cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
 			cout.flush();

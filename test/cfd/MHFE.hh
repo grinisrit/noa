@@ -48,19 +48,17 @@ void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) 
 	domain.clearLayers();
 
 	// Set up the layers
-	const auto solLayer =
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 0, P
-	domain.getLayers(dimCell).getLayer(solLayer).alias = "Computed Solution";
-	domain.getLayers(dimCell).getLayer(solLayer).exportHint = true;
+	domain.getLayers(dimCell).getLayer(Layer::P).alias = "Computed Solution";
+	domain.getLayers(dimCell).getLayer(Layer::P).exportHint = true;
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 1, P_PREV
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 2, A
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 3, C
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 4, l - cached values
 	if (allocatePrecise) {
-		const auto preciseLayer =
 		domain.getLayers(dimCell).template add<Real>(0);// Index 5, PRECISE
-		domain.getLayers(dimCell).getLayer(preciseLayer).alias = "Precise Solution";
-		domain.getLayers(dimCell).getLayer(preciseLayer).exportHint = true;
+		domain.getLayers(dimCell).getLayer(Layer::PRECISE).alias = "Precise Solution";
+		domain.getLayers(dimCell).getLayer(Layer::PRECISE).exportHint = true;
 	}
 
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 0, DIRICHLET
@@ -102,7 +100,7 @@ void initDomain(__DomainType__& domain) {
 	auto capacities = domain.getLayers(dimEdge).template get<GlobalIndex>(Layer::ROW_CAPACITIES).getView();
 	domain.getMesh().template forAll<dimEdge>([&] (const GlobalIndex& edge) {
 		capacities[edge] = 1;
-		if ((dMask[edge] != 0) && (nMask(edge) == 0)) return;
+		if ((dMask[edge] != 0) && (nMask[edge] == 0)) return;
 
 		const auto cells = mesh.template getSuperentitiesCount<dimEdge, dimCell>(edge);
 
