@@ -18,6 +18,8 @@ DEFINE_double(T, 10, "Time length of calculations");
 DEFINE_double(delta, 0.1, "Sensitivity test delta");
 DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
 DEFINE_int32(density, 1, "Grid density multiplier");
+DEFINE_int32(expand, 1, "Multiply mesh dimensions by an integer factor");
+DEFINE_bool(lumping, false, "Use mass lumping");
 
 using namespace std;
 using namespace noa;
@@ -48,8 +50,8 @@ auto main(int argc, char **argv) -> int {
 	DomainType domain;
 
 	// Generate domain grid & prepare it for initialization
-	utils::domain::generate2DGrid(domain, 20 * FLAGS_density, 10 * FLAGS_density,
-						1.0 / FLAGS_density, 1.0 / FLAGS_density);
+	utils::domain::generate2DGrid(domain, 20 * FLAGS_expand * FLAGS_density, 10 * FLAGS_expand * FLAGS_density,
+						1.0 * FLAGS_expand / FLAGS_density, 1.0 * FLAGS_expand / FLAGS_density);
 	MHFE::prepareDomain(domain, true);
 
 	auto& cellLayers = domain.getLayers(cellD);
@@ -100,7 +102,12 @@ auto main(int argc, char **argv) -> int {
 		}
 		do {
 			cout << "Performing a sensitivity test at t=" << FLAGS_T << " with delta " << delta << endl;
-			const auto sens = MHFE::testCellSensitivityAt<LMHFEDelta, LMHFELumping, LMHFERight, IntegralOver>(
+			const auto sens = FLAGS_lumping ?
+                                MHFE::testCellSensitivityAt<LMHFEDelta, LMHFELumping, LMHFERight, IntegralOver>(
+						domain,
+						MHFE::Layer::P, MHFE::Layer::A,
+						delta, (float)FLAGS_T) :
+                                MHFE::testCellSensitivityAt<MHFEDelta, MHFELumping, MHFERight, IntegralOver>(
 						domain,
 						MHFE::Layer::P, MHFE::Layer::A,
 						delta, (float)FLAGS_T);
@@ -116,7 +123,8 @@ auto main(int argc, char **argv) -> int {
 		do {
 			cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
 			cout.flush();
-			MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
+			if (FLAGS_lumping) MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
+                        else MHFE::solverStep<MHFEDelta, MHFELumping, MHFERight>(domain, tau);
 			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
 			t += tau;
 
