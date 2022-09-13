@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy.stats import norm
+from numba import njit
 
 
 class Underlying:
@@ -84,6 +85,7 @@ class Grid:
         self.dt = None
         self.lamda = None
         self.q = None
+        self.vega = None
 
     def _createGrid(self):
         self.timeBorder = self.option.maturity * self.option.Underlying.volatility ** 2 / 2
@@ -97,7 +99,7 @@ class Grid:
         self.option = option
         self._createGrid()
 
-    def valuateBSM(self): # Надо разобраться с путом и ненулевой ставкой
+    def valuateBSM(self):  # Надо разобраться с путом и ненулевой ставкой
         self.xGrid = np.linspace(self.xLeft, self.xRight, self.xSteps + 1)
         self.tGrid = np.linspace(0, self.timeBorder, self.tSteps + 1)
         self.net = np.zeros((self.xSteps + 1, self.tSteps + 1))
@@ -145,22 +147,26 @@ class Grid:
 
     # add backward transformation toDefault
 
-    def plot(self, slice_num=0):
+    def plot(self, slice_num=0, stoppingline = True):
         """ plotting 3D graph and slices by time """
         K = self.option.strike
         r = self.option.Underlying.interest
         T = self.option.maturity
         if slice_num == 0:
             surface = go.Surface(z=self.net, x=self.tGrid, y=self.xGrid)
-            curve = go.Scatter3d(z=[(1 - tau ** 1.4) * self.option.strike / 4 for tau in self.tGrid],
-                                 x=self.tGrid,
-                                 y=np.array(tuple(map(lambda tmp : early_exercise(K, r, T, tmp), self.tGrid))),
-                                 mode="markers",
-                                 marker=dict(
-                                     size=3,
-                                     color="green")
-                                 )
-            fig = go.Figure([surface, curve])
+            if stoppingline:
+                curve = go.Scatter3d(z=[(1 - tau ** 1.4) * self.option.strike / 4 for tau in self.tGrid],
+                                     x=self.tGrid,
+                                     y=np.array(tuple(map(lambda tmp : early_exercise(K, r, T, tmp), self.tGrid))),
+                                     mode="markers",
+                                     marker=dict(
+                                         size=3,
+                                         color="green")
+                                     )
+                fig = go.Figure([surface, curve])
+            else:
+                fig = go.Figure([surface])
+
             fig.update_layout(title='V(S,t)', autosize=False,
                               width=800, height=500,
                               margin=dict(l=65, r=50, b=65, t=90))
@@ -170,23 +176,54 @@ class Grid:
             plt.figure(figsize=(15, 8))
             for i in np.linspace(0, len(self.tGrid) - 1, slice_num):
                 plt.plot(self.xGrid, self.net[:, int(i)], label=f"t = {self.tGrid[int(i)]}")
-                plt.axvline(early_exercise(K, r, T, self.tGrid[int(i)]), color='green')
+                if stoppingline:
+                    plt.axvline(early_exercise(K, r, T, self.tGrid[int(i)]), color='green')
             plt.legend()
             plt.show()
 
+    def BrennanSchwartz(self):
+        n = self.xSteps
+        # matrix for explicit step
+        B = np.zeros((n + 1, n + 1))
+        for i in range(1, n + 1):
+            B[i, i] = 1 - self.lamda
+            B[i, i - 1] = self.lamda / 2
+            B[i - 1, i] = self.lamda / 2
+        # diagonals of the A matrix (implicit step):
+        alpha = (1 + self.lamda) * np.ones(n - 1)
+        beta = -0.5 * self.lamda * np.ones(n - 2)
 
+        # brennan-shwartz algorythm
+        for i in np.arange(0, self.tSteps):
+            # setting early execution curve
+            time = self.tGrid[i + 1]
+            g = np.array(tuple(map(lambda x: g_func(self.q, time, x), self.xGrid)))
+            # explicit step
+            f_hat = self.net[:, i].copy()
+            f_hat[0] = f_hat[0] + self.lamda * g[0] / 2
+            f_hat[n] = f_hat[n] + self.lamda * g[n] / 2
+            f = np.dot(B, f_hat)
+            # implicit step
+            solution = brennan_schwartz(alpha, beta, beta, f[1:n], g)
+            self.net[1:n, i + 1] = solution
+
+
+@njit
 def g_func(q, t, x):
     return np.exp(0.25 * t * (q + 1)**2) * max(0, np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
 
 
+@njit
 def call_boundary_condition(q, t, x):
     return np.exp((q + 1)**2 * t/4) * max(0, np.exp((q + 1)*x/2) - np.exp((q - 1)*x/2))
 
 
+@njit
 def early_exercise(K, r, T, time):
     return K * np.exp(r*(-T + time))
 
 
+@njit
 def scalar_walk(A, B):
     """
     three-dots scalar walk algorythm for solving Linear systems with bidiagonal matrix
@@ -217,6 +254,7 @@ def scalar_walk(A, B):
     return x
 
 
+@njit
 def brennan_schwartz(alpha, beta, gamma, b, g):
     """
     Solution to Ax-b >= 0 ; x >= g and (Ax-b)'(x-g)=0 ;
@@ -242,3 +280,5 @@ def brennan_schwartz(alpha, beta, gamma, b, g):
     for i in range(1, n):
         x[i] = np.maximum((b_hat[i] - gamma[i - 1] * x[i - 1]) / alpha_hat[i], g[i])
     return x
+
+
