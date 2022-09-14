@@ -26,7 +26,7 @@ def main():
                     pnum = int(line.replace("particle ", ""))
                     if x:
                         if max(z) > 1e3: oobCounter += 1
-                        ax.plot(x, y, z, color[fi])
+                        ax.plot(x, y, z, color[fi], label=fname)
                         x = []
                         y = []
                         z = []
@@ -40,6 +40,7 @@ def main():
 
     print("\nOK")
     print(f"{oobCounter} out of bounds")
+    # legend = plt.legend(loc="upper right")
     plt.show()
 
 if __name__ == "__main__":

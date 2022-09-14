@@ -104,6 +104,7 @@ class ParticleWorld {
                                 if (!t_index.has_value()) continue;
                                 */
                                 const auto t_index = Tracer::get_current_tetrahedron(&mesh, cells, loc);
+                                if (!t_index.has_value()) continue;
 
                                 const auto& cell_layers = domain.getLayers(dim);
                                 const auto& medium_layer_data = cell_layers.template get<int>(medium_layer);
@@ -130,11 +131,11 @@ class ParticleWorld {
                                 // TODO: Maybe here we could check if the next tetrahedron contains
                                 // the same material and extend the step, but we'll skip it for now
                                 if (step_p != nullptr) {
-                                        *step_p = intersect.distance / speed / 50;
+                                        *step_p = intersect.distance;
                                         *step_p += std::numeric_limits<float>::epsilon();
                                 }
 
-                                return pumas::PUMAS_STEP_RAW;
+                                return pumas::PUMAS_STEP_CHECK;
                         }
 
                         return environment(context_p, state_p, medium_p, step_p);
@@ -146,7 +147,7 @@ class ParticleWorld {
         }
 
         DomainType& add_domain() {
-                domains.push_back(DomainType());
+                domains.emplace_back();
                 return domains.back();
         }
 

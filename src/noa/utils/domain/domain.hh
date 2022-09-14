@@ -103,7 +103,7 @@ struct Domain {
         void clearLayers() { for (auto& layer : layers) layer.clear(); }
 
         // Check if the domain is empty
-        bool isClean() const { return mesh == std::nullopt; }
+        bool isClean() const { return !mesh.has_value(); }
 
         // Get contant mesh reference
         const MeshType& getMesh() const { return mesh.value(); }
