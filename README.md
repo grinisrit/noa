@@ -10,7 +10,8 @@ and high frequency trading.
 ## Installation 
 
 Currently, we support only `GNU`, and `CUDA` for GPU 
-(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
+(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows,
+and [LIMA](https://github.com/lima-vm/lima) for macOS).
 A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
 drop the `src/noa` folder into your project.
