@@ -5,7 +5,7 @@ import scipy.optimize as optimize
 import scipy.integrate as integrate
 
 # Set i= imaginary number
-i = complex(0.0,1.0)
+i = complex(0.0, 1.0)
 
 
 # This class defines puts and calls
@@ -20,7 +20,7 @@ class OptionTypeSwap(enum.Enum):
     PAYER = -1.0
 
 
-def CallPutOptionPriceCOSMthd(cf,CP,S0,r,tau,K,N,L):
+def CallPutOptionPriceCOSMthd(cf, CP, S0, r, tau, K, N, L):
 
 
     # cf   - Characteristic function as a functon, in the book denoted by \varphi
@@ -63,51 +63,55 @@ def CallPutOptionPriceCOSMthd(cf,CP,S0,r,tau,K,N,L):
 
 # Determine coefficients for put prices
 
-def CallPutCoefficients(CP,a,b,k):
-    if CP==OptionType.CALL:
+
+def CallPutCoefficients(CP, a, b, k):
+    if CP == OptionType.CALL:
         c = 0.0
         d = b
-        coef = Chi_Psi(a,b,c,d,k)
+        coef = Chi_Psi(a, b, c, d, k)
         Chi_k = coef["chi"]
         Psi_k = coef["psi"]
         if a < b < 0.0:
-            H_k = np.zeros([len(k),1])
+            H_k = np.zeros([len(k), 1])
         else:
-            H_k      = 2.0 / (b - a) * (Chi_k - Psi_k)
-    elif CP==OptionType.PUT:
+            H_k = 2.0 / (b - a) * (Chi_k - Psi_k)
+    elif CP == OptionType.PUT:
         c = a
         d = 0.0
-        coef = Chi_Psi(a,b,c,d,k)
+        coef = Chi_Psi(a, b, c, d, k)
         Chi_k = coef["chi"]
         Psi_k = coef["psi"]
         H_k = 2.0 / (b - a) * (- Chi_k + Psi_k)
 
     return H_k
 
-def Chi_Psi(a,b,c,d,k):
+
+def Chi_Psi(a, b, c, d, k):
     psi = np.sin(k * np.pi * (d - a) / (b - a)) - np.sin(k * np.pi * (c - a)/(b - a))
     psi[1:] = psi[1:] * (b - a) / (k[1:] * np.pi)
     psi[0] = d - c
 
     chi = 1.0 / (1.0 + np.power((k * np.pi / (b - a)) , 2.0))
-    expr1 = np.cos(k * np.pi * (d - a)/(b - a)) * np.exp(d)  - np.cos(k * np.pi
+    expr1 = np.cos(k * np.pi * (d - a)/(b - a)) * np.exp(d) - np.cos(k * np.pi
                   * (c - a) / (b - a)) * np.exp(c)
     expr2 = k * np.pi / (b - a) * np.sin(k * np.pi *
-                        (d - a) / (b - a))   - k * np.pi / (b - a) * np.sin(k
+                        (d - a) / (b - a)) - k * np.pi / (b - a) * np.sin(k
                         * np.pi * (c - a) / (b - a)) * np.exp(c)
     chi = chi * (expr1 + expr2)
 
-    value = {"chi":chi,"psi":psi }
+    value = {"chi": chi, "psi": psi}
     return value
 
 # Black-Scholes call option price
 # (nojit)
-def BS_Call_Option_Price(CP,S_0,K,sigma,tau,r):
+
+
+def BS_Call_Option_Price(CP, S_0, K, sigma, tau, r):
     if K is list:
         K = np.array(K).reshape([len(K),1])
-    d1    = (np.log(S_0 / K) + (r + 0.5 * np.power(sigma,2.0))
+    d1 = (np.log(S_0 / K) + (r + 0.5 * np.power(sigma, 2.0))
     * tau) / (sigma * np.sqrt(tau))
-    d2    = d1 - sigma * np.sqrt(tau)
+    d2 = d1 - sigma * np.sqrt(tau)
     if CP == OptionType.CALL:
         value = st.norm.cdf(d1) * S_0 - st.norm.cdf(d2) * K * np.exp(-r * tau)
     elif CP == OptionType.PUT:
@@ -115,16 +119,20 @@ def BS_Call_Option_Price(CP,S_0,K,sigma,tau,r):
     return value
 
 # Implied volatility method
-#(nojit)
-def ImpliedVolatilityXXX(CP,marketPrice,K,T,S_0,r):
+# (nojit)
+
+
+def ImpliedVolatilityXXX(CP, marketPrice, K, T, S_0, r):
     func = lambda sigma: np.power(BS_Call_Option_Price(CP,S_0,K,sigma,T,r) - marketPrice, 1.0)
     impliedVol = optimize.newton(func, 0.2, tol=1e-5)
     #impliedVol = optimize.brent(func, brack= (0.05, 0.9))
     return impliedVol
 
 # Implied volatility method
-#(nojit)
-def ImpliedVolatility(CP,marketPrice,K,T,S_0,r):
+# (nojit)
+
+
+def ImpliedVolatility(CP, marketPrice, K, T, S_0, r):
 
     # To determine initial volatility we define a grid for sigma
     # and interpolate on the inverse function
@@ -141,37 +149,40 @@ def ImpliedVolatility(CP,marketPrice,K,T,S_0,r):
     #print("Final volatility = {0}".format(impliedVol))
     return impliedVol
 
-def ChFHestonModel(r,tau,kappa,gamma,vbar,v0,rho):
+
+def ChFHestonModel(r, tau, kappa, gamma, vbar, v0, rho):
     i = complex(0.0,1.0)
     D1 = lambda u: np.sqrt(np.power(kappa-gamma*rho*i*u,2)+(u*u+i*u)*gamma*gamma)
-    g  = lambda u: (kappa-gamma*rho*i*u-D1(u))/(kappa-gamma*rho*i*u+D1(u))
-    C  = lambda u: (1.0-np.exp(-D1(u)*tau))/(gamma*gamma*(1.0-g(u)*np.exp(-D1(u)*tau)))*(kappa-gamma*rho*i*u-D1(u))
+    g = lambda u: (kappa-gamma*rho*i*u-D1(u))/(kappa-gamma*rho*i*u+D1(u))
+    C = lambda u: (1.0-np.exp(-D1(u)*tau))/(gamma*gamma*(1.0-g(u)*np.exp(-D1(u)*tau)))*(kappa-gamma*rho*i*u-D1(u))
 
     # Note that we exclude the term -r*tau, as the discounting is performed in the COS method
 
-    A  = lambda u: r * i*u *tau + kappa*vbar*tau/gamma/gamma *(kappa-gamma*rho*i*u-D1(u)) - 2*kappa*vbar/gamma/gamma*np.log((1.0-g(u)*np.exp(-D1(u)*tau))/(1.0-g(u)))
+    A = lambda u: r * i*u *tau + kappa*vbar*tau/gamma/gamma *(kappa-gamma*rho*i*u-D1(u)) - 2*kappa*vbar/gamma/gamma*np.log((1.0-g(u)*np.exp(-D1(u)*tau))/(1.0-g(u)))
 
     # Characteristic function for the Heston model
 
     cf = lambda u: np.exp(A(u) + C(u)*v0)
     return cf
 
-## NEW (9_02) functions
+# NEW (9_02) functions
 
-def EUOptionPriceFromMCPathsGeneralized(CP,S,K,T,r):
+
+def EUOptionPriceFromMCPathsGeneralized(CP, S, K, T, r):
 
     # S is a vector of Monte Carlo samples at T
 
     result = np.zeros([len(K),1])
     if CP == OptionType.CALL:
-        for (idx,k) in enumerate(K):
-            result[idx] = np.exp(-r*T)*np.mean(np.maximum(S-k,0.0))
+        for (idx, k) in enumerate(K):
+            result[idx] = np.exp(-r*T)*np.mean(np.maximum(S-k, 0.0))
     elif CP == OptionType.PUT:
-        for (idx,k) in enumerate(K):
-            result[idx] = np.exp(-r*T)*np.mean(np.maximum(k-S,0.0))
+        for (idx, k) in enumerate(K):
+            result[idx] = np.exp(-r*T)*np.mean(np.maximum(k-S, 0.0))
     return result
 
-def GeneratePathsHestonEuler(NoOfPaths,NoOfSteps,T,r,S_0,kappa,gamma,rho,vbar,v0):
+
+def GeneratePathsHestonEuler(NoOfPaths, NoOfSteps, T, r, S_0, kappa, gamma, rho, vbar, v0):
     Z1 = np.random.normal(0.0,1.0,[NoOfPaths,NoOfSteps])
     Z2 = np.random.normal(0.0,1.0,[NoOfPaths,NoOfSteps])
     W1 = np.zeros([NoOfPaths, NoOfSteps+1])
@@ -209,14 +220,16 @@ def GeneratePathsHestonEuler(NoOfPaths,NoOfSteps,T,r,S_0,kappa,gamma,rho,vbar,v0
     paths = {"time":time,"S":S}
     return paths
 
-def CIR_Sample(NoOfPaths,kappa,gamma,vbar,s,t,v_s):
-    delta = 4.0 *kappa*vbar/gamma/gamma
-    c= 1.0/(4.0*kappa)*gamma*gamma*(1.0-np.exp(-kappa*(t-s)))
-    kappaBar = 4.0*kappa*v_s*np.exp(-kappa*(t-s))/(gamma*gamma*(1.0-np.exp(-kappa*(t-s))))
-    sample = c* np.random.noncentral_chisquare(delta,kappaBar,NoOfPaths)
-    return  sample
 
-def GeneratePathsHestonAES(NoOfPaths,NoOfSteps,T,r,S_0,kappa,gamma,rho,vbar,v0):
+def CIR_Sample(NoOfPaths, kappa, gamma, vbar, s, t, v_s):
+    delta = 4.0 *kappa*vbar/gamma/gamma
+    c = 1.0/(4.0*kappa)*gamma*gamma*(1.0-np.exp(-kappa*(t-s)))
+    kappaBar = 4.0*kappa*v_s*np.exp(-kappa*(t-s))/(gamma*gamma*(1.0-np.exp(-kappa*(t-s))))
+    sample = c * np.random.noncentral_chisquare(delta,kappaBar,NoOfPaths)
+    return sample
+
+
+def GeneratePathsHestonAES(NoOfPaths, NoOfSteps, T, r, S_0, kappa, gamma, rho, vbar, v0):
     Z1 = np.random.normal(0.0,1.0,[NoOfPaths,NoOfSteps])
     W1 = np.zeros([NoOfPaths, NoOfSteps+1])
     V = np.zeros([NoOfPaths, NoOfSteps+1])
@@ -250,9 +263,10 @@ def GeneratePathsHestonAES(NoOfPaths,NoOfSteps,T,r,S_0,kappa,gamma,rho,vbar,v0):
     paths = {"time":time,"S":S}
     return paths
 
-## NEW (12_06) functions
+# NEW (12_06) functions
 
-def GeneratePathsHWEuler(NoOfPaths,NoOfSteps,T,P0T, lambd, eta):
+
+def GeneratePathsHWEuler(NoOfPaths, NoOfSteps, T, P0T, lambd, eta):
 
     # Time step
 
@@ -289,14 +303,16 @@ def GeneratePathsHWEuler(NoOfPaths,NoOfSteps,T,P0T, lambd, eta):
     paths = {"time":time,"R":R}
     return paths
 
-def HW_theta(lambd,eta,P0T):
+
+def HW_theta(lambd, eta, P0T):
     dt = 0.0001
     f0T = lambda t: - (np.log(P0T(t+dt))-np.log(P0T(t-dt)))/(2*dt)
     theta = lambda t: 1.0/lambd * (f0T(t+dt)-f0T(t-dt))/(2.0*dt) + f0T(t) + eta*eta/(2.0*lambd*lambd)*(1.0-np.exp(-2.0*lambd*t))
     #print("CHANGED THETA")
     return theta#lambda t: 0.1+t-t
 
-def HW_A(lambd,eta,P0T,T1,T2):
+
+def HW_A(lambd, eta, P0T, T1, T2):
     tau = T2-T1
     zGrid = np.linspace(0.0,tau,250)
     B_r = lambda tau: 1.0/lambd * (np.exp(-lambd *tau)-1.0)
@@ -307,10 +323,12 @@ def HW_A(lambd,eta,P0T,T1,T2):
 
     return temp1 + temp2
 
-def HW_B(lambd,eta,T1,T2):
+
+def HW_B(lambd, eta, T1, T2):
     return 1.0/lambd *(np.exp(-lambd*(T2-T1))-1.0)
 
-def HW_ZCB(lambd,eta,P0T,T1,T2,rT1):
+
+def HW_ZCB(lambd, eta, P0T, T1, T2, rT1):
     n = np.size(rT1)
 
     if T1<T2:
@@ -321,7 +339,7 @@ def HW_ZCB(lambd,eta,P0T,T1,T2,rT1):
         return np.ones([n])
 
 
-def HWMean_r(P0T,lambd,eta,T):
+def HWMean_r(P0T, lambd, eta, T):
 
     # Time step
 
@@ -337,7 +355,8 @@ def HWMean_r(P0T,lambd,eta,T):
     r_mean = r0*np.exp(-lambd*T) + lambd * integrate.trapz(temp(zGrid),zGrid)
     return r_mean
 
-def HW_r_0(P0T,lambd,eta):
+
+def HW_r_0(P0T, lambd, eta):
 
     # Time step
 
@@ -349,7 +368,8 @@ def HW_r_0(P0T,lambd,eta):
     r0 = f0T(0.00001)
     return r0
 
-def HW_Mu_FrwdMeasure(P0T,lambd,eta,T):
+
+def HW_Mu_FrwdMeasure(P0T, lambd, eta, T):
 
     # Time step
 
@@ -370,15 +390,18 @@ def HW_Mu_FrwdMeasure(P0T,lambd,eta,T):
 
     return r_mean
 
-def HWVar_r(lambd,eta,T):
+
+def HWVar_r(lambd, eta, T):
     return eta*eta/(2.0*lambd) *( 1.0-np.exp(-2.0*lambd *T))
 
-def HWDensity(P0T,lambd,eta,T):
+
+def HWDensity(P0T, lambd, eta, T):
     r_mean = HWMean_r(P0T,lambd,eta,T)
     r_var = HWVar_r(lambd,eta,T)
     return lambda x: st.norm.pdf(x,r_mean,np.sqrt(r_var))
 
-def HW_SwapPrice(CP,notional,K,t,Ti,Tm,n,r_t,P0T,lambd,eta):
+
+def HW_SwapPrice(CP, notional, K, t,Ti, Tm, n, r_t, P0T, lambd, eta):
 
     # CP -- Payer of receiver
     # n --  Notional
