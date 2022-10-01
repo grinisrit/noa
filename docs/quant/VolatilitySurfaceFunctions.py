@@ -3,9 +3,19 @@ import scipy.stats as st
 import enum
 import scipy.optimize as optimize
 import scipy.integrate as integrate
+import matplotlib.pyplot as plt
 
 # Set i= imaginary number
 i = complex(0.0, 1.0)
+
+
+def start_plotting(number: int, xLabel: str, yLabel: str, size: tuple):
+    plt.figure(num=number, figsize=size)
+    plt.grid()
+    plt.xlabel(xLabel)
+    plt.ylabel(yLabel)
+    legend = list()
+    return legend
 
 
 # This class defines puts and calls
