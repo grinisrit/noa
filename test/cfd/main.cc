@@ -32,15 +32,22 @@ auto main(int argc, char **argv) -> int {
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 
 	// Process outputDir, perform necessary checks
-	cout << "Output directory set to " << FLAGS_outputDir << endl;
-	if (filesystem::exists(FLAGS_outputDir) && FLAGS_clear) {
+	const filesystem::path outputPath(FLAGS_outputDir);
+	cout << "Output directory set to " << outputPath << endl;
+	if (filesystem::exists(outputPath) && FLAGS_clear) {
 		cout << "Clearing output location..." << endl;
-		filesystem::remove_all(FLAGS_outputDir);
+		filesystem::remove_all(outputPath);
 	}
-	if (!filesystem::exists(FLAGS_outputDir))
-		filesystem::create_directory(FLAGS_outputDir);
-	if (!filesystem::is_directory(FLAGS_outputDir))
-		throw runtime_error(FLAGS_outputDir + " is not a directory");
+	constexpr auto checkAndMkdir = [] (const filesystem::path& dirPath) {
+		if (!filesystem::exists(dirPath))
+			filesystem::create_directory(dirPath);
+		else if (!filesystem::is_directory(dirPath))
+			throw runtime_error(dirPath.string() + " is not a directory");
+	};
+	checkAndMkdir(outputPath);
+
+	const auto solverOutputPath = outputPath / "solution";
+	checkAndMkdir(solverOutputPath);
 
 	using CellTopology	= TNL::Meshes::Topologies::Triangle; // 2D
 	using DomainType	= utils::domain::Domain<CellTopology>;
@@ -99,7 +106,7 @@ auto main(int argc, char **argv) -> int {
 		ofstream dat;
 		if (FLAGS_suite) {
 			delta = 0;
-			dat.open(FLAGS_outputDir + "/sensitivity.dat");
+			dat.open(outputPath / "sensitivity.dat");
 		}
 		do {
 			cout << "Performing a sensitivity test at t=" << FLAGS_T << " with delta " << delta << endl;
@@ -121,9 +128,9 @@ auto main(int argc, char **argv) -> int {
 		float tau = FLAGS_tau;	// Time step
 		float T = FLAGS_T;
 		// Save the step result
-		const MHFE::PostStepCb<float> saveStep = [&domain, &tau] (const float& t) -> void {
+		const MHFE::PostStepCb<float> saveStep = [&domain, &tau, &solverOutputPath] (const float& t) -> void {
 			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t - tau);
-			domain.write(FLAGS_outputDir + "/" + to_string(t) + ".vtu");
+			domain.write(solverOutputPath / filesystem::path(to_string(t) + ".vtu"));
 		};
 		if (FLAGS_lumping)
 			MHFE::simulateTo<LMHFEDelta, LMHFELumping, LMHFERight>(domain, T, tau, saveStep);
