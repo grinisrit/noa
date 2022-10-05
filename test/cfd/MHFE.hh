@@ -1,6 +1,7 @@
 #pragma once
 
 // STL headers
+#include <functional>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -285,14 +286,19 @@ void writePrecise(__DomainType__& domain, SolFunc& solution, const Real& t) {
 	});
 }
 
+// Simulation steps take long enough that we can afford to call an std::function after each one
+// Inlining won't make a big difference here
+template <typename Real> using PostStepCb = std::function<void(const Real& t)>;
+// Simulate up to a certain time
 template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, __domain_targs__>
-void simulateTo(__DomainType__& domain, const Real& T, const Real& tau = .005) {
+void simulateTo(__DomainType__& domain, const Real& T, const Real& tau = .005, const PostStepCb<Real>& cb = nullptr) {
 	Real t = 0;
 	do {
 		std::cout << "\r[" << std::setw(10) << std::left << t << "/" << std::right << T << "]";
 		std::cout.flush();
 		MHFE::solverStep<DeltaFunc, LumpingFunc, RightFunc>(domain, tau);
 		t += tau;
+		if (cb != nullptr) cb(t);
 	} while (t < T);
 	std::cout << " DONE" << std::endl;
 }

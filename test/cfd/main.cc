@@ -118,20 +118,17 @@ auto main(int argc, char **argv) -> int {
 		} while (delta <= FLAGS_delta);
 		if (FLAGS_suite) dat.close();
 	} else {
-		// Simulation loop
-		float t = 0;		// Current sim time
 		float tau = FLAGS_tau;	// Time step
-		do {
-			cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
-			cout.flush();
-			if (FLAGS_lumping) MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
-                        else MHFE::solverStep<MHFEDelta, MHFELumping, MHFERight>(domain, tau);
-			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
-			t += tau;
-
+		float T = FLAGS_T;
+		// Save the step result
+		const MHFE::PostStepCb<float> saveStep = [&domain, &tau] (const float& t) -> void {
+			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t - tau);
 			domain.write(FLAGS_outputDir + "/" + to_string(t) + ".vtu");
-		} while (t <= FLAGS_T);
-		cout << " DONE" << endl;
+		};
+		if (FLAGS_lumping)
+			MHFE::simulateTo<LMHFEDelta, LMHFELumping, LMHFERight>(domain, T, tau, saveStep);
+		else
+			MHFE::simulateTo<MHFEDelta, MHFELumping, MHFERight>(domain, T, tau, saveStep);
 	}
 
 	gflags::ShutDownCommandLineFlags();
