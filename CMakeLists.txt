@@ -111,3 +111,6 @@ if (INSTALL_NOA)
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 endif ()
+
+# Build documentation with doxygen
+include(build-docs)
