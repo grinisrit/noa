@@ -10,7 +10,8 @@ and high frequency trading.
 ## Installation 
 
 Currently, we support only `GNU`, and `CUDA` for GPU 
-(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
+(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows,
+and [LIMA](https://github.com/lima-vm/lima) for macOS).
 A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
 drop the `src/noa` folder into your project.
@@ -99,6 +100,7 @@ from higher-dimensional probability distributions.
 in the passage of particles through matter simulations. 
 * [CFD](docs/cfd) implements adjoint sensitivity models for a variety 
 problems arising in computational fluid dynamics.
+* [QC](docs/qc) is a differentiable quantum chemistry platform for materials design.
 * [QUANT](docs/quant) a differentiable derivative 
 pricing library.
 
