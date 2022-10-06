@@ -1,6 +1,7 @@
 #pragma once
 
 // STL headers
+#include <functional>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -49,12 +50,17 @@ void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) 
 
 	// Set up the layers
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 0, P
+	domain.getLayers(dimCell).getLayer(Layer::P).alias = "Computed Solution";
+	domain.getLayers(dimCell).getLayer(Layer::P).exportHint = true;
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 1, P_PREV
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 2, A
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 3, C
 	domain.getLayers(dimCell).template add<Real>(0);	// Index 4, l - cached values
-	if (allocatePrecise)
+	if (allocatePrecise) {
 		domain.getLayers(dimCell).template add<Real>(0);// Index 5, PRECISE
+		domain.getLayers(dimCell).getLayer(Layer::PRECISE).alias = "Precise Solution";
+		domain.getLayers(dimCell).getLayer(Layer::PRECISE).exportHint = true;
+	}
 
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 0, DIRICHLET
 	domain.getLayers(dimEdge).template add<Real>(0);	// Index 1, NEUMANN
@@ -95,7 +101,7 @@ void initDomain(__DomainType__& domain) {
 	auto capacities = domain.getLayers(dimEdge).template get<GlobalIndex>(Layer::ROW_CAPACITIES).getView();
 	domain.getMesh().template forAll<dimEdge>([&] (const GlobalIndex& edge) {
 		capacities[edge] = 1;
-		if ((dMask[edge] != 0) && (nMask(edge) == 0)) return;
+		if ((dMask[edge] != 0) && (nMask[edge] == 0)) return;
 
 		const auto cells = mesh.template getSuperentitiesCount<dimEdge, dimCell>(edge);
 
@@ -280,14 +286,19 @@ void writePrecise(__DomainType__& domain, SolFunc& solution, const Real& t) {
 	});
 }
 
+// Simulation steps take long enough that we can afford to call an std::function after each one
+// Inlining won't make a big difference here
+template <typename Real> using PostStepCb = std::function<void(const Real& t)>;
+// Simulate up to a certain time
 template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, __domain_targs__>
-void simulateTo(__DomainType__& domain, const Real& T, const Real& tau = .005) {
+void simulateTo(__DomainType__& domain, const Real& T, const Real& tau = .005, const PostStepCb<Real>& cb = nullptr) {
 	Real t = 0;
 	do {
 		std::cout << "\r[" << std::setw(10) << std::left << t << "/" << std::right << T << "]";
 		std::cout.flush();
 		MHFE::solverStep<DeltaFunc, LumpingFunc, RightFunc>(domain, tau);
 		t += tau;
+		if (cb != nullptr) cb(t);
 	} while (t < T);
 	std::cout << " DONE" << std::endl;
 }

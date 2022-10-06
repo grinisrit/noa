@@ -38,6 +38,7 @@ inline Real cond2Solution(const Real& x, const Real& y, const Real& t, const Rea
 	return (x / sqrt(16 * M_PI * a)) * integrate(int_core, .01, 0, t);
 }
 
+// It is a struct because it's passed as a template paramter to testCellSensitivity
 struct IntegralOver {
 	template <__domain_targs__>
 	inline static Real calc(const __DomainType__& domain, const noa::MHFE::Layer& layer) {
