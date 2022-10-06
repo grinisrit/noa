@@ -8,6 +8,8 @@
 
 using namespace noa::pms::trace;
 
+template <typename DeviceType>
+using DeviceTracer = Tracer<DeviceType, double, int, short int>;
 using HostMesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, Devices::Host>;
 using HostMeshOpt = std::optional<HostMesh>;
 
@@ -33,13 +35,13 @@ inline void test_get_first_border_in_tetrahedron() {
             TNL_ASSERT_TRUE(i < 8, "incorrect index");
             TNL_ASSERT_EQ(expected[i], index, "wrong tetrahedron");
 
-            auto result = Tracer<DeviceType>::get_first_border_in_tetrahedron(
+            auto result = DeviceTracer<DeviceType>::get_first_border_in_tetrahedron(
                     mesh_pointer, index, origin, direction, 1e-7);
 
             TNL_ASSERT_TRUE(result.is_intersection_with_triangle, "incorrect result");
 
             origin += direction * result.distance;
-            auto next_tetrahedron = Tracer<DeviceType>::get_next_tetrahedron(
+            auto next_tetrahedron = DeviceTracer<DeviceType>::get_next_tetrahedron(
                 mesh_pointer, result, origin, direction, 1e-12);
 
             if (!next_tetrahedron) {
@@ -58,7 +60,7 @@ inline void test_get_first_border_in_tetrahedron() {
         PointDevice direction = PointDevice(1, 1, 1);
         direction /= sqrt(dot(direction, direction));
         PointDevice origin = PointDevice(0.45, 0.45, 0.45);
-        auto result = Tracer<DeviceType>::get_first_border_in_tetrahedron(
+        auto result = DeviceTracer<DeviceType>::get_first_border_in_tetrahedron(
             mesh_pointer, 0, origin, direction, 1e-7);
 
         TNL_ASSERT_FALSE((bool)result.is_intersection_with_triangle, "incorrect result with incorrect ray");
@@ -76,11 +78,11 @@ inline void test_get_first_border_in_tetrahedron() {
             TNL_ASSERT_TRUE(i < 8, "incorrect index in test with corners");
             TNL_ASSERT_EQ(expected[i], index, "wrong tetrahedron in test with corners");
 
-            auto result = Tracer<DeviceType>::get_first_border_in_tetrahedron(
+            auto result = DeviceTracer<DeviceType>::get_first_border_in_tetrahedron(
                     mesh_pointer, index, origin, direction, 1e-7);
 
             origin += direction * result.distance;
-            auto next_tetrahedron = Tracer<DeviceType>::get_next_tetrahedron(
+            auto next_tetrahedron = DeviceTracer<DeviceType>::get_next_tetrahedron(
                     mesh_pointer, result, origin, direction, 1e-12);
 
             if (!next_tetrahedron) {
@@ -108,7 +110,7 @@ inline void test_get_current_tetrahedron() {
 
     PointHost point = PointHost(0.1, 0.1, 0.1);
     int index = 1;
-    auto result = Tracer<DeviceType>::get_current_tetrahedron(mesh_pointer, host_mesh.template getEntitiesCount<3>(), point);
+    auto result = DeviceTracer<DeviceType>::get_current_tetrahedron(mesh_pointer, host_mesh.template getEntitiesCount<3>(), point);
     TNL_ASSERT_TRUE((bool)result, "wrong result (cell not found)");
     TNL_ASSERT_EQ(index, *result, "wrong result");
 }
@@ -129,13 +131,13 @@ inline void check_side_cases() {
             direction /= sqrt(dot(direction, direction));
             PointDevice origin = PointDevice(2, 2, 1);
 
-            auto result = Tracer<DeviceType>::get_first_border_in_tetrahedron(mesh_pointer, index, origin, direction, 1e-7);
+            auto result = DeviceTracer<DeviceType>::get_first_border_in_tetrahedron(mesh_pointer, index, origin, direction, 1e-7);
 
             TNL_ASSERT_TRUE(result.is_intersection_with_triangle, "incorrect intersection");
             TNL_ASSERT_EQ(1 / direction.z(), result.distance, "incorrect distance");
 
             origin += direction * result.distance;
-            auto next_tetrahedron = Tracer<DeviceType>::get_next_tetrahedron(mesh_pointer, result, origin, direction, 1e-12);
+            auto next_tetrahedron = DeviceTracer<DeviceType>::get_next_tetrahedron(mesh_pointer, result, origin, direction, 1e-12);
 
             TNL_ASSERT_FALSE((bool)next_tetrahedron, "incorrect next tetrahedron");
         }
