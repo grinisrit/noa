@@ -113,4 +113,4 @@ if (INSTALL_NOA)
 endif ()
 
 # Build documentation with doxygen
-include(build-docs)
+include(doxygen-docs)
