@@ -17,7 +17,6 @@ A toolchain fully supporting `C++17` is required.
 drop the `src/noa` folder into your project.
 
 :warning: However, beyond `C++17` source code, the project contains:
-* `C99` sources in `noa/kernels.h` 
 * `CUDA` sources in `noa/kernels.cuh`
 * `C++` third-party sources in `noa/kernels.hh`
 
@@ -67,6 +66,9 @@ To enable parallel execution for some algorithms you should link against `OpenMP
 To build `CUDA` tests add `-DBUILD_NOA_CUDA=ON` 
 and the  GPU architecture of your choice,
 e.g. `-DCMAKE_CUDA_ARCHITECTURES=75`.
+
+To build documentation you need to have [doxygen](https://doxygen.nl/) installed and 
+specify `-DBUILD_DOCS=ON`.
 
 Finally, once `NOA` is installed, 
 you can link against it in your own `CMakeLists.txt` file.
