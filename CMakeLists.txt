@@ -19,12 +19,13 @@ option(BUILD_NOA_TESTS "Build and run tests " ON)
 option(BUILD_NOA_BENCHMARKS "Build and run benchmarks " OFF)
 option(BUILD_NOA_CUDA "Build CUDA support" OFF)
 option(BUILD_JNOA "Build JNI bindings" OFF)
+option(BUILD_DOCS "Build documentation with doxygen" OFF)
 
 # Require C++17
 set(CMAKE_CXX_STANDARD 17)
 
 # Warning flags
-set(W_FLAGS "-Wall;-Wextra;-Wpedantic")
+set(W_FLAGS "") #"-Wall;-Wextra;-Wpedantic")
 
 # Native optimisations
 set(NA_OPT_FLAGS "-march=native;-mtune=native")
@@ -76,6 +77,10 @@ endif ()
 
 if (BUILD_JNOA)
     add_subdirectory(jnoa)
+endif ()
+
+if (BUILD_DOCS)
+    include(doxygen-docs)
 endif ()
 
 

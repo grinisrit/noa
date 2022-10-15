@@ -10,17 +10,24 @@ and high frequency trading.
 ## Installation 
 
 Currently, we support only `GNU`, and `CUDA` for GPU 
-(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
+(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows,
+and [LIMA](https://github.com/lima-vm/lima) for macOS).
 A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
 drop the `src/noa` folder into your project.
 
 :warning: However, beyond `C++17` source code, the project contains:
-* `C99` sources in `noa/kernels.h` 
 * `CUDA` sources in `noa/kernels.cuh`
 * `C++` third-party sources in `noa/kernels.hh`
 
-which require separable compilation.
+which may require separable compilation.
+
+#### Note 1
+`src/noa/kernels.hh` could be compiled separately via `test/kernels.cc`, but it is also possible to include it directly into your program if you want to keep everything inside of the single trasnlation unit.
+#### Note 2: PUMAS
+PUMAS code under `src/noa/3rdparty/_pumas` was syntactically adapted to compile under `g++` with `-fpermissive`.
+To avoid setting this parameter everywhere, `noa/kernels.hh` doesn't include PUMAS by defaut.
+To include PUMAS, define `NOA_3RDPARTY_PUMAS` before including `noa/kernels.hh`, and compile the corresponding file with an `-fpermissive` flag.
 
 ### CMake project
 The core of the library depends on 
@@ -59,6 +66,9 @@ To enable parallel execution for some algorithms you should link against `OpenMP
 To build `CUDA` tests add `-DBUILD_NOA_CUDA=ON` 
 and the  GPU architecture of your choice,
 e.g. `-DCMAKE_CUDA_ARCHITECTURES=75`.
+
+To build documentation you need to have [doxygen](https://doxygen.nl/) installed and 
+specify `-DBUILD_DOCS=ON`.
 
 Finally, once `NOA` is installed, 
 you can link against it in your own `CMakeLists.txt` file.
