@@ -5,6 +5,7 @@ from AvailableRequests import get_instruments_by_currency_request, get_ticker_by
 from pprint import pprint
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 from typing import Callable
 
@@ -52,15 +53,16 @@ def create_option_surface(currency: Currency):
 
 
     _zipped_keys = _zipped_map.keys()
+    # Fill All Available Instruments with Option Prices. Logic at get_price_of_option_function.
+    # TODO: mapping for pandas?
+    for _strike in surface_matrix.index:
+        for _maturity in surface_matrix.columns:
+            element_name = construct_instrument_name_for_call(_maturity, _strike)
+            if element_name in _zipped_keys:
+                print(element_name)
+                surface_matrix.loc[_strike, _maturity] = get_price_of_option_function(elementaryName=element_name)
 
-
-
-    # # TODO: mapping for pandas?
-    # for _strike in surface_matrix.index:
-    #     for _maturity in surface_matrix.columns:
-    #         element_name = construct_instrument_name_for_call(_maturity, _strike)
-    #         if element_name in _zipped_keys:
-    #             surface_matrix.loc[_strike, _maturity] = _zipped_map.get(element_name)
+    print(surface_matrix)
 
 
 
