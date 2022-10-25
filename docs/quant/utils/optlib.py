@@ -210,10 +210,10 @@ class Grid:
             time = self.tGrid[i + 1]
             g = np.array(tuple(map(lambda x: g_func(self.q, time, x), self.xGrid)))
             # explicit step
-            f_hat = self.net[:, i].copy()
-            f_hat[0] = f_hat[0] + self.lamda * g[0] / 2
-            f_hat[n] = f_hat[n] + self.lamda * g[n] / 2
-            f = np.dot(B, f_hat)
+            f_hat = self.net[:, i]
+            f = np.dot(B, f_hat).copy()
+            f[0] = f[0] + 0.5 * self.lamda * (g_func(self.q, self.tGrid[i], self.xGrid[0]) + g[n])
+            #f[n] = f_hat[n] + self.lamda * g[n] / 2
             # implicit step
             solution = brennan_schwartz(alpha, beta, beta, f[1:n], g)
             self.net[1:n, i + 1] = solution
