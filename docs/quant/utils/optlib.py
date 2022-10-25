@@ -147,23 +147,34 @@ class Grid:
 
     # add backward transformation toDefault
 
-    def plot(self, slice_num=0, stoppingline = True):
+    def plot(self, slice_num=0, cut=False, stoppingline=True):
         """ plotting 3D graph and slices by time """
         K = self.option.strike
         r = self.option.Underlying.interest
         T = self.option.maturity
+        tempNet = self.net
+        tempXgrid = self.xGrid
+        if cut:
+            leftBorder = K * 0.15
+            rightBorder = K * 3
+            leftBorder = np.where(self.xGrid < leftBorder)[0][-1]
+            rightBorder = np.where(self.xGrid > rightBorder)[0][0]
+            tempNet = self.net[leftBorder:rightBorder, :]
+            tempXgrid = self.xGrid[leftBorder:rightBorder]
+
         if slice_num == 0:
-            surface = go.Surface(z=self.net, x=self.tGrid, y=self.xGrid)
+            surface = go.Surface(z=tempNet, x=self.tGrid, y=tempXgrid)
             if stoppingline:
-                curve = go.Scatter3d(z=[(1 - tau ** 1.4) * self.option.strike / 4 for tau in self.tGrid],
-                                     x=self.tGrid,
-                                     y=np.array(tuple(map(lambda tmp : early_exercise(K, r, T, tmp), self.tGrid))),
-                                     mode="markers",
-                                     marker=dict(
-                                         size=3,
-                                         color="green")
-                                     )
-                fig = go.Figure([surface, curve])
+                # curve = go.Scatter3d(z=[(1 - tau ** 1.4) * self.option.strike / 4 for tau in self.tGrid],
+                #                      x=self.tGrid,
+                #                      y=np.array(tuple(map(lambda tmp : early_exercise(K, r, T, tmp), self.tGrid))),
+                #                      mode="markers",
+                #                      marker=dict(
+                #                          size=3,
+                #                          color="green")
+                #                      )
+                # fig = go.Figure([surface, curve])
+                fig = go.Figure([surface])
             else:
                 fig = go.Figure([surface])
 
@@ -175,7 +186,7 @@ class Grid:
             plt.style.use("Solarize_Light2")
             plt.figure(figsize=(15, 8))
             for i in np.linspace(0, len(self.tGrid) - 1, slice_num):
-                plt.plot(self.xGrid, self.net[:, int(i)], label=f"t = {self.tGrid[int(i)]}")
+                plt.plot(tempXgrid, tempNet[:, int(i)], label=f"t = {self.tGrid[int(i)]}")
                 if stoppingline:
                     plt.axvline(early_exercise(K, r, T, self.tGrid[int(i)]), color='green')
             plt.legend()
@@ -210,7 +221,7 @@ class Grid:
 
 @njit
 def g_func(q, t, x):
-    return np.exp(0.25 * t * (q + 1)**2) * max(0, np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
+    return np.exp(t * (q + 1)**2 / 4) * max(0, np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
 
 
 @njit
