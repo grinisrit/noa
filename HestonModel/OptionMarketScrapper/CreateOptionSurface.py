@@ -5,9 +5,11 @@ from AvailableRequests import get_instruments_by_currency_request, get_ticker_by
 from pprint import pprint
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
+from datetime import datetime
+
 
 from typing import Callable
+global SAVE_STORAGE_NAME
 
 
 def get_price_of_option_function(elementaryName: str) -> float:
@@ -19,14 +21,38 @@ def get_price_of_option_function(elementaryName: str) -> float:
     elem_last_info = send_request(get_ticker_by_instrument_request(elementaryName))
     return elem_last_info["result"]["last_price"]
 
-def get_price_of_option_batch_function(answer_list:list[list[dict, float]]) -> dict:
-    def what_field_we_need_to_get_from_ticker(ticker_obj):
-        return ticker_obj["result"]["mark_price"]
+
+def get_price_of_option_batch_function(answer_list: list[list[dict, float | list[float]]]) -> dict:
+    def what_field_we_need_to_get_from_ticker(ticker_obj) -> float | list:
+        return [ticker_obj["result"]["last_price"],
+                ticker_obj["result"]["underlying_price"],
+                ticker_obj["result"]["underlying_index"]]
+
     return dict([[elementary[0]["params"]["instrument_name"], what_field_we_need_to_get_from_ticker(elementary[1])]
                  for elementary in answer_list])
 
 
-def create_option_surface(currency: Currency):
+def fill_surface_matrix(surface_matrix: pd.DataFrame, _answer: dict, number_of_element: int,
+                        construct_instrument_name_for_call) -> pd.DataFrame:
+
+    IF_NEED_OOM = False
+    pprint(_answer)
+    pass_matrix = surface_matrix.copy()
+    for _strike in pass_matrix.index:
+        for _maturity in pass_matrix.columns:
+            element_name = construct_instrument_name_for_call(_maturity, _strike)
+            if element_name in _answer.keys():
+                # Out of the money
+                if IF_NEED_OOM:
+                    if _strike > _answer.get(element_name)[1]:
+                        pass_matrix.loc[_strike, _maturity] = _answer.get(element_name)[number_of_element]
+                else:
+                    pass_matrix.loc[_strike, _maturity] = _answer.get(element_name)[number_of_element]
+
+    return pass_matrix
+
+
+def create_option_surface(currency: Currency, save_information=False):
     answer = send_request(get_instruments_by_currency_request(currency=currency,
                                                               kind=InstrumentType.OPTION,
                                                               expired=False))
@@ -53,20 +79,38 @@ def create_option_surface(currency: Currency):
     surface_matrix.columns = unique_puts_maturities
     surface_matrix.index = unique_puts_strikes
 
-
     # TODO: not int strikes?
     construct_instrument_name_for_call: Callable[[str, float], str] = lambda x, y: f"{currency.currency}-{x}-{int(y)}-C"
     # Create messages for multiple request
     names = list(_zipped_map.keys())
-    print(names)
-    messages_list = list(map(get_ticker_by_instrument_request, names[:2]))
+
+    messages_list = list(map(get_ticker_by_instrument_request, names))
     _answer = send_batch_of_requests(messages_list, show_answer=False)
-    pprint(_answer)
-    print(get_price_of_option_batch_function(_answer))
-    # Fill All Available Instruments with Option Prices. Logic at get_price_of_option_function.
+    _answer = get_price_of_option_batch_function(_answer)
     # TODO: mapping for pandas?
 
+    # Select element at extend_info
+    filled_matrix = fill_surface_matrix(surface_matrix=surface_matrix,
+                                        _answer=_answer,
+                                        number_of_element=0,
+                                        construct_instrument_name_for_call=construct_instrument_name_for_call)
+
+    print(filled_matrix)
+    print(filled_matrix.columns)
+    if save_information:
+        date_now = datetime.now().date()
+        filled_matrix.to_csv(f"{SAVE_STORAGE_NAME}/optionMap_{date_now}.csv")
 
 
 if __name__ == "__main__":
-    create_option_surface(Currency.BITCOIN)
+    SAVE_INFO = True
+    SAVE_STORAGE_NAME = "saveStorage"
+    if SAVE_INFO:
+        import os
+        import shutil
+
+        if os.path.isdir(SAVE_STORAGE_NAME):
+            shutil.rmtree(SAVE_STORAGE_NAME, ignore_errors=True)
+        os.mkdir(SAVE_STORAGE_NAME)
+
+    create_option_surface(Currency.BITCOIN, save_information=SAVE_INFO)
