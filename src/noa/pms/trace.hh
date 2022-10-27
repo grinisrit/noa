@@ -34,14 +34,13 @@ namespace noa::pms::trace {
     using namespace noa::TNL;
     using namespace noa::TNL::Containers;
 
-    template <class DeviceType>
+    template <class DeviceType, typename Real = float, typename Index = long int, typename LocalIndex = short int>
     class Tracer {
     private:
-        using Mesh = Meshes::Mesh<Meshes::DefaultConfig<Meshes::Topologies::Tetrahedron>, DeviceType>;
+        using CellTopology = Meshes::Topologies::Tetrahedron;
+        using MeshConfig = Meshes::DefaultConfig<CellTopology, CellTopology::dimension, Real, Index, LocalIndex>;
+        using Mesh = Meshes::Mesh<MeshConfig, DeviceType>;
         using Point = typename Mesh::PointType;
-        using Real = typename Mesh::RealType;
-        using Index = typename Mesh::GlobalIndexType;
-        using LocalIndex = typename Mesh::LocalIndexType;
 
         __cuda_callable__
         static Real get_ray_plane_intersection(
@@ -239,7 +238,7 @@ namespace noa::pms::trace {
             Array<std::optional<Index>, DeviceType> device_array(mesh_size);
             auto view = device_array.getView();
 
-            Algorithms::ParallelFor<DeviceType>::exec(0, mesh_size, [=] __cuda_callable__ (Index i) mutable {
+            Algorithms::ParallelFor<DeviceType>::exec(Index(), mesh_size, [=] __cuda_callable__ (Index i) mutable {
                 std::optional<Index> result{};
                 if (check_point_in_tetrahedron(mesh_pointer, i, point)) {
                     result = i;
@@ -255,7 +254,7 @@ namespace noa::pms::trace {
                 return x ? x : y;
             };
 
-            return Algorithms::reduce<DeviceType>(0, mesh_size, fetch, reduction, std::optional<Index>{});
+            return Algorithms::reduce<DeviceType>(Index(), mesh_size, fetch, reduction, std::optional<Index>{});
         }
     };
 }

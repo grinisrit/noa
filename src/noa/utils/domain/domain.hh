@@ -55,7 +55,7 @@ template <typename CellTopology, typename Device = TNL::Devices::Host, typename 
 struct Domain {
         /* ----- PUBLIC TYPE ALIASES ----- */
         using MeshConfig        = TNL::Meshes::DefaultConfig<CellTopology, CellTopology::dimension, Real, GlobalIndex, LocalIndex>;
-        using MeshType          = TNL::Meshes::Mesh<MeshConfig>; // Meshes only seem to be implemented on Host
+        using MeshType          = TNL::Meshes::Mesh<MeshConfig>; // Meshes only seem to be implemented on Host (?)
         using MeshWriter        = TNL::Meshes::Writers::VTUWriter<MeshType>;
         using LayerManagerType  = LayerManager<Device, GlobalIndex>;
 
@@ -84,7 +84,7 @@ struct Domain {
         /* ----- PUBLIC METHODS ----- */
         // Constructor
         Domain() {
-                // If created by-itself, generate layers for each of meshes dimensions
+                // If default-constructed, generate layers for each of the meshes dimensions
                 layers = std::vector<LayerManagerType>(getMeshDimension() + 1);
         }
 
@@ -103,7 +103,7 @@ struct Domain {
         void clearLayers() { for (auto& layer : layers) layer.clear(); }
 
         // Check if the domain is empty
-        bool isClean() const { return mesh == std::nullopt; }
+        bool isClean() const { return !mesh.has_value(); }
 
         // Get contant mesh reference
         const MeshType& getMesh() const { return mesh.value(); }
@@ -124,18 +124,19 @@ struct Domain {
                         throw std::runtime_error("Mesh file not found: " + filename.string() + "!");
 
                 auto loader = [&] (auto& reader, auto&& loadedMesh) {
-                        if (typeid(loadedMesh) != typeid(MeshType))
-                                throw std::runtime_error("Read mesh has a type that differs from expected!");
-
-                        mesh = *(MeshType*)&loadedMesh;
-                        updateLayerSizes();
+                        using LoadedTypeRef = decltype(loadedMesh);
+                        using LoadedType = typename std::remove_reference<LoadedTypeRef>::type;
+                        if constexpr (std::is_same_v<MeshType, LoadedType>) {
+                                mesh = loadedMesh;
+                                updateLayerSizes();
+                        } else throw std::runtime_error("Read mesh type differs from expected!");
 
                         // TODO: Find a way to get data layers through the `reader`
 
                         return true;
                 };
 
-                using ConfigTag = ConfigTagPermissive<CellTopology>;
+                using ConfigTag = ConfigTagPermissive<TNL::Meshes::Topologies::Tetrahedron>;
                 if (!TNL::Meshes::resolveAndLoadMesh<ConfigTag, TNL::Devices::Host>(loader, filename, "auto"))
                         throw std::runtime_error("Could not load mesh (resolveAndLoadMesh returned `false`)!");
         }
@@ -154,12 +155,14 @@ struct Domain {
                 // Write layers
                 for (int dim = 0; dim <= getMeshDimension(); ++dim)
                         for (int i = 0; i < layers.at(dim).count(); ++i) {
+                                const auto& layer = layers.at(dim).getLayer(i);
+                                if (!layer.exportHint) continue;
                                 if (dim == getMeshDimension())
-                                        layers.at(dim).getLayer(i).writeCellData(writer, "cell_layer_" + std::to_string(i));
+                                        layer.writeCellData(writer, "cell_layer_" + std::to_string(i));
                                 else if (dim == 0)
-                                        layers.at(dim).getLayer(i).writePointData(writer, "point_layer_" + std::to_string(i));
+                                        layer.writePointData(writer, "point_layer_" + std::to_string(i));
                                 else
-                                        layers.at(dim).getLayer(i).writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(i));
+                                        layer.writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(i));
                         }
         }
 

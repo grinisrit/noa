@@ -19,8 +19,10 @@ pipelines, as well as portfolio and margin optimisation platforms.
 
 Hands-on tutorials:
 
-* [Introduction: the BSM model](bsm.ipynb) is a great place to start 
+* [Introduction: Arbitrage and Risk-Neutral Pricing](introduction.ipynb) - a great place to start 
 providing even newcomers with the necessary option pricing background.
+
+* Basic numerical techniques for the [Black-Scholes-Merton model](bsm.ipynb) 
  
 
 (c) 2022 GrinisRIT ltd.

@@ -15,9 +15,12 @@ DEFINE_bool(sensitivity, false, "Perform a sensitibity test");
 DEFINE_bool(suite, false, "Perform multiple tests, make an output file");
 DEFINE_string(outputDir, "./saved", "Directory to output the result to");
 DEFINE_double(T, 10, "Time length of calculations");
+DEFINE_double(tau, .005, "Time step for calculations");
 DEFINE_double(delta, 0.1, "Sensitivity test delta");
 DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
 DEFINE_int32(density, 1, "Grid density multiplier");
+DEFINE_int32(expand, 1, "Multiply mesh dimensions by an integer factor");
+DEFINE_bool(lumping, false, "Use mass lumping");
 
 using namespace std;
 using namespace noa;
@@ -29,15 +32,22 @@ auto main(int argc, char **argv) -> int {
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 
 	// Process outputDir, perform necessary checks
-	cout << "Output directory set to " << FLAGS_outputDir << endl;
-	if (filesystem::exists(FLAGS_outputDir) && FLAGS_clear) {
+	const filesystem::path outputPath(FLAGS_outputDir);
+	cout << "Output directory set to " << outputPath << endl;
+	if (filesystem::exists(outputPath) && FLAGS_clear) {
 		cout << "Clearing output location..." << endl;
-		filesystem::remove_all(FLAGS_outputDir);
+		filesystem::remove_all(outputPath);
 	}
-	if (!filesystem::exists(FLAGS_outputDir))
-		filesystem::create_directory(FLAGS_outputDir);
-	if (!filesystem::is_directory(FLAGS_outputDir))
-		throw runtime_error(FLAGS_outputDir + " is not a directory");
+	constexpr auto checkAndMkdir = [] (const filesystem::path& dirPath) {
+		if (!filesystem::exists(dirPath))
+			filesystem::create_directory(dirPath);
+		else if (!filesystem::is_directory(dirPath))
+			throw runtime_error(dirPath.string() + " is not a directory");
+	};
+	checkAndMkdir(outputPath);
+
+	const auto solverOutputPath = outputPath / "solution";
+	checkAndMkdir(solverOutputPath);
 
 	using CellTopology	= TNL::Meshes::Topologies::Triangle; // 2D
 	using DomainType	= utils::domain::Domain<CellTopology>;
@@ -48,8 +58,8 @@ auto main(int argc, char **argv) -> int {
 	DomainType domain;
 
 	// Generate domain grid & prepare it for initialization
-	utils::domain::generate2DGrid(domain, 20 * FLAGS_density, 10 * FLAGS_density,
-						1.0 / FLAGS_density, 1.0 / FLAGS_density);
+	utils::domain::generate2DGrid(domain, 20 * FLAGS_expand * FLAGS_density, 10 * FLAGS_expand * FLAGS_density,
+						1.0 * FLAGS_expand / FLAGS_density, 1.0 * FLAGS_expand / FLAGS_density);
 	MHFE::prepareDomain(domain, true);
 
 	auto& cellLayers = domain.getLayers(cellD);
@@ -96,11 +106,16 @@ auto main(int argc, char **argv) -> int {
 		ofstream dat;
 		if (FLAGS_suite) {
 			delta = 0;
-			dat.open(FLAGS_outputDir + "/sensitivity.dat");
+			dat.open(outputPath / "sensitivity.dat");
 		}
 		do {
 			cout << "Performing a sensitivity test at t=" << FLAGS_T << " with delta " << delta << endl;
-			const auto sens = MHFE::testCellSensitivityAt<LMHFEDelta, LMHFELumping, LMHFERight, IntegralOver>(
+			const auto sens = FLAGS_lumping ?
+                                MHFE::testCellSensitivityAt<LMHFEDelta, LMHFELumping, LMHFERight, IntegralOver>(
+						domain,
+						MHFE::Layer::P, MHFE::Layer::A,
+						delta, (float)FLAGS_T) :
+                                MHFE::testCellSensitivityAt<MHFEDelta, MHFELumping, MHFERight, IntegralOver>(
 						domain,
 						MHFE::Layer::P, MHFE::Layer::A,
 						delta, (float)FLAGS_T);
@@ -110,19 +125,17 @@ auto main(int argc, char **argv) -> int {
 		} while (delta <= FLAGS_delta);
 		if (FLAGS_suite) dat.close();
 	} else {
-		// Simulation loop
-		float t = 0;		// Current sim time
-		float tau = .005;	// Time step
-		do {
-			cout << "\r[" << setw(10) << left << t << "/" << right << FLAGS_T << "]";
-			cout.flush();
-			MHFE::solverStep<LMHFEDelta, LMHFELumping, LMHFERight>(domain, tau);
-			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t);
-			t += tau;
-
-			domain.write(FLAGS_outputDir + "/" + to_string(t) + ".vtu");
-		} while (t <= FLAGS_T);
-		cout << " DONE" << endl;
+		float tau = FLAGS_tau;	// Time step
+		float T = FLAGS_T;
+		// Save the step result
+		const MHFE::PostStepCb<float> saveStep = [&domain, &tau, &solverOutputPath] (const float& t) -> void {
+			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t - tau);
+			domain.write(solverOutputPath / filesystem::path(to_string(t) + ".vtu"));
+		};
+		if (FLAGS_lumping)
+			MHFE::simulateTo<LMHFEDelta, LMHFELumping, LMHFERight>(domain, T, tau, saveStep);
+		else
+			MHFE::simulateTo<MHFEDelta, MHFELumping, MHFERight>(domain, T, tau, saveStep);
 	}
 
 	gflags::ShutDownCommandLineFlags();

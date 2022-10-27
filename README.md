@@ -10,13 +10,13 @@ and high frequency trading.
 ## Installation 
 
 Currently, we support only `GNU`, and `CUDA` for GPU 
-(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows).
+(check [WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) for Windows,
+and [LIMA](https://github.com/lima-vm/lima) for macOS).
 A toolchain fully supporting `C++17` is required.
 `NOA` is a header-only library, so you can directly 
 drop the `src/noa` folder into your project.
 
 :warning: However, beyond `C++17` source code, the project contains:
-* `C99` sources in `noa/kernels.h` 
 * `CUDA` sources in `noa/kernels.cuh`
 * `C++` third-party sources in `noa/kernels.hh`
 
@@ -67,6 +67,9 @@ To build `CUDA` tests add `-DBUILD_NOA_CUDA=ON`
 and the  GPU architecture of your choice,
 e.g. `-DCMAKE_CUDA_ARCHITECTURES=75`.
 
+To build documentation you need to have [doxygen](https://doxygen.nl/) installed and 
+specify `-DBUILD_DOCS=ON`.
+
 Finally, once `NOA` is installed, 
 you can link against it in your own `CMakeLists.txt` file.
 Make sure to add `LibTorch` as well:
@@ -99,6 +102,7 @@ from higher-dimensional probability distributions.
 in the passage of particles through matter simulations. 
 * [CFD](docs/cfd) implements adjoint sensitivity models for a variety 
 problems arising in computational fluid dynamics.
+* [QC](docs/qc) is a differentiable quantum chemistry platform for materials design.
 * [QUANT](docs/quant) a differentiable derivative 
 pricing library.
 
