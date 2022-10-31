@@ -147,7 +147,7 @@ class Grid:
 
     # add backward transformation toDefault
 
-    def plot(self, slice_num=0, cut=False, stoppingline=True):
+    def plot(self, slice_num=0, cut=False, border=0.15, stoppingline=True):
         """ plotting 3D graph and slices by time """
         K = self.option.strike
         r = self.option.Underlying.interest
@@ -155,7 +155,7 @@ class Grid:
         tempNet = self.net
         tempXgrid = self.xGrid
         if cut:
-            leftBorder = K * 0.15
+            leftBorder = K * border
             rightBorder = K * 3
             leftBorder = np.where(self.xGrid < leftBorder)[0][-1]
             rightBorder = np.where(self.xGrid > rightBorder)[0][0]
