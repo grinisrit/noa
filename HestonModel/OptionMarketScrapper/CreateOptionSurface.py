@@ -24,9 +24,12 @@ def get_price_of_option_function(elementaryName: str) -> float:
 
 def get_price_of_option_batch_function(answer_list: list[list[dict, float | list[float]]]) -> dict:
     def what_field_we_need_to_get_from_ticker(ticker_obj) -> float | list:
-        return [ticker_obj["result"]["last_price"],
+        # HARDCODED underlying_price at position 1!!!
+        return [ticker_obj["result"]["mark_iv"],
                 ticker_obj["result"]["underlying_price"],
-                ticker_obj["result"]["underlying_index"]]
+                ticker_obj["result"]["underlying_index"],
+                ticker_obj["result"]["last_price"],
+                ticker_obj["result"]["mark_price"]]
 
     return dict([[elementary[0]["params"]["instrument_name"], what_field_we_need_to_get_from_ticker(elementary[1])]
                  for elementary in answer_list])
@@ -90,9 +93,10 @@ def create_option_surface(currency: Currency, save_information=False):
     # TODO: mapping for pandas?
 
     # Select element at extend_info
+    # Number of element: = What we want to get
     filled_matrix = fill_surface_matrix(surface_matrix=surface_matrix,
                                         _answer=_answer,
-                                        number_of_element=0,
+                                        number_of_element=3,
                                         construct_instrument_name_for_call=construct_instrument_name_for_call)
 
     print(filled_matrix)
@@ -104,13 +108,19 @@ def create_option_surface(currency: Currency, save_information=False):
 
 if __name__ == "__main__":
     SAVE_INFO = True
+    DELETE_OLD = False
     SAVE_STORAGE_NAME = "saveStorage"
     if SAVE_INFO:
         import os
         import shutil
-
-        if os.path.isdir(SAVE_STORAGE_NAME):
-            shutil.rmtree(SAVE_STORAGE_NAME, ignore_errors=True)
-        os.mkdir(SAVE_STORAGE_NAME)
+        if DELETE_OLD:
+            if os.path.isdir(SAVE_STORAGE_NAME):
+                shutil.rmtree(SAVE_STORAGE_NAME, ignore_errors=True)
+            os.mkdir(SAVE_STORAGE_NAME)
+        if not DELETE_OLD:
+            if os.path.isdir(SAVE_STORAGE_NAME):
+                pass
+            else:
+                raise ValueError("No working Dir")
 
     create_option_surface(Currency.BITCOIN, save_information=SAVE_INFO)

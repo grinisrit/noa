@@ -1,16 +1,21 @@
 import asyncio
 import time
 
-import websockets
 import json
 from pprint import pprint
 from tqdm import tqdm
+import websocket as web_sock
+import websockets
 
+from threading import Thread
+from collections import deque
 import AvailableCurrencies
 import AvailableInstrumentType
 
+from AvailableRequests import test_message
 
 async def call_api(msg):
+    # async with websockets.connect('wss://www.deribit.com/ws/api/v2') as websocket:
     async with websockets.connect('wss://test.deribit.com/ws/api/v2') as websocket:
         await websocket.send(msg)
         while websocket.open:
@@ -64,6 +69,16 @@ def send_batch_of_requests(msg_list, show_answer=False) -> json:
     return list(zip(msg_list, [json.loads(element) for element in return_list]))
 
 
+async def api_listener(websocket):
+    while True:
+        try:
+            message = await websocket.recv()
+            print("< {}".format(message))
+
+        except websockets.ConnectionClosed as cc:
+            print('Connection closed')
+
+
 def test_get_multiple_ticker_request():
     names = ["BTC-29SEP23-10000-C", "BTC-30DEC22-10000-C", "BTC-30JUN23-10000-C"
              "BTC-31MAR23-10000-C", "BTC-25NOV22-12000-C", "BTC-25NOV22-14000-C",
@@ -73,10 +88,12 @@ def test_get_multiple_ticker_request():
     pprint(send_batch_of_requests(messages_list, show_answer=True))
 
 
+
 if __name__ == "__main__":
     from AvailableRequests import get_instruments_by_currency_request, get_ticker_by_instrument_request
 
     # test_get_multiple_ticker_request()
-    send_request(get_ticker_by_instrument_request("BTC-29SEP23-10000-C"), show_answer=True)
+    # send_request(get_ticker_by_instrument_request("BTC-29SEP23-10000-C"), show_answer=True)
     # answer = send_request(get_instruments_by_currency_request(AvailableCurrencies.Currency.BITCOIN,
     #                                                           AvailableInstrumentType.InstrumentType.OPTION))
+

@@ -54,3 +54,15 @@ def get_ticker_by_instrument_request(instrument_request: str) -> json:
             }
         }
     return _msg
+
+
+def test_message() -> json:
+    _msg = {
+      "jsonrpc": "2.0",
+      "id": 8212,
+      "method": "public/test",
+      "params": {
+
+      }
+    }
+    return _msg
