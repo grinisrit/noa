@@ -15,8 +15,8 @@ import AvailableInstrumentType
 from AvailableRequests import test_message
 
 async def call_api(msg):
-    # async with websockets.connect('wss://www.deribit.com/ws/api/v2') as websocket:
-    async with websockets.connect('wss://test.deribit.com/ws/api/v2') as websocket:
+    async with websockets.connect('wss://www.deribit.com/ws/api/v2') as websocket:
+    # async with websockets.connect('wss://test.deribit.com/ws/api/v2') as websocket:
         await websocket.send(msg)
         while websocket.open:
             response = await websocket.recv()

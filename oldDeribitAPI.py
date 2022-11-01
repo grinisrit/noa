@@ -40,7 +40,7 @@ class DeribitConnectionOld:
         additional = "get_last_trades_by_currency"
         pprint(self.call_api_without_key(additional=additional, query=query))
 
-    def get_instrument_last_prices(self, instrument: Instrument, number_of_last_trades: int, number_of_requests=10_00,
+    def get_instrument_last_prices(self, instrument: Instrument | str, number_of_last_trades: int, number_of_requests=10_00,
                                    date_of_start_loading_data=None):
         """
         Get trades by instrument. For each request, we take the last N trades, we make such requests M pieces.
@@ -55,7 +55,11 @@ class DeribitConnectionOld:
         if number_of_last_trades > 10_000:
             raise ValueError("Too much number_of_last_trades")
 
-        instrument_request_name = instrument.instrument
+        if type(instrument) != str:
+            instrument_request_name = instrument.instrument
+        else:
+            instrument_request_name = instrument
+
         if date_of_start_loading_data is None:
             query = {'instrument_name': instrument_request_name, 'count': f'{number_of_last_trades}',
                      'include_old': 'true', 'end_timestamp': f'{int(round(time.time() * 1000))}'}

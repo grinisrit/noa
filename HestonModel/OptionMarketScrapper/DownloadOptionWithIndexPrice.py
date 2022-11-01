@@ -2,10 +2,12 @@ from AvailableCurrencies import Currency
 from AvailableInstrumentType import InstrumentType
 from Scrapper import send_request, send_batch_of_requests
 from AvailableRequests import get_instruments_by_currency_request, get_ticker_by_instrument_request
+from oldDeribitAPI import DeribitConnectionOld
 from pprint import pprint
 import pandas as pd
 import numpy as np
 from datetime import datetime
+
 
 
 def download_data_for_SABR(currency: Currency, save_information=False):
@@ -24,11 +26,55 @@ def download_data_for_SABR(currency: Currency, save_information=False):
 
     # TODO: uncomment
     # selected_maturity = int(input("Select number of interested maturity "))
-    selected_maturity = 0
+    selected_maturity = 2
     selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
     print('\nYou select:', selected_maturity)
 
-    select_all_strikes
+    selected = list(map(lambda x: x["instrument_name"]
+        ,list(filter(lambda x: (selected_maturity in x["instrument_name"]) and (x["option_type"] == "call"), answer))))
+
+    print(selected)
+
+    get_underlying = send_request(get_ticker_by_instrument_request(selected[0]),
+                                  show_answer=False)['result']['underlying_index']
+
+    CURRENT_TIME = int(datetime.now().timestamp() * 1000)
+
+    print(get_underlying)
+    # Download underlying
+    deribit_old = DeribitConnectionOld("")
+    df = deribit_old.get_instrument_last_prices(get_underlying, 10_00, number_of_requests=5,
+                                            date_of_start_loading_data=CURRENT_TIME)
+    df.index = pd.to_datetime(df.timestamp * 10 ** 6)
+    underlyingBars = DeribitConnectionOld.create_bars(df)
+
+    # Download Option prices
+    strikes_bars = list()
+    for select in selected:
+        try:
+            df = deribit_old.get_instrument_last_prices(select, 10_00, number_of_requests=1,
+                                                        date_of_start_loading_data=CURRENT_TIME)
+        except IndexError:
+            print("No trades Data for Instrument:", select)
+            continue
+        df.index = pd.to_datetime(df.timestamp * 10 ** 6)
+        strikes_bars.append(DeribitConnectionOld.create_bars(df))
+
+    # TODO: Change / to \\ on Windows System
+    if SAVE_INFO:
+        PATH = f"{SAVE_STORAGE_NAME}/{selected_maturity}"
+        if os.path.isdir(PATH):
+            shutil.rmtree(PATH, ignore_errors=True)
+        os.mkdir(PATH)
+        underlyingBars.to_csv(f"{PATH}/underlyingBars.csv")
+
+        for i, _ in enumerate(strikes_bars):
+            _.to_csv(f"{PATH}/strikeBars_{selected[i].split('-')[2]}.csv")
+
+
+
+
+
 
 if __name__ == "__main__":
     SAVE_INFO = True
