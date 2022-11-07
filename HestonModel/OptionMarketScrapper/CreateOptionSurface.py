@@ -66,13 +66,13 @@ def create_option_surface(currency: Currency, save_information=False):
     # Assertion for correct inside settlement_currency
     assert np.unique(list(map(lambda x: x["instrument_name"].split('-')[0], answer)))[0] == currency.currency
     # Select only put options
-    puts_answer = list(filter(lambda x: x["option_type"] == "call", answer))
+    calls_answer = list(filter(lambda x: x["option_type"] == "call", answer))
     # Zip instrument_names with objects to speed up matrix generation
-    _zipped_map = dict([[_elementaryOBJ["instrument_name"], _elementaryOBJ] for _elementaryOBJ in puts_answer])
+    _zipped_map = dict([[_elementaryOBJ["instrument_name"], _elementaryOBJ] for _elementaryOBJ in calls_answer])
     # Select unique expiration dates from all put options. Next it will be x axis of table
-    unique_puts_maturities = np.unique(list(map(lambda x: x["instrument_name"].split('-')[1], puts_answer)))
+    unique_puts_maturities = np.unique(list(map(lambda x: x["instrument_name"].split('-')[1], calls_answer)))
     # Get all available strikes for all maturities. Next it will be y axis of table
-    unique_puts_strikes = np.unique(list(map(lambda x: float(x["instrument_name"].split('-')[2]), puts_answer)))
+    unique_puts_strikes = np.unique(list(map(lambda x: float(x["instrument_name"].split('-')[2]), calls_answer)))
 
     # Create empty surface matrix.
     _numpyMatrixMask = np.empty((len(unique_puts_strikes), len(unique_puts_maturities), ))

@@ -12,11 +12,14 @@ from collections import deque
 import AvailableCurrencies
 import AvailableInstrumentType
 
-from AvailableRequests import test_message
+# from AvailableRequests import test_message
+global URL_TO_SCRAP
+# URL_TO_SCRAP = 'wss://test.deribit.com/ws/api/v2'
+URL_TO_SCRAP = 'wss://www.deribit.com/ws/api/v2'
 
 async def call_api(msg):
-    async with websockets.connect('wss://www.deribit.com/ws/api/v2') as websocket:
-    # async with websockets.connect('wss://test.deribit.com/ws/api/v2') as websocket:
+    # async with websockets.connect('wss://www.deribit.com/ws/api/v2') as websocket:
+    async with websockets.connect(URL_TO_SCRAP) as websocket:
         await websocket.send(msg)
         while websocket.open:
             response = await websocket.recv()
