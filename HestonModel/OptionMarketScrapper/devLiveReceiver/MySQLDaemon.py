@@ -131,6 +131,7 @@ class MySqlDaemon:
             self.connection.commit()
 
     def add_order_book_content(self, bids, asks, change_id):
+        # TODO: Can remove this request by creating HashMap inside Daemon. (Only one request when initialized)
         with self.connection.cursor() as cursor:
             cursor.execute(FIND_PRIMARY_KEY_BY_CURRENT_CHANGE_ID, change_id)
             last_connection = cursor.fetchone()
@@ -142,6 +143,29 @@ class MySqlDaemon:
             cursor.executemany(INSERT_CONTENT, bids_values)
             cursor.executemany(INSERT_CONTENT, asks_values)
             self.connection.commit()
+
+    def add_instrument_init_snapshot(self, instrument_name: str,
+                                     start_instrument_scrap_time: int,
+                                     request_change_id: int,
+                                     bids_list: list[list[str, float, float]],
+                                     asks_list: list[list[str, float, float]]
+                                     ):
+
+        self.insert_to_script_snapshot(instrument=instrument_name,
+                                       start_time=start_instrument_scrap_time,
+                                       change_id=request_change_id)
+        self.create_new_old_pair(change_id=request_change_id, old_change_id=-1, update_time=start_instrument_scrap_time)
+        self.add_order_book_content(bids=bids_list, asks=asks_list, change_id=request_change_id)
+
+    def add_instrument_change_order_book(self, request_change_id: int, request_previous_change_id: int,
+                                         change_timestamp: int,
+                                         bids_list: list[list[str, float, float]],
+                                         asks_list: list[list[str, float, float]]
+                                         ):
+        self.create_new_old_pair(change_id=request_change_id, old_change_id=request_previous_change_id,
+                                 update_time=change_timestamp)
+
+        self.add_order_book_content(bids=bids_list, asks=asks_list, change_id=request_change_id)
 
 
 if __name__ == "__main__":
