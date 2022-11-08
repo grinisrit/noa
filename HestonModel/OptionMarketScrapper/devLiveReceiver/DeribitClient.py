@@ -34,19 +34,17 @@ class DeribitClient(Thread, WebSocketApp):
             return 'wss://www.deribit.com/ws/api/v2/'
 
     def run(self):
-        print('start work')
         self.websocket = WebSocketApp(self.exchange_version,
                                       on_message=self._on_message, on_open=self._on_open, on_error=self._on_error)
-
         if self.enable_traceback:
             enableTrace(True)
-
         # Run forever loop
         while True:
             try:
                 self.websocket.run_forever()
             except:
-                print("SMTH WRONG")
+                logging.error("Error at run_forever loop")
+                # TODO: place here notificator
                 continue
 
     def _on_error(self, websocket, error):
@@ -62,6 +60,12 @@ class DeribitClient(Thread, WebSocketApp):
         """
         response = json.loads(message)
         self._process_callback(response)
+        # Answer to heartbeat request
+        if 'method' in response:
+            if response['method'] == 'heartbeat':
+                # Send test message to approve that connection is still alive
+                self.send_new_request(MSG_LIST.test_message())
+
 
     def _process_callback(self, response):
         logging.info(response)
@@ -70,14 +74,19 @@ class DeribitClient(Thread, WebSocketApp):
     def _on_open(self, websocket):
         logging.info("Client start his work")
         print('start on message')
-        self.websocket.send(json.dumps(MSG_LIST.hello_message))
+        self.websocket.send(json.dumps(MSG_LIST.hello_message()))
+
+    def send_new_request(self, request: dict):
+        self.websocket.send(json.dumps(request), ABNF.OPCODE_TEXT)
 
 
 if __name__ == '__main__':
-    test = DeribitClient(test_mode=True, enable_traceback=False)
-    test.start()
-    # test.websocket.send(json.dumps(MSG_LIST.hello_message))
-
+    deribitWorker = DeribitClient(test_mode=True, enable_traceback=False)
+    deribitWorker.start()
+    # Very important time sleep. I spend smth around 3 hours to understand why my connection
+    # is closed when i try to place new request :(
     time.sleep(1)
-    test.websocket.send(json.dumps(MSG_LIST.hello_message), ABNF.OPCODE_TEXT)
-
+    # Send Hello Message
+    deribitWorker.send_new_request(MSG_LIST.hello_message())
+    # Set heartbeat
+    deribitWorker.send_new_request(MSG_LIST.set_heartbeat(10))
