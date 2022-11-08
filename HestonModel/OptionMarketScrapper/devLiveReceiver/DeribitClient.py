@@ -13,6 +13,7 @@ from HestonModel.OptionMarketScrapper.Scrapper import TEST_NET
 import MSG_LIST
 
 
+# TODO: Add here + index_future for time_maturity
 def scrap_available_instruments(currency: Currency):
     from HestonModel.OptionMarketScrapper.AvailableRequests import get_instruments_by_currency_request
     from AvailableInstrumentType import InstrumentType
