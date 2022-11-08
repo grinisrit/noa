@@ -14,8 +14,12 @@ import AvailableInstrumentType
 
 # from AvailableRequests import test_message
 global URL_TO_SCRAP
-# URL_TO_SCRAP = 'wss://test.deribit.com/ws/api/v2'
-URL_TO_SCRAP = 'wss://www.deribit.com/ws/api/v2'
+global TEST_NET
+TEST_NET = False
+if TEST_NET:
+    URL_TO_SCRAP = 'wss://test.deribit.com/ws/api/v2'
+else:
+    URL_TO_SCRAP = 'wss://www.deribit.com/ws/api/v2'
 
 async def call_api(msg):
     # async with websockets.connect('wss://www.deribit.com/ws/api/v2') as websocket:

@@ -1,5 +1,6 @@
 import time
 from MySQLDaemon import MySqlDaemon
+from AvailableCurrencies import Currency
 
 from websocket import WebSocketApp, enableTrace, ABNF
 from threading import Thread
@@ -7,15 +8,52 @@ from threading import Thread
 from datetime import datetime
 import logging
 import json
-
+# TODO: make available to select TEST_NET inside Scrapper
+from HestonModel.OptionMarketScrapper.Scrapper import TEST_NET
 import MSG_LIST
+
+
+def scrap_available_instruments(currency: Currency):
+    from HestonModel.OptionMarketScrapper.AvailableRequests import get_instruments_by_currency_request
+    from AvailableInstrumentType import InstrumentType
+    from HestonModel.OptionMarketScrapper.Scrapper import send_request
+    import pandas as pd
+    import numpy as np
+
+    make_subscriptions_list = send_request(get_instruments_by_currency_request(currency=currency,
+                                                                               kind=InstrumentType.OPTION,
+                                                                               expired=False))
+
+    # answer_id = make_subscriptions_list['id']
+    # Take only the result of answer. Now we have list of json contains information of option dotes.
+    answer = make_subscriptions_list['result']
+    available_maturities = pd.DataFrame(np.unique(list(map(lambda x: x["instrument_name"].split('-')[1], answer))))
+    available_maturities.columns = ['DeribitNaming']
+    available_maturities['RealNaming'] = pd.to_datetime(available_maturities['DeribitNaming'], format='%d%b%y')
+    available_maturities = available_maturities.sort_values(by='RealNaming').reset_index(drop=True)
+    print("Available maturities: \n", available_maturities)
+
+    # TODO: uncomment
+    selected_maturity = int(input("Select number of interested maturity "))
+    # selected_maturity = 2
+    selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
+    print('\nYou select:', selected_maturity)
+
+    selected = list(map(lambda x: x["instrument_name"],
+                        list(filter(lambda x: (selected_maturity in x["instrument_name"]) and (
+                                x["option_type"] == "call"), answer))))
+
+    print("Selected Instruments")
+    print(selected)
+    return selected
 
 
 class DeribitClient(Thread, WebSocketApp):
     websocket: WebSocketApp | None
     database: MySqlDaemon | None
 
-    def __init__(self, test_mode: bool = False, enable_traceback: bool = True, enable_database_record: bool = True):
+    def __init__(self, test_mode: bool = False, enable_traceback: bool = True, enable_database_record: bool = True,
+                 clean_database=False):
         Thread.__init__(self)
         self.testMode = test_mode
         self.exchange_version = self._set_exchange()
@@ -32,16 +70,18 @@ class DeribitClient(Thread, WebSocketApp):
         # Set storages for requested data
         self.instrument_requested = set()
         if enable_database_record:
-            self.database = MySqlDaemon()
+            self.database = MySqlDaemon(clean_tables=clean_database)
             time.sleep(1)
         else:
             self.database = None
 
     def _set_exchange(self):
         if self.testMode:
+            print("Initialized TEST NET mode")
             return 'wss://test.deribit.com/ws/api/v2'
         else:
-            return 'wss://www.deribit.com/ws/api/v2/'
+            print("Initialized REAL MARKET mode")
+            return 'wss://www.deribit.com/ws/api/v2'
 
     def run(self):
         self.websocket = WebSocketApp(self.exchange_version,
@@ -58,6 +98,8 @@ class DeribitClient(Thread, WebSocketApp):
                 continue
 
     def _on_error(self, websocket, error):
+        # TODO: send Telegram notification
+        logging.error(error)
         print(error)
         pass
 
@@ -125,7 +167,12 @@ class DeribitClient(Thread, WebSocketApp):
 
 
 if __name__ == '__main__':
-    deribitWorker = DeribitClient(test_mode=True, enable_traceback=False, enable_database_record=True)
+    instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)
+
+    deribitWorker = DeribitClient(test_mode=TEST_NET,
+                                  enable_traceback=False,
+                                  enable_database_record=True,
+                                  clean_database=True)
     deribitWorker.start()
     # Very important time sleep. I spend smth around 3 hours to understand why my connection
     # is closed when i try to place new request :(
@@ -135,5 +182,7 @@ if __name__ == '__main__':
     # Set heartbeat
     deribitWorker.send_new_request(MSG_LIST.set_heartbeat(10))
     # Send one subscription
-    deribitWorker.make_new_subscribe("ETH-PERPETUAL")
-    time.sleep(1)
+    # deribitWorker.make_new_subscribe("ETH-PERPETUAL")
+    # Send all subscriptions
+    for instrument_name in instruments_list:
+        deribitWorker.make_new_subscribe(instrument_name=instrument_name)
