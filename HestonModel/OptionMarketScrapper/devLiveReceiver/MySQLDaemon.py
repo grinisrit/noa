@@ -65,11 +65,11 @@ INSERT_CONTENT = """INSERT INTO order_book_content (CONNECT_TO_LAST, OPERATION, 
 
 FIND_PRIMARY_KEY_BY_CURRENT_CHANGE_ID = """
 SELECT PRIMARY_KEY FROM pairs_new_old
-WHERE CHANGE_ID = VALUE
+WHERE CHANGE_ID = %s
 """
 
 class MySqlDaemon:
-    def __init__(self):
+    def __init__(self, clean_tables=False):
         logging.basicConfig(
             level='INFO',
             format='%(asctime)s | %(levelname)s %(module)s | %(message)s',
@@ -88,6 +88,18 @@ class MySqlDaemon:
         # Validate that tables exists. Create if not.
         self.check_if_tables_exists()
 
+        if clean_tables:
+            with self.connection.cursor() as cursor:
+                _truncate_query = """TRUNCATE table order_book_content"""
+                cursor.execute(_truncate_query)
+                _truncate_query = """TRUNCATE table pairs_new_old"""
+                cursor.execute(_truncate_query)
+                _truncate_query = """TRUNCATE table script_snapshot_id"""
+                cursor.execute(_truncate_query)
+                # cursor.execute(_truncate_query, 'pairs_new_old')
+                # cursor.execute(_truncate_query, 'script_snapshot_id')
+
+                del _truncate_query
     def check_if_tables_exists(self):
         _all_exist = True
         _query = """SHOW TABLES LIKE '{}'"""
@@ -131,14 +143,16 @@ class MySqlDaemon:
             self.connection.commit()
 
     def add_order_book_content(self, bids, asks, change_id):
+
         # TODO: Can remove this request by creating HashMap inside Daemon. (Only one request when initialized)
         with self.connection.cursor() as cursor:
-            cursor.execute(FIND_PRIMARY_KEY_BY_CURRENT_CHANGE_ID, change_id)
-            last_connection = cursor.fetchone()
+            cursor.execute(FIND_PRIMARY_KEY_BY_CURRENT_CHANGE_ID, [change_id])
+            last_connection = cursor.fetchone()[0]
 
         bids_values = [(last_connection, bid[0].upper(), bid[1], bid[2], "BID") for bid in bids]
         asks_values = [(last_connection, ask[0].upper(), ask[1], ask[2], "ASK") for ask in asks]
 
+        print(bids_values)
         with self.connection.cursor() as cursor:
             cursor.executemany(INSERT_CONTENT, bids_values)
             cursor.executemany(INSERT_CONTENT, asks_values)
@@ -147,7 +161,7 @@ class MySqlDaemon:
     def add_instrument_init_snapshot(self, instrument_name: str,
                                      start_instrument_scrap_time: int,
                                      request_change_id: int,
-                                     bids_list: list[list[str, float, float]],
+                                     bids_list,
                                      asks_list: list[list[str, float, float]]
                                      ):
 
@@ -169,5 +183,5 @@ class MySqlDaemon:
 
 
 if __name__ == "__main__":
-    daemon = MySqlDaemon()
+    daemon = MySqlDaemon(clean_tables=True)
 

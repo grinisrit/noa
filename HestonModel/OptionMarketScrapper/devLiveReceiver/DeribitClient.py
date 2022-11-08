@@ -1,4 +1,5 @@
 import time
+from MySQLDaemon import MySqlDaemon
 
 from websocket import WebSocketApp, enableTrace, ABNF
 from threading import Thread
@@ -11,9 +12,10 @@ import MSG_LIST
 
 
 class DeribitClient(Thread, WebSocketApp):
-    websocket: WebSocketApp
+    websocket: WebSocketApp | None
+    database: MySqlDaemon | None
 
-    def __init__(self, test_mode: bool = False, enable_traceback: bool = True):
+    def __init__(self, test_mode: bool = False, enable_traceback: bool = True, enable_database_record: bool = True):
         Thread.__init__(self)
         self.testMode = test_mode
         self.exchange_version = self._set_exchange()
@@ -29,6 +31,11 @@ class DeribitClient(Thread, WebSocketApp):
         )
         # Set storages for requested data
         self.instrument_requested = set()
+        if enable_database_record:
+            self.database = MySqlDaemon()
+            time.sleep(1)
+        else:
+            self.database = None
 
     def _set_exchange(self):
         if self.testMode:
@@ -63,12 +70,37 @@ class DeribitClient(Thread, WebSocketApp):
         """
         response = json.loads(message)
         self._process_callback(response)
-        # Answer to heartbeat request
+
+        # TODO: Create executor function to make code more readable.
         if 'method' in response:
+            # Answer to heartbeat request
             if response['method'] == 'heartbeat':
                 # Send test message to approve that connection is still alive
                 self.send_new_request(MSG_LIST.test_message())
                 return
+
+            # SUBSCRIPTION processing
+            if response['method'] == "subscription":
+                # INITIAL SNAPSHOT processing
+                if response['params']['data']['type'] == 'snapshot':
+                    if self.database:
+                        self.database.add_instrument_init_snapshot(
+                            instrument_name=response['params']['data']['instrument_name'],
+                            start_instrument_scrap_time=response['params']['data']['timestamp'],
+                            request_change_id=response['params']['data']['change_id'],
+                            bids_list=response['params']['data']['bids'],
+                            asks_list=response['params']['data']['asks'],
+                        )
+                # CHANGE ORDER BOOK processing
+                if response['params']['data']['type'] == 'change':
+                    if self.database:
+                        self.database.add_instrument_change_order_book(
+                            request_change_id=response['params']['data']['change_id'],
+                            request_previous_change_id=response['params']['data']['prev_change_id'],
+                            change_timestamp=response['params']['data']['timestamp'],
+                            bids_list=response['params']['data']['bids'],
+                            asks_list=response['params']['data']['asks'],
+                        )
 
     def _process_callback(self, response):
         logging.info(response)
@@ -76,7 +108,6 @@ class DeribitClient(Thread, WebSocketApp):
 
     def _on_open(self, websocket):
         logging.info("Client start his work")
-        print('start on message')
         self.websocket.send(json.dumps(MSG_LIST.hello_message()))
 
     def send_new_request(self, request: dict):
@@ -94,7 +125,7 @@ class DeribitClient(Thread, WebSocketApp):
 
 
 if __name__ == '__main__':
-    deribitWorker = DeribitClient(test_mode=True, enable_traceback=False)
+    deribitWorker = DeribitClient(test_mode=True, enable_traceback=False, enable_database_record=True)
     deribitWorker.start()
     # Very important time sleep. I spend smth around 3 hours to understand why my connection
     # is closed when i try to place new request :(
@@ -106,4 +137,3 @@ if __name__ == '__main__':
     # Send one subscription
     deribitWorker.make_new_subscribe("ETH-PERPETUAL")
     time.sleep(1)
-    deribitWorker.make_new_subscribe("ETH-PERPETUAL")
