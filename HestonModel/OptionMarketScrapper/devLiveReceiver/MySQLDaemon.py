@@ -152,7 +152,6 @@ class MySqlDaemon:
         bids_values = [(last_connection, bid[0].upper(), bid[1], bid[2], "BID") for bid in bids]
         asks_values = [(last_connection, ask[0].upper(), ask[1], ask[2], "ASK") for ask in asks]
 
-        print(bids_values)
         with self.connection.cursor() as cursor:
             cursor.executemany(INSERT_CONTENT, bids_values)
             cursor.executemany(INSERT_CONTENT, asks_values)
