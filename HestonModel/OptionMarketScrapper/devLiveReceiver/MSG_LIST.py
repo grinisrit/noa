@@ -1,3 +1,6 @@
+import warnings
+
+
 def hello_message() -> dict:
     _msg = \
         {
@@ -35,4 +38,27 @@ def set_heartbeat(interval=60) -> dict:
                 "interval": interval
             }
         }
+    return _msg
+
+
+def make_subscription(instrument_name: str, type_of_data="book", interval="100ms", depth=None, group=None) -> dict:
+    if not depth:
+        channel = f"{type_of_data}.{instrument_name}.{interval}"
+    else:
+        if not group:
+            channel = f"{type_of_data}.{instrument_name}.none.{depth}.{interval}"
+        else:
+            warnings.warn("Highly recommended not to use group. It can be unstable right now")
+            channel = f"{type_of_data}.{instrument_name}.{group}.{depth}.{interval}"
+
+    _msg = \
+        {
+            "jsonrpc": "2.0",
+            "method": f"public/subscribe",
+            "id": 42,
+            "params": {
+                "channels": [channel]
+            }
+        }
+
     return _msg

@@ -12,6 +12,7 @@ import MSG_LIST
 
 class DeribitClient(Thread, WebSocketApp):
     websocket: WebSocketApp
+
     def __init__(self, test_mode: bool = False, enable_traceback: bool = True):
         Thread.__init__(self)
         self.testMode = test_mode
@@ -26,6 +27,8 @@ class DeribitClient(Thread, WebSocketApp):
             format='%(asctime)s | %(levelname)s | %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
+        # Set storages for requested data
+        self.instrument_requested = set()
 
     def _set_exchange(self):
         if self.testMode:
@@ -65,7 +68,7 @@ class DeribitClient(Thread, WebSocketApp):
             if response['method'] == 'heartbeat':
                 # Send test message to approve that connection is still alive
                 self.send_new_request(MSG_LIST.test_message())
-
+                return
 
     def _process_callback(self, response):
         logging.info(response)
@@ -79,6 +82,16 @@ class DeribitClient(Thread, WebSocketApp):
     def send_new_request(self, request: dict):
         self.websocket.send(json.dumps(request), ABNF.OPCODE_TEXT)
 
+    def make_new_subscribe(self, instrument_name: str, type_of_data="book", interval="100ms", depth=None, group=None):
+        if instrument_name not in self.instrument_requested:
+            subscription_message = MSG_LIST.make_subscription(instrument_name, type_of_data=type_of_data,
+                                                              interval=interval, depth=depth, group=group)
+
+            self.send_new_request(request=subscription_message)
+            self.instrument_requested.add(instrument_name)
+        else:
+            logging.warning(f"Instrument {instrument_name} already subscribed")
+
 
 if __name__ == '__main__':
     deribitWorker = DeribitClient(test_mode=True, enable_traceback=False)
@@ -90,3 +103,7 @@ if __name__ == '__main__':
     deribitWorker.send_new_request(MSG_LIST.hello_message())
     # Set heartbeat
     deribitWorker.send_new_request(MSG_LIST.set_heartbeat(10))
+    # Send one subscription
+    deribitWorker.make_new_subscribe("ETH-PERPETUAL")
+    time.sleep(1)
+    deribitWorker.make_new_subscribe("ETH-PERPETUAL")
