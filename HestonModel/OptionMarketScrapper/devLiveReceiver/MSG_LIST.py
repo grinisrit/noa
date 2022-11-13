@@ -41,9 +41,26 @@ def set_heartbeat(interval=60) -> dict:
     return _msg
 
 
-def make_subscription(instrument_name: str, type_of_data="book", interval="100ms", depth=None, group=None) -> dict:
+def make_subscription_all_book(instrument_name: str, type_of_data="book", interval="100ms") -> dict:
+    channel = f"{type_of_data}.{instrument_name}.{interval}"
+    _msg = \
+        {
+            "jsonrpc": "2.0",
+            "method": f"public/subscribe",
+            "id": 42,
+            "params": {
+                "channels": [channel]
+            }
+        }
+
+    return _msg
+
+
+def make_subscription_constant_book_depth(instrument_name: str, type_of_data="book",
+                                          interval="100ms", depth=None, group=None) -> dict:
     if not depth:
-        channel = f"{type_of_data}.{instrument_name}.{interval}"
+        warnings.warn("You use constant depth request. Depth need to be passed")
+        raise ValueError("No depth")
     else:
         if not group:
             channel = f"{type_of_data}.{instrument_name}.none.{depth}.{interval}"
