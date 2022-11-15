@@ -160,7 +160,12 @@ class MySqlDaemon:
                     del _truncate_query
             # Limited mode
             else:
-                pass
+                with self.connection.cursor() as cursor:
+                    _truncate_query = f"""TRUNCATE table {self.TEMPLATE_FOR_LIMIT_DEPTH_TABLES_NAME.format(
+                        self.depth_size)}"""
+                    cursor.execute(_truncate_query)
+
+                    del _truncate_query
 
     def check_if_tables_exists_limited_depth(self):
         _all_exist = True
@@ -264,8 +269,8 @@ class MySqlDaemon:
         _table_name = self.TEMPLATE_FOR_LIMIT_DEPTH_TABLES_NAME.format(self.depth_size)
         insert_header = HEADER_INSERTION_LIMITED_DEPTH.format(table_name=_table_name)
 
-        bids = sorted(bids, key=lambda x: x[1], reverse=True)
-        asks = sorted(asks, key=lambda x: x[1], reverse=False)
+        bids = sorted(bids, key=lambda x: x[0], reverse=True)
+        asks = sorted(asks, key=lambda x: x[0], reverse=False)
 
         bids_insert_array = [[-1.0, -1.0] for _i in range(self.depth_size)]
         asks_insert_array = [[-1.0, -1.0] for _i in range(self.depth_size)]

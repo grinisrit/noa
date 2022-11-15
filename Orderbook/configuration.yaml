@@ -8,9 +8,13 @@ orderBookScrapper:
     test_net: False
     currency: BTC
     enable_traceback: False
-    enable_database_record: False
+    enable_database_record: True
     clean_database: True
     hearth_beat_time: 60
-    group_in_limited_order_book: None
+    group_in_limited_order_book: none
+    raise_error_at_synthetic: False
+    logger_level: INFO
+
+    select_all_order_book: True
 
 

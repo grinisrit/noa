@@ -1,5 +1,7 @@
 import pprint
 import time
+import warnings
+
 from Orderbook.DataBase.MySQLDaemon import MySqlDaemon
 from Orderbook.Utils import MSG_LIST
 from Orderbook.Utils.AvailableCurrencies import Currency
@@ -13,6 +15,8 @@ import logging
 import json
 import yaml
 
+with open("../configuration.yaml", "r") as ymlfile:
+    cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)["orderBookScrapper"]
 # TODO: make available to select TEST_NET inside Scrapper
 
 
@@ -37,8 +41,8 @@ def scrap_available_instruments(currency: Currency):
     print("Available maturities: \n", available_maturities)
 
     # TODO: uncomment
-    selected_maturity = int(input("Select number of interested maturity "))
-    # selected_maturity = 0
+    # selected_maturity = int(input("Select number of interested maturity "))
+    selected_maturity = 3
     selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
     print('\nYou select:', selected_maturity)
 
@@ -51,9 +55,10 @@ def scrap_available_instruments(currency: Currency):
     if 'SYN' not in get_underlying:
         selected.append(get_underlying)
     else:
-        logging.error("Underlying is synthetic: {}".format(get_underlying))
-        raise ValueError("Cannot subscribe to order book for synthetic underlying")
-
+        if cfg["raise_error_at_synthetic"]:
+            raise ValueError("Cannot subscribe to order book for synthetic underlying")
+        else:
+            warnings.warn("Underlying is synthetic: {}".format(get_underlying))
     print("Selected Instruments")
     print(selected)
 
@@ -75,7 +80,7 @@ class DeribitClient(Thread, WebSocketApp):
         self.enable_traceback = enable_traceback
         # Set logger settings
         logging.basicConfig(
-            level='INFO',
+            level=cfg["logger_level"],
             format='%(asctime)s | %(levelname)s | %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
@@ -218,9 +223,6 @@ class DeribitClient(Thread, WebSocketApp):
 
 
 if __name__ == '__main__':
-    with open("../configuration.yaml", "r") as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)["orderBookScrapper"]
-
     if cfg["currency"] == "BTC":
         _currency = Currency.BITCOIN
     elif cfg["currency"] == "ETH":
@@ -228,7 +230,6 @@ if __name__ == '__main__':
     else:
         raise ValueError("Unknown currency")
 
-    # instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)[10:11]
     instruments_list = scrap_available_instruments(currency=_currency)
 
     deribitWorker = DeribitClient(test_mode=cfg["test_net"],
@@ -246,8 +247,9 @@ if __name__ == '__main__':
     deribitWorker.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
     # Send all subscriptions
     for _instrument_name in instruments_list:
-        pass
-        # deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
-        deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
-                                                             depth=cfg["depth"],
-                                                             group=cfg["group_in_limited_order_book"])
+        if cfg["depth"] is False:
+            deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
+        else:
+            deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
+                                                                 depth=cfg["depth"],
+                                                                 group=cfg["group_in_limited_order_book"])
