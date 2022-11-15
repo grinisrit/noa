@@ -273,7 +273,7 @@ class MySqlDaemon:
 
         _pointer = self.depth_size-1
         for i, ask in enumerate(asks):
-            asks_insert_array[_pointer] = ask
+            asks_insert_array[i] = ask
             _pointer -= 1
 
         insert_meta = """"""

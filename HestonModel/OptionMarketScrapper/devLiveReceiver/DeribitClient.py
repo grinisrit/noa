@@ -208,7 +208,8 @@ class DeribitClient(Thread, WebSocketApp):
 
 if __name__ == '__main__':
     DEPTH = 10
-    instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)[10:11]
+    # instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)[10:11]
+    instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)
     print(instruments_list)
 
     deribitWorker = DeribitClient(test_mode=TEST_NET,
