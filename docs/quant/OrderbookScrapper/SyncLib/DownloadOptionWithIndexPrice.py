@@ -1,8 +1,8 @@
-from Orderbook.Utils.AvailableCurrencies import Currency
-from Orderbook.Utils.AvailableInstrumentType import InstrumentType
+from docs.quant.OrderbookScrapper.Utils.AvailableCurrencies import Currency
+from docs.quant.OrderbookScrapper.Utils.AvailableInstrumentType import InstrumentType
 from Scrapper import send_request
 from AvailableRequests import get_instruments_by_currency_request, get_ticker_by_instrument_request
-from Orderbook.SyncLib.DeribitConnectionOld import DeribitConnectionOld
+from docs.quant.OrderbookScrapper.SyncLib.DeribitConnectionOld import DeribitConnectionOld
 import pandas as pd
 import numpy as np
 from datetime import datetime

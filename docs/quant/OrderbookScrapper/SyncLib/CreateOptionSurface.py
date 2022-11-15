@@ -1,5 +1,5 @@
-from Orderbook.Utils.AvailableCurrencies import Currency
-from Orderbook.Utils.AvailableInstrumentType import InstrumentType
+from docs.quant.OrderbookScrapper.Utils.AvailableCurrencies import Currency
+from docs.quant.OrderbookScrapper.Utils.AvailableInstrumentType import InstrumentType
 from Scrapper import send_request, send_batch_of_requests
 from AvailableRequests import get_instruments_by_currency_request, get_ticker_by_instrument_request
 from pprint import pprint

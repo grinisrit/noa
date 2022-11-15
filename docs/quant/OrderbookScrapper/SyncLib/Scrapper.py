@@ -5,11 +5,16 @@ import json
 from pprint import pprint
 from tqdm import tqdm
 import websockets
+import yaml
 
 # from AvailableRequests import test_message
 global URL_TO_SCRAP
 global TEST_NET
-TEST_NET = False
+
+with open("../configuration.yaml", "r") as ymlfile:
+    cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)["orderBookScrapper"]
+
+TEST_NET = cfg['test_net']
 if TEST_NET:
     URL_TO_SCRAP = 'wss://test.deribit.com/ws/api/v2'
 else:

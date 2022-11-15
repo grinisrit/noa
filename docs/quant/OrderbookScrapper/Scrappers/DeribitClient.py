@@ -1,10 +1,10 @@
 import time
 import warnings
 
-from Orderbook.DataBase.MySQLDaemon import MySqlDaemon
-from Orderbook.Utils import MSG_LIST
-from Orderbook.Utils.AvailableCurrencies import Currency
-from Orderbook.SyncLib.AvailableRequests import get_ticker_by_instrument_request
+from docs.quant.OrderbookScrapper.DataBase.MySQLDaemon import MySqlDaemon
+from docs.quant.OrderbookScrapper.Utils import MSG_LIST
+from docs.quant.OrderbookScrapper.Utils.AvailableCurrencies import Currency
+from docs.quant.OrderbookScrapper.SyncLib.AvailableRequests import get_ticker_by_instrument_request
 
 from websocket import WebSocketApp, enableTrace, ABNF
 from threading import Thread
@@ -21,9 +21,9 @@ with open("../configuration.yaml", "r") as ymlfile:
 
 # TODO: Add here + index_future for time_maturity
 def scrap_available_instruments(currency: Currency):
-    from Orderbook.SyncLib.AvailableRequests import get_instruments_by_currency_request
-    from Orderbook.Utils.AvailableInstrumentType import InstrumentType
-    from Orderbook.SyncLib.Scrapper import send_request
+    from docs.quant.OrderbookScrapper.SyncLib.AvailableRequests import get_instruments_by_currency_request
+    from docs.quant.OrderbookScrapper.Utils.AvailableInstrumentType import InstrumentType
+    from docs.quant.OrderbookScrapper.SyncLib.Scrapper import send_request
     import pandas as pd
     import numpy as np
 
@@ -196,7 +196,7 @@ class DeribitClient(Thread, WebSocketApp):
     def make_new_subscribe_all_book(self, instrument_name: str, type_of_data="book", interval="100ms"):
         if instrument_name not in self.instrument_requested:
             subscription_message = MSG_LIST.make_subscription_all_book(instrument_name, type_of_data=type_of_data,
-                                                                       interval=interval,)
+                                                                       interval=interval, )
 
             self.send_new_request(request=subscription_message)
             self.instrument_requested.add(instrument_name)
