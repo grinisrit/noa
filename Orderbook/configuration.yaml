@@ -1,0 +1,16 @@
+mysql:
+    host: localhost
+    user: root
+    database: DeribitOrderBook
+
+orderBookScrapper:
+    depth: 10
+    test_net: False
+    currency: BTC
+    enable_traceback: False
+    enable_database_record: False
+    clean_database: True
+    hearth_beat_time: 60
+    group_in_limited_order_book: None
+
+

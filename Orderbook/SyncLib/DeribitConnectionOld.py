@@ -1,8 +1,8 @@
 # Old Deribit API. With it's endpoints we can get historical data from last 5 years.
 
 import requests
-from AvailableCurrencies import Currency
-from AvailableInstruments import Instrument
+from Orderbook.Utils.AvailableCurrencies import Currency
+from Orderbook.Utils.AvailableInstruments import Instrument
 from pprint import pprint
 import pandas as pd
 from tqdm import tqdm

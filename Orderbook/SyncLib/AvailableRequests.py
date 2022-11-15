@@ -1,6 +1,5 @@
-import AvailableCurrencies
-from AvailableInstrumentType import InstrumentType
-import AvailableInstruments
+from Orderbook.Utils.AvailableInstrumentType import InstrumentType
+from Orderbook.Utils import AvailableInstruments, AvailableCurrencies
 import json
 
 

@@ -4,13 +4,7 @@ import time
 import json
 from pprint import pprint
 from tqdm import tqdm
-import websocket as web_sock
 import websockets
-
-from threading import Thread
-from collections import deque
-import AvailableCurrencies
-import AvailableInstrumentType
 
 # from AvailableRequests import test_message
 global URL_TO_SCRAP
@@ -97,7 +91,7 @@ def test_get_multiple_ticker_request():
 
 
 if __name__ == "__main__":
-    from AvailableRequests import get_instruments_by_currency_request, get_ticker_by_instrument_request
+    from AvailableRequests import get_ticker_by_instrument_request
 
     # test_get_multiple_ticker_request()
     # send_request(get_ticker_by_instrument_request("BTC-29SEP23-10000-C"), show_answer=True)

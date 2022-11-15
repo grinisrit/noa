@@ -1,5 +1,6 @@
 import mysql.connector as connector
 import logging
+import yaml
 
 REQUEST_TO_CREATE_SCRIPT_SNAPSHOT_ID = """
 create table script_snapshot_id
@@ -126,7 +127,9 @@ class MySqlDaemon:
         self.connection = None
         self.db_cursor = None
         try:
-            self.connection = connector.connect(host="localhost", user="root", database="DeribitOrderBook")
+            with open("../configuration.yaml", "r") as ymlfile:
+                cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)['mysql']
+            self.connection = connector.connect(host=cfg["host"], user=cfg["user"], database=cfg["database"])
             self.db_cursor = self.connection.cursor()
             logging.info("Success connection to MySQL database")
         except connector.Error as e:

@@ -1,6 +1,9 @@
+import pprint
 import time
-from MySQLDaemon import MySqlDaemon
-from AvailableCurrencies import Currency
+from Orderbook.DataBase.MySQLDaemon import MySqlDaemon
+from Orderbook.Utils import MSG_LIST
+from Orderbook.Utils.AvailableCurrencies import Currency
+from Orderbook.SyncLib.AvailableRequests import get_ticker_by_instrument_request
 
 from websocket import WebSocketApp, enableTrace, ABNF
 from threading import Thread
@@ -8,16 +11,16 @@ from threading import Thread
 from datetime import datetime
 import logging
 import json
+import yaml
+
 # TODO: make available to select TEST_NET inside Scrapper
-from HestonModel.OptionMarketScrapper.Scrapper import TEST_NET
-import MSG_LIST
 
 
 # TODO: Add here + index_future for time_maturity
 def scrap_available_instruments(currency: Currency):
-    from HestonModel.OptionMarketScrapper.AvailableRequests import get_instruments_by_currency_request
-    from AvailableInstrumentType import InstrumentType
-    from HestonModel.OptionMarketScrapper.Scrapper import send_request
+    from Orderbook.SyncLib.AvailableRequests import get_instruments_by_currency_request
+    from Orderbook.Utils.AvailableInstrumentType import InstrumentType
+    from Orderbook.SyncLib.Scrapper import send_request
     import pandas as pd
     import numpy as np
 
@@ -25,7 +28,6 @@ def scrap_available_instruments(currency: Currency):
                                                                                kind=InstrumentType.OPTION,
                                                                                expired=False))
 
-    # answer_id = make_subscriptions_list['id']
     # Take only the result of answer. Now we have list of json contains information of option dotes.
     answer = make_subscriptions_list['result']
     available_maturities = pd.DataFrame(np.unique(list(map(lambda x: x["instrument_name"].split('-')[1], answer))))
@@ -35,17 +37,26 @@ def scrap_available_instruments(currency: Currency):
     print("Available maturities: \n", available_maturities)
 
     # TODO: uncomment
-    # selected_maturity = int(input("Select number of interested maturity "))
-    selected_maturity = 2
+    selected_maturity = int(input("Select number of interested maturity "))
+    # selected_maturity = 0
     selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
     print('\nYou select:', selected_maturity)
 
     selected = list(map(lambda x: x["instrument_name"],
                         list(filter(lambda x: (selected_maturity in x["instrument_name"]) and (
-                                x["option_type"] == "call"), answer))))
+                                x["option_type"] == "call" or "put"), answer))))
+
+    get_underlying = send_request(get_ticker_by_instrument_request(selected[0]),
+                                  show_answer=False)['result']['underlying_index']
+    if 'SYN' not in get_underlying:
+        selected.append(get_underlying)
+    else:
+        logging.error("Underlying is synthetic: {}".format(get_underlying))
+        raise ValueError("Cannot subscribe to order book for synthetic underlying")
 
     print("Selected Instruments")
     print(selected)
+
     return selected
 
 
@@ -207,16 +218,24 @@ class DeribitClient(Thread, WebSocketApp):
 
 
 if __name__ == '__main__':
-    DEPTH = 10
-    # instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)[10:11]
-    instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)
-    print(instruments_list)
+    with open("../configuration.yaml", "r") as ymlfile:
+        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)["orderBookScrapper"]
 
-    deribitWorker = DeribitClient(test_mode=TEST_NET,
-                                  enable_traceback=False,
-                                  enable_database_record=True,
-                                  clean_database=True,
-                                  constant_depth_order_book=DEPTH)
+    if cfg["currency"] == "BTC":
+        _currency = Currency.BITCOIN
+    elif cfg["currency"] == "ETH":
+        _currency = Currency.ETHER
+    else:
+        raise ValueError("Unknown currency")
+
+    # instruments_list = scrap_available_instruments(currency=Currency.BITCOIN)[10:11]
+    instruments_list = scrap_available_instruments(currency=_currency)
+
+    deribitWorker = DeribitClient(test_mode=cfg["test_net"],
+                                  enable_traceback=cfg["enable_traceback"],
+                                  enable_database_record=cfg["enable_database_record"],
+                                  clean_database=cfg["clean_database"],
+                                  constant_depth_order_book=cfg["depth"])
     deribitWorker.start()
     # Very important time sleep. I spend smth around 3 hours to understand why my connection
     # is closed when i try to place new request :(
@@ -224,16 +243,11 @@ if __name__ == '__main__':
     # Send Hello Message
     deribitWorker.send_new_request(MSG_LIST.hello_message())
     # Set heartbeat
-    deribitWorker.send_new_request(MSG_LIST.set_heartbeat(10))
-    # Send one subscription
-    # deribitWorker.make_new_subscribe_all_book("ETH-PERPETUAL")
+    deribitWorker.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
     # Send all subscriptions
     for _instrument_name in instruments_list:
+        pass
         # deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
         deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
-                                                             depth=DEPTH, group=None)
-        # deribitWorker.database.add_order_book_content_limited_depth(bids=[[0.11, 0.1], [0.22, 0.2]],
-        #                                                             asks=[[0.33, 0.3], [0.44, 0.4]],
-        #                                                             change_id=1234,
-        #                                                             timestamp=100,
-        #                                                             instrument_name="TestInstrument")
+                                                             depth=cfg["depth"],
+                                                             group=cfg["group_in_limited_order_book"])
