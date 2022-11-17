@@ -21,50 +21,35 @@ class Option:
 
     def __init__(self,
                  underlying: Underlying,
-                 style: str,
+                 style: None,
                  call: bool,
                  strike: float,
                  maturity=1.0):
 
-        self.Underlying = underlying
+        self.price = underlying.price
+        self.interest = underlying.interest
+        self.volatility = underlying.volatility
         self.style = style
         self.call = call
         self.strike = strike
         self.maturity = maturity
         self.value = None
 
-    def BSM(self, currentTime=0):
-        """
-        Pricing by BSM only for European style Options
-        """
-        D1 = (np.log(self.Underlying.price / self.strike) + (
-                    self.Underlying.volatility ** 2 / 2 + self.Underlying.interest) * (
-                          self.maturity - currentTime)) / (
-                         self.Underlying.volatility * np.sqrt(self.maturity - currentTime))
-        D2 = (np.log(self.Underlying.price / self.strike) + (
-                    -self.Underlying.volatility ** 2 / 2 + self.Underlying.interest) * (
-                          self.maturity - currentTime)) / (
-                         self.Underlying.volatility * np.sqrt(self.maturity - currentTime))
+    def bsm_value(self, currentTime=0):
+        d1, d2 = d_calc(self.price, 0, self.strike, self.maturity, self.volatility, self.interest)
         if self.call:
-            if currentTime == self.maturity:
-                V = max(self.Underlying.price - self.strike, 0)
-            else:
-                V = - self.strike * np.exp(self.Underlying.interest * (currentTime - self.maturity)) * norm.cdf(D2) \
-                    + self.Underlying.price * norm.cdf(D1)
+            self.value = - self.strike * np.exp(-self.interest * (self.maturity - currentTime)) * norm.cdf(d2) + \
+                         self.price * norm.cdf(d1)
         else:
-            if currentTime == self.maturity:
-                V = max(- self.Underlying.price + self.strike, 0)
-            else:
-                V = self.strike * np.exp(self.Underlying.interest * (currentTime - self.maturity)) * norm.cdf(-D2) \
-                    - self.Underlying.price * norm.cdf(-D1)
-        self.value = V
+            self.value = self.strike * np.exp(-self.interest * (self.maturity - currentTime)) * norm.cdf(-d2) - \
+                         self.price * norm.cdf(-d1)
+        return self.value.copy()
 
 
 class Grid:
     """
     Assumes, that parameters of the grid (last 4 params) are set as for Heat Equation.
-    """
-
+    """""
     def __init__(self,
                  xSteps: int,
                  tSteps: int,
@@ -77,9 +62,12 @@ class Grid:
         self.xRight = xRight
         self.option = None
 
-        self.net = np.zeros((self.xSteps + 1, self.tSteps + 1))
+        self._net = np.zeros((self.xSteps + 1, self.tSteps + 1))
+        self.net_add = np.zeros_like(self._net)
         self.xGrid = np.linspace(self.xLeft, self.xRight, self.xSteps + 1)
-        self.timeBorder = None
+        self.sGrid = None
+        self.timeGrid = None
+        self.tBorder = None
         self.tGrid = None
         self.dx = None
         self.dt = None
@@ -88,10 +76,12 @@ class Grid:
         self.vega = None
 
     def _createGrid(self):
-        self.timeBorder = self.option.maturity * self.option.Underlying.volatility ** 2 / 2
-        self.tGrid = np.linspace(0, self.timeBorder, self.tSteps + 1)
+        self.sGrid = self.option.strike * np.exp(self.xGrid)
+        self.tBorder = self.option.maturity * self.option.Underlying.volatility ** 2 / 2
+        self.tGrid = np.linspace(0, self.tBorder, self.tSteps + 1)
+        self.timeGrid = revert_time(self.tGrid, self.option.maturity, self.option.volatility)
         self.dx = (self.xRight - self.xLeft) / self.xSteps
-        self.dt = self.timeBorder / self.tSteps
+        self.dt = self.tBorder / self.tSteps
         self.lamda = self.dt / self.dx ** 2
         self.q = 2 * self.option.Underlying.interest / self.option.Underlying.volatility ** 2
 
@@ -99,29 +89,26 @@ class Grid:
         self.option = option
         self._createGrid()
 
-    def valuateBSM(self):  # Надо разобраться с путом и ненулевой ставкой
-        self.xGrid = np.linspace(self.xLeft, self.xRight, self.xSteps + 1)
-        self.tGrid = np.linspace(0, self.timeBorder, self.tSteps + 1)
-        self.net = np.zeros((self.xSteps + 1, self.tSteps + 1))
-        self.toNormal(True)
-        K = self.option.strike
-        vol = self.option.Underlying.volatility
-        r = self.option.Underlying.interest
-        T = self.option.maturity
+    @property
+    def net(self):
+        return self._net
 
-        if self.option.call:
-            p = 1
-        else:
-            p = -1
-        for i in range(1, len(self.tGrid)):
-            for j in range(len(self.xGrid)):
-                t = self.tGrid[i]
-                S = self.xGrid[j]
-                D1 = (np.log(S / K) + (vol ** 2 / 2 + r) * (T - t)) / (vol * np.sqrt(T - t))
-                D2 = (np.log(S / K) + (-vol ** 2 / 2 + r) * (T - t)) / (vol * np.sqrt(T - t))
-                self.net[j, i] = p * S * norm.cdf(p * D1) - p * K * np.exp(r * (t - T)) * norm.cdf(p * D2)
-        for j in range(len(self.xGrid)):
-            self.net[j, 0] = max(p*(self.xGrid[j] - K), 0)
+    @net.setter
+    def net(self, external_net):
+        if self._net.shape != (self.xSteps + 1, self.tSteps + 1):
+            print(
+                f'Warning: unexpected size of net {np.size(self.net)} instead of {(self.xSteps + 1, self.tSteps + 1)}')
+        self._net = external_net
+
+    # TODO: add meshgrid
+    def bsm(self, unsafe=False):
+        p = 1 if self.option.call else -1
+        self.net_add[:, 0] = np.maximum(p * (self.sGrid - self.option.strike), np.zeros_like(self.sGrid))
+        for i in np.arange(1, len(self.tGrid)):
+            d1, d2 = d_calc(self.sGrid, self.timeGrid[i], self.option.strike, self.option.maturity, self.option.volatility, self.option.interest)
+            self.net_add[:, i] = - p * self.option.strike * np.exp(-self.option.interest * (self.option.maturity - self.timeGrid[i])) * norm.cdf(p*d2) + p * self.option.price * norm.cdf(p*d1)
+        if unsafe:
+            self._net = self.net_add
 
     def setBoundsPut(self):
         q = self.q
@@ -219,29 +206,44 @@ class Grid:
             self.net[1:n, i + 1] = solution
 
 
-@njit
-def g_func(q, t, x):
-    return np.exp(t * (q + 1)**2 / 4) * max(0, np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
+@njit()
+def put_func(q, t, x):
+    return np.exp(t * (q + 1)**2 / 4) * np.maximum(np.zeros_like(x), np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
 
 
-@njit
-def call_boundary_condition(q, t, x):
-    return np.exp((q + 1)**2 * t/4) * max(0, np.exp((q + 1)*x/2) - np.exp((q - 1)*x/2))
+@njit()
+def call_func(q, t, x):
+    return np.exp((q + 1)**2 * t/4) * np.maximum(np.zeros_like(x), np.exp((q + 1)*x/2) - np.exp((q - 1)*x/2))
 
 
-@njit
-def early_exercise(K, r, T, time):
-    return K * np.exp(r*(-T + time))
+@njit()
+def d_calc(S, t, K, T, sigma, r):
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * (T - t)) / (sigma * np.sqrt(T - t))
+    d2 = d1 - sigma * np.sqrt(T - t)
+    return d1, d2
+
+@njit()
+def revert_time(t_array, T, volatility):
+    return np.array([T - 2 * t / volatility ** 2 for t in t_array])
+
+# @njit
+# def g_func(q, t, x):
+#     return np.exp(t * (q + 1)**2 / 4) * max(0, np.exp((q - 1)*x/2) - np.exp((q + 1)*x/2))
+
+
+# @njit
+# def call_boundary_condition(q, t, x):
+#     return np.exp((q + 1)**2 * t/4) * max(0, np.exp((q + 1)*x/2) - np.exp((q - 1)*x/2))
 
 
 @njit
 def scalar_walk(A, B):
     """
-    three-dots scalar walk algorythm for solving Linear systems with bidiagonal matrix
-    :param A: bidiagonal matrix
+    three-dots scalar walk algorythm for solving Linear systems with three-diagonal matrix
+    :param A: three-diagonal matrix
     :param B: array
     :return: solution for system A*x=B
-    """
+    """""
     # scalar walk coefficients (forward walk)
     f = -B
     n = len(A)
