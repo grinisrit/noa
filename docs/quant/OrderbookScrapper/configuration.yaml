@@ -17,4 +17,6 @@ orderBookScrapper:
 
     select_all_order_book: True
 
+    hdf5_database_file: "HDF_storage.hdf5"
+
 

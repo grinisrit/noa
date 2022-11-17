@@ -16,10 +16,8 @@ import yaml
 
 with open("../configuration.yaml", "r") as ymlfile:
     cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)["orderBookScrapper"]
-# TODO: make available to select TEST_NET inside Scrapper
 
 
-# TODO: Add here + index_future for time_maturity
 def scrap_available_instruments(currency: Currency):
     from docs.quant.OrderbookScrapper.SyncLib.AvailableRequests import get_instruments_by_currency_request
     from docs.quant.OrderbookScrapper.Utils.AvailableInstrumentType import InstrumentType

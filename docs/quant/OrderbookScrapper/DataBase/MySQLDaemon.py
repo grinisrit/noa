@@ -1,4 +1,5 @@
 import mysql.connector as connector
+from AbstractDataSaverManager import AbstractDataManager
 import logging
 import yaml
 
@@ -107,10 +108,11 @@ def REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT(table_name:str, depth_size: int
 HEADER_INSERTION_LIMITED_DEPTH = """INSERT INTO {table_name} (CHANGE_ID, NAME_INSTRUMENT, TIMESTAMP_VALUE, """
 
 
-class MySqlDaemon:
+class MySqlDaemon(AbstractDataManager):
     TEMPLATE_FOR_LIMIT_DEPTH_TABLES_NAME = "TABLE_DEPTH_{}"
 
     def __init__(self,  constant_depth_mode: bool | int, clean_tables: bool = False):
+        super().__init__()
         logging.basicConfig(
             level='INFO',
             format='%(asctime)s | %(levelname)s %(module)s | %(message)s',
