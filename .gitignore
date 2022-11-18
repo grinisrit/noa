@@ -26,3 +26,4 @@ data/
 *.pt
 tmp*
 /docs/quant/OrderBookScrapper/dataStorage/
+/docs/quant/OrderBookScrapper/logs.txt
