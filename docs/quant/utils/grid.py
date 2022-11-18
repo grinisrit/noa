@@ -1,9 +1,10 @@
 from containers import Underlying, Option
-from functions import revert_time, transform_to_normal
+from functions import revert_time, transform_to_normal, find_early_exercise
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from enum import Enum
+# TODO: add comments
 
 
 class Mode(Enum):
@@ -11,9 +12,8 @@ class Mode(Enum):
     NORM = 'normal_mode'
     BSM = 'black_scholes_mode'
     DIFF_BSM = 'difference with BSM'
-    # TODO: add diff with transformed bsm
 
-# TODO: add comments
+
 class Grid:
 
     def __init__(self,
@@ -89,58 +89,62 @@ class Grid:
                 tmpX = self.xNorm
                 tmpT = self.tNorm
             case Mode.BSM:
-                # TODO: fill netBSM if it isnan
+                if self._netBSM is None:
+                    # TODO: implement function
+                    self._make_bsm_net()
                 tmpNet = self._netBSM
                 tmpX = self.xNorm
                 tmpT = self.tNorm
             case Mode.DIFF_BSM:
-                # TODO: fill netBSM if it isnan and transform backward
+                if self._netNorm is None:
+                    self._make_normal_net()
+                if self._netBSM is None:
+                    # TODO: implement function
+                    self._make_bsm_net()
                 tmpNet = self._netNorm - self._netBSM
                 tmpX = self.xNorm
                 tmpT = self.tNorm
         return tmpX, tmpT, tmpNet
 
-    def plot(self, cut=True, slice_num=5, mod=Mode.HEAT, stopline=True):
-        # TODO: add other functions
+    def plot(self, cut=True, lcoef=0, rcoef=2.4, slice_num=5, mod=Mode.HEAT, stopline=False):
         x, t, net = self._get_mod_grid(mod)
-
+        indexes = np.linspace(0, self.tSteps - 1, slice_num)
         plt.style.use("dark_background")
         plt.figure(figsize=(15, 8))
-        for i in np.linspace(0, self.tSteps - 1, slice_num):
-            plt.plot(x, net[:, int(i)], label=f"t = {self.net[int(i)]}")
+        for i in indexes:
+            plt.plot(x, net[:, int(i)], label=f"t = {round(t[int(i)], 2)}")
+        if stopline:
+            stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike, slice_num)
+            plt.vlines(stop_X, ymin=0, ymax=stop_V, color='violet')
         if cut:
-            plt.xlim(0, 2*self.option.strike)
-        # TODO: add stopline
+            plt.xlim(lcoef * self.option.strike, rcoef * self.option.strike)
         plt.legend()
         plt.show()
 
-    # TODO: add plot3D
-    # def plot3D(self, cut=True, stopline=False):
-    #     """ plotting 3D graph and slices by time """
-    #     K = self.option.strike
-    #     r = self.option.Underlying.interest
-    #     T = self.option.maturity
-    #     tempNet = self.net
-    #     tempXgrid = self.xGrid
-    #     if cut:
-    #         leftBorder = K * 0.15
-    #         rightBorder = K * 3
-    #         leftBorder = np.where(self.xGrid < leftBorder)[0][-1]
-    #         rightBorder = np.where(self.xGrid > rightBorder)[0][0]
-    #         tempNet = self.net[leftBorder:rightBorder, :]
-    #         tempXgrid = self.xGrid[leftBorder:rightBorder]
-    #     if slice_num == 0:
-    #         surface = go.Surface(z=tempNet, x=self.tGrid, y=tempXgrid)
-    #         if stoppingline:
-    #             stop_curve = self.asymptotic_stopping_line()
-    #             curve = go.Scatter3d(z=10 * np.ones(len(stop_curve)), x=self.tGrid, y=stop_curve, mode="markers",
-    #                                  marker=dict(size=3, color="green"))
-    #             fig = go.Figure([surface, curve])
-    #         else:
-    #             fig = go.Figure([surface])
-    #         fig.update_layout(title='V(S,t)', autosize=False, width=800, height=500,
-    #                           margin=dict(l=65, r=50, b=65, t=90))
-    #         fig.show()
-    #     else:
+    # TODO: and refactor cutting for heat mode
+    def _cut_net(self, x, net, lcoef=0, rcoef=2.5):
+        left = lcoef * self.option.strike
+        right = self.option.strike * rcoef
+        leftBorder = np.where(x < left)[0][-1]
+        rightBorder = np.where(x > right)[0][0]
+        net = net[leftBorder:rightBorder, :]
+        x = x[leftBorder:rightBorder]
+        return x, net
+
+    def plot3D(self, cut=True, mod=Mode.HEAT, stopline=False):
+        """ plotting 3D graph and slices by time """
+        global curve
+        x, t, net = self._get_mod_grid(mod)
+        if cut:
+            x, net = self._cut_net(x, net)
+        if stopline:
+            stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike)
+            surface = go.Surface(z=net, x=t, y=x)
+            curve = go.Scatter3d(z=stop_V[1:], x=t[1:], y=stop_X[1:], mode="markers", marker=dict(size=2, color="green"))
+        surface = go.Surface(z=net, x=t, y=x)
+        fig = go.Figure([surface, curve])
+        fig.update_layout(title='V(S,t)', autosize=False, width=1200, height=800,
+                          margin=dict(l=65, r=50, b=65, t=90))
+        fig.show()
 
 
