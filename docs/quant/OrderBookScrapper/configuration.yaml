@@ -16,7 +16,7 @@ orderBookScrapper:
     hearth_beat_time: 60
     group_in_limited_order_book: none
     raise_error_at_synthetic: False
-    logger_level: INFO
+    logger_level: WARN
 
     select_all_order_book: True
 
