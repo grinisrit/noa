@@ -266,10 +266,10 @@ if __name__ == '__main__':
         raise ValueError("Unknown currency")
 
     instruments_list = scrap_available_instruments(currency=_currency)
-    instruments_list.extend(scrap_available_instruments(currency=_currency))
-    instruments_list.extend(scrap_available_instruments(currency=_currency))
-    instruments_list.extend(scrap_available_instruments(currency=_currency))
-    instruments_list.extend(scrap_available_instruments(currency=_currency))
+    # instruments_list.extend(scrap_available_instruments(currency=_currency))
+    # instruments_list.extend(scrap_available_instruments(currency=_currency))
+    # instruments_list.extend(scrap_available_instruments(currency=_currency))
+    # instruments_list.extend(scrap_available_instruments(currency=_currency))
 
     deribitWorker = DeribitClient(test_mode=cfg["test_net"],
                                   enable_traceback=cfg["enable_traceback"],
