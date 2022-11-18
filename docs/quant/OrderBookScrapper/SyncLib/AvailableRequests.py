@@ -1,5 +1,5 @@
-from docs.quant.OrderbookScrapper.Utils.AvailableInstrumentType import InstrumentType
-from docs.quant.OrderbookScrapper.Utils import AvailableInstruments, AvailableCurrencies
+from docs.quant.OrderBookScrapper.Utils.AvailableInstrumentType import InstrumentType
+from docs.quant.OrderBookScrapper.Utils import AvailableInstruments, AvailableCurrencies
 import json
 
 

@@ -1,5 +1,5 @@
 import mysql.connector as connector
-from docs.quant.OrderbookScrapper.DataBase.AbstractDataSaverManager import AbstractDataManager
+from docs.quant.OrderBookScrapper.DataBase.AbstractDataSaverManager import AbstractDataManager
 import logging
 import yaml
 

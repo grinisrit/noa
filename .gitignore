@@ -25,4 +25,4 @@ dist/
 data/
 *.pt
 tmp*
-/docs/quant/OrderbookScrapper/dataStorage/
+/docs/quant/OrderBookScrapper/dataStorage/

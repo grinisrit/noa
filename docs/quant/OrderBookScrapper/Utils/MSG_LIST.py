@@ -79,3 +79,16 @@ def make_subscription_constant_book_depth(instrument_name: str, type_of_data="bo
         }
 
     return _msg
+
+
+def unsubscribe_all() -> dict:
+    _msg = \
+        {
+            "jsonrpc": "2.0",
+            "id": 153,
+            "method": "public/unsubscribe_all",
+            "params": {
+
+            }
+        }
+    return _msg
