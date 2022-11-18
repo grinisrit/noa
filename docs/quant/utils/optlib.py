@@ -5,45 +5,15 @@ from scipy.stats import norm
 from numba import njit
 
 
-class Underlying:
-
-    def __init__(self,
-                 price: float,
-                 volatility: float,
-                 interest=0.0):
-        self.price = price
-        self.interest = interest
-        self.volatility = volatility
-        # add simulation function
-
-
-class Option:
-
-    def __init__(self,
-                 underlying: Underlying,
-                 style: None,
-                 call: bool,
-                 strike: float,
-                 maturity=1.0):
-
-        self.price = underlying.price
-        self.interest = underlying.interest
-        self.volatility = underlying.volatility
-        self.style = style
-        self.call = call
-        self.strike = strike
-        self.maturity = maturity
-        self.value = None
-
-    def bsm_value(self, currentTime=0):
-        d1, d2 = d_calc(self.price, 0, self.strike, self.maturity, self.volatility, self.interest)
-        if self.call:
-            self.value = - self.strike * np.exp(-self.interest * (self.maturity - currentTime)) * norm.cdf(d2) + \
-                         self.price * norm.cdf(d1)
-        else:
-            self.value = self.strike * np.exp(-self.interest * (self.maturity - currentTime)) * norm.cdf(-d2) - \
-                         self.price * norm.cdf(-d1)
-        return self.value.copy()
+def bsm_value(self, currentTime=0):
+    d1, d2 = d_calc(self.price, 0, self.strike, self.maturity, self.volatility, self.interest)
+    if self.call:
+        self.value = - self.strike * np.exp(-self.interest * (self.maturity - currentTime)) * norm.cdf(d2) + \
+                     self.price * norm.cdf(d1)
+    else:
+        self.value = self.strike * np.exp(-self.interest * (self.maturity - currentTime)) * norm.cdf(-d2) - \
+                     self.price * norm.cdf(-d1)
+    return self.value.copy()
 
 
 class Grid:
