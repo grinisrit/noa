@@ -2,6 +2,7 @@ import time
 import warnings
 
 from docs.quant.OrderbookScrapper.DataBase.MySQLDaemon import MySqlDaemon
+from docs.quant.OrderbookScrapper.DataBase.HDF5Daemon import HDF5Daemon
 from docs.quant.OrderbookScrapper.Utils import MSG_LIST
 from docs.quant.OrderbookScrapper.Utils.AvailableCurrencies import Currency
 from docs.quant.OrderbookScrapper.SyncLib.AvailableRequests import get_ticker_by_instrument_request
@@ -38,8 +39,8 @@ def scrap_available_instruments(currency: Currency):
     print("Available maturities: \n", available_maturities)
 
     # TODO: uncomment
-    selected_maturity = int(input("Select number of interested maturity "))
-    # selected_maturity = 3
+    # selected_maturity = int(input("Select number of interested maturity "))
+    selected_maturity = 3
     selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
     print('\nYou select:', selected_maturity)
 
@@ -64,7 +65,7 @@ def scrap_available_instruments(currency: Currency):
 
 class DeribitClient(Thread, WebSocketApp):
     websocket: WebSocketApp | None
-    database: MySqlDaemon | None
+    database: MySqlDaemon | HDF5Daemon | None
 
     def __init__(self, test_mode: bool = False, enable_traceback: bool = True, enable_database_record: bool = True,
                  clean_database=False, constant_depth_order_book: bool | int = False):
@@ -84,13 +85,27 @@ class DeribitClient(Thread, WebSocketApp):
         # Set storages for requested data
         self.instrument_requested = set()
         if enable_database_record:
-            if type(constant_depth_order_book) == int:
-                self.database = MySqlDaemon(constant_depth_mode=constant_depth_order_book, clean_tables=clean_database)
-            elif constant_depth_order_book is False:
-                self.database = MySqlDaemon(constant_depth_mode=constant_depth_order_book, clean_tables=clean_database)
-            else:
-                raise ValueError('Unavailable value of depth order book mode')
-            time.sleep(1)
+            if cfg["database_daemon"] == 'mysql':
+                if type(constant_depth_order_book) == int:
+                    self.database = MySqlDaemon(constant_depth_mode=constant_depth_order_book,
+                                                clean_tables=clean_database)
+                elif constant_depth_order_book is False:
+                    self.database = MySqlDaemon(constant_depth_mode=constant_depth_order_book,
+                                                clean_tables=clean_database)
+                else:
+                    raise ValueError('Unavailable value of depth order book mode')
+                time.sleep(1)
+
+            if cfg["database_daemon"] == "hdf5":
+                if type(constant_depth_order_book) == int:
+                    self.database = HDF5Daemon(constant_depth_mode=constant_depth_order_book,
+                                               clean_tables=clean_database)
+                elif constant_depth_order_book is False:
+                    self.database = HDF5Daemon(constant_depth_mode=constant_depth_order_book,
+                                               clean_tables=clean_database)
+                else:
+                    raise ValueError('Unavailable value of depth order book mode')
+                time.sleep(1)
         else:
             self.database = None
 
@@ -243,7 +258,17 @@ if __name__ == '__main__':
     # Set heartbeat
     deribitWorker.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
     # Send all subscriptions
+
     for _instrument_name in instruments_list:
+        if cfg["depth"] is False:
+            deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
+        else:
+            deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
+                                                                 depth=cfg["depth"],
+                                                                 group=cfg["group_in_limited_order_book"])
+
+    # Extra like BTC-PERPETUAL
+    for _instrument_name in cfg["add_extra_instruments"]:
         if cfg["depth"] is False:
             deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
         else:

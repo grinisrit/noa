@@ -1,5 +1,5 @@
 import mysql.connector as connector
-from AbstractDataSaverManager import AbstractDataManager
+from docs.quant.OrderbookScrapper.DataBase.AbstractDataSaverManager import AbstractDataManager
 import logging
 import yaml
 
@@ -265,7 +265,6 @@ class MySqlDaemon(AbstractDataManager):
                                                  update_time=change_timestamp)
 
         self.add_order_book_content_unlimited_depth(bids=bids_list, asks=asks_list, change_id=request_change_id)
-
 
     def add_order_book_content_limited_depth(self, bids, asks, change_id, timestamp, instrument_name):
         _table_name = self.TEMPLATE_FOR_LIMIT_DEPTH_TABLES_NAME.format(self.depth_size)
