@@ -39,8 +39,8 @@ def scrap_available_instruments(currency: Currency):
     print("Available maturities: \n", available_maturities)
 
     # TODO: uncomment
-    # selected_maturity = int(input("Select number of interested maturity "))
-    selected_maturity = 3
+    selected_maturity = int(input("Select number of interested maturity "))
+    # selected_maturity = 3
     selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
     print('\nYou select:', selected_maturity)
 
