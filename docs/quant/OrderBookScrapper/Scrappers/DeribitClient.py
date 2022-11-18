@@ -39,8 +39,8 @@ def scrap_available_instruments(currency: Currency):
     print("Available maturities: \n", available_maturities)
 
     # TODO: uncomment
-    # selected_maturity = int(input("Select number of interested maturity "))
-    selected_maturity = 3
+    selected_maturity = int(input("Select number of interested maturity "))
+    # selected_maturity = 3
     selected_maturity = available_maturities.iloc[selected_maturity]['DeribitNaming']
     print('\nYou select:', selected_maturity)
 
@@ -68,8 +68,10 @@ class DeribitClient(Thread, WebSocketApp):
     database: MySqlDaemon | HDF5Daemon | None
 
     def __init__(self, test_mode: bool = False, enable_traceback: bool = True, enable_database_record: bool = True,
-                 clean_database=False, constant_depth_order_book: bool | int = False):
+                 clean_database=False, constant_depth_order_book: bool | int = False, instruments_listed: list = []):
+
         Thread.__init__(self)
+        self.instruments_list = instruments_listed
         self.testMode = test_mode
         self.exchange_version = self._set_exchange()
         self.time = datetime.now()
@@ -134,9 +136,8 @@ class DeribitClient(Thread, WebSocketApp):
     def _on_error(self, websocket, error):
         # TODO: send Telegram notification
         logging.error(error)
-        print(error)
-        self._restart_all()
-        pass
+        print("ERROR:", error)
+        self.instrument_requested.clear()
 
     def _on_message(self, websocket, message):
         """
@@ -205,6 +206,26 @@ class DeribitClient(Thread, WebSocketApp):
         logging.info("Client start his work")
         self.websocket.send(json.dumps(MSG_LIST.hello_message()))
 
+        # Set heartbeat
+        self.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
+        # Send all subscriptions
+        for _instrument_name in self.instruments_list:
+            if cfg["depth"] is False:
+                self.make_new_subscribe_all_book(instrument_name=_instrument_name)
+            else:
+                self.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
+                                                                     depth=cfg["depth"],
+                                                                     group=cfg["group_in_limited_order_book"])
+
+        # Extra like BTC-PERPETUAL
+        for _instrument_name in cfg["add_extra_instruments"]:
+            if cfg["depth"] is False:
+                self.make_new_subscribe_all_book(instrument_name=_instrument_name)
+            else:
+                self.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
+                                                                     depth=cfg["depth"],
+                                                                     group=cfg["group_in_limited_order_book"])
+
     def send_new_request(self, request: dict):
         self.websocket.send(json.dumps(request), ABNF.OPCODE_TEXT)
 
@@ -235,33 +256,6 @@ class DeribitClient(Thread, WebSocketApp):
         else:
             logging.warning(f"Instrument {instrument_name} already subscribed")
 
-    def _restart_all(self):
-        logging.warning("Error at webApp leads to restarting")
-        self.instrument_requested.clear()
-        time.sleep(2)
-        logging.warning("Subscriptions has been cleared")
-        self.send_new_request(request=MSG_LIST.unsubscribe_all())
-        time.sleep(10)
-        logging.warning("Restart - reset hearth beat time")
-        self.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
-        logging.warning("Restart - subscribe to all instruments")
-        for _instrument_name in instruments_list:
-            if cfg["depth"] is False:
-                self.make_new_subscribe_all_book(instrument_name=_instrument_name)
-            else:
-                self.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
-                                                                     depth=cfg["depth"],
-                                                                     group=cfg["group_in_limited_order_book"])
-
-        # Extra like BTC-PERPETUAL
-        for _instrument_name in cfg["add_extra_instruments"]:
-            if cfg["depth"] is False:
-                self.make_new_subscribe_all_book(instrument_name=_instrument_name)
-            else:
-                self.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
-                                                                     depth=cfg["depth"],
-                                                                     group=cfg["group_in_limited_order_book"])
-
 
 if __name__ == '__main__':
     if cfg["currency"] == "BTC":
@@ -272,35 +266,40 @@ if __name__ == '__main__':
         raise ValueError("Unknown currency")
 
     instruments_list = scrap_available_instruments(currency=_currency)
+    instruments_list.extend(scrap_available_instruments(currency=_currency))
+    instruments_list.extend(scrap_available_instruments(currency=_currency))
+    instruments_list.extend(scrap_available_instruments(currency=_currency))
+    instruments_list.extend(scrap_available_instruments(currency=_currency))
 
     deribitWorker = DeribitClient(test_mode=cfg["test_net"],
                                   enable_traceback=cfg["enable_traceback"],
                                   enable_database_record=cfg["enable_database_record"],
                                   clean_database=cfg["clean_database"],
-                                  constant_depth_order_book=cfg["depth"])
+                                  constant_depth_order_book=cfg["depth"],
+                                  instruments_listed=instruments_list)
     deribitWorker.start()
     # Very important time sleep. I spend smth around 3 hours to understand why my connection
     # is closed when i try to place new request :(
     time.sleep(1)
     # Send Hello Message
-    deribitWorker.send_new_request(MSG_LIST.hello_message())
+    # deribitWorker.send_new_request(MSG_LIST.hello_message())
     # Set heartbeat
-    deribitWorker.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
+    # deribitWorker.send_new_request(MSG_LIST.set_heartbeat(cfg["hearth_beat_time"]))
     # Send all subscriptions
 
-    for _instrument_name in instruments_list:
-        if cfg["depth"] is False:
-            deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
-        else:
-            deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
-                                                                 depth=cfg["depth"],
-                                                                 group=cfg["group_in_limited_order_book"])
-
-    # Extra like BTC-PERPETUAL
-    for _instrument_name in cfg["add_extra_instruments"]:
-        if cfg["depth"] is False:
-            deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
-        else:
-            deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
-                                                                 depth=cfg["depth"],
-                                                                 group=cfg["group_in_limited_order_book"])
+    # for _instrument_name in instruments_list:
+    #     if cfg["depth"] is False:
+    #         deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
+    #     else:
+    #         deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
+    #                                                              depth=cfg["depth"],
+    #                                                              group=cfg["group_in_limited_order_book"])
+    #
+    # # Extra like BTC-PERPETUAL
+    # for _instrument_name in cfg["add_extra_instruments"]:
+    #     if cfg["depth"] is False:
+    #         deribitWorker.make_new_subscribe_all_book(instrument_name=_instrument_name)
+    #     else:
+    #         deribitWorker.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,
+    #                                                              depth=cfg["depth"],
+    #                                                              group=cfg["group_in_limited_order_book"])
