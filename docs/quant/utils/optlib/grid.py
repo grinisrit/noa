@@ -1,5 +1,5 @@
-from containers import Underlying, Option
-from utils import revert_time, transform_to_normal, find_early_exercise, fill_bsm
+from docs.quant.utils.optlib.containers import Underlying, Option
+from docs.quant.utils.optlib.utils import revert_time, transform_to_normal, find_early_exercise, fill_bsm, fill_bsm_dev
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -76,13 +76,13 @@ class Grid:
         return self._netNorm
 
     def _make_bsm_net(self):
-        return fill_bsm(self.xNorm,
-                        self.tNorm,
-                        self.option.strike,
-                        self.option.maturity,
-                        self.underlying.volatility,
-                        self.underlying.interest,
-                        call=self.option.call)
+        self._netBSM = fill_bsm_dev(self.xNorm,
+                                    self.tNorm,
+                                    self.option.strike,
+                                    self.option.maturity,
+                                    self.underlying.volatility,
+                                    self.underlying.interest,
+                                    call=self.option.call)
 
     def _get_mod_grid(self, mod):
         global tmpX, tmpT, tmpNet
@@ -124,6 +124,7 @@ class Grid:
             stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike, slice_num)
             plt.vlines(stop_X, ymin=0, ymax=stop_V, color='violet')
         if cut:
+            plt.ylim(0, (rcoef-1) * self.option.strike)
             plt.xlim(lcoef * self.option.strike, rcoef * self.option.strike)
         plt.legend()
         plt.show()
@@ -132,7 +133,7 @@ class Grid:
     def _cut_net(self, x, net, lcoef=0, rcoef=2.5):
         left = lcoef * self.option.strike
         right = self.option.strike * rcoef
-        leftBorder = np.where(x < left)[0][-1]
+        leftBorder = np.where(x > left)[0][0]
         rightBorder = np.where(x > right)[0][0]
         net = net[leftBorder:rightBorder, :]
         x = x[leftBorder:rightBorder]
@@ -140,18 +141,16 @@ class Grid:
 
     def plot3D(self, cut=True, mod=Mode.HEAT, stopline=False):
         """ plotting 3D graph and slices by time """
-        global curve
+        curve = go.Scatter3d(z=list(), x=list(), y=list())
         x, t, net = self._get_mod_grid(mod)
         if cut:
             x, net = self._cut_net(x, net)
         if stopline:
             stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike)
-            surface = go.Surface(z=net, x=t, y=x)
-            curve = go.Scatter3d(z=stop_V[1:], x=t[1:], y=stop_X[1:], mode="markers", marker=dict(size=2, color="green"))
+            surface = go.Surface(z=net, x=x, y=t)
+            curve = go.Scatter3d(z=stop_V[1:], x=stop_X[1:], y=t[1:], mode="markers", marker=dict(size=2, color="green"))
         surface = go.Surface(z=net, x=t, y=x)
         fig = go.Figure([surface, curve])
         fig.update_layout(title='V(S,t)', autosize=False, width=1200, height=800,
                           margin=dict(l=65, r=50, b=65, t=90))
         fig.show()
-
-

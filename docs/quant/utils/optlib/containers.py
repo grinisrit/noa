@@ -17,7 +17,7 @@ class Option:
                  call: bool,
                  strike: float,
                  maturity=1.0,
-                 style=str):
+                 style="Eu"):
 
         self.style = style
         self.call = call

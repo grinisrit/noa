@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.stats import norm
 from numba import njit
+
+
 # TODO: add comments
 
 
@@ -26,27 +28,45 @@ def transform_to_heat(K, q, t_heat, x_heat, net):
 
 
 @njit()
-def find_early_exercise(V, S_array, t_array, K, slice_num=0, tolerance=10**-5):
+def find_early_exercise(V, S_array, t_array, K, slice_num=0, tolerance=10 ** -5):
     stop_line_V = list()
     stop_line_S = list()
     if slice_num == 0:
         for i in range(len(t_array)):
             v_array = V[:, int(i)]
-            stop = [(s, v) for v, s in zip(v_array, S_array) if v <= max(K-s+tolerance, 0)]
+            stop = [(s, v) for v, s in zip(v_array, S_array) if v <= max(K - s + tolerance, 0)]
             stop_line_V.append(stop[-1][1])
             stop_line_S.append(stop[-1][0])
     else:
         for i in np.linspace(0, len(t_array) - 1, slice_num):
-            stop = [(s, v) for v, s in zip(V[:, int(i)], S_array) if v <= max(K-s+tolerance, 0)]
+            stop = [(s, v) for v, s in zip(V[:, int(i)], S_array) if v <= max(K - s + tolerance, 0)]
             stop_line_V.append(stop[-1][1])
             stop_line_S.append(stop[-1][0])
     return stop_line_V, stop_line_S
 
 
-def fill_bsm(x_aray, t_array, K, T, sigma, r, call=True):
-    xx, tt = np.meshgrid(x_aray, t_array)
+def fill_bsm_dev(x_array, t_array, K, T, vol, r, call=True):
+    tt, xx = np.meshgrid(t_array[1:], x_array)
     dtt = T - tt
-    d1 = (np.log(xx / K) + (r + sigma ** 2 / 2) * dtt) / (sigma * np.sqrt(dtt))
-    d2 = d1 - sigma * np.sqrt(dtt)
+    d1 = np.multiply((np.log(xx / K) + (r + vol ** 2 / 2) * dtt),  1 / (vol * np.sqrt(dtt)))
+    d2 = d1 - vol * np.sqrt(dtt)
     p = 1 if call else -1
-    return p * xx * norm.cdf(p * d1) - p * K * np.exp(r * dtt) * norm.cdf(p * d2)
+
+    V = np.empty((len(x_array), len(t_array)))
+    V[:, 1:] = p*np.multiply(xx, norm.cdf(p*d1)) - p*K*np.multiply(np.exp(r*dtt), norm.cdf(p*d2))
+    V[:, 0] = np.maximum(p * (np.array(x_array) - K), np.zeros_like(x_array))
+    return V
+
+
+def fill_bsm(s_array, t_array, K, T, vol, r, call=True):
+    V = np.empty((len(s_array), len(t_array)))
+    p = 1 if call else -1
+    ttm = T - t_array
+
+    V[:, 0] = np.maximum(p * (np.array(s_array) - K), np.zeros_like(s_array))
+    for i in np.arange(1, len(t_array)):
+            dt = ttm[i]
+            d1 = (np.log(s_array / K) + (vol ** 2 / 2 + r) * dt) / (vol * np.sqrt(dt))
+            d2 = d1 - vol * np.sqrt(dt)
+            V[:, i] = p * np.multiply(s_array, norm.cdf(p * d1)) - p * K * np.exp(r * dt) * norm.cdf(p * d2)
+    return V
