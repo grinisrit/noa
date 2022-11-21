@@ -58,11 +58,9 @@ class Grid:
 
     def _make_normal_net(self):
         self._netNorm = transform_to_normal(K=self.option.strike,
-                                            T=self.option.maturity,
-                                            vol=self.underlying.volatility,
                                             q=self.q,
-                                            x_array=self.xHeat,
-                                            t_array=self.tHeat,
+                                            t_heat=self.tHeat,
+                                            x_heat=self.xHeat,
                                             net=self._net.copy())
 
     @property

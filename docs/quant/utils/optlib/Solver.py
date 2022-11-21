@@ -16,7 +16,7 @@ class Solver(Grid):
         super().__init__(underlying, option, xSteps, tSteps, xLeft, xRight)
 
     def _setBounds(self):
-        self._net = set_bounds(net=self.net,
+        self._net = set_bounds(net=self.net.copy(),
                                q=self.q,
                                t_array=self.tHeat,
                                x_array=self.xHeat,
@@ -31,8 +31,9 @@ class Solver(Grid):
             print('This algorithm is not used with Call Options')
         else:
             self._setBounds()
-            self._net = brennan_schwartz_scheme(net=self.net,
-                                                time_vector=self.tHeat,
-                                                x_vector=self.xHeat,
-                                                lambda_=self.lamda,
-                                                q=self.q)
+            # self._net = brennan_schwartz_scheme(net=self.net,
+            #                                     time_vector=self.tHeat,
+            #                                     x_vector=self.xHeat,
+            #                                     lambda_=self.lamda,
+            #                                     k=self.q)
+            self._net = price_american_put(self.option.maturity, self.underlying.interest, self.underlying.volatility, self.xLeft, self.xRight, self.dxHeat, self.dtHeat)

@@ -2,15 +2,20 @@ from optlib.Solver import *
 
 stock = Underlying(price=65,
                    volatility=0.3,
-                   interest=0.01)
+                   interest=0.0)
 
-EuCall = Option(call=True,
+EuCall = Option(call=False,
                 strike=50)
 
-grid = Solver(underlying=stock,
+solver = Solver(underlying=stock,
               option=EuCall,
-              xSteps=300,
-              tSteps=200)
+              xSteps=100,
+              tSteps=80)
 
-grid.plot(cut=False,
-            mod=Mode.HEAT)
+solver.solve_brennan_schwarz()
+#solver.plot3D(cut=False, mod=Mode.HEAT)
+#solver.plot3D(cut=False, mod=Mode.NORM)
+#solver.plot3D(cut=False, mod=Mode.DIFF_BSM)
+#
+solver.plot(cut=True, mod=Mode.NORM)
+solver.plot3D(cut=True, mod=Mode.DIFF_BSM)
