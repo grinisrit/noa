@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.stats import norm
 from numba import njit
-
-
 # TODO: add comments
 
 

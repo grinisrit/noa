@@ -1,5 +1,5 @@
-from docs.quant.utils.optlib.containers import Underlying, Option
-from docs.quant.utils.optlib.utils import revert_time, transform_to_normal, find_early_exercise, fill_bsm, fill_bsm_dev
+from docs.quant.utils.optlib.Containers import *
+from docs.quant.utils.optlib.utils import *
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -113,6 +113,16 @@ class Grid:
                 tmpT = self.tNorm
         return tmpX, tmpT, tmpNet
 
+    # TODO: and refactor cutting for heat mode
+    def _cut_net(self, x, net, lcoef=0, rcoef=2.5):
+        left = lcoef * self.option.strike
+        right = self.option.strike * rcoef
+        leftBorder = np.where(x > left)[0][0]
+        rightBorder = np.where(x > right)[0][0]
+        net = net[leftBorder:rightBorder, :]
+        x = x[leftBorder:rightBorder]
+        return x, net
+
     def plot(self, cut=True, lcoef=0, rcoef=2.4, slice_num=5, mod=Mode.HEAT, stopline=False):
         x, t, net = self._get_mod_grid(mod)
         indexes = np.linspace(0, self.tSteps - 1, slice_num)
@@ -128,16 +138,6 @@ class Grid:
             plt.xlim(lcoef * self.option.strike, rcoef * self.option.strike)
         plt.legend()
         plt.show()
-
-    # TODO: and refactor cutting for heat mode
-    def _cut_net(self, x, net, lcoef=0, rcoef=2.5):
-        left = lcoef * self.option.strike
-        right = self.option.strike * rcoef
-        leftBorder = np.where(x > left)[0][0]
-        rightBorder = np.where(x > right)[0][0]
-        net = net[leftBorder:rightBorder, :]
-        x = x[leftBorder:rightBorder]
-        return x, net
 
     def plot3D(self, cut=True, mod=Mode.HEAT, stopline=False):
         """ plotting 3D graph and slices by time """
