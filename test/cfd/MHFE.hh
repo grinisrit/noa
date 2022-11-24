@@ -55,7 +55,7 @@ enum Layer : std::size_t {
 	/// Matrix B<sup>-1</sup>.
 	/// Denotes the start of an N*N layer series, where N is
 	/// the amount of edges per cell.
-	/// If the cells topologies are different, takes max(N)
+	/// It is assumed that all cells share the same topology (N is the same for all cells)
 	///
 	/// Cell, Real (Doxygen just wouldn't format this as other members for some reason 😢 )
 	BINV		= 7,
@@ -121,18 +121,7 @@ void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) 
 		domain.getLayers(dimCell).getLayer(Layer::PRECISE).exportHint = true;
 	}
 	/// Allocate BINV
-	const auto cEdgesFetch = [&domain] (GlobalIndex cell) {
-		return domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(cell);
-	};
-	const auto cellEdges = TNL::Algorithms::reduce<Device>(
-							GlobalIndex(0),
-							domain.getMesh().template getEntitiesCount<dimCell>(),
-							cEdgesFetch,
-							[] (const GlobalIndex& a, const GlobalIndex& b) {
-								return (a < b) ? b : a;
-							},
-							GlobalIndex(0)
-						);
+	const auto cellEdges = domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(0);
 	for (GlobalIndex i = 0; i < cellEdges * cellEdges; ++i)
 		domain.getLayers(dimCell).template add<Real>(BINV + i, 0);
 
@@ -192,14 +181,6 @@ void initDomain(__DomainType__& domain) {
 		}
 	});
 
-	// Fill l
-	auto ls = domain.getLayers(dimCell).template get<Real>(Layer::L).getView();
-	domain.getMesh().template forAll<dimCell>([&] (const GlobalIndex& cell) {
-		const auto cellEntity = mesh.template getEntity<dimCell>(cell);
-		const Real mes = TNL::Meshes::getEntityMeasure(mesh, cellEntity);
-		ls[cell] = lGet(domain, cell, mes);
-	});
-
 	// Fill MEASURE
 	auto mesView = domain.getLayers(dimCell).template get<Real>(MEASURE).getView();
 	domain.getMesh().template forAll<dimCell>([&mesView, &domain] (const GlobalIndex& cell) {
@@ -248,6 +229,11 @@ void solverStep(__DomainType__& domain,
 
 	const auto lView = domain.getLayers(dimCell).template get<Real>(Layer::L).getConstView();
 
+	const auto cellEdges = domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(0);
+	const auto bInvEl = [&domain, &cellEdges] (const GlobalIndex& cell, const LocalIndex& i, const LocalIndex& j) {
+		return domain.getLayers(dimCell).template get<Real>(BINV + i * cellEdges + j)[cell];
+	};
+
 	// Reset the right-hand vector
 	rightView.forAllElements([] (GlobalIndex i, Real& v) { v = 0; });
 
@@ -261,12 +247,7 @@ void solverStep(__DomainType__& domain,
 
 		const Real lambda = c * mes / tau;
 
-		// TODO: Binv could be cached because they depend only on geometry
 		const auto l = lView[cell];
-
-		const auto cellEdges = domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(cell);
-		TNL::Matrices::DenseMatrix<Real, Device, LocalIndex> mBinv(cellEdges, cellEdges);
-		Binv(domain, mBinv, cell, mes, l);
 
 		const auto alpha_i = 1 / l;
 		const auto alpha = cellEdges * alpha_i;
@@ -282,12 +263,12 @@ void solverStep(__DomainType__& domain,
 										lambda, beta,
 										a, c, l,
 										mes, tau,
-										mBinv.getElement(local, lei));
+										bInvEl(cell, local, lei));
 			const Real lumping	= LumpingFunctor::template get<CellTopology, Real>(alpha_i, alpha,
 										lambda, beta,
 										a, c, l,
 										mes, tau,
-										mBinv.getElement(local, lei));
+										bInvEl(cell, local, lei));
 			const auto gEdge = domain.getMesh().template getSubentityIndex<dimCell, dimEdge>(cell, lei);
 			mView.addElement(edge, gEdge, delta);
 			if (lei == local) mView.addElement(edge, gEdge, lumping);
