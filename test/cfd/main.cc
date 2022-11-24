@@ -6,6 +6,7 @@
 
 #include "main.hh"
 #include "MHFE.hh"
+#include "MHFESolver.hh"
 #include "Func.hh"
 
 // Set up GFlags
@@ -51,6 +52,7 @@ auto main(int argc, char **argv) -> int {
 
 	using CellTopology	= TNL::Meshes::Topologies::Triangle; // 2D
 	using DomainType	= utils::domain::Domain<CellTopology>;
+	using MatrixType	= TNL::Matrices::SparseMatrix<DomainType::RealType, DomainType::DeviceType, DomainType::GlobalIndexType>;
 	using GlobalIndex	= typename DomainType::GlobalIndexType;
 	constexpr auto cellD	= DomainType::getMeshDimension();	// 2 -> 2D cell
 	constexpr auto edgeD	= DomainType::getMeshDimension() - 1;	// 1 -> 2D cell edge
@@ -102,6 +104,7 @@ auto main(int argc, char **argv) -> int {
 	MHFE::initDomain(domain);
 
 	if (FLAGS_sensitivity) {
+		/*
 		float delta = FLAGS_delta;
 		ofstream dat;
 		if (FLAGS_suite) {
@@ -124,9 +127,11 @@ auto main(int argc, char **argv) -> int {
 			delta += FLAGS_delta / 250;
 		} while (delta <= FLAGS_delta);
 		if (FLAGS_suite) dat.close();
+		*/
 	} else {
 		float tau = FLAGS_tau;	// Time step
 		float T = FLAGS_T;
+
 		// Save the step result
 		const MHFE::PostStepCb<float> saveStep = [&domain, &tau, &solverOutputPath] (const float& t) -> void {
 			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t - tau);

@@ -60,6 +60,7 @@ struct Domain {
         using LayerManagerType  = LayerManager<Device, GlobalIndex>;
 
         using RealType          = Real;
+        using DeviceType        = Device;
         using GlobalIndexType   = GlobalIndex;
         using LocalIndexType    = LocalIndex;
 
