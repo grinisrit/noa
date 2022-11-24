@@ -188,6 +188,25 @@ void initDomain(__DomainType__& domain) {
 			domain.getMesh(), domain.getMesh().template getEntity<dimCell>(cell)
 		);
 	});
+
+	// Fill l
+	auto lView = domain.getLayers(dimCell).template get<Real>(Layer::L).getView();
+	domain.getMesh().template forAll<dimCell>([&lView, &domain, mesView] (const GlobalIndex& cell) {
+		lView[cell] = lGet(domain, cell, mesView[cell]);
+	});
+
+	// Fill BINV
+	const auto cellEdges = domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(0);
+	domain.getMesh().template forAll<dimCell>([&cellEdges, &domain, mesView, lView] (const GlobalIndex& cell) {
+		TNL::Matrices::DenseMatrix<Real, Device, LocalIndex> mBinv(cellEdges, cellEdges);
+		Binv(domain, mBinv, cell, mesView[cell], lView[cell]);
+
+		for (LocalIndex i = 0; i < cellEdges; ++i)
+			for (LocalIndex j = 0; j < cellEdges; ++j) {
+				auto view = domain.getLayers(dimCell).template get<Real>(BINV + i * cellEdges + j).getView();
+				view[cell] = mBinv.getElement(i, j);
+			}
+	});
 }
 
 template <typename DeltaFunctor, typename LumpingFunctor, typename RightFunctor, __domain_targs__>
