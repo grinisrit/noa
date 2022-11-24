@@ -26,14 +26,16 @@
 // STL headers
 #include <cassert>
 #include <variant>
+#include <vector>
+#include <unordered_map>
 
 // TNL headers
 #include <noa/3rdparty/tnl-noa/src/TNL/Containers/Vector.h>
 
 namespace noa::utils::domain {
 
-// The following macro switches on variant stored data type and performs a templated action
-// WARNING: This is only designed to be used inside of the `Layer` struct
+/// The following macro switches on variant stored data type and performs a templated action
+/// WARNING: This is only designed to be used inside of the `Layer` struct
 #define LVFOR(VARIANT, WHAT) /* WHAT(auto& v) accepts a Vector<DataType> reference v */\
                 switch (VARIANT.index()) {\
                         case 0: /* int8_t */\
@@ -197,14 +199,14 @@ struct LayerManager {
         protected:
         /* ----- PROTECTED DATA MEMBERS ----- */
         Index size;
-        std::vector<Layer<Device, Index>> layers;
+        std::unordered_map<std::size_t, Layer<Device, Index>> layers;
 
         public:
         /* ----- PUBLIC METHODS ----- */
         // Sets size for all stored layers
         void setSize(const Index& newSize) {
                 size = newSize;
-                for (auto& layer : layers) layer.setSize(size);
+                for (auto& layer : layers) layer.second.setSize(size);
         }
         // Return the number of stored layers
         std::size_t count() const { return layers.size(); }
@@ -216,9 +218,9 @@ struct LayerManager {
 
         // Adds a layer storing a certain data type and returns its index
         template <typename DataType>
-        std::size_t add(const DataType& value = DataType()) {
-                layers.push_back(LayerType(size, value));
-                return layers.size() - 1;
+        LayerType& add(const std::size_t& alias, const DataType& value = DataType()) {
+                layers.emplace(alias, LayerType(size, value));
+                return layers.at(alias);
         }
 
         // Returns selected layer's data

@@ -18,27 +18,85 @@
 // Still TNL but needs to be included after Mesh.h
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Geometry/getEntityMeasure.h>
 
+/// A namespace containing everything related to (L)MHFE
 namespace noa::MHFE {
 
+/// Layer indexing conventions used by an (L)MHFE solver
 enum Layer : std::size_t {
 	// Cell layers
+	/// Solution
+	///
+	/// Cell, Real
 	P		= 0,
+	/// Solution (previous step)
+	///
+	/// Cell, Real
 	P_PREV		= 1,
+	/// a coefficient
+	///
+	/// Cell, Real
 	A		= 2,
+	/// c coefficient
+	///
+	/// Cell, Real
 	C		= 3,
+	/// l geometric coefficient
+	///
+	/// Cell, Real
 	L		= 4,
-	PRECISE		= 5,
+	/// Cell measure
+	///
+	/// Cell, Real
+	MEASURE		= 5,
+	/// Precise solution
+	///
+	/// Cell, Real
+	PRECISE		= 6,
+	/// Matrix B<sup>-1</sup>.
+	/// Denotes the start of an N*N layer series, where N is
+	/// the amount of edges per cell.
+	/// If the cells topologies are different, takes max(N)
+	///
+	/// Cell, Real (Doxygen just wouldn't format this as other members for some reason 😢 )
+	BINV		= 7,
 	// Edge layers
+	/// Dirichlet conditions
+	///
+	/// Edge, Real
 	DIRICHLET	= 0,
+	/// Neumann conditions
+	///
+	/// Edge, Real
 	NEUMANN		= 1,
+	/// Solution over the edges
+	///
+	/// Edge, Real
 	TP		= 2,
+	/// Dirichlet conditions mask. 1 means the edge is subject to a Dirichlet boundary condition, 0 - is not.
+	///
+	/// Edge, int
 	DIRICHLET_MASK	= 3,
+	/// Neumann conditions mask. 1 means the edge is subject to a Neumann boundary condition, 0 - is not.
+	///
+	/// Edge, int
 	NEUMANN_MASK	= 4,
+	/// Sparse system matrix (M) row capacities (edge)
+	///
+	/// Edge, GlobalIndex
 	ROW_CAPACITIES	= 5,
+	/// System right vetor (edge)
+	/// 
+	/// Edge, Real
 	RIGHT		= 6,
 }; // <-- enum Layer
 
-// Prepare domain to work with the solver
+/// Prepares domain to work with the solver
+/// \param domain - a \ref Domain object reference
+/// \param allocatePrecise - should domain be prepared to hold a precise solution as well?
+///
+/// Performs an initial creation of domain layers.
+/// The domain is not yet ready for solution after this, after the layers have been
+/// filled with initial conditions, \ref initDomain() must be called to autofill some of them
 template <__domain_targs__>
 void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) {
 	if (domain.isClean()) throw std::runtime_error("Cannot prepare an empty domain!");
@@ -49,28 +107,48 @@ void prepareDomain(__DomainType__& domain, const bool& allocatePrecise = false) 
 	domain.clearLayers();
 
 	// Set up the layers
-	domain.getLayers(dimCell).template add<Real>(0);	// Index 0, P
+	domain.getLayers(dimCell).template add<Real>(P, 0);	// Index 0, P
 	domain.getLayers(dimCell).getLayer(Layer::P).alias = "Computed Solution";
 	domain.getLayers(dimCell).getLayer(Layer::P).exportHint = true;
-	domain.getLayers(dimCell).template add<Real>(0);	// Index 1, P_PREV
-	domain.getLayers(dimCell).template add<Real>(0);	// Index 2, A
-	domain.getLayers(dimCell).template add<Real>(0);	// Index 3, C
-	domain.getLayers(dimCell).template add<Real>(0);	// Index 4, l - cached values
+	domain.getLayers(dimCell).template add<Real>(P_PREV, 0);// Index 1, P_PREV
+	domain.getLayers(dimCell).template add<Real>(A, 0);	// Index 2, A
+	domain.getLayers(dimCell).template add<Real>(C, 0);	// Index 3, C
+	domain.getLayers(dimCell).template add<Real>(L, 0);	// Index 4, l - cached values
+	domain.getLayers(dimCell).template add<Real>(MEASURE,0);// Index 5, MEASURE
 	if (allocatePrecise) {
-		domain.getLayers(dimCell).template add<Real>(0);// Index 5, PRECISE
+		domain.getLayers(dimCell).template add<Real>(PRECISE, 0);// Index 6, PRECISE
 		domain.getLayers(dimCell).getLayer(Layer::PRECISE).alias = "Precise Solution";
 		domain.getLayers(dimCell).getLayer(Layer::PRECISE).exportHint = true;
 	}
+	/// Allocate BINV
+	const auto cEdgesFetch = [&domain] (GlobalIndex cell) {
+		return domain.getMesh().template getSubentitiesCount<dimCell, dimEdge>(cell);
+	};
+	const auto cellEdges = TNL::Algorithms::reduce<Device>(
+							GlobalIndex(0),
+							domain.getMesh().template getEntitiesCount<dimCell>(),
+							cEdgesFetch,
+							[] (const GlobalIndex& a, const GlobalIndex& b) {
+								return (a < b) ? b : a;
+							},
+							GlobalIndex(0)
+						);
+	for (GlobalIndex i = 0; i < cellEdges * cellEdges; ++i)
+		domain.getLayers(dimCell).template add<Real>(BINV + i, 0);
 
-	domain.getLayers(dimEdge).template add<Real>(0);	// Index 0, DIRICHLET
-	domain.getLayers(dimEdge).template add<Real>(0);	// Index 1, NEUMANN
-	domain.getLayers(dimEdge).template add<Real>(0);	// Index 2, TP
-	domain.getLayers(dimEdge).template add<int>(0);		// Index 3, DIRICHLET_MASK
-	domain.getLayers(dimEdge).template add<int>(0);		// Index 4, NEUMANN_MASK
-	domain.getLayers(dimEdge).template add<GlobalIndex>(0);	// Index 5, ROW_CAPACITIES
-	domain.getLayers(dimEdge).template add<Real>(0);	// Index 6, RIGHT
+	domain.getLayers(dimEdge).template add<Real>(DIRICHLET, 0);		// Index 0, DIRICHLET
+	domain.getLayers(dimEdge).template add<Real>(NEUMANN, 0);		// Index 1, NEUMANN
+	domain.getLayers(dimEdge).template add<Real>(TP, 0);			// Index 2, TP
+	domain.getLayers(dimEdge).template add<int>(DIRICHLET_MASK, 0);		// Index 3, DIRICHLET_MASK
+	domain.getLayers(dimEdge).template add<int>(NEUMANN_MASK, 0);		// Index 4, NEUMANN_MASK
+	domain.getLayers(dimEdge).template add<GlobalIndex>(ROW_CAPACITIES, 0);	// Index 5, ROW_CAPACITIES
+	domain.getLayers(dimEdge).template add<Real>(RIGHT, 0);			// Index 6, RIGHT
 }
 
+/// Checks if domain was initialized with correct data by user
+///
+/// For now, only checks if all border edges have border conditions associated with them.
+/// Throws an `std::runtime_error` if the domain is not initialized correctly
 template <__domain_targs__>
 void checkDomain(__DomainType__& domain) {
 	constexpr auto dimCell = domain.getMeshDimension();
@@ -85,6 +163,9 @@ void checkDomain(__DomainType__& domain) {
 	});
 }
 
+/// Performs a pre-solution setup if the given domain after user has specified all initial conditions
+///
+/// Specifically, fills \ref ROW_CAPACITIES, \ref L and \ref MEASURE layers
 template <__domain_targs__>
 void initDomain(__DomainType__& domain) {
 	constexpr auto dimCell = domain.getMeshDimension();
@@ -117,6 +198,14 @@ void initDomain(__DomainType__& domain) {
 		const auto cellEntity = mesh.template getEntity<dimCell>(cell);
 		const Real mes = TNL::Meshes::getEntityMeasure(mesh, cellEntity);
 		ls[cell] = lGet(domain, cell, mes);
+	});
+
+	// Fill MEASURE
+	auto mesView = domain.getLayers(dimCell).template get<Real>(MEASURE).getView();
+	domain.getMesh().template forAll<dimCell>([&mesView, &domain] (const GlobalIndex& cell) {
+		mesView[cell] = TNL::Meshes::getEntityMeasure(
+			domain.getMesh(), domain.getMesh().template getEntity<dimCell>(cell)
+		);
 	});
 }
 
@@ -286,8 +375,10 @@ void writePrecise(__DomainType__& domain, SolFunc& solution, const Real& t) {
 	});
 }
 
-// Simulation steps take long enough that we can afford to call an std::function after each one
-// Inlining won't make a big difference here
+/// Post-solution callback type
+///
+/// Simulation steps take long enough that we can afford to call an std::function after each one
+/// since inlining won't make a big difference here
 template <typename Real> using PostStepCb = std::function<void(const Real& t)>;
 // Simulate up to a certain time
 template <typename DeltaFunc, typename LumpingFunc, typename RightFunc, __domain_targs__>
