@@ -7,6 +7,7 @@ from numba import njit
 def put_func(q, t, x):
     return np.exp(t * (q + 1) ** 2 / 4) * max(0, np.exp((q - 1) * x / 2) - np.exp((q + 1) * x / 2))
 
+
 @njit()
 def call_func(q, t, x):
     return np.exp((q + 1) ** 2 * t / 4) * max(0, np.exp((q + 1) * x / 2) - np.exp((q - 1) * x / 2))
@@ -150,7 +151,6 @@ def brennan_schwartz_scheme(net, time_vector, x_vector, lambda_, k):
         solution = brennan_schwartz_algorithm(alpha, beta, gamma, f, g)
         net[:, i + 1] = solution
     return net
-
 
 
 @njit()

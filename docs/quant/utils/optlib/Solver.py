@@ -15,7 +15,7 @@ class Solver(Grid):
 
         super().__init__(underlying, option, xSteps, tSteps, xLeft, xRight)
 
-    def _setBounds(self):
+    def setBounds(self):
         self._net = set_bounds(net=self.net.copy(),
                                q=self.q,
                                t_array=self.tHeat,
@@ -23,14 +23,14 @@ class Solver(Grid):
                                call=self.option.call)
 
     def solve_crank_nickolson(self):
-        self._setBounds()
+        self.setBounds()
         self._net = crank_nickolson_scheme(self.net, self.lamda)
 
     def solve_brennan_schwarz(self):
         if self.option.call:
             print('This algorithm is not used with Call Options')
         else:
-            self._setBounds()
+            self.setBounds()
             # self._net = brennan_schwartz_scheme(net=self.net,
             #                                     time_vector=self.tHeat,
             #                                     x_vector=self.xHeat,
