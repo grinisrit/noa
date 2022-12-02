@@ -56,15 +56,11 @@ def fill_bsm_dev(x_array, t_array, K, T, vol, r, call=True):
     return V
 
 
-def fill_bsm(s_array, t_array, K, T, vol, r, call=True):
-    V = np.empty((len(s_array), len(t_array)))
-    p = 1 if call else -1
-    ttm = T - t_array
+def fill_vega(x_array, t_array, K, T, vol, r):
+    tt, xx = np.meshgrid(t_array[1:], x_array)
+    dtt = T - tt
+    d1 = np.multiply((np.log(xx / K) + (r + vol ** 2 / 2) * dtt), 1 / (vol * np.sqrt(dtt)))
 
-    V[:, 0] = np.maximum(p * (np.array(s_array) - K), np.zeros_like(s_array))
-    for i in np.arange(1, len(t_array)):
-            dt = ttm[i]
-            d1 = (np.log(s_array / K) + (vol ** 2 / 2 + r) * dt) / (vol * np.sqrt(dt))
-            d2 = d1 - vol * np.sqrt(dt)
-            V[:, i] = p * np.multiply(s_array, norm.cdf(p * d1)) - p * K * np.exp(r * dt) * norm.cdf(p * d2)
+    V = np.zeros((len(x_array), len(t_array)))
+    V[:, 1:] = np.multiply(np.multiply(xx, np.sqrt(dtt)), np.exp(-np.square(d1)/2) / np.sqrt(2*np.pi))
     return V

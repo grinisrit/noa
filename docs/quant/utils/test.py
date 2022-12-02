@@ -13,7 +13,7 @@ solver = Solver(underlying=stock,
                 tSteps=80)
 
 solver.solve_crank_nickolson()
-solver.plot(cut=True, mod=Mode.DIFF_BSM)
+solver.plot3D(cut=True, mod=Mode.VEGA)
 # solver.plot3D(cut=True, mod=Mode.NORM)
 # solver.plot3D(cut=True, mod=Mode.DIFF_BSM)
 

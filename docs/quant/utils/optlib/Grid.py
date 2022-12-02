@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from enum import Enum
 from typing import Dict, Optional
+import warnings
+
+
 # TODO: add comments
 
 
@@ -14,13 +17,16 @@ class Mode(Enum):
     NORM = 'Normal mode'
     BSM = 'Black-Scholes mode'
     DIFF_BSM = 'Difference with BSM'
+    VEGA = 'Vega by BSM'
+    # SHIFT_PARAM = 'Grid with shifted params'
 
 
 class Grid:
-
     _net_mod_map: Dict[Mode, Optional[ndarray]] = {
         Mode.NORM: None,
         Mode.BSM: None,
+        Mode.VEGA: None,
+        # Mode.SHIFT_PARAM: None
     }
 
     def __init__(self,
@@ -38,13 +44,14 @@ class Grid:
         self.xLeft = xLeft
         self.xRight = xRight
 
-        self._net = np.zeros((self.xSteps+1, self.tSteps+1))
-        self.xHeat = np.linspace(self.xLeft, self.xRight, self.xSteps+1)
+        self._net = np.zeros((self.xSteps + 1, self.tSteps + 1))
+        self.xHeat = np.linspace(self.xLeft, self.xRight, self.xSteps + 1)
         self._maturityHeat = self.option.maturity * self.underlying.volatility ** 2 / 2
         self.tHeat = np.linspace(0, self._maturityHeat, self.tSteps + 1)
         self.dxHeat = (self.xRight - self.xLeft) / self.xSteps
         self.dtHeat = self._maturityHeat / self.tSteps
         self.lamda = self.dtHeat / self.dxHeat ** 2
+
         self.q = 2 * self.underlying.interest / self.underlying.volatility ** 2
 
         self.xNorm = self.option.strike * np.exp(self.xHeat)
@@ -78,6 +85,15 @@ class Grid:
                                                        self.underlying.interest,
                                                        call=self.option.call)
 
+    def _make_vega_net(self):
+        if self._net_mod_map[Mode.VEGA] is None:
+            self._net_mod_map[Mode.VEGA] = fill_vega(self.xNorm,
+                                                     self.tNorm,
+                                                     self.option.strike,
+                                                     self.option.maturity,
+                                                     self.underlying.volatility,
+                                                     self.underlying.interest)
+
     def get_mod_net(self, mod=Mode.HEAT):
         match mod:
             case Mode.HEAT:
@@ -95,6 +111,16 @@ class Grid:
                 self._make_normal_net()
                 self._make_bsm_net()
                 return self._net_mod_map[Mode.NORM] - self._net_mod_map[Mode.BSM]
+
+            case Mode.VEGA:
+                self._make_vega_net()
+                return self._net_mod_map[Mode.VEGA]
+
+            # case Mode.SHIFT_PARAM:
+            #     if self._net_mod_map[Mode.SHIFT_PARAM] is None:
+            #         warnings.warn('NetIsNone: this net has no content')
+            #     else:
+            #         return self._net_mod_map[Mode.SHIFT_PARAM]
 
     def get_mod_grid(self, mod=Mode.HEAT):
         if mod == Mode.HEAT:
@@ -127,10 +153,12 @@ class Grid:
         # x, net = self._cut_net(x, net)
         if stopline:
             stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike)
-            curve = go.Scatter3d(z=stop_V[1:], x=t[1:], y=stop_X[1:], mode="markers", marker=dict(size=2, color="green"))
+            curve = go.Scatter3d(z=stop_V[1:], x=t[1:], y=stop_X[1:], mode="markers",
+                                 marker=dict(size=2, color="green"))
         fig = go.Figure([surface, curve])
         fig.update_layout(title='V(S,t)', autosize=False, width=1200, height=800,
                           margin=dict(l=65, r=50, b=65, t=90))
         if cut:
-            fig.update_layout(scene=dict(yaxis=dict(nticks=4, range=[lcoef * self.option.strike, rcoef * self.option.strike])))
+            fig.update_layout(
+                scene=dict(yaxis=dict(nticks=4, range=[lcoef * self.option.strike, rcoef * self.option.strike])))
         fig.show()
