@@ -74,14 +74,15 @@ class Grid:
                                                            net=self._net.copy())
 
     def _make_bsm_net(self):
-        if self._net_mod_map[Mode.BSM] is None:
-            self._net_mod_map[Mode.BSM] = fill_bsm_dev(self.xNorm,
-                                                       self.tNorm,
-                                                       self.option.strike,
-                                                       self.option.maturity,
-                                                       self.underlying.volatility,
-                                                       self.underlying.interest,
-                                                       call=self.option.call)
+        # working incorrect in the notebooks
+        # if self._net_mod_map[Mode.BSM] is None:
+        self._net_mod_map[Mode.BSM] = fill_bsm_dev(self.xNorm,
+                                                   self.tNorm,
+                                                   self.option.strike,
+                                                   self.option.maturity,
+                                                   self.underlying.volatility,
+                                                   self.underlying.interest,
+                                                   call=self.option.call)
 
     def _make_vega_net(self):
         if self._net_mod_map[Mode.VEGA] is None:

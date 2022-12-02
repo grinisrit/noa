@@ -51,7 +51,7 @@ def fill_bsm_dev(x_array, t_array, K, T, vol, r, call=True):
     p = 1 if call else -1
 
     V = np.empty((len(x_array), len(t_array)))
-    V[:, 1:] = p*np.multiply(xx, norm.cdf(p*d1)) - p*K*np.multiply(np.exp(r*dtt), norm.cdf(p*d2))
+    V[:, 1:] = p*np.multiply(xx, norm.cdf(p*d1)) - p*K*np.multiply(np.exp(-r*dtt), norm.cdf(p*d2))
     V[:, 0] = np.maximum(p * (np.array(x_array) - K), np.zeros_like(x_array))
     return V
 
