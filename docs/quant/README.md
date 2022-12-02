@@ -23,6 +23,8 @@ Hands-on tutorials:
 providing even newcomers with the necessary option pricing background.
 
 * Basic numerical techniques for the [Black-Scholes-Merton model](bsm.ipynb) 
+
+* Calibrating the volatility smile with [SABR](sabr.ipynb)
  
 
 (c) 2022 GrinisRIT ltd.
