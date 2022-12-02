@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from enum import Enum
 from typing import Dict, Optional
-import warnings
-
-
 # TODO: add comments
 
 
@@ -18,6 +15,7 @@ class Mode(Enum):
     BSM = 'Black-Scholes mode'
     DIFF_BSM = 'Difference with BSM'
     VEGA = 'Vega by BSM'
+    VEGA_HEAT = 'Vega in Heat Equation coordinates'
     # SHIFT_PARAM = 'Grid with shifted params'
 
 
@@ -25,7 +23,7 @@ class Grid:
     _net_mod_map: Dict[Mode, Optional[ndarray]] = {
         Mode.NORM: None,
         Mode.BSM: None,
-        Mode.VEGA: None,
+        Mode.VEGA: None
         # Mode.SHIFT_PARAM: None
     }
 
@@ -116,6 +114,10 @@ class Grid:
                 self._make_vega_net()
                 return self._net_mod_map[Mode.VEGA]
 
+            case Mode.VEGA_HEAT:
+                self._make_vega_net()
+                return self._net_mod_map[Mode.VEGA]
+
             # case Mode.SHIFT_PARAM:
             #     if self._net_mod_map[Mode.SHIFT_PARAM] is None:
             #         warnings.warn('NetIsNone: this net has no content')
@@ -123,7 +125,7 @@ class Grid:
             #         return self._net_mod_map[Mode.SHIFT_PARAM]
 
     def get_mod_grid(self, mod=Mode.HEAT):
-        if mod == Mode.HEAT:
+        if mod == Mode.HEAT or mod == Mode.VEGA_HEAT:
             return self.xHeat, self.tHeat, self.get_mod_net(mod)
         else:
             return self.xNorm, self.tNorm, self.get_mod_net(mod)
@@ -140,7 +142,7 @@ class Grid:
             stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike, slice_num)
             plt.vlines(stop_X, ymin=0, ymax=stop_V, color='violet')
         if cut:
-            # plt.ylim(0, (rcoef-1) * self.option.strike)
+            plt.ylim(0, (rcoef-1) * self.option.strike)
             plt.xlim(lcoef * self.option.strike, rcoef * self.option.strike)
         plt.legend()
         plt.show()

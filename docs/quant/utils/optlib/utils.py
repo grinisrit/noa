@@ -64,3 +64,11 @@ def fill_vega(x_array, t_array, K, T, vol, r):
     V = np.zeros((len(x_array), len(t_array)))
     V[:, 1:] = np.multiply(np.multiply(xx, np.sqrt(dtt)), np.exp(-np.square(d1)/2) / np.sqrt(2*np.pi))
     return V
+
+# def fill_vega_heat(x_array, t_array, K, T, vol, r):
+#     tt, xx = np.meshgrid(t_array[1:], x_array)
+#     d1 = np.multiply((xx + (2*r/vol**2 + 1) * tt), 1 / (np.sqrt(2 * tt)))
+#
+#     V = np.zeros((len(x_array), len(t_array)))
+#     V[:, 1:] = np.multiply(np.multiply(K * np.exp(xx) / vol, np.sqrt(2 * tt)), np.exp(-np.square(d1) / 2) / np.sqrt(2 * np.pi))
+#     return V

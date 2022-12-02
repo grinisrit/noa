@@ -22,7 +22,7 @@ def set_bounds(net, q, t_array, x_array, call: bool):
             net[i, 0] = call_func(q, t_array[0], x_array[i])
     else:
         for i in range(len(t_array)):
-            net[-1, i] = put_func(q, t_array[i], x_array[-1])
+            net[0, i] = put_func(q, t_array[i], x_array[0])
         for i in range(len(x_array)):
             net[i, 0] = put_func(q, t_array[0], x_array[i])
     return net
@@ -64,7 +64,7 @@ def get_matrices(size, lambda_):
     A = np.diag(np.ones(size) * (1 + lambda_))
     B = np.diag(np.ones(size) * (1 - lambda_))
     size = size - 1
-    for i in range(1, size):
+    for i in range(1, size+1):
         A[i, i - 1] = -lambda_ / 2
         A[i - 1, i] = -lambda_ / 2
         B[i, i - 1] = lambda_ / 2
