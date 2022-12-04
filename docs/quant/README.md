@@ -24,7 +24,9 @@ providing even newcomers with the necessary option pricing background.
 
 * Basic numerical techniques for the [Black-Scholes-Merton model](bsm.ipynb) 
 
-* Calibrating the volatility smile with [SABR](sabr.ipynb)
+* Calibrating the volatility smile with the [SABR model](sabr.ipynb)
+
+* Calibrating the volatility surface with the [Heston model](heston.ipynb)
  
 
 (c) 2022 GrinisRIT ltd.
