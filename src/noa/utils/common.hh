@@ -18,6 +18,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
 /**
+ * \file common.hh
  * Implemented by: Roland Grinis
  */
 
@@ -34,6 +35,7 @@
 
 namespace noa::utils {
 
+    /// Path type
     using Path = std::filesystem::path;
     using Status = bool;
     using Line = std::string;

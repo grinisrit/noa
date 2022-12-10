@@ -18,13 +18,15 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
 /**
+ * \file domain.hh
+ * \brief \ref Domain wraps TNL Mesh and provedes a simple interface for storing data over it
+ *
  * Implemented by: Gregory Dushkin
  */
 
 #pragma once
 
 // STL headers
-#include <filesystem>
 #include <optional>
 
 // TNL headers
@@ -35,44 +37,60 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/resolveMeshType.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Writers/VTUWriter.h>
 
+// NOA headers
+#include <common.hh>
+
 // Local headers
 #include "configtagpermissive.hh"
 #include "layermanager.hh"
 
 // Macros definition
+/// \ref Domain template arguments list
 #define __domain_targs__ \
         typename CellTopology, typename Device, typename Real, typename GlobalIndex, typename LocalIndex
+/// Full \ref Domain type with template arguments. To be used with \ref __domain_targs__
 #define __DomainType__  \
         noa::utils::domain::Domain<CellTopology, Device, Real, GlobalIndex, LocalIndex>
 
+/// Namespace containing the domain-related code
 namespace noa::utils::domain {
 
-// struct Domain
-// `Domain` is the class that stores a TNL mesh and data over its elements
-// in one place. It's more handy to use in solvers
-
+/// \brief Domain stores a TNL mesh and various data over its elements in one place
+/// providing a friendly all-in-one-place interface for solvers.
 template <typename CellTopology, typename Device = TNL::Devices::Host, typename Real = float, typename GlobalIndex = long int, typename LocalIndex = short int>
 struct Domain {
         /* ----- PUBLIC TYPE ALIASES ----- */
+        /// TNL Mesh config
         using MeshConfig        = TNL::Meshes::DefaultConfig<CellTopology, CellTopology::dimension, Real, GlobalIndex, LocalIndex>;
+        /// \brief TNL Mesh type
+        ///
+        /// Doesn't use the \p Device template parameter.
+        /// (TODO?) Look into CUDA Mesh implementation in TNL
         using MeshType          = TNL::Meshes::Mesh<MeshConfig>; // Meshes only seem to be implemented on Host (?)
+        /// TNL Mesh writer type
         using MeshWriter        = TNL::Meshes::Writers::VTUWriter<MeshType>;
+        /// LayerManager type
         using LayerManagerType  = LayerManager<Device, GlobalIndex>;
 
+        /// Floating point numeric type
         using RealType          = Real;
+        /// Mesh global index type
         using GlobalIndexType   = GlobalIndex;
+        /// Mesh local index type
         using LocalIndexType    = LocalIndex;
 
-        // Get mesh dimensions
+        /// Get mesh dimensions
         static constexpr int getMeshDimension() { return MeshType::getMeshDimension(); }
 
         protected:
         /* ----- PROTECTED DATA MEMBERS ----- */
-        std::optional<MeshType> mesh = std::nullopt;    // The mesh itself
-        std::vector<LayerManagerType> layers;           // Mesh data layers
+        /// Domain mesh
+        std::optional<MeshType> mesh = std::nullopt;
+        /// Mesh data layers
+        std::vector<LayerManagerType> layers;
 
         /* ----- PROTECTED METHODS ----- */
-        // Updates all layer sizes from mesh entities count
+        /// Updates all layer sizes from mesh entities count
         template <int fromDimension = getMeshDimension()>
         void updateLayerSizes() {
                 const auto size = isClean() ? 0 : mesh.value().template getEntitiesCount<fromDimension>();
@@ -82,13 +100,15 @@ struct Domain {
 
         public:
         /* ----- PUBLIC METHODS ----- */
-        // Constructor
+        /// Constructor
         Domain() {
                 // If default-constructed, generate layers for each of the meshes dimensions
                 layers = std::vector<LayerManagerType>(getMeshDimension() + 1);
         }
 
-        // Clear mesh data
+        /// \brief Clear mesh data
+        ///
+        /// Resets both mesh and layer data
         void clear() {
                 if (isClean()) return; // Nothing to clear
 
@@ -99,16 +119,16 @@ struct Domain {
                 clearLayers();
         }
 
-        // Clears all layers
+        /// Clear layer data
         void clearLayers() { for (auto& layer : layers) layer.clear(); }
 
-        // Check if the domain is empty
+        /// Check if the domain is empty. Equivalent to `!mesh.has_value()`
         bool isClean() const { return !mesh.has_value(); }
 
-        // Get contant mesh reference
+        /// Get mesh as a constant reference
         const MeshType& getMesh() const { return mesh.value(); }
 
-        // Get layers
+        /// Get layers
         LayerManagerType& getLayers(const std::size_t& dimension) {
                 return layers.at(dimension);
         }
@@ -116,8 +136,8 @@ struct Domain {
                 return layers.at(dimension);
         }
 
-        // Mesh loader
-        void loadFrom(const std::filesystem::path& filename) {
+        /// Load Domain from a file
+        void loadFrom(const Path& filename) {
                 assert(("Mesh data is not empty, cannot load!", isClean()));
 
                 if (!std::filesystem::exists(filename))
@@ -141,8 +161,8 @@ struct Domain {
                         throw std::runtime_error("Could not load mesh (resolveAndLoadMesh returned `false`)!");
         }
 
-        // Mesh writer
-        void write(const std::filesystem::path& filename) {
+        /// Write Domain to a file
+        void write(const Path& filename) {
                 assert(("Mesh data is empty, nothing to save!", !isClean()));
 
                 std::ofstream file(filename);
