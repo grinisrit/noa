@@ -64,10 +64,5 @@ TEST(DOMAIN, SaveLoadDomain) {
 	constexpr auto test_domain_file_2 = "domain-test-save-load-2.vtu";
 	domain2.write(test_domain_file_2);
 
-	std::ifstream d1file(test_domain_file, std::ios::binary), d2file(test_domain_file_2, std::ios::binary);
-	ASSERT_EQ(d1file.good() && d2file.good(), true);
-	char c1, c2;
-	while (bool(d1file.read(&c1, 1)) & bool(d2file.read(&c2, 1))) // & instead of && to ensure both sides get executed
-		ASSERT_EQ(c1, c2);
-	ASSERT_EQ(d1file.eof() && d2file.eof(), true); // Check if reached EOF in both files
+	ASSERT_EQ(utils::compare_files(test_domain_file, test_domain_file_2), true);
 }
