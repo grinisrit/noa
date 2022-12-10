@@ -61,5 +61,12 @@ TEST(DOMAIN, SaveLoadDomain) {
 	ASSERT_EQ(cellLayers.getLayer(i).alias, domain2.getLayers(dimCell).getLayer(i).alias);
 	ASSERT_EQ(cellLayers.template get<int>(i), domain2.getLayers(dimCell).template get<int>(i));
 
-	domain2.write("domain-test-save-load-2.vtu");
+	constexpr auto test_domain_file_2 = "domain-test-save-load-2.vtu";
+	domain2.write(test_domain_file_2);
+
+	std::ifstream d1file(test_domain_file, std::ios::binary), d2file(test_domain_file_2, std::ios::binary);
+	ASSERT_EQ(d1file.good() && d2file.good(), true);
+	char c1, c2;
+	while (d1file.read(&c1, 1) && d2file.read(&c2, 1))
+		ASSERT_EQ(c1, c2);
 }
