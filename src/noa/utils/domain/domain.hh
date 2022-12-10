@@ -38,7 +38,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Writers/VTUWriter.h>
 
 // NOA headers
-#include <common.hh>
+#include <noa/utils/common.hh>
 
 // Local headers
 #include "configtagpermissive.hh"
@@ -136,8 +136,35 @@ struct Domain {
                 return layers.at(dimension);
         }
 
-        /// Load Domain from a file
-        void loadFrom(const Path& filename) {
+        /// \brief Cell layers requested for loadFrom() function
+        ///
+        /// To be changed to std::unordered_map in feature/cfd
+        using LayersRequest = std::vector<std::string>;
+
+        /// \brief Layer loader helper structure
+        ///
+        /// Handles loading of a layer with type T from a data variant
+        template <typename T>
+        struct load_layer {
+                template <typename V>
+                static inline void load(V& from, Domain* self) {
+                        auto& fromT = std::get<std::vector<T>>(from);
+                        auto toIndex = self->getLayers(self->getMeshDimension()).
+                                                        template add<T>();
+                        auto& toT = self->getLayers(self->getMeshDimension()).
+                                                        template get<T>(toIndex);
+
+                        for (std::size_t i = 0; i < fromT.size(); ++i)
+                                toT[i] = fromT[i];
+                }
+        };
+        /// \brief Load Domain from a file
+        /// \param filename - path to mesh file
+        /// \param layersRequest - a list of requested cell layers
+        ///
+        /// Only supports loading of the cell layers (layers for dimension reported by getMeshDimension()).
+        /// Layers are loaded in order in which they were specified in \p layersRequest.
+        void loadFrom(const Path& filename, const LayersRequest& layersRequest = {}) {
                 assert(("Mesh data is not empty, cannot load!", isClean()));
 
                 if (!std::filesystem::exists(filename))
@@ -151,12 +178,52 @@ struct Domain {
                                 updateLayerSizes();
                         } else throw std::runtime_error("Read mesh type differs from expected!");
 
-                        // TODO: Find a way to get data layers through the `reader`
+                        // Load cell layers
+                        for (std::size_t i = 0; i < layersRequest.size(); ++i) {
+                                const auto& reqLayer = layersRequest[i];
+                                const auto data = reader.readCellData(reqLayer);
+
+                                switch (data.index()) {
+                                        case 0: /* int8_t */
+                                                load_layer<std::int8_t>::load(data, this);
+                                                break;
+                                        case 1: /* uint8_t */
+                                                load_layer<std::uint8_t>::load(data, this);
+                                                break;
+                                        case 2: /* int16_t */
+                                                load_layer<std::int16_t>::load(data, this);
+                                                break;
+                                        case 3: /* uint16_t */
+                                                load_layer<std::uint16_t>::load(data, this);
+                                                break;
+                                        case 4: /* int32_t */
+                                                load_layer<std::int32_t>::load(data, this);
+                                                break;
+                                        case 5: /* uint32_t */
+                                                load_layer<std::uint32_t>::load(data, this);
+                                                break;
+                                        case 6: /* int64_t */
+                                                load_layer<std::int64_t>::load(data, this);
+                                                break;
+                                        case 7: /* uint64_t */
+                                                load_layer<std::uint64_t>::load(data, this);
+                                                break;
+                                        case 8: /* float */
+                                                load_layer<float>::load(data, this);
+                                                break;
+                                        case 9: /* double */
+                                                load_layer<double>::load(data, this);
+                                                break;
+                                }
+
+                                this->getLayers(this->getMeshDimension()).getLayer(i).alias = reqLayer;
+                                this->getLayers(this->getMeshDimension()).getLayer(i).exportHint = true;
+                        }
 
                         return true;
                 };
 
-                using ConfigTag = ConfigTagPermissive<TNL::Meshes::Topologies::Tetrahedron>;
+                using ConfigTag = ConfigTagPermissive<CellTopology>;
                 if (!TNL::Meshes::resolveAndLoadMesh<ConfigTag, TNL::Devices::Host>(loader, filename, "auto"))
                         throw std::runtime_error("Could not load mesh (resolveAndLoadMesh returned `false`)!");
         }
@@ -196,6 +263,7 @@ struct Domain {
                                 const float& dy);
 }; // <-- struct Domain
 
+/// \brief Generates a uniform 2D grid mesh for the domain. Implementation depends on \p CellTopology2
 template <typename CellTopology2, typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
 void generate2DGrid(Domain<CellTopology2, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
                         const int& Nx,
@@ -204,6 +272,8 @@ void generate2DGrid(Domain<CellTopology2, Device2, Real2, GlobalIndex2, LocalInd
                         const float& dy) {
         throw std::runtime_error("generate2DGrid is not implemented for this topology!");
 }
+
+/// \brief Specialization for Triangle topology
 template <typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
 void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
                         const int& Nx,
