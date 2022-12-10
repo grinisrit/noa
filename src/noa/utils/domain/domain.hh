@@ -141,23 +141,29 @@ struct Domain {
         /// To be changed to std::unordered_map in feature/cfd
         using LayersRequest = std::vector<std::string>;
 
-        /// \brief Layer loader helper structure
+        private:
+        /// \brief Layer loading helper
         ///
-        /// Handles loading of a layer with type T from a data variant
-        template <typename T>
-        struct load_layer {
-                template <typename V>
-                static inline void load(V& from, Domain* self) {
-                        auto& fromT = std::get<std::vector<T>>(from);
-                        auto toIndex = self->getLayers(self->getMeshDimension()).
-                                                        template add<T>();
-                        auto& toT = self->getLayers(self->getMeshDimension()).
-                                                        template get<T>(toIndex);
+        /// \tparam DataType - required layer data type
+        /// \tparam FromType - TNL's MeshReader::VariantVector, gets deduced automatically to avoid hardcoding
+        ///
+        /// \param from - VariantVector with data
+        ///
+        /// Handles loading a layer from a variant of `std::vector`'s when the
+        /// layer data type is known
+        template <typename DataType, typename FromType>
+        void load_layer(FromType& from) {
+                auto& fromT = std::get<std::vector<DataType>>(from);
+                auto toIndex = this->getLayers(this->getMeshDimension()).
+                                                template add<DataType>();
+                auto& toT = this->getLayers(this->getMeshDimension()).
+                                                template get<DataType>(toIndex);
 
-                        for (std::size_t i = 0; i < fromT.size(); ++i)
-                                toT[i] = fromT[i];
-                }
-        };
+                for (std::size_t i = 0; i < fromT.size(); ++i)
+                        toT[i] = fromT[i];
+        }
+
+        public:
         /// \brief Load Domain from a file
         /// \param filename - path to mesh file
         /// \param layersRequest - a list of requested cell layers
@@ -185,34 +191,34 @@ struct Domain {
 
                                 switch (data.index()) {
                                         case 0: /* int8_t */
-                                                load_layer<std::int8_t>::load(data, this);
+                                                load_layer<std::int8_t>(data);
                                                 break;
                                         case 1: /* uint8_t */
-                                                load_layer<std::uint8_t>::load(data, this);
+                                                load_layer<std::uint8_t>(data);
                                                 break;
                                         case 2: /* int16_t */
-                                                load_layer<std::int16_t>::load(data, this);
+                                                load_layer<std::int16_t>(data);
                                                 break;
                                         case 3: /* uint16_t */
-                                                load_layer<std::uint16_t>::load(data, this);
+                                                load_layer<std::uint16_t>(data);
                                                 break;
                                         case 4: /* int32_t */
-                                                load_layer<std::int32_t>::load(data, this);
+                                                load_layer<std::int32_t>(data);
                                                 break;
                                         case 5: /* uint32_t */
-                                                load_layer<std::uint32_t>::load(data, this);
+                                                load_layer<std::uint32_t>(data);
                                                 break;
                                         case 6: /* int64_t */
-                                                load_layer<std::int64_t>::load(data, this);
+                                                load_layer<std::int64_t>(data);
                                                 break;
                                         case 7: /* uint64_t */
-                                                load_layer<std::uint64_t>::load(data, this);
+                                                load_layer<std::uint64_t>(data);
                                                 break;
                                         case 8: /* float */
-                                                load_layer<float>::load(data, this);
+                                                load_layer<float>(data);
                                                 break;
                                         case 9: /* double */
-                                                load_layer<double>::load(data, this);
+                                                load_layer<double>(data);
                                                 break;
                                 }
 
