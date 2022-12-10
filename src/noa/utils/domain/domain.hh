@@ -152,7 +152,7 @@ struct Domain {
         /// Handles loading a layer from a variant of `std::vector`'s when the
         /// layer data type is known
         template <typename DataType, typename FromType>
-        void load_layer(FromType& from) {
+        void load_layer(const FromType& from) {
                 auto& fromT = std::get<std::vector<DataType>>(from);
                 auto toIndex = this->getLayers(this->getMeshDimension()).
                                                 template add<DataType>();
