@@ -69,4 +69,5 @@ TEST(DOMAIN, SaveLoadDomain) {
 	char c1, c2;
 	while (d1file.read(&c1, 1) && d2file.read(&c2, 1))
 		ASSERT_EQ(c1, c2);
+	ASSERT_EQ(d1file.eof() && d2file.eof(), true); // Check if reached EOF in both files
 }
