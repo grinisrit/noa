@@ -16,7 +16,7 @@ class Solver(Grid):
         super().__init__(underlying, option, xSteps, tSteps, xLeft, xRight)
 
     def setBounds(self):
-        self._net = set_bounds(net=self.net.copy(),
+        self._net = set_bounds(net=self.net,
                                q=self.q,
                                t_array=self.tHeat,
                                x_array=self.xHeat,

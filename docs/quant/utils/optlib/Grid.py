@@ -57,13 +57,13 @@ class Grid:
 
     @property
     def net(self):
-        return self._net
+        return self._net.copy()
 
     @net.setter
     def net(self, external_net):
         if self._net.shape != (self.xSteps + 1, self.tSteps + 1):
             print(
-                f'Warning: unexpected size of net {np.size(self.net)} instead of {(self.xSteps + 1, self.tSteps + 1)}')
+                f'Warning: unexpected size of net {np.size(self._net)} instead of {(self.xSteps + 1, self.tSteps + 1)}')
         self._net = external_net
 
     def _make_normal_net(self):
@@ -71,7 +71,7 @@ class Grid:
                                                            q=self.q,
                                                            t_heat=self.tHeat,
                                                            x_heat=self.xHeat,
-                                                           net=self._net.copy())
+                                                           net=self.net)
 
     def _make_bsm_net(self):
         # working incorrect in the notebooks
