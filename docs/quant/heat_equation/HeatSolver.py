@@ -39,8 +39,7 @@ class HeatSolver(HeatGrid):
     # TODO: manage with cashing and if before CN and without backup
     def diff_sigma(self, shift_percent=0.001):
         if self._net_mod_map[Mode.CASH] is None:
-            print('Please solvee CN and make backup (CASH is empty)')
+            print('Please solve CN and make backup (CASH is empty)')
         else:
             self._net_mod_map[Mode.DIFF_C] = \
                 (crank_nickolson_scheme(self.net, self.lambda_*(1 + shift_percent)) - self._net_mod_map[Mode.CASH]) / (shift_percent*self.lambda_)
-

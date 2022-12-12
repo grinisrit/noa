@@ -42,7 +42,7 @@ class HeatGrid:
 
     @property
     def net(self):
-        return self._net
+        return self._net.copy()
 
     @net.setter
     def net(self, external_net):
