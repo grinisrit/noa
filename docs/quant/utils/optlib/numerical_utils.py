@@ -5,26 +5,25 @@ from numba import njit
 
 @njit()
 def put_func(q, t, x):
-    return np.exp(t * (q + 1) ** 2 / 4) * max(0, np.exp((q - 1) * x / 2) - np.exp((q + 1) * x / 2))
+    return np.exp((q + 1) ** 2 * t / 4) * np.maximum(np.zeros_like(x), np.exp((q - 1) * x / 2) - np.exp((q + 1) * x / 2))
 
 
 @njit()
 def call_func(q, t, x):
-    return np.exp((q + 1) ** 2 * t / 4) * max(0, np.exp((q + 1) * x / 2) - np.exp((q - 1) * x / 2))
+    return np.exp((q + 1) ** 2 * t / 4) * np.maximum(np.zeros_like(x), np.exp((q + 1) * x / 2) - np.exp((q - 1) * x / 2))
 
 
 @njit()
 def set_bounds(net, q, t_array, x_array, call: bool):
     if call:
-        for i in range(len(t_array)):
-            net[-1, i] = call_func(q, t_array[i], x_array[-1])
-        for i in range(len(x_array)):
-            net[i, 0] = call_func(q, t_array[0], x_array[i])
+        net[-1, :] = call_func(q, t_array, x_array[-1])
+        # net[-1, :] = (np.exp(x_array[-1]) - 1) * np.exp((q - 1) * x_array[-1] / 2 + (((q - 1) ** 2) / 4) * t_array)
+        net[0, :] = call_func(q, t_array, x_array[0])
+        net[:, 0] = call_func(q, t_array[0], x_array)
     else:
-        for i in range(len(t_array)):
-            net[0, i] = put_func(q, t_array[i], x_array[0])
-        for i in range(len(x_array)):
-            net[i, 0] = put_func(q, t_array[0], x_array[i])
+        net[-1, :] = put_func(q, t_array, x_array[-1])
+        net[0, :] = (1 - np.exp(x_array[0])) * np.exp((q - 1) * x_array[0] / 2 + (((q - 1) ** 2) / 4) * t_array)
+        net[:, 0] = put_func(q, t_array[0], x_array)
     return net
 
 
@@ -73,7 +72,7 @@ def get_matrices(size, lambda_):
     A[size, size] = 1
     A[0, 1] = 0
     A[size, size-1] = 0
-    B[0, 0] = 1
+    B[0, 0] = 1 - lambda_
     B[size, size] = 1
     B[0, 1] = 0
     B[size, size-1] = 0
@@ -87,6 +86,9 @@ def crank_nickolson_scheme(net, lambda_):
     for i in range(0, time_steps-1):
         # explicit step
         f = np.dot(B, net[:, i])
+        # refreshing boundary conditions
+        f[0] = net[0, i+1]
+        f[-1] = net[-1, i+1]
         # implicit step
         solution = scalar_walk(A, f)
         net[:, i + 1] = solution

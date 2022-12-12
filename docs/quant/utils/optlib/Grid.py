@@ -143,11 +143,15 @@ class Grid:
             stop_V, stop_X = find_early_exercise(net, x, t, self.option.strike, slice_num)
             plt.vlines(stop_X, ymin=0, ymax=stop_V, color='violet')
         if cut:
-            plt.ylim(0, (rcoef-1) * self.option.strike)
+            if mod == Mode.VEGA or mod == Mode.VEGA_HEAT or mod == Mode.DIFF_BSM:
+                plt.ylim(np.min(net), np.max(net))
+            else:
+                plt.ylim(0, (rcoef-1) * self.option.strike)
             plt.xlim(lcoef * self.option.strike, rcoef * self.option.strike)
         plt.legend()
         plt.show()
 
+    # TODO: and cutting for other modes
     def plot3D(self, cut=False, lcoef=0, rcoef=2.4, mod=Mode.HEAT, stopline=False):
         curve = go.Scatter3d(z=list(), x=list(), y=list())
         x, t, net = self.get_mod_grid(mod)
@@ -162,6 +166,6 @@ class Grid:
         fig.update_layout(title='V(S,t)', autosize=False, width=1200, height=800,
                           margin=dict(l=65, r=50, b=65, t=90))
         if cut:
-            fig.update_layout(
-                scene=dict(yaxis=dict(nticks=4, range=[lcoef * self.option.strike, rcoef * self.option.strike])))
+                fig.update_layout(
+                    scene=dict(yaxis=dict(nticks=4, range=[lcoef * self.option.strike, rcoef * self.option.strike])))
         fig.show()
