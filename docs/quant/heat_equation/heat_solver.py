@@ -1,4 +1,4 @@
-from docs.quant.heat_equation.HeatGrid import *
+from docs.quant.heat_equation.heat_grid import *
 from docs.quant.utils.optlib.numerical_utils import crank_nickolson_scheme
 from numba import njit
 

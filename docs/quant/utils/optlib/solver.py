@@ -1,4 +1,4 @@
-from docs.quant.utils.optlib.Grid import *
+from docs.quant.utils.optlib.grid import *
 from docs.quant.utils.optlib.numerical_utils import *
 # TODO: add comments
 
@@ -22,11 +22,11 @@ class Solver(Grid):
                                x_array=self.xHeat,
                                call=self.option.call)
 
-    def solve_crank_nickolson(self):
+    def CN(self):
         self.setBounds()
         self._net = crank_nickolson_scheme(self.net, self.lamda)
 
-    def solve_brennan_schwarz(self):
+    def BSA(self):
         if self.option.call:
             print('This algorithm is not used with Call Options')
         else:

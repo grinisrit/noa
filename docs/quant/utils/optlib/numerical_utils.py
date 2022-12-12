@@ -205,4 +205,4 @@ def price_american_put(T, r, sigma, x_min, x_max, delta_x, delta_tau):
         # implicit step
         w_ = brennan_schwartz_algorithm(alpha, beta, gamma, f, g_func(tau_array[nu+1], x, k))
         w_matrix[:, nu + 1] = w_
-    return w_matrix, x, tau_array
+    return w_matrix
