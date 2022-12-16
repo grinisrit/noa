@@ -22,6 +22,7 @@ set(NOA_TEST_SRC
         test-dcs-calc.cc
         test-tnl.cc
         test-trace.cc
+        test-domain.cc
         ${NOA_ROOT_DIR}/test/kernels.cc)
 
 if (BUILD_NOA_CUDA)
