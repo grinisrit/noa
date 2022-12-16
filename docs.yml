@@ -9,6 +9,7 @@ dependencies:
   - ninja
   - python=3.9
   - pip
+  - plotly
   - seaborn
   - pip:
       - numba

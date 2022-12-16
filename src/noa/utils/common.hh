@@ -18,6 +18,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
 /**
+ * \file common.hh
  * Implemented by: Roland Grinis
  */
 
@@ -34,6 +35,7 @@
 
 namespace noa::utils {
 
+    /// Path type
     using Path = std::filesystem::path;
     using Status = bool;
     using Line = std::string;
@@ -59,6 +61,21 @@ namespace noa::utils {
             return false;
         }
         return true;
+    }
+
+    /// Bitwise comparison of files
+    ///
+    /// \returns `true` if files are equal, `false` if differ
+    inline Status compare_files(const Path& file1, const Path& file2) {
+        std::ifstream file1_stream(file1, std::ios::binary), file2_stream(file2, std::ios::binary);
+
+        if (file1_stream.fail() || file2_stream.fail()) return false;
+
+        char c1, c2;
+        while (bool(file1_stream.read(&c1, 1)) & bool(file2_stream.read(&c2, 1))) // & instead of && to ensure both sides get executed
+                if (c1 != c2) return false;
+
+        return file1_stream.eof() && file2_stream.eof(); // Check if reached EOF in both files
     }
 
     inline TensorOpt load_tensor(const Path &path) {
