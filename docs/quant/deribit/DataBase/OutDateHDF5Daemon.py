@@ -1,10 +1,14 @@
 import time
+from typing import Union, Optional, Dict
 
-from docs.quant.OrderBookScrapper.DataBase.AbstractDataSaverManager import AbstractDataManager
+import numpy as np
+
+from docs.quant.deribit.DataBase.AbstractDataSaverManager import AbstractDataManager
 import logging
 import yaml
-import os
 import pandas as pd
+import os
+
 
 
 class HDF5Daemon(AbstractDataManager):
@@ -12,21 +16,21 @@ class HDF5Daemon(AbstractDataManager):
 
     LIMITS_OF_COLUMNS = {
         "CHANGE_ID": 15,
-        "NAME_INSTRUMENT": 18,
+        "NAME_INSTRUMENT": 20,
         "TIMESTAMP_VALUE": 16,
-        "BID_PRICE": 30,
-        "BID_AMOUNT": 30,
-        "ASK_PRICE": 30,
-        "ASK_AMOUNT": 30,
+        "BID_PRICE": 10,
+        "BID_AMOUNT": 10,
+        "ASK_PRICE": 10,
+        "ASK_AMOUNT": 10,
 
     }
 
-    def __init__(self, constant_depth_mode: bool | int, clean_tables: bool = False):
+    def __init__(self, constant_depth_mode: Union[bool, int], clean_tables: bool = False):
         # Config file
         with open("../configuration.yaml", "r") as ymlfile:
-            cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)['hdf5']
+            self.cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)['hdf5']
 
-        super().__init__()
+        super().__init__("../configuration.yaml")
         logging.basicConfig(
             level='INFO',
             format='%(asctime)s | %(levelname)s %(module)s | %(message)s',
@@ -51,13 +55,13 @@ class HDF5Daemon(AbstractDataManager):
 
         else:
             if clean_tables:
-                if os.path.exists(f"../dataStorage/{cfg['hdf5_database_file']}"):
-                    os.remove(f"../dataStorage/{cfg['hdf5_database_file']}")
-                    os.remove(f"../dataStorage/pd_{cfg['hdf5_database_file']}")
+                if os.path.exists(f"../dataStorage/{self.cfg['hdf5_database_file']}"):
+                    os.remove(f"../dataStorage/{self.cfg['hdf5_database_file']}")
+                    os.remove(f"../dataStorage/pd_{self.cfg['hdf5_database_file']}")
                     time.sleep(0.5)
         try:
-            self.path_to_hdf5_file = f"../dataStorage/{cfg['hdf5_database_file']}"
-            self.path_to_hdf5_file_pd = f"../dataStorage/pd_{cfg['hdf5_database_file']}"
+            self.path_to_hdf5_file = f"../dataStorage/{self.cfg['hdf5_database_file']}"
+            self.path_to_hdf5_file_pd = f"../dataStorage/pd_{self.cfg['hdf5_database_file']}"
             # self.connection = db_system.File(f"../dataStorage/{cfg['hdf5_database_file']}", "w")
 
             self.connection = pd.HDFStore(self.path_to_hdf5_file_pd, mode='w')
@@ -78,6 +82,12 @@ class HDF5Daemon(AbstractDataManager):
         # self.connection.close()
 
     def check_if_tables_exists_limited_depth(self):
+        if not self.cfg["use_bathes_to_record"]:
+            self.no_batch_check_if_tables_exists_limited_depth()
+        else:
+            self.batch_check_if_table_exists_limited_depth()
+
+    def no_batch_check_if_tables_exists_limited_depth(self):
         _all_exist = True
         _table_name = self.TEMPLATE_FOR_LIMIT_DEPTH_TABLES_NAME.format(self.depth_size)
         if _table_name not in self.connection:
@@ -104,6 +114,12 @@ class HDF5Daemon(AbstractDataManager):
             self.columns_data_sizing[f"ASK_{_pointer}_AMOUNT"] = self.LIMITS_OF_COLUMNS["ASK_AMOUNT"]
 
     def add_order_book_content_limited_depth(self, bids, asks, change_id, timestamp, instrument_name):
+        if not self.cfg["use_bathes_to_record"]:
+            self.no_batch_add_order_book_content_limited_depth(bids, asks, change_id, timestamp, instrument_name)
+        else:
+            self.batch_add_order_book_content_limited_depth(bids, asks, change_id, timestamp, instrument_name)
+
+    def no_batch_add_order_book_content_limited_depth(self, bids, asks, change_id, timestamp, instrument_name):
         _table_name = self.TEMPLATE_FOR_LIMIT_DEPTH_TABLES_NAME.format(self.depth_size)
 
         bids = sorted(bids, key=lambda x: x[0], reverse=True)
@@ -143,19 +159,44 @@ class HDF5Daemon(AbstractDataManager):
         raise ValueError("Raw order book mode for HDF5 not available current now")
 
 
+    def batch_add_order_book_content_limited_depth(self, bids, asks, change_id, timestamp, instrument_name):
+
+        # Refresh tables when filled
+        self.batch_mutable_pointer += 1
+        print(f'Table pointer = {self.batch_mutable_pointer}')
+        if self.batch_mutable_pointer > self.cfg["batch_size"]:
+            self.batch_mutable_pointer = 0
+            self.batch_currently_selected_table += 1
+            logging.info(f'TMP table has been filled. Setting pointer to zero. Start transfer data to db ({self.batch_currently_selected_table})')
+            if self.batch_currently_selected_table == len(self.batch_mode_tables_storage):
+                self.batch_currently_selected_table = 0
+
+            # Send request to database
+        else:
+            # Add new line to tmp table
+            pass
+
+
+
 if __name__ == "__main__":
     # Testing
     hdf5Daemon = HDF5Daemon(2, True)
-    hdf5Daemon.add_order_book_content_limited_depth(bids=[[0.1, 0.11], [0.2, 0.22]],
-                                                    asks=[[0.3, 0.33], [0.4, 0.44]],
-                                                    change_id=12312,
-                                                    timestamp="231231213",
-                                                    instrument_name="BTC-p")
-
-    hdf5Daemon.add_order_book_content_limited_depth(bids=[[0.11231, 0.1123123], [0.2, 0.22]],
-                                                    asks=[[0.32312, 0.321313], [0.4, 0.44]],
-                                                    change_id=12312321,
-                                                    timestamp="231231213",
-                                                    instrument_name="BTC-p")
+    # hdf5Daemon.add_order_book_content_limited_depth(bids=[[0.1, 0.11], [0.2, 0.22]],
+    #                                                 asks=[[0.3, 0.33], [0.4, 0.44]],
+    #                                                 change_id=12312,
+    #                                                 timestamp="231231213",
+    #                                                 instrument_name="BTC-p")
+    #
+    # hdf5Daemon.add_order_book_content_limited_depth(bids=[[0.11231, 0.1123123], [0.2, 0.22]],
+    #                                                 asks=[[0.32312, 0.321313], [0.4, 0.44]],
+    #                                                 change_id=12312321,
+    #                                                 timestamp="231231213",
+    #                                                 instrument_name="BTC-p")
+    #
+    # hdf5Daemon.add_order_book_content_limited_depth(bids=[[0.11123231, 0.1123123], [0.2, 0.22]],
+    #                                                 asks=[[0.3212312312, 0.321313], [0.4, 0.44]],
+    #                                                 change_id=1232131239423412312321,
+    #                                                 timestamp="231231213",
+    #                                                 instrument_name="BTC-p")
     file = hdf5Daemon.connection
     file.close()
