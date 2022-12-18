@@ -1,5 +1,5 @@
 import mysql.connector as connector
-from docs.quant.OrderBookScrapper.DataBase.AbstractDataSaverManager import AbstractDataManager
+from docs.quant.deribit.DataBase.AbstractDataSaverManager import AbstractDataManager
 import logging
 import yaml
 
@@ -229,7 +229,6 @@ class MySqlDaemon(AbstractDataManager):
 
     def add_order_book_content_unlimited_depth(self, bids, asks, change_id):
 
-        # TODO: Can remove this request by creating HashMap inside Daemon. (Only one request when initialized)
         with self.connection.cursor() as cursor:
             cursor.execute(FIND_PRIMARY_KEY_BY_CURRENT_CHANGE_ID, [change_id])
             last_connection = cursor.fetchone()[0]
