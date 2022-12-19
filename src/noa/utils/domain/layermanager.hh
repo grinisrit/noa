@@ -211,6 +211,11 @@ struct LayerManager {
         // Return the number of stored layers
         std::size_t count() const { return layers.size(); }
 
+	/// Layer map start iterator
+	auto begin() { return this->layers.begin(); }
+	/// Layer map end iterator
+	auto end() { return this->layers.end(); }
+
         // Removes all layers
         void clear() {
                 while (!layers.empty()) layers.erase(layers.begin());

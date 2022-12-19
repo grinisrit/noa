@@ -1,150 +1,94 @@
-#include <noa/kernels.hh> // Instead of compiling alongside kernels.cc
+/**
+ * \file main.cc
+ * \brief Functional tests for the mass lumping technique and adjoint methods in MHFEM (entry point).
+ */
 
-#include <gflags/gflags.h>
-#include <iostream>
-#include <filesystem>
+// Precompile some headers
+#include "main-pch.hh"
 
-#include "main.hh"
-#include "MHFE.hh"
-#include "MHFESolver.hh"
-#include "Func.hh"
+// Local headers
+#include "mhfe/mhfe.hh"
 
-// Set up GFlags
-DEFINE_bool(clear, false, "Clear the outputDir (WARNING: if outputDir is a file, remove it!)");
-DEFINE_bool(precise, false, "Should the saved mesh include precise problem solution");
-DEFINE_bool(sensitivity, false, "Perform a sensitibity test");
-DEFINE_bool(suite, false, "Perform multiple tests, make an output file");
-DEFINE_string(outputDir, "./saved", "Directory to output the result to");
-DEFINE_double(T, 10, "Time length of calculations");
-DEFINE_double(tau, .005, "Time step for calculations");
-DEFINE_double(delta, 0.1, "Sensitivity test delta");
-DEFINE_int32(condition, 1, "Select boundary condition (1 or 2)");
-DEFINE_int32(density, 1, "Grid density multiplier");
-DEFINE_int32(expand, 1, "Multiply mesh dimensions by an integer factor");
-DEFINE_bool(lumping, false, "Use mass lumping");
+using noa::utils::test::status_line;
 
-using namespace std;
-using namespace noa;
-using namespace MHFE::Func;
+/// Set up GFlags
+DEFINE_string(	outputDir,	"./saved",	"Directory to output calculation results to");
+DEFINE_bool(	clear,		false,		"Should the output directory be cleared if exists?");
+DEFINE_double(	T,		2.0,		"Simulation time");
 
-auto main(int argc, char **argv) -> int {
+/// Test entry point
+int main(int argc, char** argv) {
 	// Parse GFlags
 	gflags::SetUsageMessage("Functional tests for the mass lumping technique in MHFEM");
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+	using noa::utils::Path;
 	// Process outputDir, perform necessary checks
-	const filesystem::path outputPath(FLAGS_outputDir);
-	cout << "Output directory set to " << outputPath << endl;
-	if (filesystem::exists(outputPath) && FLAGS_clear) {
-		cout << "Clearing output location..." << endl;
-		filesystem::remove_all(outputPath);
+	const Path outputPath(FLAGS_outputDir);
+	std::cout << "Output directory set to: " << outputPath << std::endl;
+
+	using noa::utils::DirectoryStatus;
+	switch (noa::utils::check_directory(outputPath)) {
+		case DirectoryStatus::NOT_A_DIR:
+			std::cerr << "Refusing to continue." << std::endl;
+			return EXIT_FAILURE;
+		case DirectoryStatus::EXISTS:
+			std::cerr << "Output directory exists!" << std::endl;
+			if (FLAGS_clear) {
+				std::cerr << "Clearing..." << std::endl;
+				std::filesystem::remove_all(outputPath);
+			} else return EXIT_FAILURE;
+		case DirectoryStatus::NOT_FOUND:
+			std::filesystem::create_directory(outputPath);
 	}
-	constexpr auto checkAndMkdir = [] (const filesystem::path& dirPath) {
-		if (!filesystem::exists(dirPath))
-			filesystem::create_directory(dirPath);
-		else if (!filesystem::is_directory(dirPath))
-			throw runtime_error(dirPath.string() + " is not a directory");
-	};
-	checkAndMkdir(outputPath);
 
+	// outputPath is newly created and guaranteed to be empty
 	const auto solverOutputPath = outputPath / "solution";
-	checkAndMkdir(solverOutputPath);
+	std::filesystem::create_directory(solverOutputPath);
 
-	using CellTopology	= TNL::Meshes::Topologies::Triangle; // 2D
-	using DomainType	= utils::domain::Domain<CellTopology>;
-	using MatrixType	= TNL::Matrices::SparseMatrix<DomainType::RealType, DomainType::DeviceType, DomainType::GlobalIndexType>;
-	using GlobalIndex	= typename DomainType::GlobalIndexType;
-	constexpr auto cellD	= DomainType::getMeshDimension();	// 2 -> 2D cell
-	constexpr auto edgeD	= DomainType::getMeshDimension() - 1;	// 1 -> 2D cell edge
-	constexpr auto vertD	= 0;
-	DomainType domain;
+	using CellTopology	= noa::TNL::Meshes::Topologies::Triangle;
+	using SolverType	= noa::test::mhfe::Solver<CellTopology>;
 
-	// Generate domain grid & prepare it for initialization
-	utils::domain::generate2DGrid(domain, 20 * FLAGS_expand * FLAGS_density, 10 * FLAGS_expand * FLAGS_density,
-						1.0 * FLAGS_expand / FLAGS_density, 1.0 * FLAGS_expand / FLAGS_density);
-	MHFE::prepareDomain(domain, true);
+	SolverType solver(true);
+	noa::utils::domain::generate2DGrid(solver.getDomain(), 20, 10, 1.0, 1.0);
+	solver.updateLayers();
+	
+	const auto& mesh = solver.getDomain().getMesh();
 
-	auto& cellLayers = domain.getLayers(cellD);
-	auto& edgeLayers = domain.getLayers(edgeD);
-	auto& domainMesh = domain.getMesh();
-
-	// Boundary conditions
-	domainMesh.template forBoundary<edgeD>([&] (GlobalIndex edge) {
-		const auto p1 = domainMesh.getPoint(domainMesh.template getSubentityIndex<edgeD, vertD>(edge, 0));
-		const auto p2 = domainMesh.getPoint(domainMesh.template getSubentityIndex<edgeD, vertD>(edge, 1));
+	mesh.template forBoundary<SolverType::dimEdge>([&solver, &mesh] (auto edge) {
+		const auto p1 = mesh.getPoint(mesh.template getSubentityIndex<SolverType::dimEdge, 0>(edge, 0));
+		const auto p2 = mesh.getPoint(mesh.template getSubentityIndex<SolverType::dimEdge, 0>(edge, 1));
 
 		const auto r = p2 - p1;
 
-		if (r[0] == 0) { // Vertical boundary (x = const)
-			edgeLayers.template get<int>(MHFE::Layer::DIRICHLET_MASK)[edge]	= 1;
-			// x = 0 -> TP = 1; x = 1 -> TP = 0; x = p1[0]
+		if (r[0] == 0) { // x = const boundary
 			float x1v = 0;
-			switch (FLAGS_condition) {
-				case 1:
-					x1v = 1;
-					break;
-				case 2:
-					if (((p1 + r / 2)[1] > 1) && ((p1 + r / 2)[1] < 9)) x1v = 1;
-					else x1v = 0;
-					break;
-			}
-			edgeLayers.template get<float>(MHFE::Layer::DIRICHLET)[edge]	= (p1[0] == 0) * x1v;
-			edgeLayers.template get<float>(MHFE::Layer::TP)[edge]		= (p1[0] == 0) * x1v;
-		} else if (r[1] == 0) { // Horizontal boundary (y = const)
-			edgeLayers.template get<int>(MHFE::Layer::NEUMANN_MASK)[edge]	= 1;
-			edgeLayers.template get<float>(MHFE::Layer::NEUMANN)[edge]	= 0;
+
+			auto mask = (p1[0] == 0) && (((p1 + r / 2)[1] > 1) && ((p1 + r / 2)[1] < 9));
+
+			solver.dirichletMask[edge] = 1;
+			solver.dirichlet[edge] = mask;
+			solver.tp[edge] = mask;
+		} else if (r[1] == 0) { // y = const boundary
+			solver.neumannMask[edge] = 1;
+			solver.neumann[edge] = 0;
 		}
 	});
+	solver.a.forAllElements([] (auto i, auto& v) { v = 1; });
+	solver.c.forAllElements([] (auto i, auto& v) { v = 1; });
+	solver.cache();
 
-	// Fill a and c coefficients a=1, c=1
-	cellLayers.template get<float>(MHFE::Layer::A).forAllElements([] (GlobalIndex i, float& v) { v = 1; });
-	cellLayers.template get<float>(MHFE::Layer::C).forAllElements([] (GlobalIndex i, float& v) { v = 1; });
-
-	// Init domain not that the layers are initialized
-	MHFE::initDomain(domain);
-
-	if (FLAGS_sensitivity) {
-		/*
-		float delta = FLAGS_delta;
-		ofstream dat;
-		if (FLAGS_suite) {
-			delta = 0;
-			dat.open(outputPath / "sensitivity.dat");
-		}
-		do {
-			cout << "Performing a sensitivity test at t=" << FLAGS_T << " with delta " << delta << endl;
-			const auto sens = FLAGS_lumping ?
-                                MHFE::testCellSensitivityAt<LMHFEDelta, LMHFELumping, LMHFERight, IntegralOver>(
-						domain,
-						MHFE::Layer::P, MHFE::Layer::A,
-						delta, (float)FLAGS_T) :
-                                MHFE::testCellSensitivityAt<MHFEDelta, MHFELumping, MHFERight, IntegralOver>(
-						domain,
-						MHFE::Layer::P, MHFE::Layer::A,
-						delta, (float)FLAGS_T);
-			cout << "Solution sensitivity: " << sens << " at delta " << delta << endl;
-			if (FLAGS_suite) dat << delta << " " << sens << endl;
-			delta += FLAGS_delta / 250;
-		} while (delta <= FLAGS_delta);
-		if (FLAGS_suite) dat.close();
-		*/
-	} else {
-		float tau = FLAGS_tau;	// Time step
-		float T = FLAGS_T;
-
-		// Save the step result
-		const MHFE::PostStepCb<float> saveStep = [&domain, &tau, &solverOutputPath] (const float& t) -> void {
-			if (FLAGS_precise) MHFE::writePrecise(domain, cond2Solution<float>, t - tau);
-			domain.write(solverOutputPath / filesystem::path(to_string(t) + ".vtu"));
-		};
-		if (FLAGS_lumping)
-			MHFE::simulateTo<LMHFEDelta, LMHFELumping, LMHFERight>(domain, T, tau, saveStep);
-		else
-			MHFE::simulateTo<MHFEDelta, MHFELumping, MHFERight>(domain, T, tau, saveStep);
+	while (solver.t < FLAGS_T) {
+		std::cout << status_line << "[" << std::setw(10) << solver.t << " / " << FLAGS_T << "] ["
+			<< ((int(solver.t) % 5 == 0) ? "=" : " ")
+			<< ((int(solver.t) % 5 == 1) ? "=" : " ")
+			<< ((int(solver.t) % 5 == 2) ? "=" : " ")
+			<< ((int(solver.t) % 5 == 3) ? "=" : " ")
+			<< ((int(solver.t) % 5 == 4) ? "=" : " ") << "]";
+		solver.template step<noa::test::mhfe::methods::MHFE>();
+		solver.getDomain().write(solverOutputPath / std::filesystem::path(std::to_string(solver.t) + ".vtu"));
 	}
+	std::cout << std::endl;
 
-	gflags::ShutDownCommandLineFlags();
-
-	return 0;
-
+	return EXIT_SUCCESS;
 }

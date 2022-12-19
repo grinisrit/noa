@@ -51,6 +51,13 @@
 /// Full \ref Domain type with template arguments. To be used with \ref __domain_targs__
 #define __DomainType__  \
         noa::utils::domain::Domain<CellTopology, Device, Real, GlobalIndex, LocalIndex>
+/// Same as \ref __domain_targs__, but not including CellTopology
+#define __domain_targs_topospec__ \
+   typename Device, typename Real, typename GlobalIndex, typename LocalIndex
+/// Same as \ref __DomainType__, but accepts cell topology as an argument
+/// (for use with \ref __domain_targs__topospec__)
+#define __DomainTypeTopoSpec__(topology) \
+   noa::utils::domain::Domain<topology, Device, Real, GlobalIndex, LocalIndex>
 
 /// Namespace containing the domain-related code
 namespace noa::utils::domain {
@@ -249,15 +256,15 @@ struct Domain {
 
                 // Write layers
                 for (int dim = 0; dim <= getMeshDimension(); ++dim)
-                        for (int i = 0; i < layers.at(dim).count(); ++i) {
-                                const auto& layer = layers.at(dim).getLayer(i);
+                        for (auto it : layers.at(dim)) {
+				const auto& layer = it.second;
                                 if (!layer.exportHint) continue;
                                 if (dim == getMeshDimension())
-                                        layer.writeCellData(writer, "cell_layer_" + std::to_string(i));
+                                        layer.writeCellData(writer, "cell_layer_" + std::to_string(it.first));
                                 else if (dim == 0)
-                                        layer.writePointData(writer, "point_layer_" + std::to_string(i));
+                                        layer.writePointData(writer, "point_layer_" + std::to_string(it.first));
                                 else
-                                        layer.writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(i));
+                                        layer.writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(it.first));
                         }
         }
 
