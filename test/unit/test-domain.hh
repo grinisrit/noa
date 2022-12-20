@@ -31,23 +31,23 @@ TEST(DOMAIN, SaveLoadDomain) {
 
 	auto& cellLayers = domain.getLayers(dimCell);
 
-	const auto l1 = cellLayers.template add<float>(3.1415f);
-	cellLayers.getLayer(l1).alias = "Float Layer";
-	cellLayers.getLayer(l1).exportHint = true;
-	const auto l2 = cellLayers.template add<double>(2.7182);
-	cellLayers.getLayer(l2).alias = "Double Layer";
-	cellLayers.getLayer(l2).exportHint = true;
-	const auto l3 = cellLayers.template add<int>(42);
-	cellLayers.getLayer(l3).alias = "Integer Layer";
-	cellLayers.getLayer(l3).exportHint = true;
-	const auto l4 = cellLayers.template add<int>(142);
-	cellLayers.getLayer(l4).alias = "Unsaved layer";
+	auto& l1 = cellLayers.template add<float>(0, 3.1415f);
+	l1.alias = "Float Layer";
+	l1.exportHint = true;
+	auto& l2 = cellLayers.template add<double>(1, 2.7182);
+	l2.alias = "Double Layer";
+	l2.exportHint = true;
+	auto& l3 = cellLayers.template add<int>(2, 42);
+	l3.alias = "Integer Layer";
+	l3.exportHint = true;
+	auto& l4 = cellLayers.template add<int>(3, 142);
+	l4.alias = "Unsaved layer";
 
 	constexpr auto test_domain_file = "domain-test-save-load.vtu";
 	domain.write(test_domain_file);
 
 	DomainType domain2;
-	domain2.loadFrom(test_domain_file, { "Float Layer", "Double Layer", "Integer Layer" });
+	domain2.loadFrom(test_domain_file, { { "Float Layer", 0 }, { "Double Layer", 1 }, { "Integer Layer", 2 } });
 
 	ASSERT_EQ(domain.getMesh().template getEntitiesCount<dimCell>(), domain2.getMesh().template getEntitiesCount<dimCell>());
 

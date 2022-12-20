@@ -27,7 +27,7 @@
 #include <cassert>
 #include <variant>
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 // TNL headers
 #include <noa/3rdparty/tnl-noa/src/TNL/Containers/Vector.h>
@@ -199,7 +199,8 @@ struct LayerManager {
         protected:
         /* ----- PROTECTED DATA MEMBERS ----- */
         Index size;
-        std::unordered_map<std::size_t, Layer<Device, Index>> layers;
+        /// Ordered map ensures that re-writing a file without change will give an identical per-byte copy
+        std::map<std::size_t, Layer<Device, Index>> layers;
 
         public:
         /* ----- PUBLIC METHODS ----- */
@@ -211,10 +212,10 @@ struct LayerManager {
         // Return the number of stored layers
         std::size_t count() const { return layers.size(); }
 
-	/// Layer map start iterator
-	auto begin() { return this->layers.begin(); }
-	/// Layer map end iterator
-	auto end() { return this->layers.end(); }
+        /// Layer map start iterator
+        auto begin() { return this->layers.begin(); }
+        /// Layer map end iterator
+        auto end() { return this->layers.end(); }
 
         // Removes all layers
         void clear() {

@@ -81,7 +81,7 @@ struct Domain {
 
         /// Floating point numeric type
         using RealType          = Real;
-	/// TNL mesh device type
+        /// TNL mesh device type
         using DeviceType        = Device;
         /// Mesh global index type
         using GlobalIndexType   = GlobalIndex;
@@ -147,8 +147,8 @@ struct Domain {
 
         /// \brief Cell layers requested for loadFrom() function
         ///
-        /// To be changed to std::unordered_map in feature/cfd
-        using LayersRequest = std::vector<std::string>;
+        /// Contains pairs of ( layer_name -> layer_key )
+        using LayersRequest = std::map<std::string, std::size_t>;
 
         private:
         /// \brief Layer loading helper
@@ -161,12 +161,10 @@ struct Domain {
         /// Handles loading a layer from a variant of `std::vector`'s when the
         /// layer data type is known
         template <typename DataType, typename FromType>
-        void load_layer(const FromType& from) {
-                auto& fromT = std::get<std::vector<DataType>>(from);
-                auto toIndex = this->getLayers(this->getMeshDimension()).
-                                                template add<DataType>();
+        void load_layer(std::size_t key, const FromType& from) {
+                const auto& fromT = std::get<std::vector<DataType>>(from);
                 auto& toT = this->getLayers(this->getMeshDimension()).
-                                                template get<DataType>(toIndex);
+                                                template add<DataType>(key).template get<DataType>();
 
                 for (std::size_t i = 0; i < fromT.size(); ++i)
                         toT[i] = fromT[i];
@@ -194,45 +192,44 @@ struct Domain {
                         } else throw std::runtime_error("Read mesh type differs from expected!");
 
                         // Load cell layers
-                        for (std::size_t i = 0; i < layersRequest.size(); ++i) {
-                                const auto& reqLayer = layersRequest[i];
-                                const auto data = reader.readCellData(reqLayer);
+                        for (auto& lp : layersRequest) {
+                                const auto data = reader.readCellData(lp.first);
 
                                 switch (data.index()) {
                                         case 0: /* int8_t */
-                                                load_layer<std::int8_t>(data);
+                                                load_layer<std::int8_t>(lp.second, data);
                                                 break;
                                         case 1: /* uint8_t */
-                                                load_layer<std::uint8_t>(data);
+                                                load_layer<std::uint8_t>(lp.second, data);
                                                 break;
                                         case 2: /* int16_t */
-                                                load_layer<std::int16_t>(data);
+                                                load_layer<std::int16_t>(lp.second, data);
                                                 break;
                                         case 3: /* uint16_t */
-                                                load_layer<std::uint16_t>(data);
+                                                load_layer<std::uint16_t>(lp.second, data);
                                                 break;
                                         case 4: /* int32_t */
-                                                load_layer<std::int32_t>(data);
+                                                load_layer<std::int32_t>(lp.second, data);
                                                 break;
                                         case 5: /* uint32_t */
-                                                load_layer<std::uint32_t>(data);
+                                                load_layer<std::uint32_t>(lp.second, data);
                                                 break;
                                         case 6: /* int64_t */
-                                                load_layer<std::int64_t>(data);
+                                                load_layer<std::int64_t>(lp.second, data);
                                                 break;
                                         case 7: /* uint64_t */
-                                                load_layer<std::uint64_t>(data);
+                                                load_layer<std::uint64_t>(lp.second, data);
                                                 break;
                                         case 8: /* float */
-                                                load_layer<float>(data);
+                                                load_layer<float>(lp.second, data);
                                                 break;
                                         case 9: /* double */
-                                                load_layer<double>(data);
+                                                load_layer<double>(lp.second, data);
                                                 break;
                                 }
 
-                                this->getLayers(this->getMeshDimension()).getLayer(i).alias = reqLayer;
-                                this->getLayers(this->getMeshDimension()).getLayer(i).exportHint = true;
+                                this->getLayers(this->getMeshDimension()).getLayer(lp.second).alias = lp.first;
+                                this->getLayers(this->getMeshDimension()).getLayer(lp.second).exportHint = true;
                         }
 
                         return true;
@@ -257,7 +254,7 @@ struct Domain {
                 // Write layers
                 for (int dim = 0; dim <= getMeshDimension(); ++dim)
                         for (auto it : layers.at(dim)) {
-				const auto& layer = it.second;
+                                const auto& layer = it.second;
                                 if (!layer.exportHint) continue;
                                 if (dim == getMeshDimension())
                                         layer.writeCellData(writer, "cell_layer_" + std::to_string(it.first));
