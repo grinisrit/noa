@@ -23,6 +23,7 @@ set(NOA_TEST_SRC
         test-tnl.cc
         test-trace.cc
         test-domain.cc
+        test-mhfem.cc
         ${NOA_ROOT_DIR}/test/kernels.cc)
 
 if (BUILD_NOA_CUDA)

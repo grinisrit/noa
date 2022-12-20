@@ -127,6 +127,11 @@ private:
 	std::shared_ptr<MatrixType>	M;
 
 public:
+        /// Getter of const view to system matrix
+        ///
+        /// Intended use: testing/debugging
+        auto getM() const { return this->M->getConstView(); }
+
 	/// Solution time
 	Real t = 0;
 	/// Solution time step
