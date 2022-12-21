@@ -33,7 +33,7 @@ void setupSolver(SolverT& solver) {
 }
 
 template <typename LinearContainer, typename Real = float>
-bool TNLIsClose(LinearContainer& c1, LinearContainer& c2, Real relTolerance = 1e-6) {
+bool TNLIsClose(LinearContainer& c1, LinearContainer& c2, Real relTolerance = 1e-5) {
 	Real len1	= Real{};
 	Real len2	= Real{};
 	Real distance	= Real{};
@@ -62,17 +62,19 @@ bool TNLIsClose(LinearContainer& c1, LinearContainer& c2, Real relTolerance = 1e
 	setupSolver(s1);\
 	setupSolver(s2);\
 	\
-	for (std::size_t i = 0; i < 1000; ++i) {\
+	for (std::size_t i = 0; i < steps; ++i) {\
 		s1.template step<noa::test::mhfe::methods::method>();\
 		s2.template step<noa::test::mhfe::methods::method>();\
 		\
 		TNL_ASSERT_EQ(s1.getM(), s2.getM(), "System matrices are expected to be the same");\
-		EXPECT_TRUE(TNLIsClose(s1.p, s2.p));\
+		ASSERT_TRUE(TNLIsClose(s1.p, s2.p)) << " on step " << i << "/"#steps;\
 	}\
 }
 
 TEST_MHFEM(MHFE, 1);
 TEST_MHFEM(MHFE, 100);
+TEST_MHFEM(MHFE, 1000);
 
 TEST_MHFEM(LMHFE, 1);
 TEST_MHFEM(LMHFE, 100);
+TEST_MHFEM(LMHFE, 1000);
