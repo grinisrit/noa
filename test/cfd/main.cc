@@ -16,6 +16,7 @@ DEFINE_string(	outputDir,	"./saved",	"Directory to output calculation results to
 DEFINE_bool(	clear,		false,		"Should the output directory be cleared if exists?");
 DEFINE_double(	T,		2.0,		"Simulation time");
 DEFINE_bool(	lumping,	false,		"Usees LMHFE over MHFE");
+DEFINE_int32(	densify,	1,		"Grid density multiplier");
 
 /// Test entry point
 int main(int argc, char** argv) {
@@ -48,11 +49,14 @@ int main(int argc, char** argv) {
 	std::filesystem::create_directory(solverOutputPath);
 
 	using CellTopology	= noa::TNL::Meshes::Topologies::Triangle;
-	constexpr auto features	= noa::test::mhfe::Features{ true, false };
+	constexpr auto features	= noa::test::mhfe::Features{ true, true };
 	using SolverType	= noa::test::mhfe::Solver<features, CellTopology>;
 
 	SolverType solver;
-	noa::utils::domain::generate2DGrid(solver.getDomain(), 20, 10, 1.0, 1.0);
+	noa::utils::domain::generate2DGrid(
+			solver.getDomain(),
+			20 * FLAGS_densify, 10 * FLAGS_densify,
+			1.0 / FLAGS_densify, 1.0 / FLAGS_densify);
 	solver.updateLayers();
 	
 	const auto& mesh = solver.getDomain().getMesh();
