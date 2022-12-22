@@ -15,6 +15,7 @@ using noa::utils::test::status_line;
 DEFINE_string(	outputDir,	"./saved",	"Directory to output calculation results to");
 DEFINE_bool(	clear,		false,		"Should the output directory be cleared if exists?");
 DEFINE_double(	T,		2.0,		"Simulation time");
+DEFINE_bool(	lumping,	false,		"Usees LMHFE over MHFE");
 
 /// Test entry point
 int main(int argc, char** argv) {
@@ -85,7 +86,11 @@ int main(int argc, char** argv) {
 			<< ((int(solver.t) % 5 == 2) ? "=" : " ")
 			<< ((int(solver.t) % 5 == 3) ? "=" : " ")
 			<< ((int(solver.t) % 5 == 4) ? "=" : " ") << "]";
-		solver.template step<noa::test::mhfe::methods::MHFE>();
+		if (FLAGS_lumping)
+			solver.template step<noa::test::mhfe::methods::LMHFE>();
+		else
+			solver.template step<noa::test::mhfe::methods::MHFE>();
+
 		solver.getDomain().write(solverOutputPath / std::filesystem::path(std::to_string(solver.t) + ".vtu"));
 	}
 	std::cout << std::endl;
