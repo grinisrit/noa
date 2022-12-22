@@ -58,7 +58,7 @@ def scalar_walk(A, B):
     return x
 
 
-@njit
+@njit()
 def get_matrices(size, lambda_):
     A = np.diag(np.ones(size) * (1 + lambda_))
     B = np.diag(np.ones(size) * (1 - lambda_))
@@ -79,7 +79,28 @@ def get_matrices(size, lambda_):
     return A, B
 
 
-@njit
+@njit()
+def get_matrices_mod(size, lambda_array):
+    A = np.diag(1 + lambda_array)
+    B = np.diag(1 - lambda_array)
+    size = size - 1
+    for i in range(1, size + 1):
+        A[i, i - 1] = -lambda_array[i] / 2
+        A[i - 1, i] = -lambda_array[i-1] / 2
+        B[i, i - 1] = lambda_array[i] / 2
+        B[i - 1, i] = lambda_array[i-1] / 2
+    A[0, 0] = 1
+    A[size, size] = 1
+    A[0, 1] = 0
+    A[size, size - 1] = 0
+    B[0, 0] = 1 - lambda_array[0]
+    B[size, size] = 1
+    B[0, 1] = 0
+    B[size, size - 1] = 0
+    return A, B
+
+
+@njit()
 def crank_nickolson_scheme(net, lambda_):
     size, time_steps = net.shape
     A, B = get_matrices(size, lambda_)
@@ -89,6 +110,22 @@ def crank_nickolson_scheme(net, lambda_):
         # refreshing boundary conditions
         f[0] = net[0, i+1]
         f[-1] = net[-1, i+1]
+        # implicit step
+        solution = scalar_walk(A, f)
+        net[:, i + 1] = solution
+    return net
+
+
+@njit()
+def crank_nickolson_mod(net, lambda_net):
+    size, time_steps = net.shape
+    for i in range(0, time_steps - 1):
+        A, B = get_matrices_mod(size, lambda_net[:, i])
+        # explicit step
+        f = np.dot(B, net[:, i])
+        # refreshing boundary conditions
+        f[0] = net[0, i + 1]
+        f[-1] = net[-1, i + 1]
         # implicit step
         solution = scalar_walk(A, f)
         net[:, i + 1] = solution
@@ -108,7 +145,7 @@ def get_matrix_diag(size, lambda_):
     return alpha, beta, gamma
 
 
-@njit
+@njit()
 def brennan_schwartz_algorithm(alpha, beta, gamma, b, g):
     """
     Solution to Ax-b >= 0 ; x >= g and (Ax-b)'(x-g)=0 ;
@@ -138,7 +175,7 @@ def brennan_schwartz_algorithm(alpha, beta, gamma, b, g):
 
 
 # brennan-shwartz algorythm (only for put option)
-@njit
+@njit()
 def brennan_schwartz_scheme(net, time_vector, x_vector, lambda_, k):
     size, time_steps = net.shape
     A, B = get_matrices(size, lambda_)

@@ -90,6 +90,7 @@ class HeatGrid:
         x, t = self._get_mod_grid(mod)
         surface = go.Surface(z=net, x=t, y=x)
         fig = go.Figure(surface)
-        fig.update_layout(title='V(S,t)', autosize=False, width=1200, height=800,
+        fig.update_layout(title='U(x,t)', autosize=False, width=1200, height=800,
                           margin=dict(l=65, r=50, b=65, t=90))
+        fig.update_scenes(xaxis_title_text='t', yaxis_title_text='x', zaxis_title_text='U')
         fig.show()
