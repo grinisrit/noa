@@ -11,6 +11,18 @@
 
 namespace noa::utils::test {
 
+/// An empty type
+///
+/// Used as a placeholder for 'unimplemented' fields in
+/// classes as a third argument for `std::conditional`
+struct Empty {
+	constexpr Empty() noexcept = default;
+	template <typename T>
+	Empty(T) = delete;
+	template <typename T>
+	Empty& operator=(T) = delete;
+};
+
 /// A temporary ostream wrapper. Performs Handler::exit(stream)
 template <typename StreamT, typename Handler>
 class EndingOstreamWrapper {

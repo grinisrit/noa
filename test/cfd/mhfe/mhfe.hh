@@ -34,18 +34,62 @@
 /// \brief A namespace containing MHFEM implementation
 namespace noa::test::mhfe {
 
+/// \brief Solver features
+///
+/// Describes various options that could be on or off for the solver
+/// Passed to a \Solver as a type template parameter since features might
+/// not be implemented for certain domain/method configurations
+///
+/// TODO: When and if moving to C++20, make bools bit fields with size of 1 bit?
+struct Features {
+	/// Is precise solution layer allocated by this solver?
+	bool precise	= false;
+	/// Is this solver used to calculate some scalar function
+	/// derivative by a via adjoints?
+	bool ajDerivativeA	= false;
+
+	/// Placeholder enum type to pass \ref Features to \ref Solver
+	///
+	/// Is only required since non-type template parameters are not
+	/// available prior to C++20 and we don't want to just pass a
+	/// regular `int` parameter to solver.
+	enum class Enum : unsigned int {};
+
+	/// \brief Construct a features object from Features::Enum enum
+	///
+	/// Is not a constructor because declaring a constructor removes
+	/// list initialization from this struct
+	constexpr static Features from(Enum initializer) noexcept {
+		return Features{
+			bool(static_cast<unsigned int>(initializer) & 1),
+			bool(static_cast<unsigned int>(initializer) & (1 << 2))
+		};
+	}
+
+	constexpr operator Enum() const noexcept {
+		return static_cast<Enum>(
+			(unsigned int)(this->precise) << 1 |
+			(unsigned int)(this->ajDerivativeA) << 2
+		);
+	}
+};
+
 /// System is a friend of \ref Solver and has access to
 /// all of its members. Its only purpose is to, given a method,
 /// calculate MHFEM system matrices and terms
 ///
 /// Every system specialization should include matrixTerm() and rhsTerm() functions
-template <__domain_targs__>
+template <Features::Enum solverFeatures, __domain_targs__>
 struct System {}; // <-- struct System
 
 /// \brief A MHFEM solver class
 ///
-/// Template parameters repeat those of \ref Domain
+/// \tparam features_ - solver features. Its type being enum is a placeholder until
+/// we move to C++20 FIXME
+///
+/// Other template parameters repeat those of \ref Domain
 template <
+	Features::Enum features_,
 	typename CellTopology,
 	typename Device = TNL::Devices::Host,
 	typename Real = float,
@@ -59,8 +103,10 @@ public:
 	/// System matrix type
 	using MatrixType = TNL::Matrices::SparseMatrix<Real, Device, GlobalIndex>;
 private:
-	using SystemType = System<CellTopology, Device, Real, GlobalIndex, LocalIndex>;
+	using SystemType = System<features_, CellTopology, Device, Real, GlobalIndex, LocalIndex>;
 	friend SystemType;
+
+	static constexpr auto features = Features::from(features_); // TODO: Remove this with C++20
 
 	/// TNL Vector view types
 	template <typename DataType>
@@ -80,6 +126,7 @@ public:
 	static constexpr auto dimEdge = dimCell - 1;
 
 	// Layer views
+	using Empty = noa::utils::test::Empty;
 public:
 	/// Solution view
 	VectorViewType<Real> p;
@@ -92,7 +139,7 @@ public:
 	/// `c` coefficient view
 	VectorViewType<Real> c;
 	/// Precise solution view
-	VectorViewType<Real> precise;
+	std::conditional_t<features.precise, VectorViewType<Real>, Empty> precise;
 
 private:
 	using BInvEType = VectorViewType<Real>;
@@ -143,9 +190,6 @@ public:
 	std::string preconditionerName = "diagonal";
 
 private:
-	/// Is precise solution layer allocated by this solver?
-	bool allocatePrecise;
-
 	/// Get some uncached cell-wise coefficients
 	///
 	/// \return a tuple of (lambda, alpha_i, alpha, beta)
@@ -160,10 +204,10 @@ private:
 public:
 	/// \brief Constructor
 	///
-	/// \param allocatePrecise_ - sets allocatePrecise member
+	/// \param features_ - used solver features
 	///
 	/// Populates domain with layers
-	Solver(bool allocatePrecise_ = false) noexcept : allocatePrecise(allocatePrecise_) {} // <-- Solver()
+	Solver() noexcept = default; // <-- Solver()
 
 	/// (Re)create domain layers
 	void updateLayers() {
@@ -190,7 +234,7 @@ public:
 		addLayer(cellLayers, CellLayers::MEASURE,	this->measure,	Real{});
 		addLayer(cellLayers, CellLayers::L,		this->l,	Real{});
 
-		if (this->allocatePrecise) {
+		if constexpr (features.precise) {
 			auto& layerPrecise = addLayer(cellLayers, CellLayers::PRECISE, this->precise, Real{});
 			layerPrecise.alias = "Precise solution";
 			layerPrecise.exportHint = true;
@@ -360,10 +404,10 @@ public:
 }; // <-- class Solver
 
 // System specializations
-template <__domain_targs_topospec__>
-struct System<TNL::Meshes::Topologies::Triangle, Device, Real, GlobalIndex, LocalIndex> {
+template <Features::Enum features, __domain_targs_topospec__>
+struct System<features, TNL::Meshes::Topologies::Triangle, Device, Real, GlobalIndex, LocalIndex> {
 	using CellTopology = TNL::Meshes::Topologies::Triangle;
-        using SolverType = Solver<CellTopology, Device, Real, GlobalIndex, LocalIndex>;
+        using SolverType = Solver<features, CellTopology, Device, Real, GlobalIndex, LocalIndex>;
 	template <template <typename, typename> typename Method>
 	static inline
         void matrixTerm(SolverType& solver, GlobalIndex cell, GlobalIndex edge, GlobalIndex cellEdges) {

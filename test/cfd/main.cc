@@ -48,9 +48,10 @@ int main(int argc, char** argv) {
 	std::filesystem::create_directory(solverOutputPath);
 
 	using CellTopology	= noa::TNL::Meshes::Topologies::Triangle;
-	using SolverType	= noa::test::mhfe::Solver<CellTopology>;
+	constexpr auto features	= noa::test::mhfe::Features{ true, false };
+	using SolverType	= noa::test::mhfe::Solver<features, CellTopology>;
 
-	SolverType solver(true);
+	SolverType solver;
 	noa::utils::domain::generate2DGrid(solver.getDomain(), 20, 10, 1.0, 1.0);
 	solver.updateLayers();
 	
