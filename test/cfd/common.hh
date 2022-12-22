@@ -11,7 +11,7 @@
 
 namespace noa::utils::test {
 
-/// An empty type
+/// \brief An empty type
 ///
 /// Used as a placeholder for 'unimplemented' fields in
 /// classes as a third argument for `std::conditional`
@@ -23,7 +23,7 @@ struct Empty {
 	Empty& operator=(T) = delete;
 };
 
-/// A temporary ostream wrapper. Performs Handler::exit(stream)
+/// \brief A temporary ostream wrapper. Performs Handler::exit(stream)
 template <typename StreamT, typename Handler>
 class EndingOstreamWrapper {
 	StreamT& stream;
@@ -39,12 +39,12 @@ public:
 	EndingOstreamWrapper& operator<<(T arg) { this->stream << arg; return *this; }
 };
 
-/// Automatically flush the stream at the end of output
+/// \brief Automatically flush the stream at the end of output
 inline struct AutoFlush {
 	static void exit(std::ostream& stream) { stream.flush(); }
 } autoflush;
 
-/// Replace current terminal line message to argument
+/// \brief Replace current terminal line message to argument
 inline struct StatusLine : AutoFlush {} status_line;
 
 /// Do nothing at the start of autoflush output

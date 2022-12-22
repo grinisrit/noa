@@ -101,7 +101,8 @@ public:
 	/// Domain type
 	using DomainType = __DomainType__;
 	/// System matrix type
-	using MatrixType = TNL::Matrices::SparseMatrix<Real, Device, GlobalIndex>;
+	using SparseMatrixType	= TNL::Matrices::SparseMatrix<Real, Device, GlobalIndex>;
+	using DenseMatrixType	= TNL::Matrices::DenseMatrix<Real, Device, GlobalIndex>;
 private:
 	using SystemType = System<features_, CellTopology, Device, Real, GlobalIndex, LocalIndex>;
 	friend SystemType;
@@ -170,8 +171,8 @@ public:
 	VectorViewType<Real>		tp;
 
 private:
-	/// System matrix
-	std::shared_ptr<MatrixType>	M;
+	/// System matrix (TNL solvers require shared pointers)
+	std::shared_ptr<SparseMatrixType>	M;
 
 public:
         /// Getter of const view to system matrix
@@ -315,12 +316,12 @@ public:
 		// Get edges count
 		const auto edges = mesh.template getEntitiesCount<dimEdge>();
 
-		if (this->M == nullptr) this->M = std::make_shared<MatrixType>(edges, edges);
-
+		// Create matrix if needed
+		if (this->M == nullptr) this->M = std::make_shared<SparseMatrixType>(edges, edges);
 		this->M->setRowCapacities(this->capacities);
-
 		// Zero all elements
-		this->M->forAllElements([] (GlobalIndex row, GlobalIndex loc, GlobalIndex col, Real& v) { v = 0; });
+		this->M->forAllElements([] (auto row, auto loc, auto col, auto& v) { v = 0; });
+
 		this->rhs.forAllElements([] (GlobalIndex i, Real& v) { v = 0; });
 
 		// Get the matrix view
@@ -360,8 +361,8 @@ public:
 		this->template updateSystem<Method>();
 
 		// Solve the system
-		auto preconditioner = TNL::Solvers::getPreconditioner<MatrixType>(this->preconditionerName);
-		auto solver = TNL::Solvers::getLinearSolver<MatrixType>(this->solverName);
+		auto preconditioner = TNL::Solvers::getPreconditioner<SparseMatrixType>(this->preconditionerName);
+		auto solver = TNL::Solvers::getLinearSolver<SparseMatrixType>(this->solverName);
 
 		preconditioner->update(this->M);
 		solver->setMatrix(this->M);
