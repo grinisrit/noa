@@ -142,4 +142,4 @@ for a commercial license.
 For support or consultancy services 
 contact [GrinisRIT](https://www.grinisrit.com).
 
-(c) 2022 GrinisRIT ltd. 
+(c) 2023 GrinisRIT ltd. and contributors
