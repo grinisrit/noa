@@ -130,7 +130,7 @@ The JNI wrapper is being developed in collaboration with
 NOA is licensed under the terms and conditions of the GNU General
 Public License (GPL) version 3 or - at your option - any later
 version. The GPL can be read [online](https://www.gnu.org/licenses/gpl-3.0.en.html), 
-or see the full [LICENSE](LICENSE)
+or see the full [LICENSE](LICENSE).
 
 Please note that NOA license does NOT feature a
 template exception to the GNU General Public License. This means that

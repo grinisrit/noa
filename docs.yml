@@ -12,6 +12,7 @@ dependencies:
   - plotly
   - seaborn
   - pip:
+      - numba
       - torch
       - pythreejs
       - pyvista
