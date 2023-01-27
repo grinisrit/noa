@@ -1,5 +1,3 @@
-#define HAVE_OPENMP
-
 #include "test-tnl.hh"
 
 #include <torch/torch.h>

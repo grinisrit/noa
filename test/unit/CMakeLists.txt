@@ -9,9 +9,6 @@ include(fetch-gtest)
 # Test data
 include(noa-test-data)
 
-# Find OpenMP
-find_package(OpenMP QUIET)
-
 # Find ZLIB
 find_package(ZLIB)
 
@@ -22,6 +19,8 @@ set(NOA_TEST_SRC
         test-dcs-calc.cc
         test-tnl.cc
         test-trace.cc
+        test-domain.cc
+        test-mhfem.cc
         ${NOA_ROOT_DIR}/test/kernels.cc)
 
 if (BUILD_NOA_CUDA)
@@ -40,14 +39,16 @@ add_dependencies(noa_test_suite test_data)
 set_target_properties(noa_test_suite PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Extra include directories
-target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test ${OpenMP_CXX_INCLUDE_DIRS})
+target_include_directories(noa_test_suite PRIVATE ${NOA_ROOT_DIR}/test)
 
 # Link libraries
-target_link_libraries(noa_test_suite PRIVATE gtest ${PROJECT_NAME} ${OpenMP_CXX_LIBRARIES} ZLIB::ZLIB)
+target_link_libraries(noa_test_suite PRIVATE gtest ${PROJECT_NAME} ZLIB::ZLIB)
 target_compile_options(noa_test_suite
-        PRIVATE -O3 -DHAVE_ZLIB -DHAVE_OPENMP
-        $<$<COMPILE_LANGUAGE:CXX>: ${W_FLAGS} ${OpenMP_CXX_FLAGS}>
+        PRIVATE -O3 -DHAVE_ZLIB
+        $<$<COMPILE_LANGUAGE:CXX>: ${W_FLAGS}>
         $<$<COMPILE_LANGUAGE:CUDA>:${MCXX_CUDA}>)
+
+target_add_openmp( noa_test_suite )
 
 
 # Set up test
