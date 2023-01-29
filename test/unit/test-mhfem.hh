@@ -55,7 +55,8 @@ bool TNLIsClose(LinearContainer& c1, LinearContainer& c2, Real relTolerance = 1e
 /// solutions (one step)
 #define TEST_MHFEM(method, steps) TEST(method, SolverSteps_ ##steps) { \
 	using CellTopology = noa::TNL::Meshes::Topologies::Triangle;\
-	using SolverType = noa::test::mhfe::Solver<CellTopology>;\
+	constexpr auto features	= noa::test::mhfe::Features{ false, false };\
+	using SolverType = noa::test::mhfe::Solver<features, CellTopology>;\
 	\
 	SolverType s1, s2;\
 	\

@@ -23,6 +23,7 @@
 #include <noa/utils/domain/domain.hh>
 
 // Local headers
+#include "../common.hh"
 #include "except.hh"
 #include "geometry.hh"
 #include "layers.hh"
