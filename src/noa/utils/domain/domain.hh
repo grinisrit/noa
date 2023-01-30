@@ -36,6 +36,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/MeshBuilder.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/resolveMeshType.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Writers/VTUWriter.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Geometry/getEntityCenter.h>
 
 // NOA headers
 #include <noa/utils/common.hh>
@@ -88,6 +89,9 @@ struct Domain {
         /// Mesh local index type
         using LocalIndexType    = LocalIndex;
 
+        /// Mesh point type
+        using PointType         = typename MeshType::PointType;
+
         /// Get mesh dimensions
         static constexpr int getMeshDimension() { return MeshType::getMeshDimension(); }
 
@@ -136,6 +140,12 @@ struct Domain {
 
         /// Get mesh as a constant reference
         const MeshType& getMesh() const { return mesh.value(); }
+
+        /// Get center coordinates for entity with index
+        template <int dimension>
+        auto getEntityCenter(GlobalIndex idx) const {
+                return TNL::Meshes::getEntityCenter(*this->mesh, this->mesh->template getEntity<dimension>(idx));
+        }
 
         /// Get layers
         LayerManagerType& getLayers(const std::size_t& dimension) {
