@@ -146,6 +146,18 @@ def get_matrix_diag(size, lambda_):
 
 
 @njit()
+def get_matrix_diag_mod(lambda_array):
+    alpha = 1 + lambda_array
+    alpha[0] = 1
+    alpha[-1] = 1
+    beta = -0.5 * lambda_array[:-1]
+    beta[0] = 0
+    gamma = -0.5 * lambda_array[1:]
+    gamma[-1] = 0
+    return alpha, beta, gamma
+
+
+@njit()
 def brennan_schwartz_algorithm(alpha, beta, gamma, b, g):
     """
     Solution to Ax-b >= 0 ; x >= g and (Ax-b)'(x-g)=0 ;
@@ -174,7 +186,35 @@ def brennan_schwartz_algorithm(alpha, beta, gamma, b, g):
     return x
 
 
-# brennan-shwartz algorythm (only for put option)
+@njit()
+def brennan_schwartz_algorithm(alpha, beta, gamma, b, g):
+    """
+    Solution to Ax-b >= 0 ; x >= g and (Ax-b)'(x-g)=0 ;
+
+    A - bidiagonal matrix with alpha, beta, gamma coefficients
+    alpha: [n x 1] numpy vector  of main diagonal of A
+    beta: [(n-1) x 1] numpy vector of upper diagonal
+    gamma: [(n-1) x 1] numpy vector of lower diagonal
+    """""
+
+    n = len(alpha)
+    alpha_hat = np.zeros(n, dtype=np.float64)
+    b_hat = np.zeros(n, dtype=np.float64)
+
+    alpha_hat[-1] = alpha[-1]
+    b_hat[-1] = b[-1]
+
+    for i in range(n - 2, -1, -1):
+        alpha_hat[i] = alpha[i] - beta[i] * gamma[i] / alpha_hat[i + 1]
+        b_hat[i] = b[i] - beta[i] * b_hat[i + 1] / alpha_hat[i + 1]
+
+    x = np.zeros(n, dtype=np.float64)
+    x[0] = np.maximum(b_hat[0] / alpha_hat[0], g[0])
+    for i in range(1, n):
+        x[i] = np.maximum((b_hat[i] - gamma[i - 1] * x[i - 1]) / alpha_hat[i], g[i])
+    return x
+
+
 @njit()
 def brennan_schwartz_scheme(net, time_vector, x_vector, lambda_, k):
     size, time_steps = net.shape
@@ -188,6 +228,23 @@ def brennan_schwartz_scheme(net, time_vector, x_vector, lambda_, k):
         f = np.dot(B, net[:, i])
         # implicit step
         solution = brennan_schwartz_algorithm(alpha, beta, gamma, f, g)
+        net[:, i + 1] = solution
+    return net
+
+
+@njit()
+def brennan_schwartz_scheme_mod(net, lambda_net, t_array, x_array, g_func):
+    size, time_steps = net.shape
+    for i in range(0, time_steps - 1):
+        A, B = get_matrices_mod(size, lambda_net[:, i])
+        alpha, beta, gamma = get_matrix_diag_mod(lambda_net[:, i])
+
+        f = np.dot(B, net[:, i])
+        f[0] = net[0, i + 1]
+        f[-1] = net[-1, i + 1]
+
+        g_array = np.array([g_func(t_array[i+1], x) for x in x_array])
+        solution = brennan_schwartz_algorithm(alpha, beta, gamma, f, g_array)
         net[:, i + 1] = solution
     return net
 
