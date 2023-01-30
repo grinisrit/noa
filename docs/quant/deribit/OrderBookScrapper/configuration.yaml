@@ -1,0 +1,42 @@
+mysql:
+    host: localhost
+    user: root
+    database: DeribitOrderBook
+    use_bathes_to_record: False
+
+    reconnect_max_attempts: 5
+    reconnect_wait_time: 1
+
+hdf5:
+    hdf5_database_file: "HDF_storage.h5"
+
+record_system:
+    use_batches_to_record: True
+    number_of_tmp_tables: 5
+    size_of_tmp_batch_table: 40
+    instrumentNameToIdMapFile: "InstrumentNameToIdMap.json"
+
+    clean_database_at_startup: True
+
+orderBookScrapper:
+    scrapper_body: OrderBook
+    depth: 1
+    test_net: False
+    currency: BTC
+    enable_traceback: False
+    enable_database_record: True
+    clean_database: True
+    hearth_beat_time: 10
+    group_in_limited_order_book: none
+    raise_error_at_synthetic: False
+    logger_level: INFO
+
+    select_all_order_book: True
+
+    database_daemon: mysql
+
+    add_extra_instruments: ["BTC-PERPETUAL"]
+    # Need to be true if you need to select maturities by configuration file.
+    use_configuration_to_select_maturities: True
+    maturities_configuration_path: "test_DEC23_configuration.yaml"
+
