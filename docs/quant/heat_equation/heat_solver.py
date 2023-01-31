@@ -1,6 +1,10 @@
+import types
+from typing import Union, Callable
+
 from docs.quant.heat_equation.heat_grid import *
-from docs.quant.utils.optlib.numerical_utils import crank_nickolson_scheme
+from docs.quant.utils.optlib.numerical_utils import crank_nickolson_scheme, crank_nickolson_mod
 from numba import njit
+from numpy import ndarray
 
 
 @njit()
@@ -14,14 +18,24 @@ class HeatSolver(HeatGrid):
     def __init__(self,
                  xSteps: int,
                  tSteps: int,
-                 sigma=1,
+                 sigma=1.0,
                  xLeft=-3.0,
                  xRight=3.0,
                  tMax=1.0):
 
         super().__init__(xSteps, tSteps, xLeft, xRight, tMax)
-        self.lambda_ = sigma * self.dt / self.dx ** 2
-        # TODO: sigma == sigma(xx, tt)
+        self.sigma_net = sigma * np.ones_like(self._net)
+        self.lambda_ = self.sigma_net * self.dt / self.dx ** 2
+
+    def set_sigma(self, sigma: Union[ndarray, Callable[[ndarray, ndarray], ndarray]]):
+        if isinstance(sigma, ndarray):
+            assert sigma.shape == (self.xSteps + 1, self.tSteps + 1)
+            self.sigma_net = sigma
+            self.lambda_ = sigma * self.dt / self.dx ** 2
+        elif isinstance(sigma, types.FunctionType):
+            xx, tt = np.meshgrid(self.xGrid, self.tGrid, indexing='ij')
+            self.sigma_net = sigma(xx, tt)
+            self.lambda_ = self.sigma_net * self.dt / self.dx ** 2
 
     def setBounds(self):
         # boundary conditions
@@ -33,13 +47,15 @@ class HeatSolver(HeatGrid):
 
     def CN(self):
         self.setBounds()
-        self._net = crank_nickolson_scheme(self.net, self.lambda_)
+        self._net = crank_nickolson_mod(self.net, self.lambda_)
         self._net_mod_map[Mode.MAIN] = self.net
 
-    # TODO: manage with cashing and if before CN and without backup
-    def diff_sigma(self, shift_percent=0.001):
+    # TODO: manage with cashing
+    def diff_sigma(self, shift=10**-5):
         if self._net_mod_map[Mode.CASH] is None:
             print('Please solve CN and make backup (CASH is empty)')
         else:
+            sigma_net_shifted = self.sigma_net + shift
+            lambda_shifted = sigma_net_shifted * self.dt / self.dx ** 2
             self._net_mod_map[Mode.DIFF_C] = \
-                (crank_nickolson_scheme(self.net, self.lambda_*(1 + shift_percent)) - self._net_mod_map[Mode.CASH]) / (shift_percent*self.lambda_)
+                (crank_nickolson_mod(self.net, lambda_shifted) - self._net_mod_map[Mode.CASH]) / shift

@@ -31,10 +31,9 @@ def find_early_exercise(V, S_array, t_array, K, slice_num=0, tolerance=10 ** -5)
     stop_line_S = list()
     if slice_num == 0:
         for i in range(len(t_array)):
-            v_array = V[:, int(i)]
-            stop = [(s, v) for v, s in zip(v_array, S_array) if v <= max(K - s + tolerance, 0)]
-            stop_line_V.append(stop[-1][1])
-            stop_line_S.append(stop[-1][0])
+            stop_idx = np.argmax(V[:, i] > np.maximum(K - S_array + tolerance, 0))
+            stop_line_V.append(V[stop_idx, i])
+            stop_line_S.append(S_array[stop_idx])
     else:
         for i in np.linspace(0, len(t_array) - 1, slice_num):
             stop = [(s, v) for v, s in zip(V[:, int(i)], S_array) if v <= max(K - s + tolerance, 0)]

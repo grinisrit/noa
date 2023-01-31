@@ -165,6 +165,7 @@ class Grid:
         fig = go.Figure([surface, curve])
         fig.update_layout(title='V(S,t)', autosize=False, width=1200, height=800,
                           margin=dict(l=65, r=50, b=65, t=90))
+        fig.update_scenes(xaxis_title_text='t', yaxis_title_text='S', zaxis_title_text='V')
         if cut:
                 fig.update_layout(
                     scene=dict(yaxis=dict(nticks=4, range=[lcoef * self.option.strike, rcoef * self.option.strike])))
