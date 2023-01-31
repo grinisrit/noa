@@ -1,9 +1,6 @@
 def REQUEST_TO_CREATE_OWN_ORDERS_TABLE(table_name: str):
     HEADER = "create table {}".format(table_name)
     REQUEST = HEADER
-    columns = ["CHANGE_ID", "CREATION_TIMESTAMP", "LAST_UPDATE_TIMESTAMP", "NAME_INSTRUMENT", "ORDER_TYPE",
-               "ORDER_STATE", "ORDER_ID", "FILLED_AMOUNT", "COMMISSION", "AVERAGE_PRICE", "PRICE",
-               "DIRECTION", "AMOUNT"]
     REQUEST += \
         """
     (
@@ -23,6 +20,7 @@ def REQUEST_TO_CREATE_OWN_ORDERS_TABLE(table_name: str):
     );
     """
     return REQUEST
+
 
 def REQUEST_TO_CREATE_TRADES_TABLE(table_name: str):
     HEADER = "create table {}".format(table_name)
@@ -46,7 +44,7 @@ def REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT(table_name: str, depth_size: in
     HEADER = "create table {}".format(table_name)
     REQUIRED_FIELDS = """(
     CHANGE_ID bigint not null auto_increment primary key,
-    NAME_INSTRUMENT blob                           not null,
+    NAME_INSTRUMENT bigint                           not null,
     TIMESTAMP_VALUE bigint                           not null,
     """
     ADDITIONAL_FIELDS_BIDS = """

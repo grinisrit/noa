@@ -13,7 +13,7 @@ hdf5:
 record_system:
     use_batches_to_record: True
     number_of_tmp_tables: 5
-    size_of_tmp_batch_table: 1
+    size_of_tmp_batch_table: 2
     instrumentNameToIdMapFile: "InstrumentNameToIdMap.json"
 
     clean_database_at_startup: True
@@ -28,7 +28,7 @@ user_data:
 
 orderBookScrapper:
     scrapper_body: [OrderBook, Trades, OwnOrderChange]
-#    scrapper_body: [OwnOrderChange]
+#    scrapper_body: [OrderBook]
     depth: 10
     test_net: True
     currency: BTC
@@ -38,7 +38,7 @@ orderBookScrapper:
     hearth_beat_time: 60
     group_in_limited_order_book: none
     raise_error_at_synthetic: False
-    logger_level: INFO
+    logger_level: WARN
 
     select_all_order_book: True
 
