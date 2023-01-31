@@ -34,4 +34,4 @@ target_compile_options(measure_dcs_calc
         PRIVATE -O3
         $<$<COMPILE_LANGUAGE:CXX>: ${W_FLAGS}>
         $<$<COMPILE_LANGUAGE:CUDA>:${MCXX_CUDA}>)
-target_add_openmp( measure_dcs_cal )
+target_add_openmp( measure_dcs_calc )

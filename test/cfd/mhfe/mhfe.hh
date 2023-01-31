@@ -23,6 +23,7 @@
 #include <noa/utils/domain/domain.hh>
 
 // Local headers
+#include "../common.hh"
 #include "except.hh"
 #include "geometry.hh"
 #include "layers.hh"
@@ -209,6 +210,13 @@ public:
 	///
 	/// Populates domain with layers
 	Solver() noexcept = default; // <-- Solver()
+	
+	/// Reset the solver
+	void reset() {
+		this->t = 0.0;
+		this->M = nullptr;
+		this->domain.clear();
+	} // <-- void Solver::reset()
 
 	/// (Re)create domain layers
 	void updateLayers() {
@@ -387,6 +395,157 @@ public:
 		// Advance the time
 		this->t += this->tau;
 	} // <-- void step()
+
+	/// \biref Perfoms sensitivity calculation for a
+	///
+	/// Uses last step data
+	template <template <typename, typename> class Method, template <typename> class ScalarFunction>
+	Real adjointA() {
+		using RealVector = TNL::Containers::Vector<Real, Device, GlobalIndex>;
+		using DenseMatrix = TNL::Matrices::DenseMatrix<Real, Device, GlobalIndex>;
+
+		const auto& mesh = this->getDomain().getMesh();
+
+		const auto numCells = mesh.template getEntitiesCount<dimCell>();
+		const auto numEdges = mesh.template getEntitiesCount<dimEdge>();
+
+		RealVector g_wrt_p(numCells);
+
+		ScalarFunction<Real>::partial_P(this->p, numCells, g_wrt_p.getView());
+
+		static RealVector tp_wrt_a(numEdges, 0);
+		static RealVector p_wrt_a(numCells, 0);
+
+		static RealVector b_wrt_tp(numEdges); // Diagonal matrix
+
+		b_wrt_tp.forAllElements([&mesh, this] (auto idx, auto& v) {
+			v = 0;
+
+			if (this->dirichletMask[idx] > 0 && this->neumannMask == 0) return;
+
+			const auto cells = mesh.template getSuperentitiesCount<dimEdge, dimCell>(idx);
+			for (std::size_t lCell = 0; lCell < cells; ++lCell) {
+				const auto cell = mesh.template getSuperentityIndex<dimEdge, dimCell>(idx, lCell);
+				v += this->measure[cell] * this->c[cell] / (Real{3} * this->tau);
+			}
+		});
+
+		static DenseMatrix M_wrt_a(numEdges, numEdges);
+
+		const auto getMutualCell = [&mesh] (auto edge1, auto edge2) -> std::optional<GlobalIndex> {
+			const auto cells1 = mesh.template getSuperentitiesCount<dimEdge, dimCell>(edge1);
+			const auto cells2 = mesh.template getSuperentitiesCount<dimEdge, dimCell>(edge2);
+
+			for (std::size_t cell1 = 0; cell1 < cells1; ++cell1)
+				for (std::size_t cell2 = 0; cell2 < cells2; ++cell2) {
+					const auto gCell1 = mesh.template getSuperentityIndex<dimEdge, dimCell>(edge1, cell1);
+					const auto gCell2 = mesh.template getSuperentityIndex<dimEdge, dimCell>(edge2, cell2);
+
+					if (gCell1 == gCell2) return gCell1;
+				}
+
+			return std::nullopt;
+		};
+
+		const auto getEdgeLocalIndex = [&mesh] (auto edge, auto cell) {
+			const auto edges = mesh.template getSubentitiesCount<dimCell, dimEdge>(cell);
+
+			for (std::size_t lEdge = 0; lEdge < edges; ++lEdge) {
+				if (mesh.template getSubentityIndex<dimCell, dimEdge>(cell, lEdge) == edge)
+					return lEdge;
+			}
+
+			throw std::runtime_error("Edge doesn't belong to the cell");
+		};
+
+		M_wrt_a.forAllElements([&mesh, &getMutualCell, &getEdgeLocalIndex, this] (auto row, auto col, auto, auto& v) {
+			v = 0;
+
+			if (this->dirichletMask[row] > 0 && this->neumannMask[row] == 0) return;
+
+			if (row != col) {
+				const auto cell = getMutualCell(row, col);
+
+				if (!cell.has_value()) return;
+
+				const auto e1 = getEdgeLocalIndex(row, *cell);
+				const auto e2 = getEdgeLocalIndex(col, *cell);
+
+				const auto cellEdges = mesh.template getSubentitiesCount<dimCell, dimEdge>(*cell);
+				const auto [ lambda, alpha_i, alpha, beta ] = this->getCellParameters(*cell, cellEdges);
+
+				v = this->bInv[e1][e2][*cell] - alpha_i * alpha_i / alpha;
+
+				return;
+			}
+
+			// row = col
+			const auto cells = mesh.template getSuperentitiesCount<dimEdge, dimCell>(row);
+			for (std::size_t lCell = 0; lCell < cells; ++lCell) {
+				const auto cell = mesh.template getSuperentityIndex<dimEdge, dimCell>(row, lCell);
+				const auto lEdge = getEdgeLocalIndex(row, cell);
+
+				const auto cellEdges = mesh.template getSubentitiesCount<dimCell, dimEdge>(cell);
+				const auto [ lambda, alpha_i, alpha, beta ] = this->getCellParameters(cell, cellEdges);
+
+				v += this->bInv[lEdge][lEdge][cell] - alpha_i * alpha_i / alpha;
+			}
+		});
+
+		static RealVector rhs_1(numEdges);
+
+		// M_wrt_a * tp
+		M_wrt_a.vectorProduct(this->tp, rhs_1);
+
+		// -M_wrt_a * tp + b_wrt_tp * tp_wrt_a
+		rhs_1.forAllElements([btp=b_wrt_tp.getConstView(), tpa=tp_wrt_a.getConstView()] (auto i, auto& v) {
+			v = -v + btp[i] * tpa[i];
+		});
+
+		// Border/boundary conditions
+		rhs_1.forAllElements([this] (auto edge, auto& v) {
+			if (this->dirichletMask[edge] > 0) v = 0;
+		});
+
+		// Solve the system
+		auto preconditioner = TNL::Solvers::getPreconditioner<SparseMatrixType>(this->preconditionerName);
+		auto solver = TNL::Solvers::getLinearSolver<SparseMatrixType>(this->solverName);
+
+		preconditioner->update(this->M);
+		solver->setMatrix(this->M);
+		solver->setPreconditioner(preconditioner);
+
+		solver->solve(rhs_1, tp_wrt_a);
+
+		p_wrt_a.forAllElements([&mesh, this, tp_a=tp_wrt_a.getConstView()] (auto cell, auto& v) {
+			const auto cellEdges = mesh.template getSubentitiesCount<dimCell, dimEdge>(cell);
+			const auto [ lambda, alpha_i, alpha, beta ] = this->getCellParameters(cell, cellEdges);
+
+			// V * p_wrt_a
+			v *= lambda / beta;
+
+			// + V_wrt_a * p
+			v -= this->pPrev[cell] * lambda * alpha / beta / beta;
+
+			for (LocalIndex lei = 0; lei < cellEdges; ++lei) {
+				const auto gEdge = mesh.template getSubentityIndex<dimCell, dimEdge>(cell, lei);
+				// + U * tp_wrt_a
+				v += this->a[cell] * tp_a[gEdge] * alpha_i / beta;
+
+				// + U_wrt_a * tp
+				v += this->tp[gEdge] * alpha_i *  lambda / beta / beta;
+				// v -= this->tp[gEdge] * alpha / beta / beta / this->l[cell];
+			}
+		});
+
+		Real ret{};
+
+		p_wrt_a.forAllElements([&ret, g_p=g_wrt_p.getConstView()] (auto idx, auto& v) { // TODO: reduce
+			ret += g_p[idx] * v;
+		});
+
+		return ret;
+	} // <-- void adjointA
 
 	/// Checks whever the domain is set to correct conditions for solving
 	[[nodiscard]] utils::Status isValid() noexcept {
