@@ -5,7 +5,7 @@ import asyncio
 
 from docs.quant.deribit.TradingInterfaceBot.Strategy.AbstractStrategy import AbstractStrategy
 import threading
-from time import time, sleep
+from time import time
 
 
 class TickerNode:

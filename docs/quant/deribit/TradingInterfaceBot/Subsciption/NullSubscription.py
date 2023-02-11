@@ -4,8 +4,7 @@ from numpy import ndarray
 from functools import partial
 from pandas import DataFrame
 
-from docs.quant.deribit.TradingInterfaceBot.DataBase.mysqlRecording.cleanUpRequestsLimited import \
-    REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT
+from docs.quant.deribit.TradingInterfaceBot.Utils import REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT
 
 
 class NullSub(AbstractSubscription):
@@ -25,7 +24,7 @@ class NullSub(AbstractSubscription):
         columns[1] = "UNKNOWN_TABLE"
         return columns
 
-    def create_subscription_request(self) -> str:
+    def _create_subscription_request(self) -> str:
         pass
 
     def _process_response(self, response: dict):

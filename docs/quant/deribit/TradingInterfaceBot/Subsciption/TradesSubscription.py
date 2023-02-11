@@ -1,15 +1,9 @@
-import asyncio
-import pprint
-
-from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription, flatten
-from docs.quant.deribit.TradingInterfaceBot.Utils import MSG_LIST
-from docs.quant.deribit.TradingInterfaceBot.DataBase.mysqlRecording.cleanUpRequestsLimited import REQUEST_TO_CREATE_TRADES_TABLE
+from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription, flatten, RequestTypo
+from docs.quant.deribit.TradingInterfaceBot.Utils import *
 
 from numpy import ndarray
-from functools import partial
 from pandas import DataFrame
 from typing import List, TYPE_CHECKING
-import logging
 import numpy as np
 
 if TYPE_CHECKING:
@@ -27,7 +21,7 @@ class TradesSubscription(AbstractSubscription):
         self.tables_names = [f"Trades_table_test"]
         self.tables_names_creation = list(map(REQUEST_TO_CREATE_TRADES_TABLE, self.tables_names))
 
-        super(TradesSubscription, self).__init__(scrapper=scrapper)
+        super(TradesSubscription, self).__init__(scrapper=scrapper, request_typo=RequestTypo.PUBLIC)
         self.number_of_columns = 7
         self.instrument_name_instrument_id_map = self.scrapper.instrument_name_instrument_id_map
 
@@ -73,8 +67,7 @@ class TradesSubscription(AbstractSubscription):
             )
         return np.array(_full_ndarray)
 
-
-    def create_subscription_request(self):
+    def _create_subscription_request(self):
         self._trades_subscription_request()
 
     def _record_to_daemon_database_pipeline(self, record_dataframe: DataFrame, tag_of_data: str) -> DataFrame:
@@ -83,7 +76,6 @@ class TradesSubscription(AbstractSubscription):
         return record_dataframe
 
     def _trades_subscription_request(self):
-        # TODO for _instrument_name in self.scrapper.instruments_list:
         for _instrument_name in self.scrapper.instruments_list:
             subscription_message = \
                 MSG_LIST.make_trades_subscription_request_by_instrument(

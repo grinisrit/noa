@@ -1,15 +1,10 @@
-import asyncio
-import pprint
 
-from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription, flatten
-from docs.quant.deribit.TradingInterfaceBot.Utils import MSG_LIST
-from docs.quant.deribit.TradingInterfaceBot.DataBase.mysqlRecording.cleanUpRequestsLimited import REQUEST_TO_CREATE_OWN_ORDERS_TABLE
+from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription, flatten, RequestTypo
+from docs.quant.deribit.TradingInterfaceBot.Utils import *
 
 from numpy import ndarray
-from functools import partial
 from pandas import DataFrame
 from typing import List, TYPE_CHECKING
-import logging
 import numpy as np
 
 if TYPE_CHECKING:
@@ -27,20 +22,9 @@ class OwnOrdersSubscription(AbstractSubscription):
         self.tables_names = [f"User_orders_test"]
         self.tables_names_creation = list(map(REQUEST_TO_CREATE_OWN_ORDERS_TABLE, self.tables_names))
 
-        super(OwnOrdersSubscription, self).__init__(scrapper=scrapper)
+        super(OwnOrdersSubscription, self).__init__(scrapper=scrapper, request_typo=RequestTypo.PRIVATE)
         self.number_of_columns = 13
         self.instrument_name_instrument_id_map = self.scrapper.instrument_name_instrument_id_map
-
-        self.client_id = \
-            self.scrapper.configuration["user_data"]["test_net"]["client_id"] \
-                if self.scrapper.configuration["orderBookScrapper"]["test_net"] else \
-                self.scrapper.configuration["user_data"]["production"]["client_id"]
-
-        self.client_secret = \
-            self.scrapper.configuration["user_data"]["test_net"]["client_secret"] \
-                if self.scrapper.configuration["orderBookScrapper"]["test_net"] else \
-                self.scrapper.configuration["user_data"]["production"]["client_secret"]
-
 
     def _place_here_tables_names_and_creation_requests(self):
         self.tables_names = [f"User_orders_test"]
@@ -94,19 +78,18 @@ class OwnOrdersSubscription(AbstractSubscription):
         )
         return np.array(_full_ndarray)
 
-    def create_subscription_request(self):
+    def _create_subscription_request(self):
         self.scrapper.send_new_request(MSG_LIST.auth_message(client_id=self.client_id,
                                                              client_secret=self.client_secret))
 
-        self._trades_subscription_request()
+        self._user_orders_change_subscription_request()
 
     def _record_to_daemon_database_pipeline(self, record_dataframe: DataFrame, tag_of_data: str) -> DataFrame:
         if 'CHANGE_ID' in record_dataframe.columns:
             return record_dataframe.iloc[:, 1:]
         return record_dataframe
 
-    def _trades_subscription_request(self):
-        # TODO for _instrument_name in self.scrapper.instruments_list:
+    def _user_orders_change_subscription_request(self):
         for _instrument_name in self.scrapper.instruments_list:
             subscription_message = \
                 MSG_LIST.make_user_orders_subscription_request_by_instrument(
