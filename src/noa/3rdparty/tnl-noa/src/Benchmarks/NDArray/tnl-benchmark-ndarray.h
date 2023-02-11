@@ -386,7 +386,7 @@ void setupConfig( Config::ConfigDescription & config )
    config.addEntry< String >( "devices", "Run benchmarks on these devices.", "all" );
    config.addEntryEnum( "all" );
    config.addEntryEnum( "host" );
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    config.addEntryEnum( "cuda" );
    #endif
 
@@ -430,7 +430,7 @@ int main( int argc, char* argv[] )
    const String devices = parameters.getParameter< String >( "devices" );
    if( devices == "all" || devices == "host" )
       run_benchmarks< Devices::Host >( benchmark );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( devices == "all" || devices == "cuda" )
       run_benchmarks< Devices::Cuda >( benchmark );
 #endif

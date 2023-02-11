@@ -96,11 +96,12 @@ protected:
    using VectorOrView = typename TestFixture::VectorOrView; \
    VectorOrView& V1 = this->V1;                             \
    const int size = V1.getSize();                           \
+   (void) 0  // dummy statement here enforces ';' after the macro use
 
 // types for which VectorVerticalOperationsTest is instantiated
 #if defined(DISTRIBUTED_VECTOR)
    using VectorTypes = ::testing::Types<
-   #ifndef HAVE_CUDA
+   #ifndef __CUDACC__
       DistributedVector<           double, Devices::Host, int >,
       DistributedVectorView<       double, Devices::Host, int >,
       DistributedVectorView< const double, Devices::Host, int >,
@@ -138,7 +139,7 @@ protected:
 #else
    #ifdef VECTOR_OF_STATIC_VECTORS
       using VectorTypes = ::testing::Types<
-      #ifndef HAVE_CUDA
+      #ifndef __CUDACC__
          Vector<     StaticVector< 3, double >, Devices::Host >,
          VectorView< StaticVector< 3, double >, Devices::Host >
       #else
@@ -148,7 +149,7 @@ protected:
       >;
    #else
       using VectorTypes = ::testing::Types<
-      #ifndef HAVE_CUDA
+      #ifndef __CUDACC__
          Vector<     int,       Devices::Host >,
          VectorView< int,       Devices::Host >,
          VectorView< const int, Devices::Host >,
@@ -157,7 +158,7 @@ protected:
          Vector<     CustomScalar< int >, Devices::Host >,
          VectorView< CustomScalar< int >, Devices::Host >
       #endif
-      #ifdef HAVE_CUDA
+      #ifdef __CUDACC__
          Vector<     int,       Devices::Cuda >,
          VectorView< int,       Devices::Cuda >,
          VectorView< const int, Devices::Cuda >,

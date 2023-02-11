@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -49,8 +49,12 @@ BICGStab< Matrix >::solve( ConstVectorViewType b, VectorViewType x )
    }
    else
       b_norm = lpNorm( b, 2.0 );
-   if( b_norm == 0.0 )
-      b_norm = 1.0;
+
+   // check for zero rhs - solution is the null vector
+   if( b_norm == 0 ) {
+      x = 0;
+      return true;
+   }
 
    // r = M.solve(b - A * x);
    compute_residue( r, x, b );

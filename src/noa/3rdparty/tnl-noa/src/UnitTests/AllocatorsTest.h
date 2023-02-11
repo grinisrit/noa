@@ -44,7 +44,7 @@ TYPED_TEST( AllocatorsTest, Host )
    allocator.deallocate( data, ARRAY_TEST_SIZE );
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TYPED_TEST( AllocatorsTest, CudaHost )
 {
    using ValueType = typename TestFixture::ValueType;
@@ -98,7 +98,7 @@ TYPED_TEST( AllocatorsTest, Cuda )
 
    allocator.deallocate( data, ARRAY_TEST_SIZE );
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 #endif // HAVE_GTEST
 
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -227,7 +227,7 @@ Multireduction< Devices::Cuda >::reduce( Result identity,
    timer.stop();
    std::cout << "   Multireduction of small data set on CPU took " << timer.getRealTime() << " sec. " << std::endl;
 #endif
-};
+}
 
 }  // namespace Algorithms
 }  // namespace noa::TNL

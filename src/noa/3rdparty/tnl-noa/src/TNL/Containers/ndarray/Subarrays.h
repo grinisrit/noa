@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -14,7 +14,7 @@
 
 namespace noa::TNL {
 namespace Containers {
-namespace __ndarray_impl {
+namespace detail {
 
 template< typename Dimensions, typename Permutation >
 class SubpermutationGetter;
@@ -246,7 +246,7 @@ class SubarrayGetter< NDArrayBase< SliceInfo >, Permutation, Dimensions... >
       get()
       {
          constexpr std::size_t start_offset = index_in_sequence( start_dim, Permutation{} );
-         constexpr std::size_t dim = __ndarray_impl::get< start_offset + level + 1 >( Permutation{} );
+         constexpr std::size_t dim = detail::get< start_offset + level + 1 >( Permutation{} );
          return SizesHolder::template getStaticSize< dim >()
               * StaticStrideGetter< SizesHolder, start_dim, end, level + 1 >::get();
       }
@@ -274,7 +274,7 @@ class SubarrayGetter< NDArrayBase< SliceInfo >, Permutation, Dimensions... >
       get( const SizesHolder& sizes )
       {
          constexpr std::size_t start_offset = index_in_sequence( start_dim, Permutation{} );
-         constexpr std::size_t dim = __ndarray_impl::get< start_offset + level + 1 >( Permutation{} );
+         constexpr std::size_t dim = detail::get< start_offset + level + 1 >( Permutation{} );
          return sizes.template getSize< dim >() * DynamicStrideGetter< start_dim, end, level + 1 >::get( sizes );
       }
    };
@@ -352,6 +352,6 @@ public:
    }
 };
 
-}  // namespace __ndarray_impl
+}  // namespace detail
 }  // namespace Containers
 }  // namespace noa::TNL

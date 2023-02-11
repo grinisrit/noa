@@ -15,7 +15,7 @@ using namespace TNL;
 #ifdef HAVE_GTEST
 TEST( DevicePointerCudaTest, ConstructorTest )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType =  TNL::Containers::StaticArray< 2, int  >;
    TestType obj1;
    Pointers::DevicePointer< TestType, Devices::Cuda > ptr1( obj1 );
@@ -38,7 +38,7 @@ TEST( DevicePointerCudaTest, ConstructorTest )
 
 TEST( DevicePointerCudaTest, getDataTest )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType = TNL::Containers::StaticArray< 2, int  >;
    TestType obj1( 1, 2 );
    Pointers::DevicePointer< TestType, Devices::Cuda > ptr1( obj1 );
@@ -51,10 +51,10 @@ TEST( DevicePointerCudaTest, getDataTest )
 
    ASSERT_EQ( aux[ 0 ], 1 );
    ASSERT_EQ( aux[ 1 ], 2 );
-#endif  // HAVE_CUDA
+#endif  // __CUDACC__
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 __global__ void copyArrayKernel( const TNL::Containers::Array< int, Devices::Cuda >* inArray,
                                  int* outArray )
 {
@@ -76,7 +76,7 @@ __global__ void copyArrayKernel2( const Pointers::DevicePointer< TNL::Containers
 
 TEST( DevicePointerCudaTest, getDataArrayTest )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType = TNL::Containers::Array< int, Devices::Cuda  >;
    TestType obj;
    Pointers::DevicePointer< TestType > ptr( obj );
@@ -110,7 +110,7 @@ TEST( DevicePointerCudaTest, getDataArrayTest )
 
 TEST( DevicePointerCudaTest, nullptrAssignement )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType = Pointers::DevicePointer< double, Devices::Cuda >;
    double o1 = 5;
    TestType p1( o1 ), p2( nullptr );
@@ -125,7 +125,7 @@ TEST( DevicePointerCudaTest, nullptrAssignement )
 
 TEST( DevicePointerCudaTest, swap )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType = Pointers::DevicePointer< double, Devices::Cuda >;
    double o1( 1 ), o2( 2 );
    TestType p1( o1 ), p2( o2 );

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -26,7 +26,7 @@ class SlicedEllpackView
 public:
    using DeviceType = Device;
    using IndexType = std::remove_const_t< Index >;
-   using OffsetsView = typename Containers::VectorView< Index, DeviceType, IndexType >;
+   using OffsetsView = Containers::VectorView< Index, DeviceType, IndexType >;
    static constexpr int
    getSliceSize()
    {
@@ -47,7 +47,7 @@ public:
    havePadding()
    {
       return true;
-   };
+   }
 
    __cuda_callable__
    SlicedEllpackView() = default;
@@ -76,7 +76,7 @@ public:
    getView();
 
    __cuda_callable__
-   const ConstViewType
+   ConstViewType
    getConstView() const;
 
    __cuda_callable__

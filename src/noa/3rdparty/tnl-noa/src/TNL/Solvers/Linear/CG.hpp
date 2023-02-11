@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -29,8 +29,12 @@ CG< Matrix >::solve( ConstVectorViewType b, VectorViewType x )
    }
    else
       normb = lpNorm( b, 2.0 );
-   if( normb == 0.0 )
-      normb = 1.0;
+
+   // check for zero rhs - solution is the null vector
+   if( normb == 0 ) {
+      x = 0;
+      return true;
+   }
 
    /****
     * r_0 = b - A x_0, p_0 = r_0

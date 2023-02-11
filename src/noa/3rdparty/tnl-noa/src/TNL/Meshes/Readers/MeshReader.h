@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -33,15 +31,15 @@ class MeshReader
 {
 public:
    using VariantVector = std::variant< std::vector< std::int8_t >,
-                                         std::vector< std::uint8_t >,
-                                         std::vector< std::int16_t >,
-                                         std::vector< std::uint16_t >,
-                                         std::vector< std::int32_t >,
-                                         std::vector< std::uint32_t >,
-                                         std::vector< std::int64_t >,
-                                         std::vector< std::uint64_t >,
-                                         std::vector< float >,
-                                         std::vector< double > >;
+                                       std::vector< std::uint8_t >,
+                                       std::vector< std::int16_t >,
+                                       std::vector< std::uint16_t >,
+                                       std::vector< std::int32_t >,
+                                       std::vector< std::uint32_t >,
+                                       std::vector< std::int64_t >,
+                                       std::vector< std::uint64_t >,
+                                       std::vector< float >,
+                                       std::vector< double > >;
 
    MeshReader() = default;
 
@@ -73,7 +71,7 @@ public:
     *
     * The implementation has to set all protected attributes of this class such
     * that the mesh representation can be loaded into the mesh object by the
-    * \ref loadMesh method.
+    * \ref MeshReader::loadMesh "loadMesh" method.
     */
    virtual void
    detectMesh() = 0;
@@ -271,14 +269,14 @@ public:
    }
 
    virtual VariantVector
-   readPointData( std::string arrayName )
+   readPointData( const std::string& arrayName )
    {
       throw Exceptions::NotImplementedError(
          "readPointData is not implemented in the mesh reader for this specific file format." );
    }
 
    virtual VariantVector
-   readCellData( std::string arrayName )
+   readCellData( const std::string& arrayName )
    {
       throw Exceptions::NotImplementedError(
          "readCellData is not implemented in the mesh reader for this specific file format." );
@@ -363,9 +361,9 @@ protected:
 
    // string representation of mesh types (forced means specified by the user, otherwise
    // the type detected by detectMesh takes precedence)
-   std::string forcedRealType = "";
-   std::string forcedGlobalIndexType = "";
-   std::string forcedLocalIndexType = "short int";  // not stored in any file format
+   std::string forcedRealType;
+   std::string forcedGlobalIndexType;
+   std::string forcedLocalIndexType = "std::int16_t";  // not stored in any file format
 
    // intermediate representation of a grid (this is relevant only for TNL::Meshes::Grid)
    std::vector< std::int64_t > gridExtent;
@@ -378,6 +376,11 @@ protected:
    // string representation of each array's value type
    std::string pointsType, connectivityType, offsetsType, typesType;
 
+   /**
+    * \brief Resets the base class \ref MeshReader to the empty state.
+    *
+    * Subclasses should call this method from their \ref reset method.
+    */
    void
    resetBase()
    {

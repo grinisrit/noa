@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,6 +15,11 @@ namespace Meshes {
 //! \brief Namespace for mesh writers.
 namespace Writers {
 
+/**
+ * \brief Writer of data linked with meshes into [VTK format](https://kitware.github.io/vtk-examples/site/VTKFileFormats/).
+ *
+ * \tparam Mesh type of mesh.
+ */
 template< typename Mesh >
 class VTKWriter
 {
@@ -23,27 +28,60 @@ class VTKWriter
    //   static_assert( Mesh::getSpaceDimension() <= 3, "The VTK format supports only 1D, 2D and 3D meshes." );
 
 public:
+   /**
+    * \brief Construct with no parameters is not allowed.
+    */
    VTKWriter() = delete;
 
-   VTKWriter( std::ostream& str, VTK::FileFormat format = VTK::FileFormat::binary ) : str( str.rdbuf() ), format( format )
-   {
-      if( format != VTK::FileFormat::ascii && format != VTK::FileFormat::binary )
-         throw std::domain_error( "The Legacy VTK file formats support only ASCII and BINARY formats." );
-   }
+   /**
+    * \brief Constructor of a VTIWriter.
+    *
+    * \param str output stream used for the export of the data.
+    * \param format
+    */
+   VTKWriter( std::ostream& str, VTK::FileFormat format = VTK::FileFormat::binary );
 
-   // If desired, cycle and time of the simulation can put into the file. This follows the instructions at
-   // http://www.visitusers.org/index.php?title=Time_and_Cycle_in_VTK_files
+   /**
+    * \brief If desired, cycle and time of the simulation can put into the file.
+    *
+    * This follows the instructions at http://www.visitusers.org/index.php?title=Time_and_Cycle_in_VTK_files
+    *
+    * \param cycle is the of the simulation.
+    * \param time is the time of the simulation.
+    */
    void
    writeMetadata( std::int32_t cycle = -1, double time = -1 );
 
+   /**
+    * \brief Write mesh entites to the output file.
+    *
+    * \tparam EntityDimension is a dimension of entities to be exported.
+    * \param mesh is a mesh to be exported.
+    */
    template< int EntityDimension = Mesh::getMeshDimension() >
    void
    writeEntities( const Mesh& mesh );
 
+   /**
+    * \brief Writes data linked with mesh vertexes.
+    *
+    * \tparam Array type of array holding the data.
+    * \param array instance of an array holding the data.
+    * \param name is a name of data which will appear in the outptu file.
+    * \param numberOfComponents is number of compononets of the data for each vertex.
+    */
    template< typename Array >
    void
    writePointData( const Array& array, const std::string& name, int numberOfComponents = 1 );
 
+   /**
+    * \brief Writes data linked with mesh cells.
+    *
+    * \tparam Array type of array holding the data.
+    * \param array instance of an array holding the data.
+    * \param name is a name of data which will appear in the outptu file.
+    * \param numberOfComponents is number of compononets of the data for each cell.
+    */
    template< typename Array >
    void
    writeCellData( const Array& array, const std::string& name, int numberOfComponents = 1 );

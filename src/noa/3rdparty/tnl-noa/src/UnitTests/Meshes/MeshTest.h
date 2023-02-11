@@ -121,7 +121,7 @@ void testCopyAssignment( const Object& obj )
 template< typename Mesh >
 void testMeshOnCuda( const Mesh& mesh )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using DeviceMesh = Meshes::Mesh< typename Mesh::Config, Devices::Cuda >;
 
    // test host->CUDA copy
@@ -287,7 +287,7 @@ TEST( MeshTest, TwoTrianglesTest )
    EXPECT_EQ( mesh.getCellNeighborIndex( 1, 0 ), 0 );
 
    testFinishedMesh( mesh );
-};
+}
 
 TEST( MeshTest, TwoTrianglesTest_ReturnedPair )
 {
@@ -367,13 +367,11 @@ TEST( MeshTest, TwoTrianglesTest_ReturnedPair )
    EXPECT_EQ( mesh.getCellNeighborIndex( 1, 0 ), 0 );
 
    testFinishedMesh( mesh );
-};
+}
 
 TEST( MeshTest, TetrahedronsTest )
 {
    using TetrahedronMeshEntityType = MeshEntity< TestTetrahedronMeshConfig, Devices::Host, Topologies::Tetrahedron >;
-   using TriangleMeshEntityType = typename TetrahedronMeshEntityType::SubentityTraits< 2 >::SubentityType;
-   using EdgeMeshEntityType = typename TetrahedronMeshEntityType::SubentityTraits< 1 >::SubentityType;
    using VertexMeshEntityType = typename TetrahedronMeshEntityType::SubentityTraits< 0 >::SubentityType;
 
    using PointType = typename VertexMeshEntityType::PointType;
@@ -540,7 +538,6 @@ TEST( MeshTest, TetrahedronsTest )
 TEST( MeshTest, RegularMeshOfTrianglesTest )
 {
    using TriangleMeshEntityType = MeshEntity< TestTriangleMeshConfig, Devices::Host, Topologies::Triangle >;
-   using EdgeMeshEntityType = typename TriangleMeshEntityType::SubentityTraits< 1 >::SubentityType;
    using VertexMeshEntityType = typename TriangleMeshEntityType::SubentityTraits< 0 >::SubentityType;
 
    using PointType = typename VertexMeshEntityType::PointType;
@@ -640,7 +637,6 @@ TEST( MeshTest, RegularMeshOfTrianglesTest )
 TEST( MeshTest, RegularMeshOfQuadranglesTest )
 {
    using QuadrangleMeshEntityType = MeshEntity< TestQuadrangleMeshConfig, Devices::Host, Topologies::Quadrangle >;
-   using EdgeMeshEntityType = typename QuadrangleMeshEntityType::SubentityTraits< 1 >::SubentityType;
    using VertexMeshEntityType = typename QuadrangleMeshEntityType::SubentityTraits< 0 >::SubentityType;
 
    using PointType = typename VertexMeshEntityType::PointType;
@@ -771,8 +767,6 @@ TEST( MeshTest, RegularMeshOfQuadranglesTest )
 TEST( MeshTest, RegularMeshOfHexahedronsTest )
 {
    using HexahedronMeshEntityType = MeshEntity< TestHexahedronMeshConfig, Devices::Host, Topologies::Hexahedron >;
-   using QuadrangleMeshEntityType = typename HexahedronMeshEntityType::SubentityTraits< 2 >::SubentityType;
-   using EdgeMeshEntityType = typename HexahedronMeshEntityType::SubentityTraits< 1 >::SubentityType;
    using VertexMeshEntityType = typename HexahedronMeshEntityType::SubentityTraits< 0 >::SubentityType;
 
    using PointType = typename VertexMeshEntityType::PointType;
@@ -1284,7 +1278,7 @@ TEST( MeshTest, TwoPolygonsTest )
    EXPECT_EQ( mesh.getCellNeighborIndex( 1, 0 ), 0 );
 
    testFinishedMesh( mesh );
-};
+}
 
 TEST( MeshTest, SevenPolygonsTest )
 {
@@ -1750,7 +1744,7 @@ TEST( MeshTest, SevenPolygonsTest )
    EXPECT_EQ( mesh.template getEntity< 2 >( 6 ).getTag() & TNL::Meshes::EntityTags::BoundaryEntity, 1 );
 
    testFinishedMesh( mesh );
-};
+}
 
 TEST( MeshTest, TwoWedgesTest )
 {

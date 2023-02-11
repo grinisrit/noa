@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,11 +15,6 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Algorithms/Segments/CSRView.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Algorithms/Segments/EllpackView.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Algorithms/Segments/SlicedEllpackView.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/CSR.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Ellpack.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/SlicedEllpack.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/ChunkedEllpack.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/BiEllpack.h>
 
 namespace noa::TNL {
 /**
@@ -40,7 +35,13 @@ struct MatrixInfo< DenseMatrixView< Real, Device, Index, Organization > >
    getDensity()
    {
       return "dense";
-   };
+   }
+
+   static String
+   getFormat()
+   {
+      return "Dense";
+   }
 };
 
 template< typename Real, typename Device, typename Index, ElementsOrganization Organization, typename RealAllocator >
@@ -60,7 +61,7 @@ struct MatrixInfo< SparseMatrixView< Real, Device, Index, MatrixType, SegmentsVi
    getDensity()
    {
       return "sparse";
-   };
+   }
 
    static String
    getFormat()
@@ -75,7 +76,7 @@ struct MatrixInfo< SparseMatrixView< Real, Device, Index, MatrixType, SegmentsVi
       else if( std::is_same< Real, bool >::value )
          prefix = "Binary ";
       return prefix + SegmentsView< Device, Index >::getSegmentsType();
-   };
+   }
 };
 
 template< typename Real,
@@ -98,7 +99,7 @@ struct MatrixInfo< Sandbox::SparseSandboxMatrixView< Real, Device, Index, Matrix
    getDensity()
    {
       return "sparse";
-   };
+   }
 
    static String
    getFormat()
@@ -107,7 +108,7 @@ struct MatrixInfo< Sandbox::SparseSandboxMatrixView< Real, Device, Index, Matrix
          return "Symmetric Sandbox";
       else
          return "Sandbox";
-   };
+   }
 };
 
 template< typename Real, typename Device, typename Index, typename MatrixType, typename RealAllocator, typename IndexAllocator >
@@ -115,259 +116,6 @@ struct MatrixInfo< Sandbox::SparseSandboxMatrix< Real, Device, Index, MatrixType
 : public MatrixInfo<
      typename Sandbox::SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::ViewType >
 {};
-
-/////
-// Legacy matrices
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::BiEllpack< Real, Device, Index > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "BiEllpack Legacy";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRScalar > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Scalar";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRVector > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Vector";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLight > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Light";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLight2 > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Light2";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLight3 > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Light3";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLight4 > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Light4";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLight5 > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Light5";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLight6 > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Light6";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRAdaptive > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy Adaptive";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRMultiVector > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy MultiVector";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::
-                      CSR< Real, Device, Index, Benchmarks::SpMV::ReferenceFormats::Legacy::CSRLightWithoutAtomic > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "CSR Legacy LightWithoutAtomic";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::ChunkedEllpack< Real, Device, Index > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "ChunkedEllpack Legacy";
-   };
-};
-
-template< typename Real, typename Device, typename Index >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::Ellpack< Real, Device, Index > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "Ellpack Legacy";
-   };
-};
-
-template< typename Real, typename Device, typename Index, int SliceSize >
-struct MatrixInfo< Benchmarks::SpMV::ReferenceFormats::Legacy::SlicedEllpack< Real, Device, Index, SliceSize > >
-{
-   static String
-   getDensity()
-   {
-      return "sparse";
-   };
-
-   static String
-   getFormat()
-   {
-      return "SlicedEllpack Legacy";
-   };
-};
 
 /// \endcond
 }  // namespace Matrices

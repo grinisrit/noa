@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -32,7 +32,7 @@ SparseMatrixRowView< SegmentView, ValuesView, ColumnsIndexesView >::getSize() co
 template< typename SegmentView, typename ValuesView, typename ColumnsIndexesView >
 __cuda_callable__
 auto
-SparseMatrixRowView< SegmentView, ValuesView, ColumnsIndexesView >::getRowIndex() const -> const IndexType&
+SparseMatrixRowView< SegmentView, ValuesView, ColumnsIndexesView >::getRowIndex() const -> IndexType
 {
    return segmentView.getSegmentIndex();
 }

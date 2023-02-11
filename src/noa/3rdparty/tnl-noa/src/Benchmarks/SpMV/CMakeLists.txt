@@ -9,7 +9,7 @@
 #include( cmake/BuildCSR5.cmake )
 
 # PETSc requires MPI
-#if( ( ${BUILD_MPI} ) AND ( NOT ${WITH_PETSC} EQUAL "no" ) )
+#if( TNL_BUILD_MPI AND TNL_USE_PETSC )
 #   find_package( PETSc COMPONENTS CXX )
 #endif()
 
@@ -21,19 +21,19 @@
 #   message( "   PETSC_LIBRARIES = ${PETSC_LIBRARIES}" )
 #endif()
 
-if( BUILD_CUDA )
+if( TNL_BUILD_CUDA )
    file( GLOB EXPLICIT_TEMPLATES spmv.templates/*.cu )
-   cuda_include_directories( ${CXX_BENCHMARKS_INCLUDE_DIRS} )
-   cuda_add_executable( tnl-benchmark-spmv tnl-benchmark-spmv.cu ${EXPLICIT_TEMPLATES} ReferenceFormats/LightSpMV-1.0/SpMV.cu ReferenceFormats/LightSpMV-1.0/SpMVCSR.cu
-                        OPTIONS ${CXX_BENCHMARKS_FLAGS} ${PETSC_CXX_FLAGS} )
-   target_link_libraries( tnl-benchmark-spmv ${CUDA_cusparse_LIBRARY} ${CUDA_cudadevrt_LIBRARY} )
+   add_executable( tnl-benchmark-spmv tnl-benchmark-spmv.cu ${EXPLICIT_TEMPLATES} ReferenceFormats/LightSpMV-1.0/SpMV.cu ReferenceFormats/LightSpMV-1.0/SpMVCSR.cu )
+   target_link_libraries( tnl-benchmark-spmv PUBLIC TNL::TNL_CUDA )
+   find_package( CUDAToolkit REQUIRED )
+   target_link_libraries( tnl-benchmark-spmv PUBLIC CUDA::cusparse )
 else()
    file( GLOB EXPLICIT_TEMPLATES spmv.templates/*.cpp )
    add_executable( tnl-benchmark-spmv tnl-benchmark-spmv.cpp ${EXPLICIT_TEMPLATES} )
-   target_compile_options( tnl-benchmark-spmv  PRIVATE ${CXX_BENCHMARKS_FLAGS} ${PETSC_CXX_FLAGS} )
-   target_include_directories( tnl-benchmark-spmv PRIVATE ${CXX_BENCHMARKS_INCLUDE_DIRS} )
+   target_link_libraries( tnl-benchmark-spmv PUBLIC TNL::TNL_CXX )
 endif()
-set_property( TARGET tnl-benchmark-spmv APPEND PROPERTY INCLUDE_DIRECTORIES ${PETSC_INCLUDES} )
+target_compile_options( tnl-benchmark-spmv PRIVATE ${PETSC_CXX_FLAGS} )
+target_include_directories( tnl-benchmark-spmv PRIVATE ${PETSC_INCLUDES} )
 target_link_libraries( tnl-benchmark-spmv ${PETSC_LIBRARIES} )
 
 install( TARGETS tnl-benchmark-spmv RUNTIME DESTINATION bin )

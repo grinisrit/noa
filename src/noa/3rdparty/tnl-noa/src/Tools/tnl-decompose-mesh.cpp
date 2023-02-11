@@ -38,8 +38,10 @@ template<> struct GridRealTag< DecomposeMeshConfigTag, long double > { static co
 template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Edge > { static constexpr bool enabled = true; };
 template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Triangle > { static constexpr bool enabled = true; };
 template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Quadrangle > { static constexpr bool enabled = true; };
+template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Polygon > { static constexpr bool enabled = true; };
 template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Tetrahedron > { static constexpr bool enabled = true; };
 template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Hexahedron > { static constexpr bool enabled = true; };
+template<> struct MeshCellTopologyTag< DecomposeMeshConfigTag, Topologies::Polyhedron > { static constexpr bool enabled = true; };
 
 // Meshes are enabled only for the space dimension equal to the cell dimension.
 template< typename CellTopology, int SpaceDimension >
@@ -63,30 +65,31 @@ struct MeshConfigTemplateTag< DecomposeMeshConfigTag >
              typename GlobalIndex = int,
              typename LocalIndex = GlobalIndex >
    struct MeshConfig
+   : public TNL::Meshes::DefaultConfig< Cell, SpaceDimension, Real, GlobalIndex, LocalIndex >
    {
-      using CellTopology = Cell;
-      using RealType = Real;
-      using GlobalIndexType = GlobalIndex;
-      using LocalIndexType = LocalIndex;
-
-      static constexpr int spaceDimension = SpaceDimension;
-      static constexpr int meshDimension = Cell::dimension;
-
       static constexpr bool subentityStorage( int entityDimension, int subentityDimension )
       {
+         constexpr int D = Cell::dimension;
          // subvertices of faces are needed due to cell boundary tags
-         return subentityDimension == 0 && entityDimension >= meshDimension - 1;
+         if( subentityDimension == 0 && entityDimension >= D - 1 )
+            return true;
+         // subfaces of cells are needed for polyhedral meshes
+         if( std::is_same< Cell, TNL::Meshes::Topologies::Polyhedron >::value && subentityDimension == D - 1 && entityDimension == D )
+            return true;
+         return false;
       }
 
       static constexpr bool superentityStorage( int entityDimension, int superentityDimension )
       {
+         constexpr int D = Cell::dimension;
          // superentities from faces to cells are needed due to cell boundary tags
-         return superentityDimension == meshDimension && entityDimension == meshDimension - 1;
+         return superentityDimension == D && entityDimension == D - 1;
       }
 
       static constexpr bool entityTagsStorage( int entityDimension )
       {
-         return entityDimension >= meshDimension - 1;
+         constexpr int D = Cell::dimension;
+         return entityDimension >= D - 1;
       }
 
       static constexpr bool dualGraphStorage()
@@ -278,6 +281,8 @@ decompose_and_save( const Mesh& mesh,
    using Index = typename Mesh::GlobalIndexType;
    using IndexArray = Containers::Array< Index, Devices::Sequential, Index >;
 
+   constexpr bool is_polyhedral = std::is_same_v< typename Mesh::Config::CellTopology, Meshes::Topologies::Polyhedron >;
+
    const Index cellsCount = mesh.template getEntitiesCount< typename Mesh::Cell >();
    const Index pointsCount = mesh.template getEntitiesCount< typename Mesh::Vertex >();
 
@@ -416,29 +421,64 @@ decompose_and_save( const Mesh& mesh,
 
       // Due to ghost levels, we don't know the number of cells, let alone points, in each
       // subdomain ahead of time. Hence, we use dynamic data structures instead of MeshBuilder.
+
+      // We'll need global-to-local index mapping for vertices (and faces in case of polyhedral meshes).
+      // Here we also record which points (and faces) are actually needed.
+      std::map< Index, Index > vertex_global_to_local;
+      std::map< Index, Index > face_global_to_local;
+
+      // Cell seeds refer usually to vertices, except for polyhedral meshes where they refer to faces
       using CellSeed = typename Mesh::MeshTraitsType::CellSeedType;
-      std::vector< CellSeed > seeds;
-      std::vector< Index > seeds_global_indices;
+      std::vector< CellSeed > cell_seeds;
+      std::vector< Index > cell_seeds_global_indices;
       std::set< Index > cell_global_indices;
 
-      // We'll need global-to-local index mapping for vertices. Here we also record which
-      // points are actually needed.
-      std::map< Index, Index > vertex_global_to_local;
-      auto add_cell = [&] ( const auto& cell )
+      // Face seeds are needed only for polyhedral meshes
+      using FaceSeed = typename Mesh::MeshTraitsType::FaceSeedType;
+      std::vector< FaceSeed > face_seeds;
+
+      auto add_face = [&] ( const auto& face )
       {
-         if( cell_global_indices.count( cell.getIndex() ) != 0 )
-            return false;
-         CellSeed seed;
-         for( Index v = 0; v < cell.template getSubentitiesCount< 0 >(); v++ ) {
-            const Index global_idx = cell.template getSubentityIndex< 0 >( v );
+         if( face_global_to_local.count( face.getIndex() ) != 0 )
+            return;
+         FaceSeed seed;
+         seed.setCornersCount( face.template getSubentitiesCount< 0 >() );
+         for( Index v = 0; v < face.template getSubentitiesCount< 0 >(); v++ ) {
+            const Index global_idx = face.template getSubentityIndex< 0 >( v );
             if( vertex_global_to_local.count(global_idx) == 0 )
                vertex_global_to_local.insert( {global_idx, vertex_global_to_local.size()} );
             seed.setCornerId( v, vertex_global_to_local[ global_idx ] );
          }
-         seeds.push_back( seed );
-         seeds_global_indices.push_back( cell_to_seed_index[ cell.getIndex() ] );
+         face_seeds.push_back( seed );
+         face_global_to_local.insert( {face.getIndex(), face_global_to_local.size()} );
+      };
+
+      auto add_cell = [&] ( const auto& cell )
+      {
+         if( cell_global_indices.count( cell.getIndex() ) != 0 )
+            return;
+         CellSeed seed;
+         if constexpr( is_polyhedral ) {
+            seed.setCornersCount( cell.template getSubentitiesCount< Mesh::getMeshDimension() - 1 >() );
+            for( Index f = 0; f < cell.template getSubentitiesCount< Mesh::getMeshDimension() - 1 >(); f++ ) {
+               const Index global_idx = cell.template getSubentityIndex< Mesh::getMeshDimension() - 1 >( f );
+               const auto& face = mesh.template getEntity< Mesh::getMeshDimension() - 1 >( global_idx );
+               add_face( face );
+               seed.setCornerId( f, face_global_to_local[ face.getIndex() ] );
+            }
+         }
+         else {
+            seed.setCornersCount( cell.template getSubentitiesCount< 0 >() );
+            for( Index v = 0; v < cell.template getSubentitiesCount< 0 >(); v++ ) {
+               const Index global_idx = cell.template getSubentityIndex< 0 >( v );
+               if( vertex_global_to_local.count(global_idx) == 0 )
+                  vertex_global_to_local.insert( {global_idx, vertex_global_to_local.size()} );
+               seed.setCornerId( v, vertex_global_to_local[ global_idx ] );
+            }
+         }
+         cell_seeds.push_back( seed );
+         cell_seeds_global_indices.push_back( cell_to_seed_index[ cell.getIndex() ] );
          cell_global_indices.insert( cell.getIndex() );
-         return true;
       };
 
       // iterate over local cells, add only local points (to ensure that ghost points are ordered after all local points)
@@ -457,6 +497,7 @@ decompose_and_save( const Mesh& mesh,
       }
       TNL_ASSERT_EQ( (Index) vertex_global_to_local.size(), points_counts[p],
                      "some local points were not added in the first pass" );
+      // TODO: in case of a polyhedral mesh, now we should first add local faces (to ensure that ghost faces are ordered after all local faces)
       // iterate over local cells, create seeds and record ghost neighbor indices
       std::vector< Index > ghost_neighbors;
       for( Index local_idx = 0; local_idx < cells_counts[ p ]; local_idx++ ) {
@@ -502,6 +543,7 @@ decompose_and_save( const Mesh& mesh,
       }
       ghost_seed_indices.clear();
       cell_global_indices.clear();
+      face_global_to_local.clear();
 
       // set points needed for the subdomain
       using PointArrayType = typename Mesh::MeshTraitsType::PointArrayType;
@@ -515,16 +557,16 @@ decompose_and_save( const Mesh& mesh,
       vertex_global_to_local.clear();
 
       // create "GlobalIndex" CellData array
-      IndexArray cellsGlobalIndices = seeds_global_indices;
-      seeds_global_indices.clear();
-      seeds_global_indices.shrink_to_fit();
+      IndexArray cellsGlobalIndices = cell_seeds_global_indices;
+      cell_seeds_global_indices.clear();
+      cell_seeds_global_indices.shrink_to_fit();
 
       // create "vtkGhostType" CellData and PointData arrays - see https://blog.kitware.com/ghost-and-blanking-visibility-changes/
-      Containers::Array< std::uint8_t, Devices::Sequential, Index > cellGhosts( seeds.size() );
+      Containers::Array< std::uint8_t, Devices::Sequential, Index > cellGhosts( cell_seeds.size() );
       Containers::Array< std::uint8_t, Devices::Sequential, Index > pointGhosts( points.getSize() );
       for( Index i = 0; i < cells_counts[ p ]; i++ )
          cellGhosts[ i ] = 0;
-      for( Index i = cells_counts[ p ]; i < (Index) seeds.size(); i++ )
+      for( Index i = cells_counts[ p ]; i < (Index) cell_seeds.size(); i++ )
          cellGhosts[ i ] = (std::uint8_t) Meshes::VTK::CellGhostTypes::DUPLICATECELL;
       // point ghosts are more tricky because they were assigned to the subdomain with higher number
       Index pointsGhostCount = 0;
@@ -568,26 +610,60 @@ decompose_and_save( const Mesh& mesh,
          std::vector< Index > iperm( points.getSize() );
          for( Index i = 0; i < perm.getSize(); i++ )
             iperm[ perm[ i ] ] = i;
-         for( auto& seed : seeds ) {
-            auto& cornerIds = seed.getCornerIds();
-            for( Index v = 0; v < cornerIds.getSize(); v++ )
-               cornerIds[ v ] = iperm[ cornerIds[ v ] ];
+         if constexpr( is_polyhedral ) {
+            for( auto& seed : face_seeds ) {
+               auto& cornerIds = seed.getCornerIds();
+               for( Index v = 0; v < cornerIds.getSize(); v++ )
+                  cornerIds[ v ] = iperm[ cornerIds[ v ] ];
+            }
+         }
+         else {
+            for( auto& seed : cell_seeds ) {
+               auto& cornerIds = seed.getCornerIds();
+               for( Index v = 0; v < cornerIds.getSize(); v++ )
+                  cornerIds[ v ] = iperm[ cornerIds[ v ] ];
+            }
          }
       }
 
-      // copy points and cell seeds to the MeshBuilder
+      // initialize the MeshBuilder
       TNL::Meshes::MeshBuilder< Mesh > builder;
-      builder.setEntitiesCount( points.getSize(), seeds.size() );
+      builder.setEntitiesCount( points.getSize(), cell_seeds.size(), face_seeds.size() );
+
+      // copy points to the MeshBuilder
       for( Index i = 0; i < points.getSize(); i++ )
          builder.setPoint( i, points[ i ] );
       points.reset();
-      for( std::size_t i = 0; i < seeds.size(); i++ ) {
-         const auto& cornerIds = seeds[ i ].getCornerIds();
+
+      // copy face seeds to the MeshBuilder
+      if constexpr( is_polyhedral ) {
+         typename TNL::Meshes::MeshBuilder< Mesh >::NeighborCountsArray corners_counts( face_seeds.size() );
+         for( std::size_t i = 0; i < face_seeds.size(); i++ )
+            corners_counts[ i ] = face_seeds[ i ].getCornersCount();
+         builder.setFaceCornersCounts( corners_counts );
+         for( std::size_t i = 0; i < face_seeds.size(); i++ ) {
+            const auto& cornerIds = face_seeds[ i ].getCornerIds();
+            for( Index v = 0; v < cornerIds.getSize(); v++ )
+               builder.getFaceSeed( i ).setCornerId( v, cornerIds[ v ] );
+         }
+         face_seeds.clear();
+         face_seeds.shrink_to_fit();
+      }
+
+      // copy cell seeds to the MeshBuilder
+      if constexpr( TNL::Meshes::Topologies::IsDynamicTopology< typename Mesh::Cell::EntityTopology >::value ) {
+         typename TNL::Meshes::MeshBuilder< Mesh >::NeighborCountsArray corners_counts( cell_seeds.size() );
+         for( std::size_t i = 0; i < cell_seeds.size(); i++ )
+            corners_counts[ i ] = cell_seeds[ i ].getCornersCount();
+         builder.setCellCornersCounts( corners_counts );
+      }
+      for( std::size_t i = 0; i < cell_seeds.size(); i++ ) {
+         const auto& cornerIds = cell_seeds[ i ].getCornerIds();
          for( Index v = 0; v < cornerIds.getSize(); v++ )
             builder.getCellSeed( i ).setCornerId( v, cornerIds[ v ] );
       }
-      seeds.clear();
-      seeds.shrink_to_fit();
+      cell_seeds.clear();
+      cell_seeds.shrink_to_fit();
 
       // init mesh for the subdomain
       Mesh subdomain;

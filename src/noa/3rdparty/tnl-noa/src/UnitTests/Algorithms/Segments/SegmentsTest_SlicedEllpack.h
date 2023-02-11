@@ -19,7 +19,7 @@ using SlicedEllpackSegmentsTypes = ::testing::Types
 <
     TNL::Algorithms::Segments::SlicedEllpack< TNL::Devices::Host, int    >,
     TNL::Algorithms::Segments::SlicedEllpack< TNL::Devices::Host, long   >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,TNL::Algorithms::Segments::SlicedEllpack< TNL::Devices::Cuda, int    >,
     TNL::Algorithms::Segments::SlicedEllpack< TNL::Devices::Cuda, long   >
 #endif

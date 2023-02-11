@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,6 +15,9 @@
 
 namespace noa::TNL {
 
+//! \brief Value of the pi constant
+static constexpr double pi = 3.14159265358979323846;
+
 /**
  * \brief This function returns minimum of two numbers.
  *
@@ -23,7 +26,7 @@ namespace noa::TNL {
  */
 template< typename T1,
           typename T2,
-          typename ResultType = typename std::common_type< T1, T2 >::type,
+          typename ResultType = std::common_type_t< T1, T2 >,
           // enable_if is necessary to avoid ambiguity in vector expressions
           std::enable_if_t< std::is_arithmetic< T1 >::value && std::is_arithmetic< T2 >::value, bool > = true >
 constexpr ResultType
@@ -36,7 +39,8 @@ min( const T1& a, const T2& b )
 /**
  * \brief This function returns minimum of a variadic number of inputs.
  *
- * The inputs are folded with the \ref min function from the left to the right.
+ * The inputs are folded with the binary \e min function from the left to the
+ * right.
  */
 template< typename T1, typename T2, typename T3, typename... Ts >
 constexpr typename std::common_type< T1, T2, T3, Ts... >::type
@@ -54,7 +58,7 @@ min( T1&& val1, T2&& val2, T3&& val3, Ts&&... vs )
  */
 template< typename T1,
           typename T2,
-          typename ResultType = typename std::common_type< T1, T2 >::type,
+          typename ResultType = std::common_type_t< T1, T2 >,
           // enable_if is necessary to avoid ambiguity in vector expressions
           std::enable_if_t< std::is_arithmetic< T1 >::value && std::is_arithmetic< T2 >::value, bool > = true >
 constexpr ResultType
@@ -67,11 +71,11 @@ max( const T1& a, const T2& b )
 /**
  * \brief This function returns minimum of a variadic number of inputs.
  *
- * The inputs are folded with the \ref max function from the left to the right.
+ * The inputs are folded with the binary \e max function from the left to the
+ * right.
  */
 template< typename T1, typename T2, typename T3, typename... Ts >
-__cuda_callable__
-typename std::common_type< T1, T2, T3, Ts... >::type
+constexpr typename std::common_type< T1, T2, T3, Ts... >::type
 max( T1&& val1, T2&& val2, T3&& val3, Ts&&... vs )
 {
    return max(
@@ -110,9 +114,8 @@ abs( const T& n )
 /***
  * \brief This function returns argument of minimum of two numbers.
  */
-template< typename T1, typename T2, typename ResultType = typename std::common_type< T1, T2 >::type >
-__cuda_callable__
-ResultType
+template< typename T1, typename T2, typename ResultType = std::common_type_t< T1, T2 > >
+constexpr ResultType
 argMin( const T1& a, const T2& b )
 {
    return ( a < b ) ? a : b;
@@ -121,9 +124,8 @@ argMin( const T1& a, const T2& b )
 /***
  * \brief This function returns argument of maximum of two numbers.
  */
-template< typename T1, typename T2, typename ResultType = typename std::common_type< T1, T2 >::type >
-__cuda_callable__
-ResultType
+template< typename T1, typename T2, typename ResultType = std::common_type_t< T1, T2 > >
+constexpr ResultType
 argMax( const T1& a, const T2& b )
 {
    return ( a > b ) ? a : b;
@@ -132,7 +134,7 @@ argMax( const T1& a, const T2& b )
 /***
  * \brief This function returns argument of minimum of absolute values of two numbers.
  */
-template< typename T1, typename T2, typename ResultType = typename std::common_type< T1, T2 >::type >
+template< typename T1, typename T2, typename ResultType = std::common_type_t< T1, T2 > >
 __cuda_callable__
 ResultType
 argAbsMin( const T1& a, const T2& b )
@@ -143,7 +145,7 @@ argAbsMin( const T1& a, const T2& b )
 /***
  * \brief This function returns argument of maximum of absolute values of two numbers.
  */
-template< typename T1, typename T2, typename ResultType = typename std::common_type< T1, T2 >::type >
+template< typename T1, typename T2, typename ResultType = std::common_type_t< T1, T2 > >
 __cuda_callable__
 ResultType
 argAbsMax( const T1& a, const T2& b )
@@ -156,7 +158,7 @@ argAbsMax( const T1& a, const T2& b )
  */
 template< typename T1,
           typename T2,
-          typename ResultType = typename std::common_type< T1, T2 >::type,
+          typename ResultType = std::common_type_t< T1, T2 >,
           // enable_if is necessary to avoid ambiguity in vector expressions
           std::enable_if_t< std::is_arithmetic< T1 >::value && std::is_arithmetic< T2 >::value, bool > = true >
 __cuda_callable__
@@ -164,9 +166,9 @@ ResultType
 pow( const T1& base, const T2& exp )
 {
 #if defined( __CUDA_ARCH__ )
-   return ::pow( (ResultType) base, (ResultType) exp );
+   return ::pow( base, exp );
 #else
-   return std::pow( (ResultType) base, (ResultType) exp );
+   return std::pow( base, exp );
 #endif
 }
 
@@ -183,6 +185,20 @@ exp( const T& value ) -> decltype( std::exp( value ) )
 #else
    return std::exp( value );
 #endif
+}
+
+/**
+ * \brief This function returns the square the given \e value.
+ */
+template< typename T >
+__cuda_callable__
+std::enable_if_t< IsScalarType< T >::value, T >
+sqr( const T& value )
+{
+   if constexpr( std::is_same_v< T, bool > )
+      return value;
+   else
+      return value * value;
 }
 
 /**
@@ -351,6 +367,22 @@ atan( const T& value ) -> decltype( std::atan( value ) )
 }
 
 /**
+ * \brief This function returns the arc tangent of \e y/x using the signs of
+ * arguments to determine the correct quadrant.
+ */
+template< typename T >
+__cuda_callable__
+auto
+atan2( const T& y, const T& x ) -> decltype( std::atan2( y, x ) )
+{
+#if defined( __CUDA_ARCH__ )
+   return ::atan2( y, x );
+#else
+   return std::atan2( y, x );
+#endif
+}
+
+/**
  * \brief This function returns the hyperbolic sine of the given \e value.
  */
 template< typename T >
@@ -477,7 +509,7 @@ ceil( const T& value ) -> decltype( std::ceil( value ) )
  */
 template< typename Type >
 __cuda_callable__
-void
+constexpr void
 swap( Type& a, Type& b )
 {
    Type tmp( a );
@@ -494,8 +526,7 @@ swap( Type& a, Type& b )
 template< class T,
           // enable_if is necessary to avoid ambiguity in vector expressions
           std::enable_if_t< ! HasSubscriptOperator< T >::value, bool > = true >
-__cuda_callable__
-T
+constexpr T
 sign( const T& a )
 {
    if( a < (T) 0 )
@@ -514,8 +545,7 @@ sign( const T& a )
  * \param tolerance Critical value which is set to 0.00001 by defalt.
  */
 template< typename Real >
-__cuda_callable__
-bool
+constexpr bool
 isSmall( const Real& v, const Real& tolerance = 1.0e-5 )
 {
    return ( -tolerance <= v && v <= tolerance );
@@ -527,8 +557,7 @@ isSmall( const Real& v, const Real& tolerance = 1.0e-5 )
  * \param num An integer considered as dividend.
  * \param div An integer considered as divisor.
  */
-__cuda_callable__
-inline int
+constexpr int
 roundUpDivision( const int num, const int div )
 {
    return num / div + static_cast< int >( num % div != 0 );
@@ -540,8 +569,7 @@ roundUpDivision( const int num, const int div )
  * \param number Integer we want to round.
  * \param multiple Integer.
  */
-__cuda_callable__
-inline int
+constexpr int
 roundToMultiple( int number, int multiple )
 {
    return multiple * ( number / multiple + static_cast< int >( number % multiple != 0 ) );
@@ -553,8 +581,7 @@ roundToMultiple( int number, int multiple )
  * Returns \e true if \e x is a power of two. Otherwise returns \e false.
  * \param x Integer.
  */
-__cuda_callable__
-inline bool
+constexpr bool
 isPow2( int x )
 {
    return ( ( x & ( x - 1 ) ) == 0 );
@@ -566,8 +593,7 @@ isPow2( int x )
  * Returns \e true if \e x is a power of two. Otherwise returns \e false.
  * \param x Long integer.
  */
-__cuda_callable__
-inline bool
+constexpr bool
 isPow2( long int x )
 {
    return ( ( x & ( x - 1 ) ) == 0 );

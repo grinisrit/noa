@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -39,13 +39,27 @@ struct Traits
    {
       return m;
    }
+
    static ConstLocalViewType
    getConstLocalView( ConstVectorViewType v )
    {
       return v;
    }
+
    static LocalViewType
    getLocalView( VectorViewType v )
+   {
+      return v;
+   }
+
+   static ConstLocalViewType
+   getConstLocalViewWithGhosts( ConstVectorViewType v )
+   {
+      return v;
+   }
+
+   static LocalViewType
+   getLocalViewWithGhosts( VectorViewType v )
    {
       return v;
    }
@@ -55,9 +69,11 @@ struct Traits
    {
       return MPI_COMM_WORLD;
    }
+
    static void
    startSynchronization( VectorViewType v )
    {}
+
    static void
    waitForSynchronization( VectorViewType v )
    {}
@@ -87,15 +103,29 @@ struct Traits< Matrices::DistributedMatrix< Matrix > >
    {
       return m.getLocalMatrix();
    }
+
    static ConstLocalViewType
    getConstLocalView( ConstVectorViewType v )
    {
       return v.getConstLocalView();
    }
+
    static LocalViewType
    getLocalView( VectorViewType v )
    {
       return v.getLocalView();
+   }
+
+   static ConstLocalViewType
+   getConstLocalViewWithGhosts( ConstVectorViewType v )
+   {
+      return v.getConstLocalViewWithGhosts();
+   }
+
+   static LocalViewType
+   getLocalViewWithGhosts( VectorViewType v )
+   {
+      return v.getLocalViewWithGhosts();
    }
 
    static const MPI::Comm&
@@ -103,11 +133,13 @@ struct Traits< Matrices::DistributedMatrix< Matrix > >
    {
       return m.getCommunicator();
    }
+
    static void
    startSynchronization( VectorViewType v )
    {
       v.startSynchronization();
    }
+
    static void
    waitForSynchronization( VectorViewType v )
    {

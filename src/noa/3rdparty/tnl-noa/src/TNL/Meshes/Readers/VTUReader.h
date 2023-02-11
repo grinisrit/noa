@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -94,14 +92,14 @@ class VTUReader : public XMLVTK
             // check empty mesh
             if( array.size() == 0 )
                return;
-            cellShape = (VTK::EntityShape) array[ 0 ];
+            cellShape = static_cast< VTK::EntityShape >( array[ 0 ] );
             meshDimension = getEntityDimension( cellShape );
             using PolygonShapeGroupChecker = VTK::EntityShapeGroupChecker< VTK::EntityShape::Polygon >;
             using PolyhedronShapeGroupChecker = VTK::EntityShapeGroupChecker< VTK::EntityShape::Polyhedron >;
 
             // TODO: check only entities of the same dimension (edges, faces and cells separately)
             for( auto c : array ) {
-               VTK::EntityShape entityShape = (VTK::EntityShape) c;
+               const auto entityShape = static_cast< VTK::EntityShape >( c );
                if( entityShape != cellShape ) {
                   if( PolygonShapeGroupChecker::bothBelong( cellShape, entityShape ) )
                      cellShape = PolygonShapeGroupChecker::GeneralShape;
@@ -201,7 +199,10 @@ class VTUReader : public XMLVTK
                //    num_faces_cell_1,
                //      ...
                // See https://vtk.org/Wiki/VTK/Polyhedron_Support for more.
-               std::decay_t< decltype( vtk_faces ) > cellOffsets, cellConnectivity, faceOffsets, faceConnectivity;
+               std::decay_t< decltype( vtk_faces ) > cellOffsets;
+               std::decay_t< decltype( vtk_faces ) > cellConnectivity;
+               std::decay_t< decltype( vtk_faces ) > faceOffsets;
+               std::decay_t< decltype( vtk_faces ) > faceConnectivity;
                std::make_signed_t< std::size_t > cell_off_begin = 0;
                std::size_t faceIndex = 0;
                for( std::size_t cell = 0; cell < vtk_faceOffsets.size(); cell++ ) {

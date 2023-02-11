@@ -1,7 +1,7 @@
 #pragma once
 
 #include <TNL/Meshes/Grid.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Multidiagonal.h>
+#include "Multidiagonal.h"
 
 namespace TNL {
     namespace Benchmarks {
@@ -81,4 +81,4 @@ class MultidiagonalMatrixSetter< Meshes::Grid< 3, MeshReal, Device, MeshIndex > 
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/MultidiagonalMatrixSetter_impl.h>
+#include "MultidiagonalMatrixSetter_impl.h"

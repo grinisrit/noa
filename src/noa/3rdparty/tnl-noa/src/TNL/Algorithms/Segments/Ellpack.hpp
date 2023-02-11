@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -56,14 +56,14 @@ template< typename Device, typename Index, typename IndexAllocator, ElementsOrga
 auto
 Ellpack< Device, Index, IndexAllocator, Organization, Alignment >::getView() -> ViewType
 {
-   return ViewType( size, segmentSize, alignedSize );
+   return { size, segmentSize, alignedSize };
 }
 
 template< typename Device, typename Index, typename IndexAllocator, ElementsOrganization Organization, int Alignment >
 auto
-Ellpack< Device, Index, IndexAllocator, Organization, Alignment >::getConstView() const -> const ConstViewType
+Ellpack< Device, Index, IndexAllocator, Organization, Alignment >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( size, segmentSize, alignedSize );
+   return { size, segmentSize, alignedSize };
 }
 
 template< typename Device, typename Index, typename IndexAllocator, ElementsOrganization Organization, int Alignment >

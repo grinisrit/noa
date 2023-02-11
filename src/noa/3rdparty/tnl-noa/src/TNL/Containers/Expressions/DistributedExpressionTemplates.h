@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -451,6 +451,8 @@ TNL_MAKE_DISTRIBUTED_BINARY_EXPRESSION( max, TNL::Max )
 
 TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( operator+, TNL::UnaryPlus )
 TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( operator-, TNL::UnaryMinus )
+TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( operator!, TNL::LogicalNot )
+TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( operator~, TNL::BitNot )
 TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( abs, TNL::Abs )
 TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( exp, TNL::Exp )
 TNL_MAKE_DISTRIBUTED_UNARY_EXPRESSION( sqrt, TNL::Sqrt )
@@ -730,6 +732,8 @@ operator<<( std::ostream& str, const DistributedUnaryExpressionTemplate< T, Oper
 
 // Make all operators visible in the TNL::Containers namespace to be considered
 // even for DistributedVector and DistributedVectorView
+using Expressions::operator!;
+using Expressions::operator~;
 using Expressions::operator+;
 using Expressions::operator-;
 using Expressions::operator*;

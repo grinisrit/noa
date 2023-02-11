@@ -1,10 +1,12 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
 
 #pragma once
+
+#include <noa/3rdparty/tnl-noa/src/TNL/Matrices/TridiagonalMatrixRowView.h>
 
 namespace noa::TNL {
 namespace Matrices {
@@ -28,7 +30,7 @@ TridiagonalMatrixRowView< ValuesView, Indexer >::getSize() const -> IndexType
 template< typename ValuesView, typename Indexer >
 __cuda_callable__
 auto
-TridiagonalMatrixRowView< ValuesView, Indexer >::getRowIndex() const -> const IndexType&
+TridiagonalMatrixRowView< ValuesView, Indexer >::getRowIndex() const -> IndexType
 {
    return rowIdx;
 }
@@ -36,7 +38,7 @@ TridiagonalMatrixRowView< ValuesView, Indexer >::getRowIndex() const -> const In
 template< typename ValuesView, typename Indexer >
 __cuda_callable__
 auto
-TridiagonalMatrixRowView< ValuesView, Indexer >::getColumnIndex( const IndexType localIdx ) const -> const IndexType
+TridiagonalMatrixRowView< ValuesView, Indexer >::getColumnIndex( const IndexType localIdx ) const -> IndexType
 {
    TNL_ASSERT_GE( localIdx, 0, "" );
    TNL_ASSERT_LT( localIdx, 3, "" );

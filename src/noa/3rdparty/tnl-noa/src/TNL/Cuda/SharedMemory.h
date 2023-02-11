@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -35,13 +35,12 @@
  * using template class specializations.
  */
 
-#ifdef HAVE_CUDA
-
-   #include <stdint.h>
+#include <stdint.h>
 
 namespace noa::TNL {
 namespace Cuda {
 
+#ifdef __CUDACC__
 template< typename T, std::size_t _alignment = CHAR_BIT * sizeof( T ) >
 struct SharedMemory;
 
@@ -130,6 +129,7 @@ getSharedMemory()
                   "Requested type has unsupported size." );
    return SharedMemory< T >{};
 }
+#endif
 
 // helper functions for indexing shared memory
 inline constexpr int
@@ -148,5 +148,3 @@ getInterleaving( const Index index )
 
 }  // namespace Cuda
 }  // namespace noa::TNL
-
-#endif

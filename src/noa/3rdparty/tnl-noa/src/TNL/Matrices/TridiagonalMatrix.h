@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -92,7 +92,7 @@ public:
    isSymmetric()
    {
       return false;
-   };
+   }
 
    /**
     * \brief The allocator for matrix elements values.
@@ -138,7 +138,7 @@ public:
    getOrganization()
    {
       return Organization;
-   };
+   }
 
    /**
     * \brief Constructor with no parameters.
@@ -196,7 +196,7 @@ public:
     * \return tridiagonal matrix view.
     */
    ViewType
-   getView() const;  // TODO: remove const
+   getView();
 
    /**
     * \brief Returns a non-modifiable view of the tridiagonal matrix.
@@ -309,11 +309,6 @@ public:
    void
    getCompressedRowLengths( Vector& rowLengths ) const;
 
-   //[[deprecated]]
-   // IndexType getRowLength( const IndexType row ) const;
-
-   // IndexType getMaxRowLength() const;
-
    /**
     * \brief Setup the matrix dimensions and diagonals offsets based on another tridiagonal matrix.
     *
@@ -394,7 +389,7 @@ public:
     */
    __cuda_callable__
    RowView
-   getRow( const IndexType& rowIdx );
+   getRow( IndexType rowIdx );
 
    /**
     * \brief Constant getter of simple structure for accessing given matrix row.
@@ -411,8 +406,8 @@ public:
     * See \ref TridiagonalMatrixRowView.
     */
    __cuda_callable__
-   const ConstRowView
-   getRow( const IndexType& rowIdx ) const;
+   ConstRowView
+   getRow( IndexType rowIdx ) const;
 
    /**
     * \brief Set all matrix elements to given value.
@@ -459,7 +454,7 @@ public:
     * \param row is row index of the element.
     * \param column is columns index of the element.
     * \param value is the value the element will be set to.
-    * \param thisElementTriplicator is multiplicator the original matrix element
+    * \param thisElementMultiplicator is multiplicator the original matrix element
     *   value is multiplied by before addition of given \e value.
     *
     * \par Example
@@ -469,7 +464,7 @@ public:
     *
     */
    void
-   addElement( IndexType row, IndexType column, const RealType& value, const RealType& thisElementTriplicator = 1.0 );
+   addElement( IndexType row, IndexType column, const RealType& value, const RealType& thisElementMultiplicator = 1.0 );
 
    /**
     * \brief Returns value of matrix element at position given by its row and column index.
@@ -514,7 +509,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -557,7 +552,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -600,13 +595,11 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row.  It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
     *
-    * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
-    * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
     * \param fetch is an instance of lambda function for data fetch.
     * \param reduce is an instance of lambda function for reduction.
     * \param keep in an instance of lambda function for storing results.
@@ -643,13 +636,11 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
     *
-    * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
-    * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
     * \param fetch is an instance of lambda function for data fetch.
     * \param reduce is an instance of lambda function for reduction.
     * \param keep in an instance of lambda function for storing results.
@@ -728,14 +719,12 @@ public:
     *
     *  The \e localIdx parameter is a rank of the non-zero element in given row.
     *
-    * \param begin defines beginning of the range [ \e begin, \e end ) of rows to be processed.
-    * \param end defines ending of the range [ \e begin, \e end ) of rows to be processed.
     * \param function is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forAllRows.cpp
+    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forAllElements.cpp
     * \par Output
-    * \include TridiagonalMatrixExample_forAllRows.out
+    * \include TridiagonalMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -753,14 +742,12 @@ public:
     *
     *  The \e localIdx parameter is a rank of the non-zero element in given row.
     *
-    * \param begin defines beginning of the range [begin,end) of rows to be processed.
-    * \param end defines ending of the range [begin,end) of rows to be processed.
     * \param function is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forAllRows.cpp
+    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_forAllElements.cpp
     * \par Output
-    * \include TridiagonalMatrixExample_forAllRows.out
+    * \include TridiagonalMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -938,18 +925,22 @@ public:
     * More precisely, it computes:
     *
     * ```
-    * outVector = matrixTriplicator * ( * this ) * inVector + outVectorTriplicator * outVector
+    * outVector = matrixMultiplicator * ( * this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
-    * \param matrixTriplicator is a factor by which the matrix is multiplied. It is one by default.
-    * \param outVectorTriplicator is a factor by which the outVector is multiplied before added
+    * \param matrixMultiplicator is a factor by which the matrix is multiplied. It is one by default.
+    * \param outVectorMultiplicator is a factor by which the outVector is multiplied before added
     *    to the result of matrix-vector product. It is zero by default.
     * \param begin is the beginning of the rows range for which the vector product
     *    is computed. It is zero by default.
@@ -960,20 +951,20 @@ public:
    void
    vectorProduct( const InVector& inVector,
                   OutVector& outVector,
-                  RealType matrixTriplicator = 1.0,
-                  RealType outVectorTriplicator = 0.0,
+                  RealType matrixMultiplicator = 1.0,
+                  RealType outVectorMultiplicator = 0.0,
                   IndexType begin = 0,
                   IndexType end = 0 ) const;
 
    template< typename Real_, typename Device_, typename Index_, ElementsOrganization Organization_, typename RealAllocator_ >
    void
    addMatrix( const TridiagonalMatrix< Real_, Device_, Index_, Organization_, RealAllocator_ >& matrix,
-              const RealType& matrixTriplicator = 1.0,
-              const RealType& thisMatrixTriplicator = 1.0 );
+              const RealType& matrixMultiplicator = 1.0,
+              const RealType& thisMatrixMultiplicator = 1.0 );
 
    template< typename Real2, typename Index2 >
    void
-   getTransposition( const TridiagonalMatrix< Real2, Device, Index2 >& matrix, const RealType& matrixTriplicator = 1.0 );
+   getTransposition( const TridiagonalMatrix< Real2, Device, Index2 >& matrix, const RealType& matrixMultiplicator = 1.0 );
 
    /**
     * \brief Assignment of exactly the same matrix type.
@@ -1064,7 +1055,7 @@ public:
 protected:
    __cuda_callable__
    IndexType
-   getElementIndex( IndexType row, IndexType localIdx ) const;
+   getElementIndex( IndexType row, IndexType column ) const;
 
    IndexerType indexer;
 

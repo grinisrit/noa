@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -8,8 +8,11 @@
 
 #pragma once
 
-#include <unistd.h>
 #include <iostream>
+
+#ifndef _MSC_VER
+   #include <unistd.h>
+#endif
 
 namespace noa::TNL {
 namespace Debugging {
@@ -28,6 +31,7 @@ public:
    bool
    redirect( const std::string& fname )
    {
+#ifndef _MSC_VER
       // restore the original stream if there is any backup
       if( backupFd >= 0 || file != nullptr )
          if( ! restore() )
@@ -54,11 +58,16 @@ public:
       }
 
       return true;
+#else
+      std::cerr << "Output redirection is not supported with the MSVC compiler." << std::endl;
+      return false;
+#endif
    }
 
    bool
    restore()
    {
+#ifndef _MSC_VER
       // first restore the original file descriptor
       if( backupFd >= 0 ) {
          if( ::dup2( backupFd, targetFd ) < 0 ) {
@@ -74,6 +83,10 @@ public:
          file = nullptr;
       }
       return true;
+#else
+      std::cerr << "Output redirection is not supported with the MSVC compiler." << std::endl;
+      return false;
+#endif
    }
 
    ~OutputRedirection()
@@ -85,6 +98,7 @@ public:
 inline bool
 redirect_stdout_stderr( const std::string& stdout_fname, const std::string& stderr_fname, bool restore = false )
 {
+#ifndef _MSC_VER
    static OutputRedirection stdoutRedir( STDOUT_FILENO );
    static OutputRedirection stderrRedir( STDERR_FILENO );
 
@@ -100,6 +114,10 @@ redirect_stdout_stderr( const std::string& stdout_fname, const std::string& stde
    }
 
    return true;
+#else
+   std::cerr << "Output redirection is not supported with the MSVC compiler." << std::endl;
+   return false;
+#endif
 }
 
 }  // namespace Debugging

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# exit whenever a command fails
+set -e
+
+# enable recursive globbing
+shopt -s globstar
+
+DEBUG="no"
+
+BENCHMARK="tnl-benchmark-spmv --with-legacy-matrices yes --precision double --openmp-enabled no"
+BENCHMARK_DBG="tnl-benchmark-spmv-dbg --with-legacy-matrices no"
+
+matrices_base_path="./mtx_matrices"
+log_file="./log-files/sparse-matrix-benchmark.log"
+
+if [[ ! -d "$matrices_base_path" ]]; then
+   echo "The path '$matrices_base_path' does not exist." >&2
+   exit 1
+fi
+
+if [[ ! -d "$(dirname "$log_file")" ]]; then
+   mkdir -p "$(dirname "$log_file")"
+fi
+
+if [[ -f "$log_file" ]]; then
+   echo "WARNING: deleting an existing log file $log_file"
+   rm -f "$log_file"
+fi
+
+for matrix in "$matrices_base_path"/**/*.mtx; do
+   if [[ "$DEBUG" == "yes" ]]; then
+      gdb --args $BENCHMARK_DBG --input-file "$matrix" --log-file "$log_file" --output-mode append --verbose 1
+   else
+      $BENCHMARK --input-file "$matrix" --log-file "$log_file" --output-mode append --verbose 1
+   fi
+done

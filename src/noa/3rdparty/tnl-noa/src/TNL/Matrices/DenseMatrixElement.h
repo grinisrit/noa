@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -46,7 +46,8 @@ public:
                        const IndexType& rowIdx,
                        const IndexType& columnIdx,
                        const IndexType& localIdx )  // localIdx is here only for compatibility with SparseMatrixElement
-   : value_( value ), rowIdx( rowIdx ), columnIdx( columnIdx ){};
+   : value_( value ), rowIdx( rowIdx ), columnIdx( columnIdx )
+   {}
 
    /**
     * \brief Returns reference on matrix element value.
@@ -58,7 +59,7 @@ public:
    value()
    {
       return value_;
-   };
+   }
 
    /**
     * \brief Returns constant reference on matrix element value.
@@ -70,7 +71,7 @@ public:
    value() const
    {
       return value_;
-   };
+   }
 
    /**
     * \brief Returns constant reference on matrix element row index.
@@ -82,7 +83,7 @@ public:
    rowIndex() const
    {
       return rowIdx;
-   };
+   }
 
    /**
     * \brief Returns constant reference on matrix element column index.
@@ -94,7 +95,7 @@ public:
    columnIndex() const
    {
       return columnIdx;
-   };
+   }
 
    /**
     * \brief Returns constant reference on matrix element column index.
@@ -106,7 +107,7 @@ public:
    localIndex() const
    {
       return columnIdx;
-   };
+   }
 
 protected:
    RealType& value_;

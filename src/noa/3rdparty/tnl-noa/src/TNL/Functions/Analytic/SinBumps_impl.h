@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -98,18 +98,18 @@ SinBumps< 1, Real >::getPartialDerivative( const PointType& v, const Real& time 
       return 0.0;
 
    const RealType& x = v.x();
-   const RealType xp = abs( x ) + sign( x ) * this->phase.x() * this->waveLength.x() / ( 2.0 * M_PI );
+   const RealType xp = abs( x ) + sign( x ) * this->phase.x() * this->waveLength.x() / ( 2.0 * TNL::pi );
    if( this->wavesNumber.x() != 0.0 && xp > this->waveLength.x() * this->wavesNumber.x() )
       return 0.0;
 
    if( XDiffOrder == 0 )
-      return this->amplitude * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return this->amplitude * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    if( XDiffOrder == 1 )
-      return 2.0 * M_PI / this->waveLength.x() * this->amplitude
-           * ::cos( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return 2.0 * TNL::pi / this->waveLength.x() * this->amplitude
+           * ::cos( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    if( XDiffOrder == 2 )
-      return -4.0 * M_PI * M_PI / ( this->waveLength.x() * this->waveLength.x() ) * this->amplitude
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return -4.0 * TNL::pi * TNL::pi / ( this->waveLength.x() * this->waveLength.x() ) * this->amplitude
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    return 0.0;
 }
 
@@ -152,37 +152,38 @@ SinBumps< 2, Real >::getPartialDerivative( const PointType& v, const Real& time 
 
    const RealType& x = v.x();
    const RealType& y = v.y();
-   const RealType xp = abs( x ) + sign( x ) * this->phase.x() * this->waveLength.x() / ( 2.0 * M_PI );
-   const RealType yp = abs( y ) + sign( y ) * this->phase.y() * this->waveLength.y() / ( 2.0 * M_PI );
-   // std::cerr << "this->wavesNumber.x() = " << this->wavesNumber.x() << "fabs( x ) = " << fabs( x ) << " 2.0*M_PI *
-   // this->waveLength.x() * this->wavesNumber.x() = " << 2.0*M_PI * this->waveLength.x() * this->wavesNumber.x() << std::endl;
+   const RealType xp = abs( x ) + sign( x ) * this->phase.x() * this->waveLength.x() / ( 2.0 * TNL::pi );
+   const RealType yp = abs( y ) + sign( y ) * this->phase.y() * this->waveLength.y() / ( 2.0 * TNL::pi );
+   // std::cerr << "this->wavesNumber.x() = " << this->wavesNumber.x() << "fabs( x ) = " << fabs( x ) << " 2.0*TNL::pi *
+   // this->waveLength.x() * this->wavesNumber.x() = " << 2.0*TNL::pi * this->waveLength.x() * this->wavesNumber.x() <<
+   // std::endl;
    if( ( this->wavesNumber.x() != 0.0 && xp > this->waveLength.x() * this->wavesNumber.x() )
        || ( this->wavesNumber.y() != 0.0 && yp > this->waveLength.y() * this->wavesNumber.y() ) )
       return 0.0;
 
    if( XDiffOrder == 0 && YDiffOrder == 0 )
-      return this->amplitude * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() );
+      return this->amplitude * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() );
    if( XDiffOrder == 1 && YDiffOrder == 0 )
-      return 2.0 * M_PI / this->waveLength.x() * this->amplitude
-           * ::cos( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() );
+      return 2.0 * TNL::pi / this->waveLength.x() * this->amplitude
+           * ::cos( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() );
    if( XDiffOrder == 2 && YDiffOrder == 0 )
-      return -4.0 * M_PI * M_PI / ( this->waveLength.x() * this->waveLength.x() ) * this->amplitude
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() );
+      return -4.0 * TNL::pi * TNL::pi / ( this->waveLength.x() * this->waveLength.x() ) * this->amplitude
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() );
    if( XDiffOrder == 0 && YDiffOrder == 1 )
-      return 2.0 * M_PI / this->waveLength.y() * this->amplitude
-           * ::cos( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return 2.0 * TNL::pi / this->waveLength.y() * this->amplitude
+           * ::cos( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    if( XDiffOrder == 0 && YDiffOrder == 2 )
-      return -4.0 * M_PI * M_PI / ( this->waveLength.y() * this->waveLength.y() ) * this->amplitude
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return -4.0 * TNL::pi * TNL::pi / ( this->waveLength.y() * this->waveLength.y() ) * this->amplitude
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    if( XDiffOrder == 1 && YDiffOrder == 1 )
-      return 4.0 * M_PI * M_PI / ( this->waveLength.x() * this->waveLength.y() ) * this->amplitude
-           * ::cos( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::cos( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return 4.0 * TNL::pi * TNL::pi / ( this->waveLength.x() * this->waveLength.y() ) * this->amplitude
+           * ::cos( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::cos( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    return 0.0;
 }
 
@@ -227,9 +228,9 @@ SinBumps< 3, Real >::getPartialDerivative( const PointType& v, const Real& time 
    const RealType& y = v.y();
    const RealType& z = v.z();
 
-   const RealType xp = abs( x ) + sign( x ) * this->phase.x() * this->waveLength.x() / ( 2.0 * M_PI );
-   const RealType yp = abs( y ) + sign( y ) * this->phase.y() * this->waveLength.y() / ( 2.0 * M_PI );
-   const RealType zp = abs( z ) + sign( z ) * this->phase.z() * this->waveLength.z() / ( 2.0 * M_PI );
+   const RealType xp = abs( x ) + sign( x ) * this->phase.x() * this->waveLength.x() / ( 2.0 * TNL::pi );
+   const RealType yp = abs( y ) + sign( y ) * this->phase.y() * this->waveLength.y() / ( 2.0 * TNL::pi );
+   const RealType zp = abs( z ) + sign( z ) * this->phase.z() * this->waveLength.z() / ( 2.0 * TNL::pi );
 
    if( ( this->wavesNumber.x() != 0.0 && xp > this->waveLength.x() * this->wavesNumber.x() )
        || ( this->wavesNumber.y() != 0.0 && yp > this->waveLength.y() * this->wavesNumber.y() )
@@ -237,54 +238,54 @@ SinBumps< 3, Real >::getPartialDerivative( const PointType& v, const Real& time 
       return 0.0;
 
    if( XDiffOrder == 0 && YDiffOrder == 0 && ZDiffOrder == 0 )
-      return this->amplitude * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return this->amplitude * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 1 && YDiffOrder == 0 && ZDiffOrder == 0 )
-      return 2.0 * M_PI / this->waveLength.x() * this->amplitude
-           * ::cos( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return 2.0 * TNL::pi / this->waveLength.x() * this->amplitude
+           * ::cos( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 2 && YDiffOrder == 0 && ZDiffOrder == 0 )
-      return -4.0 * M_PI * M_PI / ( this->waveLength.x() * this->waveLength.x() ) * this->amplitude
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return -4.0 * TNL::pi * TNL::pi / ( this->waveLength.x() * this->waveLength.x() ) * this->amplitude
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 0 && YDiffOrder == 1 && ZDiffOrder == 0 )
-      return 2.0 * M_PI / this->waveLength.y() * this->amplitude
-           * ::cos( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return 2.0 * TNL::pi / this->waveLength.y() * this->amplitude
+           * ::cos( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 0 && YDiffOrder == 2 && ZDiffOrder == 0 )
-      return -4.0 * M_PI * M_PI / ( this->waveLength.y() * this->waveLength.y() ) * this->amplitude
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return -4.0 * TNL::pi * TNL::pi / ( this->waveLength.y() * this->waveLength.y() ) * this->amplitude
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 0 && YDiffOrder == 0 && ZDiffOrder == 1 )
-      return 2.0 * M_PI / this->waveLength.z() * this->amplitude
-           * ::cos( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return 2.0 * TNL::pi / this->waveLength.z() * this->amplitude
+           * ::cos( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    if( XDiffOrder == 0 && YDiffOrder == 0 && ZDiffOrder == 2 )
-      return -4.0 * M_PI * M_PI / ( this->waveLength.z() * this->waveLength.z() ) * this->amplitude
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() );
+      return -4.0 * TNL::pi * TNL::pi / ( this->waveLength.z() * this->waveLength.z() ) * this->amplitude
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() );
    if( XDiffOrder == 1 && YDiffOrder == 1 && ZDiffOrder == 0 )
-      return 4.0 * M_PI * M_PI / ( this->waveLength.x() * this->waveLength.y() ) * this->amplitude
-           * ::cos( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::cos( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::sin( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return 4.0 * TNL::pi * TNL::pi / ( this->waveLength.x() * this->waveLength.y() ) * this->amplitude
+           * ::cos( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::cos( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::sin( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 1 && YDiffOrder == 0 && ZDiffOrder == 1 )
-      return 4.0 * M_PI * M_PI / ( this->waveLength.x() * this->waveLength.z() ) * this->amplitude
-           * ::cos( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::sin( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::cos( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return 4.0 * TNL::pi * TNL::pi / ( this->waveLength.x() * this->waveLength.z() ) * this->amplitude
+           * ::cos( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::sin( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::cos( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    if( XDiffOrder == 0 && YDiffOrder == 1 && ZDiffOrder == 1 )
-      return 4.0 * M_PI * M_PI / ( this->waveLength.y() * this->waveLength.z() ) * this->amplitude
-           * ::sin( this->phase.x() + 2.0 * M_PI * x / this->waveLength.x() )
-           * ::cos( this->phase.y() + 2.0 * M_PI * y / this->waveLength.y() )
-           * ::cos( this->phase.z() + 2.0 * M_PI * z / this->waveLength.z() );
+      return 4.0 * TNL::pi * TNL::pi / ( this->waveLength.y() * this->waveLength.z() ) * this->amplitude
+           * ::sin( this->phase.x() + 2.0 * TNL::pi * x / this->waveLength.x() )
+           * ::cos( this->phase.y() + 2.0 * TNL::pi * y / this->waveLength.y() )
+           * ::cos( this->phase.z() + 2.0 * TNL::pi * z / this->waveLength.z() );
    return 0.0;
 }
 

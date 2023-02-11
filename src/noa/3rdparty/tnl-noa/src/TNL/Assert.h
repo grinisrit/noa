@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -25,6 +25,25 @@
  *
  * Implemented by: Jakub Klinkovsky
  */
+
+// check the minimum version of the C++ standard required by TNL, otherwise
+// provide a useful error message for each supported compiler/platform
+#if __cplusplus < 201703L
+   #if defined( __clang__ ) || defined( __GNUC__ ) || defined( __GNUG__ )
+      #error "TNL requires the C++17 standard or later. Did you forget to specify the -std=c++17 compiler option?"
+   #elif defined( _MSC_VER )
+      #error "TNL requires the C++17 standard or later. Did you forget to specify the /std:c++17 compiler option?"
+   #else
+      #error "TNL requires the C++17 standard or later. Make sure it is enabled in your compiler options."
+   #endif
+#endif
+
+#if defined( __NVCC__ )
+   // check for required compiler features and provide a useful error message
+   #if ! defined( __CUDACC_RELAXED_CONSTEXPR__ ) || ! defined( __CUDACC_EXTENDED_LAMBDA__ )
+      #error "TNL requires the following flags to be specified for nvcc: --expt-relaxed-constexpr --extended-lambda"
+   #endif
+#endif
 
 // wrapper for nvcc pragma which disables warnings about __host__ __device__
 // functions: https://stackoverflow.com/q/55481202
@@ -356,22 +375,22 @@ cmpHelperFalse( const char* assertion,
 
 // Implements the helper function for TNL_ASSERT_EQ
 TNL_NVCC_HD_WARNING_DISABLE
-TNL_IMPL_CMP_HELPER_( EQ, == );
+TNL_IMPL_CMP_HELPER_( EQ, == )
 // Implements the helper function for TNL_ASSERT_NE
 TNL_NVCC_HD_WARNING_DISABLE
-TNL_IMPL_CMP_HELPER_( NE, != );
+TNL_IMPL_CMP_HELPER_( NE, != )
 // Implements the helper function for TNL_ASSERT_LE
 TNL_NVCC_HD_WARNING_DISABLE
-TNL_IMPL_CMP_HELPER_( LE, <= );
+TNL_IMPL_CMP_HELPER_( LE, <= )
 // Implements the helper function for TNL_ASSERT_LT
 TNL_NVCC_HD_WARNING_DISABLE
-TNL_IMPL_CMP_HELPER_( LT, < );
+TNL_IMPL_CMP_HELPER_( LT, < )
 // Implements the helper function for TNL_ASSERT_GE
 TNL_NVCC_HD_WARNING_DISABLE
-TNL_IMPL_CMP_HELPER_( GE, >= );
+TNL_IMPL_CMP_HELPER_( GE, >= )
 // Implements the helper function for TNL_ASSERT_GT
 TNL_NVCC_HD_WARNING_DISABLE
-TNL_IMPL_CMP_HELPER_( GT, > );
+TNL_IMPL_CMP_HELPER_( GT, > )
 
    #undef TNL_IMPL_CMP_HELPER_
 
@@ -381,6 +400,8 @@ TNL_IMPL_CMP_HELPER_( GT, > );
    // Internal macro wrapping the __PRETTY_FUNCTION__ "magic".
    #if defined( __NVCC__ ) && ( __CUDACC_VER_MAJOR__ < 8 )
       #define __TNL_PRETTY_FUNCTION "(not known in CUDA 7.5 or older)"
+   #elif defined( _MSC_VER )
+      #define __TNL_PRETTY_FUNCTION __FUNCSIG__
    #else
       #define __TNL_PRETTY_FUNCTION __PRETTY_FUNCTION__
    #endif
@@ -426,7 +447,8 @@ TNL_IMPL_CMP_HELPER_( GT, > );
                          __FILE__,                                                                                       \
                          __LINE__ );                                                                                     \
             asm( "trap;" );                                                                                              \
-         }
+         }                                                                                                               \
+         (void) 0  // dummy statement here enforces ';' after the macro: TNL_ASSERT( ... );
 
    #else  // #ifdef __CUDA_ARCH__
       #ifdef TNL_THROW_ASSERTION_ERROR
@@ -448,7 +470,8 @@ TNL_IMPL_CMP_HELPER_( GT, > );
                std::string msg = buffer.str();                                                                   \
                std::cerr.rdbuf( old );                                                                           \
                throw ::noa::TNL::Assert::AssertionError( msg );                                                       \
-            }
+            }                                                                                                    \
+            (void) 0  // dummy statement here enforces ';' after the macro: TNL_ASSERT( ... );
 
       #else  // #ifdef TNL_THROW_ASSERTION_ERROR
 
@@ -462,7 +485,8 @@ TNL_IMPL_CMP_HELPER_( GT, > );
                          << "Diagnostics: ";                                                                     \
                ___tnl__assert_command;                                                                           \
                throw EXIT_FAILURE;                                                                               \
-            }
+            }                                                                                                    \
+            (void) 0  // dummy statement here enforces ';' after the macro: TNL_ASSERT( ... );
 
       #endif  // #ifdef TNL_THROW_ASSERTION_ERROR
    #endif     // #ifdef __CUDA_ARCH__

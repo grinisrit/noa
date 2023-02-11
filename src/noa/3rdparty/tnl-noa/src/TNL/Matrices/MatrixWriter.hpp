@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -7,6 +7,8 @@
 #pragma once
 
 #include <iomanip>
+#include <fstream>
+
 #include <noa/3rdparty/tnl-noa/src/TNL/Matrices/MatrixWriter.h>
 
 namespace noa::TNL {
@@ -66,9 +68,10 @@ MatrixWriter< Matrix, Device >::writeEps( std::ostream& str, const Matrix& matri
    MatrixWriter< HostMatrix >::writeEps( str, hostMatrix, verbose );
 }
 
-/**
- * MatrixWriter specialization for TNL::Devices::Host.
- */
+// MatrixWriter specialization for TNL::Devices::Host.
+
+// This is to prevent Doxygen warnings due to hidden class.
+/// \cond
 template< typename Matrix >
 void
 MatrixWriter< Matrix, TNL::Devices::Host >::writeGnuplot( const TNL::String& fileName, const Matrix& matrix, bool verbose )
@@ -116,7 +119,7 @@ MatrixWriter< Matrix, TNL::Devices::Host >::writeMtx( std::ostream& str, const M
    str << std::setw( 9 ) << matrix.getRows() << " " << std::setw( 9 ) << matrix.getColumns() << " " << std::setw( 12 )
        << matrix.getNonzeroElementsCount() << std::endl;
    std::ostream* str_ptr = &str;
-   auto cout_ptr = &std::cout;
+   std::ostream* cout_ptr = &std::cout;
    auto f = [ = ] __cuda_callable__( const typename Matrix::ConstRowView& row ) mutable
    {
       auto rowIdx = row.getRowIndex();
@@ -178,7 +181,8 @@ MatrixWriter< Matrix, TNL::Devices::Host >::writeEpsBody( std::ostream& str,
                                                           const int elementSize,
                                                           bool verbose )
 {
-   IndexType lastRow( 0 ), lastColumn( 0 );
+   IndexType lastRow = 0;
+   IndexType lastColumn = 0;
    for( IndexType row = 0; row < matrix.getRows(); row++ ) {
       for( IndexType column = 0; column < matrix.getColumns(); column++ ) {
          RealType elementValue = matrix.getElement( row, column );
@@ -193,6 +197,7 @@ MatrixWriter< Matrix, TNL::Devices::Host >::writeEpsBody( std::ostream& str,
          std::cout << "Drawing the row " << row << "      \r" << std::flush;
    }
 }
+/// \endcond
 
 }  // namespace Matrices
 }  // namespace noa::TNL

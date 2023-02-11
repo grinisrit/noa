@@ -16,7 +16,7 @@ void check_permutation()
 
 TEST( NDArraySubarrayTest, StaticAsserts )
 {
-    using namespace TNL::Containers::__ndarray_impl;
+    using namespace TNL::Containers::detail;
 
 //    auto is_even = [](int _in) {return _in % 2 == 0;};
     using expected_type = std::integer_sequence<int, 0, 2, 4, 6, 8>;

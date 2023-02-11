@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -35,7 +35,8 @@ struct MeshEntitiesVTUCollector
          for( Index j = 0; j < verticesPerEntity; j++ )
             connectivity.push_back( entity.template getSubentityIndex< 0 >( j ) );
          offsets.push_back( connectivity.size() );
-         const std::uint8_t type = (std::uint8_t) VTK::TopologyToEntityShape< typename EntityType::EntityTopology >::shape;
+         const auto type =
+            static_cast< std::uint8_t >( VTK::TopologyToEntityShape< typename EntityType::EntityTopology >::shape );
          types.push_back( type );
       }
    }
@@ -58,7 +59,8 @@ struct MeshEntitiesVTUCollector< Mesh, 0 >
       for( Index i = 0; i < entitiesCount; i++ ) {
          connectivity.push_back( i );
          offsets.push_back( connectivity.size() );
-         const std::uint8_t type = (std::uint8_t) VTK::TopologyToEntityShape< typename EntityType::EntityTopology >::shape;
+         const auto type =
+            static_cast< std::uint8_t >( VTK::TopologyToEntityShape< typename EntityType::EntityTopology >::shape );
          types.push_back( type );
       }
    }
@@ -81,7 +83,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 1, MeshReal, Device, MeshIndex >,
          connectivity.push_back( i );
          connectivity.push_back( i + 1 );
          offsets.push_back( connectivity.size() );
-         types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+         types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
       }
    }
 };
@@ -102,7 +104,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 1, MeshReal, Device, MeshIndex >,
       for( MeshIndex i = 0; i < mesh.getDimensions().x() + 1; i++ ) {
          connectivity.push_back( i );
          offsets.push_back( connectivity.size() );
-         types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+         types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
       }
    }
 };
@@ -127,7 +129,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 2, MeshReal, Device, MeshIndex >,
             connectivity.push_back( ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i );
             connectivity.push_back( ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i + 1 );
             offsets.push_back( connectivity.size() );
-            types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+            types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
          }
    }
 };
@@ -150,7 +152,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 2, MeshReal, Device, MeshIndex >,
             connectivity.push_back( j * ( mesh.getDimensions().x() + 1 ) + i );
             connectivity.push_back( ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i );
             offsets.push_back( connectivity.size() );
-            types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+            types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
          }
 
       for( MeshIndex j = 0; j < ( mesh.getDimensions().y() + 1 ); j++ )
@@ -158,7 +160,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 2, MeshReal, Device, MeshIndex >,
             connectivity.push_back( j * ( mesh.getDimensions().x() + 1 ) + i );
             connectivity.push_back( j * ( mesh.getDimensions().x() + 1 ) + i + 1 );
             offsets.push_back( connectivity.size() );
-            types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+            types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
          }
    }
 };
@@ -180,7 +182,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 2, MeshReal, Device, MeshIndex >,
          for( MeshIndex i = 0; i < ( mesh.getDimensions().x() + 1 ); i++ ) {
             connectivity.push_back( j * mesh.getDimensions().x() + i );
             offsets.push_back( connectivity.size() );
-            types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+            types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
          }
    }
 };
@@ -218,7 +220,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( ( k + 1 ) * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i + 1 );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
    }
 };
@@ -248,7 +250,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( ( k + 1 ) * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
 
       for( MeshIndex k = 0; k < mesh.getDimensions().z(); k++ )
@@ -263,7 +265,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( ( k + 1 ) * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + j * ( mesh.getDimensions().x() + 1 ) + i + 1 );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
 
       for( MeshIndex k = 0; k <= mesh.getDimensions().z(); k++ )
@@ -278,7 +280,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( k * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i + 1 );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
    }
 };
@@ -304,7 +306,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( k * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + j * ( mesh.getDimensions().x() + 1 ) + i + 1 );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
 
       for( MeshIndex k = 0; k <= mesh.getDimensions().z(); k++ )
@@ -315,7 +317,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( k * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + ( j + 1 ) * ( mesh.getDimensions().x() + 1 ) + i );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
 
       for( MeshIndex k = 0; k < mesh.getDimensions().z(); k++ )
@@ -326,7 +328,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( ( k + 1 ) * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + j * ( mesh.getDimensions().x() + 1 ) + i );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
    }
 };
@@ -350,7 +352,7 @@ struct MeshEntitiesVTUCollector< Meshes::Grid< 3, MeshReal, Device, MeshIndex >,
                connectivity.push_back( k * ( mesh.getDimensions().y() + 1 ) * ( mesh.getDimensions().x() + 1 )
                                        + j * ( mesh.getDimensions().x() + 1 ) + i );
                offsets.push_back( connectivity.size() );
-               types.push_back( (std::uint8_t) VTK::GridEntityShape< Entity >::shape );
+               types.push_back( static_cast< std::uint8_t >( VTK::GridEntityShape< Entity >::shape ) );
             }
    }
 };

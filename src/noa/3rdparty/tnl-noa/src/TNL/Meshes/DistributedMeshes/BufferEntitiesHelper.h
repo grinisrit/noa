@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -55,7 +55,7 @@ public:
          }
       };
       Algorithms::ParallelFor< Device >::exec( 0, sizex, kernel );
-   };
+   }
 };
 
 template< typename MeshFunctionType, typename MaskPointer, typename RealType, typename Device, typename Index >
@@ -97,7 +97,7 @@ public:
          }
       };
       Algorithms::ParallelFor2D< Device >::exec( 0, 0, sizex, sizey, kernel );
-   };
+   }
 };
 
 template< typename MeshFunctionType, typename MaskPointer, typename RealType, typename Device, typename Index >
@@ -142,7 +142,7 @@ public:
          }
       };
       Algorithms::ParallelFor3D< Device >::exec( 0, 0, 0, sizex, sizey, sizez, kernel );
-   };
+   }
 };
 
 }  // namespace DistributedMeshes

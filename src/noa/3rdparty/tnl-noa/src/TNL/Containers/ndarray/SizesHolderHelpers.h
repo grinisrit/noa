@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -16,7 +16,7 @@
 
 namespace noa::TNL {
 namespace Containers {
-namespace __ndarray_impl {
+namespace detail {
 
 // Dynamic storage size with alignment
 template< typename SizesHolder,
@@ -28,7 +28,7 @@ struct StorageSizeGetter
    static typename SizesHolder::IndexType __cuda_callable__
    get( const SizesHolder& sizes )
    {
-      static constexpr std::size_t overlap = __ndarray_impl::get< LevelTag::value >( Overlaps{} );
+      static constexpr std::size_t overlap = detail::get< LevelTag::value >( Overlaps{} );
       const auto size = Alignment::template getAlignedSize< LevelTag::value >( sizes );
       return ( size + 2 * overlap )
            * StorageSizeGetter< SizesHolder, Alignment, Overlaps, IndexTag< LevelTag::value - 1 > >::get( sizes );
@@ -39,8 +39,8 @@ struct StorageSizeGetter
    static typename SizesHolder::IndexType
    getPermuted( const SizesHolder& sizes, Permutation )
    {
-      static constexpr std::size_t idx = __ndarray_impl::get< LevelTag::value >( Permutation{} );
-      static constexpr std::size_t overlap = __ndarray_impl::get< idx >( Overlaps{} );
+      static constexpr std::size_t idx = detail::get< LevelTag::value >( Permutation{} );
+      static constexpr std::size_t overlap = detail::get< idx >( Overlaps{} );
       const auto size = Alignment::template getAlignedSize< idx >( sizes );
       return ( size + 2 * overlap )
            * StorageSizeGetter< SizesHolder, Alignment, Overlaps, IndexTag< LevelTag::value - 1 > >::get( sizes );
@@ -53,7 +53,7 @@ struct StorageSizeGetter< SizesHolder, Alignment, Overlaps, IndexTag< 0 > >
    static typename SizesHolder::IndexType __cuda_callable__
    get( const SizesHolder& sizes )
    {
-      static constexpr std::size_t overlap = __ndarray_impl::get< 0 >( Overlaps{} );
+      static constexpr std::size_t overlap = detail::get< 0 >( Overlaps{} );
       return Alignment::template getAlignedSize< 0 >( sizes ) + 2 * overlap;
    }
 
@@ -62,8 +62,8 @@ struct StorageSizeGetter< SizesHolder, Alignment, Overlaps, IndexTag< 0 > >
    static typename SizesHolder::IndexType
    getPermuted( const SizesHolder& sizes, Permutation )
    {
-      static constexpr std::size_t idx = __ndarray_impl::get< 0 >( Permutation{} );
-      static constexpr std::size_t overlap = __ndarray_impl::get< idx >( Overlaps{} );
+      static constexpr std::size_t idx = detail::get< 0 >( Permutation{} );
+      static constexpr std::size_t overlap = detail::get< idx >( Overlaps{} );
       return Alignment::template getAlignedSize< idx >( sizes ) + 2 * overlap;
    }
 };
@@ -207,7 +207,7 @@ sizesWeakCompare( const SizesHolder1& sizes1, const SizesHolder2& sizes2 )
    return result;
 }
 
-// helper for the forInternal and forBoundary methods (NDArray and DistributedNDArray)
+// helper for the forInterior and forBoundary methods (NDArray and DistributedNDArray)
 template< std::size_t ConstValue,
           typename TargetHolder,
           typename SourceHolder,
@@ -235,7 +235,7 @@ struct SetSizesSubtractHelper< ConstValue, TargetHolder, SourceHolder, Overlaps,
    }
 };
 
-// helper for the forInternal and forBoundary methods (DistributedNDArray)
+// helper for the forInterior and forBoundary methods (DistributedNDArray)
 template< std::size_t ConstValue,
           typename TargetHolder,
           typename SourceHolder,
@@ -263,7 +263,7 @@ struct SetSizesAddHelper< ConstValue, TargetHolder, SourceHolder, Overlaps, 0 >
    }
 };
 
-// helper for the forLocalInternal, forLocalBoundary and forOverlaps methods (DistributedNDArray)
+// helper for the forLocalInterior, forLocalBoundary and forGhosts methods (DistributedNDArray)
 template< typename TargetHolder,
           typename SourceHolder,
           typename Overlaps = make_constant_index_sequence< TargetHolder::getDimension(), 0 >,
@@ -290,7 +290,7 @@ struct SetSizesSubtractOverlapsHelper< TargetHolder, SourceHolder, Overlaps, 0 >
    }
 };
 
-// helper for the forLocalInternal, forLocalBoundary and forOverlaps methods (DistributedNDArray)
+// helper for the forLocalInterior, forLocalBoundary and forGhosts methods (DistributedNDArray)
 template< typename TargetHolder,
           typename SourceHolder,
           typename Overlaps = make_constant_index_sequence< TargetHolder::getDimension(), 0 >,
@@ -317,7 +317,7 @@ struct SetSizesAddOverlapsHelper< TargetHolder, SourceHolder, Overlaps, 0 >
    }
 };
 
-// helper for the forInternal method (DistributedNDArray)
+// helper for the forInterior method (DistributedNDArray)
 template< typename TargetHolder, typename SourceHolder, std::size_t level = TargetHolder::getDimension() - 1 >
 struct SetSizesMaxHelper
 {
@@ -341,7 +341,7 @@ struct SetSizesMaxHelper< TargetHolder, SourceHolder, 0 >
    }
 };
 
-// helper for the forInternal method (DistributedNDArray)
+// helper for the forInterior method (DistributedNDArray)
 template< typename TargetHolder, typename SourceHolder, std::size_t level = TargetHolder::getDimension() - 1 >
 struct SetSizesMinHelper
 {
@@ -365,6 +365,6 @@ struct SetSizesMinHelper< TargetHolder, SourceHolder, 0 >
    }
 };
 
-}  // namespace __ndarray_impl
+}  // namespace detail
 }  // namespace Containers
 }  // namespace noa::TNL

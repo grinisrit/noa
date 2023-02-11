@@ -50,5 +50,5 @@ class MultidiagonalRow
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <TNL/Benchmarks/SpMV/ReferenceFormats/Legacy/MultidiagonalRow_impl.h>
+#include "MultidiagonalRow_impl.h"
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -45,9 +45,9 @@ public:
    using RealType = Real;
 
    /**
-    * \brief Device where the vector is allocated.
+    * \brief Device used to run operations on the vector.
     *
-    * See \ref Devices::Host or \ref Devices::Cuda.
+    * See \ref TNL::Devices for the available options.
     */
    using DeviceType = Device;
 
@@ -59,8 +59,7 @@ public:
    /**
     * \brief Allocator type used for allocating this vector.
     *
-    * See \ref Allocators::Cuda, \ref Allocators::CudaHost, \ref Allocators::CudaManaged, \ref Allocators::Host or \ref
-    * Allocators:Default.
+    * See \ref TNL::Allocators.
     */
    using AllocatorType = Allocator;
 
@@ -75,7 +74,9 @@ public:
    using ConstViewType = VectorView< std::add_const_t< Real >, Device, Index >;
 
    /**
-    * \brief A template which allows to quickly obtain a \ref Vector type with changed template parameters.
+    * \brief A template which allows to quickly obtain a
+    * \ref TNL::Containers::Vector "Vector" type with changed template
+    * parameters.
     */
    template< typename _Real,
              typename _Device = Device,
@@ -136,7 +137,7 @@ public:
     * \brief Move-assignment operator for acquiring data from \e rvalues.
     */
    Vector&
-   operator=( Vector&& ) noexcept = default;
+   operator=( Vector&& ) noexcept( false ) = default;
 
    /**
     * \brief Returns a modifiable view of the vector.
@@ -198,7 +199,8 @@ public:
    operator=( const VectorExpression& expression );
 
    /**
-    * \brief Assigns a value or an array - same as \ref Array::operator=.
+    * \brief Assigns a value or an array - same as
+    * \ref TNL::Containers::Array::operator= "Array::operator=".
     *
     * \return Reference to this vector.
     */

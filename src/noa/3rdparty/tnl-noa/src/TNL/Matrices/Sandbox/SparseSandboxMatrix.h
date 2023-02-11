@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -23,88 +23,110 @@ namespace Matrices {
 namespace Sandbox {
 
 /**
- * \brief Template of a sparse matrix that can be used for testing of new sparse-matrix formats.
+ * \brief Template of a sparse matrix that can be used for testing of new
+ * sparse-matrix formats.
  *
- * \tparam Real is a type of matrix elements. If \e Real equals \e bool the matrix is treated
- *    as binary and so the matrix elements values are not stored in the memory since we need
- *    to remember only coordinates of non-zero elements( which equal one).
+ * \tparam Real is a type of matrix elements. If \e Real equals \e bool the
+ *         matrix is treated as binary and so the matrix elements values are
+ *         not stored in the memory since we need to remember only coordinates
+ *         of non-zero elements( which equal one).
  * \tparam Device is a device where the matrix is allocated.
  * \tparam Index is a type for indexing of the matrix elements.
- * \tparam MatrixType specifies a symmetry of matrix. See \ref MatrixType. Symmetric
- *    matrices store only lower part of the matrix and its diagonal. The upper part is reconstructed on the fly.
- *    GeneralMatrix with no symmetry is used by default.
+ * \tparam MatrixType specifies a symmetry of matrix. See \ref MatrixType.
+ *         Symmetric matrices store only lower part of the matrix and its
+ *         diagonal. The upper part is reconstructed on the fly.  GeneralMatrix
+ *         with no symmetry is used by default.
  * \tparam RealAllocator is allocator for the matrix elements values.
  * \tparam IndexAllocator is allocator for the matrix elements column indexes.
  *
- * This class can be used for rapid testing and development of new formats for sparse matrices. One may profit from
- * several TNL tools compatible with interface of this templated class like:
+ * This class can be used for rapid testing and development of new formats for
+ * sparse matrices. One may profit from several TNL tools compatible with
+ * interface of this templated class like:
  *
  * 1. Large set of existing unit tests.
- * 3. Matrix reading from MTX files - to use \ref TNL::Matrices::MatrixReader, the following methods must be functional
- *    a. \ref TNL::Matrices::SandboxSparseMatrix::setRowCapacities
- *    b. \ref TNL::Matrices::SandboxSparseMatrix::setElement
- *    c. \ref TNL::Matrices::SandboxSparseMatrix::operator= between different devices
+ * 3. Matrix reading from MTX files - to use \ref TNL::Matrices::MatrixReader,
+ *    the following methods must be functional
+ *    a. \ref SparseSandboxMatrix::setRowCapacities
+ *    b. \ref SparseSandboxMatrix::setElement
+ *    c. \ref SparseSandboxMatrix::operator= between different devices
  * 4. Matrix benchmarks - the following methods must be functional
- *    a. \ref TNL::Matrices::SandboxSparseMatrix::vectorProduct - for SpMV benchmark
+ *    a. \ref SparseSandboxMatrix::vectorProduct - for SpMV benchmark
  * 5. Linear solvers
  * 6. Simple comparison of performance with other matrix formats
  *
  * In the core of this class there is:
  *
- * 1. Vector 'values` (\ref TNL::Matrices::Matrix::values) which is inheritted from \ref TNL::Matrices::Matrix. This vector is
- * used for storing of matrix elements values.
- * 2. Vector `columnIndexes` (\ref TNL::Matrices::SendboxMatrix::columnIndexes). This vector is used for storing of matrix
- * elements column indexes.
+ * 1. Vector 'values` (\ref TNL::Matrices::Matrix::values) which is inheritted
+ *    from \ref TNL::Matrices::Matrix. This vector is used for storing of matrix
+ *    elements values.
+ * 2. Vector `columnIndexes` (\ref SparseSandboxMatrix::columnIndexes). This
+ *    vector is used for storing of matrix elements column indexes.
  *
- * This class contains fully functional implementation of CSR format and so the user have to replace just what he needs to. Once
- * you have successfully implemented the sparse matrix format in this form, you may consider to extract it into a form of
- * segments to make it accessible even for other algorithms then SpMV.
+ * This class contains fully functional implementation of CSR format and so the
+ * user have to replace just what he needs to. Once you have successfully
+ * implemented the sparse matrix format in this form, you may consider to
+ * extract it into a form of segments to make it accessible even for other
+ * algorithms then SpMV.
  *
- * Parts of the code, that need to be modified are marked by SANDBOX_TODO tag. The whole implementation consits of the following
- * classes:
+ * Parts of the code, that need to be modified are marked by SANDBOX_TODO tag.
+ * The whole implementation consits of the following classes:
  *
- * 1. \ref TNL::Matrices::Sandbox::SparseSandboxMatrix - this class, it serves for matrix setup and performing of the main
- * operations.
- * 2. \ref TNL::Matrices::Sandbox::SparseSandboxMatrixView - view class which is necessary mainly for passing the matrix to GPU
- * kernels. Most methods of `SparseSandboxMatrix` are common with `SparseSandboxMatrixView` and in this case they are
- * implemented in the view class (and there is just redirection from this class). For this reason, `SparseSandboxMatrix`
- * contains instance of the view class
- *    (\ref TNL::Matrices::Sandbox::SparseSandboxMatrix::view) which needs to be regularly updated each time when metadata are
- * changed. This is usually done by the means of method \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::getView.
- * 3. \ref TNL::Matrices::Sandbox::SparseSandboxMatrixRowView - is a class for accessing particular matrix rows. It will,
- * likely, require some changes as well.
+ * 1. \ref SparseSandboxMatrix - this class, it serves for matrix setup and
+ *    performing of the main operations.
+ * 2. \ref SparseSandboxMatrixView - view class which is necessary mainly for
+ *    passing the matrix to GPU kernels. Most methods of `SparseSandboxMatrix`
+ *    are common with `SparseSandboxMatrixView` and in this case they are
+ *    implemented in the view class (and there is just redirection from this
+ *    class). For this reason, `SparseSandboxMatrix` contains instance of the
+ *    view class (\ref SparseSandboxMatrix::view) which needs to be regularly
+ *    updated each time when metadata are changed. This is usually done by the
+ *    means of method \ref SparseSandboxMatrix::getView.
+ * 3. \ref SparseSandboxMatrixRowView - is a class for accessing particular
+ *    matrix rows. It will, likely, require some changes as well.
  *
- * We suggest the following way of implementation of the new sparse matrix format:
+ * We suggest the following way of implementation of the new sparse matrix
+ * format:
  *
- * 1. Add metadata required by your format next to \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::rowPointers but do not
- * replace the row pointers. It will allow you to implement your new format next to the original CSR and to check/compare with
- * the valid CSR implementation any time you get into troubles. The adventage is that all unit tests are working properly and
- * you may just focus on modifying one method after another. The unit tests are called from
+ * 1. Add metadata required by your format next to
+ *    \ref SparseSandboxMatrix::rowPointers but do not replace the row
+ *    pointers. It will allow you to implement your new format next to the
+ *    original CSR and to check/compare with the valid CSR implementation any
+ *    time you get into troubles. The adventage is that all unit tests are
+ *    working properly and you may just focus on modifying one method after
+ *    another. The unit tests are called from
  *    `src/UnitTests/Matrices/SparseMatrixTests_SandboxMatrix.h` and
- * `src/UnitTests/Matrices/SparseMatrixVectorProductTests_SandboxMatrix.h`
- * 2. Modify first the method \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::setRowCapacities which is responsible for the
- * setup of the format metadata.
- * 3. Continue with modification of constructors, view class, \ref TNL::Matrices::Sandbox::SparseSandoxMatrix::getView and \ref
- * TNL::Matrices::Sandbox::SparseSandoxMatrix::getConstView.
- * 4. Next you need to modify \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::setElement and \ref
- * TNL::Matrices::Sandbox::SparseSandboxMatrix::getElement methods and assignment operator at least for copying the matrix
- * across different devices (i.e. from CPU to GPU). It will allow you to use \ref TNL::Matrices::MatrixReader. We recommend to
- * have the same data layout on both CPU and GPU so that the transfer of the matrix from CPU to GPU is trivial.
- * 5. Finally proceed to \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::vectorProduct to implement SpMV operation. We
- * recommend to implement first the CPU version which is easier to debug. Next proceed to GPU version.
- * 6. When SpMV works it is time to delete the original CSR implementation, i.e. everything around `rowPointers`.
- * 7. Optimize your implementation to the best performance and test with `tnl-benchmark-spmv` - you need to include your new
- * matrix to `src/Benchmarks/SpMV/spmv.h` and modify this file accordingly.
- * 8. If you want, you may now generalize SpMV to \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::reduceRows method.
- * 9. If you have `reduceRows` implemented, you may use the original implementation of SpMV based just on the `reduceRows`
- * method.
- * 10. You may implement \ref TNL::Matrices::Sandbox::SparseSandboxMatrix::forRows and \ref
- * TNL::Matrices::Sandbox::SparseSandboxMatrix::forElements.
- * 11. Now you have complete implementation of new sparse matrix format. You may turn it into new type of segments (\ref
- * TNL::Algorithms::Segments).
+ *    `src/UnitTests/Matrices/SparseMatrixVectorProductTests_SandboxMatrix.h`
+ * 2. Modify first the method \ref SparseSandboxMatrix::setRowCapacities which
+ *    is responsible for the setup of the format metadata.
+ * 3. Continue with modification of constructors, view class,
+ *    \ref SparseSandboxMatrix::getView and \ref SparseSandboxMatrix::getConstView.
+ * 4. Next you need to modify \ref SparseSandboxMatrix::setElement and
+ *    \ref SparseSandboxMatrix::getElement methods and assignment operator at
+ *    least for copying the matrix across different devices (i.e. from CPU to
+ *    GPU). It will allow you to use \ref TNL::Matrices::MatrixReader.
+ *    We recommend to have the same data layout on both CPU and GPU so that
+ *    the transfer of the matrix from CPU to GPU is trivial.
+ * 5. Finally proceed to \ref SparseSandboxMatrix::vectorProduct to implement
+ *    SpMV operation. We recommend to implement first the CPU version which is
+ *    easier to debug. Next proceed to GPU version.
+ * 6. When SpMV works it is time to delete the original CSR implementation,
+ *    i.e. everything around `rowPointers`.
+ * 7. Optimize your implementation to the best performance and test with
+ *    `tnl-benchmark-spmv` - you need to include your new matrix to
+ *    `src/Benchmarks/SpMV/spmv.h` and modify this file accordingly.
+ * 8. If you want, you may now generalize SpMV to
+ *    \ref SparseSandboxMatrix::reduceRows method.
+ * 9. If you have `reduceRows` implemented, you may use the original
+ *    implementation of SpMV based just on the `reduceRows` method.
+ * 10. You may implement \ref SparseSandboxMatrix::forRows and
+ *     \ref SparseSandboxMatrix::forElements.
+ * 11. Now you have complete implementation of new sparse matrix format. You
+ *     may turn it into new type of segments (\ref TNL::Algorithms::Segments).
  *
- * During the implementation some unit tests may crash. If you do not need them at the moment, you may comment them in files
- * `src/UnitTests/Matrices/SparseMatrixTests.h` and `src/UnitTests/Matrices/SparseMatrixVectorProductTests.h`
+ * During the implementation some unit tests may crash. If you do not need them
+ * at the moment, you may comment them in files
+ * `src/UnitTests/Matrices/SparseMatrixTests.h` and
+ * `src/UnitTests/Matrices/SparseMatrixVectorProductTests.h`
  */
 template< typename Real = double,
           typename Device = Devices::Host,
@@ -143,7 +165,7 @@ public:
    isSymmetric()
    {
       return MatrixType::isSymmetric();
-   };
+   }
 
    /**
     * \brief Test of binary matrix type.
@@ -154,7 +176,7 @@ public:
    isBinary()
    {
       return std::is_same< Real, bool >::value;
-   };
+   }
 
    /**
     * \brief The type of matrix elements.
@@ -204,7 +226,6 @@ public:
     * \brief Type for accessing constant matrix rows.
     */
    using ConstRowView = SparseSandboxMatrixRowView< ConstValuesViewType, ConstColumnsIndexesViewType, isBinary() >;
-   ;
 
    /**
     * \brief Helper type for getting self type or its modifications.
@@ -238,7 +259,7 @@ public:
     *
     * \param matrix is the source matrix
     */
-   SparseSandboxMatrix( const SparseSandboxMatrix& matrix1 ) = default;
+   SparseSandboxMatrix( const SparseSandboxMatrix& matrix ) = default;
 
    /**
     * \brief Move constructor.
@@ -370,7 +391,7 @@ public:
     * \return sparse matrix view.
     */
    ViewType
-   getView() const;  // TODO: remove const
+   getView();
 
    /**
     * \brief Returns a non-modifiable view of the sparse matrix.
@@ -566,7 +587,7 @@ public:
     * See \ref SparseMatrixRowView.
     */
    __cuda_callable__
-   const ConstRowView
+   ConstRowView
    getRow( const IndexType& rowIdx ) const;
 
    /**
@@ -1026,10 +1047,14 @@ public:
     *
     * `outVector = matrixMultiplicator * ( * this ) * inVector + outVectorMultiplicator * outVector`
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
@@ -1047,22 +1072,19 @@ public:
                   OutVector& outVector,
                   RealType matrixMultiplicator = 1.0,
                   RealType outVectorMultiplicator = 0.0,
-                  IndexType firstRow = 0,
-                  IndexType lastRow = 0 ) const;
+                  IndexType begin = 0,
+                  IndexType end = 0 ) const;
 
    /*template< typename Real2, typename Index2 >
    void addMatrix( const SparseMatrix< Real2, Segments, Device, Index2 >& matrix,
                    const RealType& matrixMultiplicator = 1.0,
                    const RealType& thisMatrixMultiplicator = 1.0 );
+   */
 
    template< typename Real2, typename Index2 >
-   void getTransposition( const SparseMatrix< Real2, Segments, Device, Index2 >& matrix,
-                          const RealType& matrixMultiplicator = 1.0 );
-    */
-
-   template< typename Vector1, typename Vector2 >
-   bool
-   performSORIteration( const Vector1& b, IndexType row, Vector2& x, const RealType& omega = 1.0 ) const;
+   void
+   getTransposition( const SparseSandboxMatrix< Real2, Device, Index2, MatrixType >& matrix,
+                     const RealType& matrixMultiplicator = 1.0 );
 
    /**
     * \brief Assignment of exactly the same matrix type.
@@ -1114,7 +1136,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator==( const Matrix& m ) const;
+   operator==( const Matrix& matrix ) const;
 
    /**
     * \brief Comparison operator with another arbitrary matrix type.
@@ -1124,7 +1146,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator!=( const Matrix& m ) const;
+   operator!=( const Matrix& matrix ) const;
 
    /**
     * \brief Method for saving the matrix to the file with given filename.
@@ -1215,10 +1237,12 @@ public:
    getColumnIndexes();
 
 protected:
+   //! \brief Vector containing the column indices of non-zero matrix elements.
    ColumnsIndexesVectorType columnIndexes;
 
    IndexAllocator indexAllocator;
 
+   //! \brief Instance of the sparse matrix view.
    ViewType view;
 
    /**

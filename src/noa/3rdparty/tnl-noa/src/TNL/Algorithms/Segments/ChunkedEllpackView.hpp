@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -72,34 +72,33 @@ __cuda_callable__
 typename ChunkedEllpackView< Device, Index, Organization >::ViewType
 ChunkedEllpackView< Device, Index, Organization >::getView()
 {
-   return ViewType( size,
-                    storageSize,
-                    chunksInSlice,
-                    desiredChunkSize,
-                    rowToChunkMapping.getView(),
-                    rowToSliceMapping.getView(),
-                    chunksToSegmentsMapping.getView(),
-                    rowPointers.getView(),
-                    slices.getView(),
-                    numberOfSlices );
+   return { size,
+            storageSize,
+            chunksInSlice,
+            desiredChunkSize,
+            rowToChunkMapping.getView(),
+            rowToSliceMapping.getView(),
+            chunksToSegmentsMapping.getView(),
+            rowPointers.getView(),
+            slices.getView(),
+            numberOfSlices };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization >
 __cuda_callable__
 auto
-ChunkedEllpackView< Device, Index, Organization >::getConstView() const -> const ConstViewType
+ChunkedEllpackView< Device, Index, Organization >::getConstView() const -> ConstViewType
 {
-   ChunkedEllpackView* this_ptr = const_cast< ChunkedEllpackView* >( this );
-   return ConstViewType( size,
-                         storageSize,
-                         chunksInSlice,
-                         desiredChunkSize,
-                         this_ptr->rowToChunkMapping.getView(),
-                         this_ptr->rowToSliceMapping.getView(),
-                         this_ptr->chunksToSegmentsMapping.getView(),
-                         this_ptr->rowPointers.getView(),
-                         this_ptr->slices.getView(),
-                         numberOfSlices );
+   return { size,
+            storageSize,
+            chunksInSlice,
+            desiredChunkSize,
+            rowToChunkMapping.getConstView(),
+            rowToSliceMapping.getConstView(),
+            chunksToSegmentsMapping.getConstView(),
+            rowPointers.getConstView(),
+            slices.getConstView(),
+            numberOfSlices };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization >
@@ -272,7 +271,7 @@ ChunkedEllpackView< Device, Index, Organization >::reduceSegments( IndexType fir
                                                                    const Real& zero ) const
 {
    using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
-   if( std::is_same< DeviceType, Devices::Host >::value ) {
+   if constexpr( std::is_same< DeviceType, Devices::Host >::value ) {
       // reduceSegmentsKernel( 0, first, last, fetch, reduction, keeper, zero );
       // return;
 
@@ -314,25 +313,25 @@ ChunkedEllpackView< Device, Index, Organization >::reduceSegments( IndexType fir
          keeper( segmentIdx, aux );
       }
    }
-   if( std::is_same< DeviceType, Devices::Cuda >::value ) {
-#ifdef HAVE_CUDA
+   if constexpr( std::is_same< DeviceType, Devices::Cuda >::value ) {
+      Devices::Cuda::LaunchConfiguration launch_config;
       // const IndexType chunksCount = this->numberOfSlices * this->chunksInSlice;
       //  TODO: This ignores parameters first and last
       const IndexType cudaBlocks = this->numberOfSlices;
-      const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
-      dim3 cudaBlockSize( this->chunksInSlice ), cudaGridSize;
-      const IndexType sharedMemory = cudaBlockSize.x * sizeof( RealType );
+      const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
+      launch_config.blockSize.x = this->chunksInSlice;
+      launch_config.dynamicSharedMemorySize = launch_config.blockSize.x * sizeof( RealType );
 
       for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx++ ) {
+         launch_config.gridSize.x = Cuda::getMaxGridXSize();
          if( gridIdx == cudaGrids - 1 )
-            cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
-         detail::ChunkedEllpackreduceSegmentsKernel< ViewType, IndexType, Fetch, Reduction, ResultKeeper, Real >
-            <<< cudaGridSize, cudaBlockSize,
-            sharedMemory >>>( *this, gridIdx, first, last, fetch, reduction, keeper, zero );
+            launch_config.gridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
+         constexpr auto kernel =
+            detail::ChunkedEllpackreduceSegmentsKernel< ViewType, IndexType, Fetch, Reduction, ResultKeeper, Real >;
+         Cuda::launchKernelAsync( kernel, launch_config, *this, gridIdx, first, last, fetch, reduction, keeper, zero );
       }
-      cudaStreamSynchronize( 0 );
+      cudaStreamSynchronize( launch_config.stream );
       TNL_CHECK_CUDA_DEVICE;
-#endif
    }
 }
 
@@ -401,7 +400,7 @@ ChunkedEllpackView< Device, Index, Organization >::printStructure( std::ostream&
           << " chunk = " << this->rowToChunkMapping.getElement( i ) << std::endl;
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Device, typename Index, ElementsOrganization Organization >
 template< typename Fetch, typename Reduction, typename ResultKeeper, typename Real >
 __device__
@@ -414,12 +413,13 @@ ChunkedEllpackView< Device, Index, Organization >::reduceSegmentsKernelWithAllPa
                                                                                           ResultKeeper keeper,
                                                                                           Real zero ) const
 {
-   using RealType = decltype( fetch( IndexType(), IndexType(), IndexType(), std::declval< bool& >() ) );
+   using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
+   // using RealType = decltype( fetch( IndexType(), IndexType(), IndexType(), std::declval< bool& >() ) );
 
    const IndexType firstSlice = rowToSliceMapping[ first ];
    const IndexType lastSlice = rowToSliceMapping[ last - 1 ];
 
-   const IndexType sliceIdx = firstSlice + gridIdx * Cuda::getMaxGridSize() + blockIdx.x;
+   const IndexType sliceIdx = firstSlice + gridIdx * Cuda::getMaxGridXSize() + blockIdx.x;
    if( sliceIdx > lastSlice )
       return;
 
@@ -479,12 +479,13 @@ ChunkedEllpackView< Device, Index, Organization >::reduceSegmentsKernel( IndexTy
                                                                          ResultKeeper keeper,
                                                                          Real zero ) const
 {
-   using RealType = decltype( fetch( IndexType(), std::declval< bool& >() ) );
+   using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
+   // using RealType = decltype( fetch( IndexType(), std::declval< bool& >() ) );
 
    const IndexType firstSlice = rowToSliceMapping[ first ];
    const IndexType lastSlice = rowToSliceMapping[ last - 1 ];
 
-   const IndexType sliceIdx = firstSlice + gridIdx * Cuda::getMaxGridSize() + blockIdx.x;
+   const IndexType sliceIdx = firstSlice + gridIdx * Cuda::getMaxGridXSize() + blockIdx.x;
    if( sliceIdx > lastSlice )
       return;
 

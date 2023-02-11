@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -43,7 +43,8 @@ public:
     */
    __cuda_callable__
    LambdaMatrixElement( const RealType& value, const IndexType& rowIdx, const IndexType& columnIdx, const IndexType& localIdx )
-   : value_( value ), rowIdx( rowIdx ), columnIdx( columnIdx ), localIdx( localIdx ){};
+   : value_( value ), rowIdx( rowIdx ), columnIdx( columnIdx ), localIdx( localIdx )
+   {}
 
    /**
     * \brief Copy constructor.
@@ -63,7 +64,7 @@ public:
    value() const
    {
       return value_;
-   };
+   }
 
    /**
     * \brief Returns constant reference on matrix element row index.
@@ -75,7 +76,7 @@ public:
    rowIndex() const
    {
       return rowIdx;
-   };
+   }
 
    /**
     * \brief Returns constant reference on matrix element column index.
@@ -87,7 +88,7 @@ public:
    columnIndex() const
    {
       return columnIdx;
-   };
+   }
 
    /**
     * \brief Returns constant reference on the rank of the non-zero matrix element in the row.
@@ -99,7 +100,7 @@ public:
    localIndex() const
    {
       return localIdx;
-   };
+   }
 
 protected:
    const RealType value_;

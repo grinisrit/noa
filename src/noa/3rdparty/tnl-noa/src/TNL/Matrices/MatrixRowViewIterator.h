@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -46,10 +46,10 @@ public:
    isBinary()
    {
       return RowViewType::isBinary();
-   };
+   }
 
    __cuda_callable__
-   MatrixRowViewIterator( RowViewType& rowView, const IndexType& localIdx );
+   MatrixRowViewIterator( RowViewType& rowView, IndexType localIdx );
 
    /**
     * \brief Comparison of two matrix row iterators.
@@ -96,7 +96,7 @@ public:
     * \brief Dereference operator for constant instances.
     */
    __cuda_callable__
-   const MatrixElementType
+   MatrixElementType
    operator*() const;
 
 protected:

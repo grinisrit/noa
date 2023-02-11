@@ -26,7 +26,7 @@ using MatrixTypes = ::testing::Types
     TNL::Matrices::SparseMatrix< long,    TNL::Devices::Host, long,  TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >,
     TNL::Matrices::SparseMatrix< float,   TNL::Devices::Host, long,  TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >,
     TNL::Matrices::SparseMatrix< double,  TNL::Devices::Host, long,  TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
-#ifdef HAVE_CUDA // Commented types are not supported by atomic operations on GPU.
+#ifdef __CUDACC__ // Commented types are not supported by atomic operations on GPU.
     //,TNL::Matrices::SparseMatrix< int,     TNL::Devices::Cuda, short, TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
     //,TNL::Matrices::SparseMatrix< long,    TNL::Devices::Cuda, short, TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
     //,TNL::Matrices::SparseMatrix< float,   TNL::Devices::Cuda, short, TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
@@ -39,7 +39,7 @@ using MatrixTypes = ::testing::Types
     //,TNL::Matrices::SparseMatrix< long,    TNL::Devices::Cuda, long,  TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
     //,TNL::Matrices::SparseMatrix< float,   TNL::Devices::Cuda, long,  TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
     //,TNL::Matrices::SparseMatrix< double,  TNL::Devices::Cuda, long,  TNL::Matrices::SymmetricMatrix, TNL::Algorithms::Segments::CSRDefault >
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 >;
 
 const char* saveAndLoadTestFileName = "test_SymmetricSparseMatrixTest_CSR_segments";

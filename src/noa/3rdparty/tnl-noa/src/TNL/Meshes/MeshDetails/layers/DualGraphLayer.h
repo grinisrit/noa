@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -27,7 +25,7 @@ public:
 
    explicit DualGraphLayer( const DualGraphLayer& ) = default;
 
-   DualGraphLayer( DualGraphLayer&& ) = default;
+   DualGraphLayer( DualGraphLayer&& ) noexcept = default;
 
    template< typename Device_ >
    DualGraphLayer( const DualGraphLayer< MeshConfig, Device_ >& other )
@@ -39,7 +37,7 @@ public:
    operator=( const DualGraphLayer& ) = default;
 
    DualGraphLayer&
-   operator=( DualGraphLayer&& ) = default;
+   operator=( DualGraphLayer&& ) noexcept( false ) = default;
 
    template< typename Device_ >
    DualGraphLayer&

@@ -1,0 +1,49 @@
+#/bin/bash
+
+devices="sequential host cuda"
+precisions="float double"
+# FIXME: nd-grid does not give correct results
+#tests="parallel-for simple-grid grid nd-grid"
+tests="parallel-for simple-grid grid"
+max_x_dimension="800"
+max_y_dimension="800"
+base="tnl-benchmark-heat-equation"
+
+for device in ${devices}
+do
+   for precision in ${precisions}
+   do
+      for test in ${tests}
+      do
+         tnl-benchmark-heat-equation                                  \
+            --id "${test}"                                            \
+            --implementation "${test}"                                \
+            --precision ${precision}                                  \
+            --max-x-dimension ${max_x_dimension}                      \
+            --max-y-dimension ${max_y_dimension}                      \
+            --max-iterations 500                                      \
+            --loops 1                                                 \
+            --final-time 0.1                                          \
+            --device ${device}                                        \
+            --log-file "${base}-${test}-${device}-${precision}.json"  \
+            --output-mode append                                      \
+            --write-data no
+      done
+   done
+done
+
+# nvprof --csv --log-file 'profiler/tnl_grid_small_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_tnl_grid --grid-x-size 100 --grid-y-size 100 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/tnl_grid_medium_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_tnl_grid  --grid-x-size 800 --grid-y-size 800 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/tnl_grid_large_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_tnl_grid --grid-x-size 3200 --grid-y-size 3200 --time-step 0.0001 --final-time 0.01
+
+# nvprof --csv --log-file 'profiler/parallel_for_small_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_parallel_for_grid --grid-x-size 100 --grid-y-size 100 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/parallel_for_medium_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_parallel_for_grid --grid-x-size 800 --grid-y-size 800 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/parallel_for_large_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_parallel_for_grid --grid-x-size 3200 --grid-y-size 3200 --time-step 0.0001 --final-time 0.01
+
+# nvprof --csv --log-file 'profiler/parallel_for_with_emulated_entity_small_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_parallel_for_with_memory_load --grid-x-size 100 --grid-y-size 100 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/parallel_for_with_emulated_entity_medium_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_parallel_for_with_memory_load --grid-x-size 800 --grid-y-size 800 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/parallel_for_with_emulated_entity_large_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_parallel_for_with_memory_load --grid-x-size 3200 --grid-y-size 3200 --time-step 0.0001 --final-time 0.01
+
+# nvprof --csv --log-file 'profiler/heat_n_dim_grid_small_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_n_dim_grid  --grid-x-size 100 --grid-y-size 100 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/heat_n_dim_grid_medium_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_n_dim_grid  --grid-x-size 800 --grid-y-size 800 --time-step 0.0001 --final-time 0.01
+# nvprof --csv --log-file 'profiler/heat_n_dim_grid_large_double.csv' --metrics flop_sp_efficiency,flop_dp_efficiency,eligible_warps_per_cycle,l2_utilization,gld_efficiency,gst_efficiency,sm_efficiency,achieved_occupancy,branch_efficiency,stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected ./builddir/Release/bin/heat_n_dim_grid  --grid-x-size 3200 --grid-y-size 3200 --time-step 0.0001 --final-time 0.01

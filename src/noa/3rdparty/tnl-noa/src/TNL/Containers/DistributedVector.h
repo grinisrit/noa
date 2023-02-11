@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -14,6 +14,14 @@
 namespace noa::TNL {
 namespace Containers {
 
+/**
+ * \brief \e DistributedVector extends \ref DistributedArray with algebraic operations.
+ *
+ * \par Example
+ * \include Containers/DistributedVectorExample.cpp
+ * \par Output
+ * \include DistributedVectorExample.out
+ */
 template< typename Real,
           typename Device = Devices::Host,
           typename Index = int,
@@ -74,7 +82,7 @@ public:
     * \brief Move-assignment operator for acquiring data from \e rvalues.
     */
    DistributedVector&
-   operator=( DistributedVector&& ) noexcept = default;
+   operator=( DistributedVector&& ) noexcept( false ) = default;
 
    /**
     * \brief Returns a modifiable view of the local part of the vector.

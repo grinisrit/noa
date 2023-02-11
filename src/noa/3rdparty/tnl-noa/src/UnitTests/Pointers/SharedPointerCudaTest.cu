@@ -15,7 +15,7 @@ using namespace TNL;
 #ifdef HAVE_GTEST
 TEST( SharedPointerCudaTest, ConstructorTest )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    typedef TNL::Containers::StaticArray< 2, int  > TestType;
    Pointers::SharedPointer< TestType, Devices::Cuda > ptr1;
 
@@ -36,7 +36,7 @@ TEST( SharedPointerCudaTest, ConstructorTest )
 
 TEST( SharedPointerCudaTest, getDataTest )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    typedef TNL::Containers::StaticArray< 2, int  > TestType;
    Pointers::SharedPointer< TestType, Devices::Cuda > ptr1( 1, 2 );
 
@@ -48,10 +48,10 @@ TEST( SharedPointerCudaTest, getDataTest )
 
    ASSERT_EQ( aux[ 0 ], 1 );
    ASSERT_EQ( aux[ 1 ], 2 );
-#endif  // HAVE_CUDA
+#endif  // __CUDACC__
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 __global__ void copyArrayKernel( const TNL::Containers::Array< int, Devices::Cuda >* inArray,
                                  int* outArray )
 {
@@ -73,7 +73,7 @@ __global__ void copyArrayKernel2( const Pointers::SharedPointer< TNL::Containers
 
 TEST( SharedPointerCudaTest, getDataArrayTest )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    typedef TNL::Containers::Array< int, Devices::Cuda  > TestType;
    Pointers::SharedPointer< TestType > ptr;
 
@@ -106,7 +106,7 @@ TEST( SharedPointerCudaTest, getDataArrayTest )
 
 TEST( SharedPointerCudaTest, nullptrAssignement )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType = Pointers::SharedPointer< double, Devices::Cuda >;
    TestType p1( 5 ), p2( nullptr );
 
@@ -120,7 +120,7 @@ TEST( SharedPointerCudaTest, nullptrAssignement )
 
 TEST( SharedPointerCudaTest, swap )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using TestType = Pointers::SharedPointer< double, Devices::Cuda >;
    TestType p1( 1 ), p2( 2 );
 

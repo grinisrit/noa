@@ -59,7 +59,7 @@ protected:
 // types for which DistributedArrayTest is instantiated
 using DistributedArrayTypes = ::testing::Types<
    DistributedArray< double, Devices::Host, int >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,
    DistributedArray< double, Devices::Cuda, int >
 #endif

@@ -57,7 +57,6 @@ void test_SetSegmentsSizes_EqualSizes()
 template< typename Segments >
 void test_SetSegmentsSizes_EqualSizes_EllpackOnly()
 {
-   using DeviceType = typename Segments::DeviceType;
    using IndexType = typename Segments::IndexType;
 
    const IndexType segmentsCount = 20;

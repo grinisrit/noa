@@ -12,7 +12,7 @@
 #include <TNL/Solvers/ODE/Merson.h>
 
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 #include <cuda.h>
 

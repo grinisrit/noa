@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -26,7 +26,6 @@ VectorView< Real, Device, Index >::getView( IndexType begin, IndexType end )
    if( end == 0 )
       end = this->getSize();
    return ViewType( this->getData() + begin, end - begin );
-   ;
 }
 
 template< typename Real, typename Device, typename Index >
@@ -43,7 +42,6 @@ VectorView< Real, Device, Index >::getConstView( const IndexType begin, IndexTyp
    if( end == 0 )
       end = this->getSize();
    return ConstViewType( this->getData() + begin, end - begin );
-   ;
 }
 
 template< typename Real, typename Device, typename Index >

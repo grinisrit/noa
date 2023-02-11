@@ -20,5 +20,5 @@ ExternalProject_Add(csr5
   TEST_COMMAND      ""
   # Disable update of the external project in an offline build
   # reference: https://stackoverflow.com/a/40423683
-  UPDATE_DISCONNECTED ${OFFLINE_BUILD}
+  UPDATE_DISCONNECTED ${TNL_OFFLINE_BUILD}
 )

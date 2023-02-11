@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -59,8 +59,12 @@ BICGStabL< Matrix >::solve( ConstVectorViewType b, VectorViewType x )
    }
    else
       b_norm = lpNorm( b, 2.0 );
-   if( b_norm == 0.0 )
-      b_norm = 1.0;
+
+   // check for zero rhs - solution is the null vector
+   if( b_norm == 0 ) {
+      x = 0;
+      return true;
+   }
 
    // r_0 = M.solve(b - A * x);
    compute_residue( r_0, x, b );
@@ -283,7 +287,7 @@ template< typename Matrix >
 void
 BICGStabL< Matrix >::setSize( const VectorViewType& x )
 {
-   this->size = ldSize = Traits::getConstLocalView( x ).getSize();
+   this->size = ldSize = Traits::getConstLocalViewWithGhosts( x ).getSize();
    R.setSize( ( ell + 1 ) * ldSize );
    U.setSize( ( ell + 1 ) * ldSize );
    r_ast.setLike( x );

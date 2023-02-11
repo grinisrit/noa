@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -35,6 +35,13 @@ TFQMR< Matrix >::solve( ConstVectorViewType b, VectorViewType x )
       this->matrix->vectorProduct( x, r );
       r = b - r;
    }
+
+   // check for zero rhs - solution is the null vector
+   if( b_norm == 0 ) {
+      x = 0;
+      return true;
+   }
+
    w = u = r;
    if( this->preconditioner ) {
       this->matrix->vectorProduct( u, M_tmp );
@@ -51,9 +58,6 @@ TFQMR< Matrix >::solve( ConstVectorViewType b, VectorViewType x )
    rho = ( r_ast, r );
    // only to avoid compiler warning; alpha is initialized inside the loop
    alpha = 0.0;
-
-   if( b_norm == 0.0 )
-      b_norm = 1.0;
 
    this->resetIterations();
    this->setResidue( tau / b_norm );

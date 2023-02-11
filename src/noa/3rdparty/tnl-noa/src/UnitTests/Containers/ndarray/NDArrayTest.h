@@ -220,7 +220,7 @@ TEST( NDArrayTest, CopySemantics )
     // TODO
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( NDArrayTest, CopySemanticsCrossDevice )
 {
     constexpr int I = 3, J = 4;
@@ -582,7 +582,7 @@ TEST( NDArrayTest, forAll_static_6D )
         EXPECT_EQ( a( i, j, k, l, m, n ), 1 );
 }
 
-TEST( NDArrayTest, forInternal_dynamic_1D )
+TEST( NDArrayTest, forInterior_dynamic_1D )
 {
     int I = 3;
     NDArray< int,
@@ -596,7 +596,7 @@ TEST( NDArrayTest, forInternal_dynamic_1D )
        a( i ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int i = 0; i < I; i++ )
     {
@@ -609,7 +609,7 @@ TEST( NDArrayTest, forInternal_dynamic_1D )
     }
 }
 
-TEST( NDArrayTest, forInternal_dynamic_2D )
+TEST( NDArrayTest, forInterior_dynamic_2D )
 {
     int I = 3, J = 4;
     NDArray< int,
@@ -623,7 +623,7 @@ TEST( NDArrayTest, forInternal_dynamic_2D )
        a( i, j ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int j = 0; j < J; j++ )
     for( int i = 0; i < I; i++ )
@@ -638,7 +638,7 @@ TEST( NDArrayTest, forInternal_dynamic_2D )
     }
 }
 
-TEST( NDArrayTest, forInternal_dynamic_3D )
+TEST( NDArrayTest, forInterior_dynamic_3D )
 {
     int I = 3, J = 4, K = 5;
     NDArray< int,
@@ -652,7 +652,7 @@ TEST( NDArrayTest, forInternal_dynamic_3D )
        a( i, j, k ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int k = 0; k < K; k++ )
     for( int i = 0; i < I; i++ )
@@ -669,7 +669,7 @@ TEST( NDArrayTest, forInternal_dynamic_3D )
     }
 }
 
-TEST( NDArrayTest, forInternal_dynamic_4D )
+TEST( NDArrayTest, forInterior_dynamic_4D )
 {
     int I = 3, J = 4, K = 5, L = 6;
     NDArray< int,
@@ -683,7 +683,7 @@ TEST( NDArrayTest, forInternal_dynamic_4D )
        a( i, j, k, l ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int l = 0; l < L; l++ )
     for( int k = 0; k < K; k++ )
@@ -702,7 +702,7 @@ TEST( NDArrayTest, forInternal_dynamic_4D )
     }
 }
 
-TEST( NDArrayTest, forInternal_dynamic_5D )
+TEST( NDArrayTest, forInterior_dynamic_5D )
 {
     int I = 3, J = 4, K = 5, L = 6, M = 7;
     NDArray< int,
@@ -716,7 +716,7 @@ TEST( NDArrayTest, forInternal_dynamic_5D )
        a( i, j, k, l, m ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int l = 0; l < L; l++ )
     for( int m = 0; m < M; m++ )
@@ -737,7 +737,7 @@ TEST( NDArrayTest, forInternal_dynamic_5D )
     }
 }
 
-TEST( NDArrayTest, forInternal_dynamic_6D )
+TEST( NDArrayTest, forInterior_dynamic_6D )
 {
     int I = 3, J = 4, K = 5, L = 6, M = 7, N = 8;
     NDArray< int,
@@ -751,7 +751,7 @@ TEST( NDArrayTest, forInternal_dynamic_6D )
        a( i, j, k, l, m, n ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int n = 0; n < N; n++ )
     for( int l = 0; l < L; l++ )
@@ -774,7 +774,7 @@ TEST( NDArrayTest, forInternal_dynamic_6D )
     }
 }
 
-TEST( NDArrayTest, forInternal_static_1D )
+TEST( NDArrayTest, forInterior_static_1D )
 {
     constexpr int I = 3;
     StaticNDArray< int, SizesHolder< int, I > > a;
@@ -786,7 +786,7 @@ TEST( NDArrayTest, forInternal_static_1D )
        a( i ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int i = 0; i < I; i++ )
     {
@@ -799,7 +799,7 @@ TEST( NDArrayTest, forInternal_static_1D )
     }
 }
 
-TEST( NDArrayTest, forInternal_static_2D )
+TEST( NDArrayTest, forInterior_static_2D )
 {
     constexpr int I = 3, J = 4;
     StaticNDArray< int, SizesHolder< int, I, J > > a;
@@ -811,7 +811,7 @@ TEST( NDArrayTest, forInternal_static_2D )
        a( i, j ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int j = 0; j < J; j++ )
     for( int i = 0; i < I; i++ )
@@ -826,7 +826,7 @@ TEST( NDArrayTest, forInternal_static_2D )
     }
 }
 
-TEST( NDArrayTest, forInternal_static_3D )
+TEST( NDArrayTest, forInterior_static_3D )
 {
     constexpr int I = 3, J = 4, K = 5;
     StaticNDArray< int, SizesHolder< int, I, J, K > > a;
@@ -838,7 +838,7 @@ TEST( NDArrayTest, forInternal_static_3D )
        a( i, j, k ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int k = 0; k < K; k++ )
     for( int i = 0; i < I; i++ )
@@ -855,7 +855,7 @@ TEST( NDArrayTest, forInternal_static_3D )
     }
 }
 
-TEST( NDArrayTest, forInternal_static_4D )
+TEST( NDArrayTest, forInterior_static_4D )
 {
     constexpr int I = 3, J = 4, K = 5, L = 6;
     StaticNDArray< int, SizesHolder< int, I, J, K, L > > a;
@@ -867,7 +867,7 @@ TEST( NDArrayTest, forInternal_static_4D )
        a( i, j, k, l ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int l = 0; l < L; l++ )
     for( int k = 0; k < K; k++ )
@@ -886,7 +886,7 @@ TEST( NDArrayTest, forInternal_static_4D )
     }
 }
 
-TEST( NDArrayTest, forInternal_static_5D )
+TEST( NDArrayTest, forInterior_static_5D )
 {
     constexpr int I = 3, J = 4, K = 5, L = 6, M = 7;
     StaticNDArray< int, SizesHolder< int, I, J, K, L, M > > a;
@@ -898,7 +898,7 @@ TEST( NDArrayTest, forInternal_static_5D )
        a( i, j, k, l, m ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int l = 0; l < L; l++ )
     for( int m = 0; m < M; m++ )
@@ -919,7 +919,7 @@ TEST( NDArrayTest, forInternal_static_5D )
     }
 }
 
-TEST( NDArrayTest, forInternal_static_6D )
+TEST( NDArrayTest, forInterior_static_6D )
 {
     constexpr int I = 3, J = 4, K = 5, L = 6, M = 7, N = 8;
     StaticNDArray< int, SizesHolder< int, I, J, K, L, M, N > > a;
@@ -931,7 +931,7 @@ TEST( NDArrayTest, forInternal_static_6D )
        a( i, j, k, l, m, n ) += 1;
     };
 
-    a.forInternal( setter );
+    a.forInterior( setter );
 
     for( int n = 0; n < N; n++ )
     for( int l = 0; l < L; l++ )
@@ -1325,6 +1325,49 @@ TEST( NDArrayTest, forBoundary_static_6D )
             EXPECT_EQ( a( i, j, k, l, m, n ), 0 )
                << "i = " << i << ", j = " << j << ", k = " << k << ", l = " << l << ", m = " << m << ", n = " << n;
     }
+}
+
+TEST( NDArrayTest, isContguousBlock )
+{
+    int I = 3, J = 3, K = 3;
+    NDArray< int,
+             SizesHolder< int, 0, 0, 0 >,
+             index_sequence< 0, 1, 2 > > a;
+    a.setSizes( I, J, K );
+    a.setValue( 0 );
+    using SizesHolder = typename decltype(a)::SizesHolderType;
+
+    // 1D blocks
+    EXPECT_TRUE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 2, 2, 3 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 2, 3, 2 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 3, 2, 2 ) ) );
+
+    // 2D blocks
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 2, 3, 3 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 3, 3, 2 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 3, 2, 3 ) ) );
+
+    EXPECT_TRUE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 1, 3, 3 ) ) );
+    EXPECT_TRUE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 1, 2, 3 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 1, 3, 2 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 1, 2, 2 ) ) );
+
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 3, 3, 1 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 3, 2, 1 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 2, 3, 1 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 2, 2, 1 ) ) );
+
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 3, 1, 3 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 3, 1, 2 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 2, 1, 3 ) ) );
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 2, 1, 2 ) ) );
+
+    // 3D blocks
+    EXPECT_FALSE( a.isContiguousBlock( SizesHolder( 1, 1, 1 ), SizesHolder( 3, 3, 3 ) ) );
+
+    EXPECT_TRUE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 3, 3, 3 ) ) );
+    EXPECT_TRUE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 2, 3, 3 ) ) );
+    EXPECT_TRUE( a.isContiguousBlock( SizesHolder( 0, 0, 0 ), SizesHolder( 1, 3, 3 ) ) );
 }
 #endif // HAVE_GTEST
 

@@ -7,7 +7,8 @@
 #include <TNL/Algorithms/Sorting/BitonicSort.h>
 #include <TNL/Algorithms/Sorting/STLSort.h>
 
-#ifdef HAVE_CUDA
+// FIXME: clang 14 fails to compile the reference algorithms (e.g. due to compile errors in thrust or cub)
+#if defined(__CUDA__) && !defined(__clang__)
 #ifdef HAVE_CUDA_SAMPLES
 #include "ReferenceAlgorithms/MancaQuicksort.h"
 #include "ReferenceAlgorithms/NvidiaBitonicSort.h"

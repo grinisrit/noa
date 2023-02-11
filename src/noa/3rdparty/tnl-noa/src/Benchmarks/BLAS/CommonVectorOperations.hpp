@@ -14,11 +14,10 @@ getVectorMax( const Vector& v )
 {
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
-   auto fetch = [=] __cuda_callable__ ( IndexType i ) -> ResultType { return data[ i ]; };
+   auto fetch = [=] __cuda_callable__ ( IndexType i ) { return data[ i ]; };
    auto reduction = [] __cuda_callable__ ( const ResultType& a, const ResultType& b ) { return TNL::max( a, b ); };
    return Algorithms::reduce< DeviceType >( ( IndexType ) 0, v.getSize(), fetch, reduction, std::numeric_limits< ResultType >::lowest() );
 }
@@ -31,11 +30,10 @@ getVectorMin( const Vector& v )
 {
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
-   auto fetch = [=] __cuda_callable__ ( IndexType i ) -> RealType { return data[ i ]; };
+   auto fetch = [=] __cuda_callable__ ( IndexType i ) { return data[ i ]; };
    auto reduction = [] __cuda_callable__ ( const ResultType& a, const ResultType& b ) { return TNL::min( a, b ); };
    return Algorithms::reduce< DeviceType >( ( IndexType ) 0, v.getSize(), fetch, reduction, std::numeric_limits< ResultType >::max() );
 }
@@ -48,7 +46,6 @@ getVectorAbsMax( const Vector& v )
 {
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
@@ -65,7 +62,6 @@ getVectorAbsMin( const Vector& v )
 {
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
@@ -82,7 +78,6 @@ getVectorL1Norm( const Vector& v )
 {
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
@@ -98,7 +93,6 @@ getVectorL2Norm( const Vector& v )
 {
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
@@ -116,7 +110,6 @@ getVectorLpNorm( const Vector& v,
    TNL_ASSERT_GT( v.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_GE( p, 1.0, "Parameter of the L^p norm must be at least 1.0." );
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    if( p == 1.0 )
@@ -140,7 +133,6 @@ getVectorSum( const Vector& v )
    if( std::is_same< ResultType, bool >::value )
       abort();
 
-   using RealType = typename Vector::RealType;
    using IndexType = typename Vector::IndexType;
 
    const auto* data = v.getData();
@@ -158,7 +150,6 @@ getVectorDifferenceMax( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -178,7 +169,6 @@ getVectorDifferenceMin( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -198,7 +188,6 @@ getVectorDifferenceAbsMax( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -218,7 +207,6 @@ getVectorDifferenceAbsMin( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -238,7 +226,6 @@ getVectorDifferenceL1Norm( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -257,7 +244,6 @@ getVectorDifferenceL2Norm( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -286,7 +272,6 @@ getVectorDifferenceLpNorm( const Vector1& v1,
    if( p == 2.0 )
       return getVectorDifferenceL2Norm< Vector1, Vector2, ResultType >( v1, v2 );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -305,7 +290,6 @@ getVectorDifferenceSum( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();
@@ -324,7 +308,6 @@ getScalarProduct( const Vector1& v1,
    TNL_ASSERT_GT( v1.getSize(), 0, "Vector size must be positive." );
    TNL_ASSERT_EQ( v1.getSize(), v2.getSize(), "The vector sizes must be the same." );
 
-   using RealType = typename Vector1::RealType;
    using IndexType = typename Vector1::IndexType;
 
    const auto* data1 = v1.getData();

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -25,7 +25,7 @@ Merson< Vector, SolverMonitor >::configSetup( Config::ConfigDescription& config,
                               "Time step adaptivity controlling coefficient (the smaller the more precise the computation is, "
                               "zero means no adaptivity).",
                               1.0e-4 );
-};
+}
 
 template< typename Vector, typename SolverMonitor >
 bool
@@ -42,14 +42,14 @@ void
 Merson< Vector, SolverMonitor >::setAdaptivity( const RealType& a )
 {
    this->adaptivity = a;
-};
+}
 
 template< typename Vector, typename SolverMonitor >
 auto
 Merson< Vector, SolverMonitor >::getAdaptivity() const -> const RealType&
 {
    return this->adaptivity;
-};
+}
 
 template< typename Vector, typename SolverMonitor >
 template< typename RHSFunction >
@@ -178,7 +178,7 @@ Merson< Vector, SolverMonitor >::solve( VectorType& _u, RHSFunction&& rhsFunctio
          return true;
    }
    return this->checkConvergence();
-};
+}
 
 template< typename Vector, typename SolverMonitor >
 void

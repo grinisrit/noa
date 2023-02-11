@@ -28,6 +28,7 @@
 #include <TNL/Solvers/Linear/TFQMR.h>
 #include <TNL/Solvers/Linear/BICGStab.h>
 #include <TNL/Solvers/Linear/BICGStabL.h>
+#include <TNL/Solvers/Linear/IDRs.h>
 #include <TNL/Solvers/Linear/UmfpackWrapper.h>
 
 #include <TNL/Benchmarks/Benchmarks.h>
@@ -39,7 +40,9 @@
 //             function "isinf(float)"
 //             function "std::isinf(float)"
 //             argument types are: (float)
-#if defined(HAVE_CUDA) && !defined(__NVCC__)
+//#if defined(__CUDACC__) && !defined(__NVCC__)
+// FIXME: CuSolverWrapper does not work at all now
+#if 0
    #include "CuSolverWrapper.h"
    #define HAVE_CUSOLVER
 #endif
@@ -60,6 +63,7 @@ static const std::set< std::string > valid_solvers = {
    "tfqmr",
    "bicgstab",
    "bicgstab-ell",
+   "idrs",
 };
 
 static const std::set< std::string > valid_gmres_variants = {
@@ -140,7 +144,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
                            const Vector& x0,
                            const Vector& b )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using CudaMatrix = typename Matrix::template Self< typename Matrix::RealType, Devices::Cuda >;
    using CudaVector = typename Vector::template Self< typename Vector::RealType, Devices::Cuda >;
 
@@ -165,7 +169,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( with_preconditioner_update ) {
          benchmark.setOperation("preconditioner update (Jacobi)");
          benchmarkPreconditionerUpdate< Diagonal >( benchmark, parameters, matrixPointer );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkPreconditionerUpdate< Diagonal >( benchmark, parameters, cudaMatrixPointer );
          #endif
       }
@@ -175,7 +179,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
             benchmark.setOperation(variant + "-GMRES (Jacobi)");
             parameters.template setParameter< String >( "gmres-variant", variant );
             benchmarkSolver< GMRES, Diagonal >( benchmark, parameters, matrixPointer, x0, b );
-            #ifdef HAVE_CUDA
+            #ifdef __CUDACC__
             benchmarkSolver< GMRES, Diagonal >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
             #endif
          }
@@ -184,7 +188,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( solvers.count( "tfqmr" ) ) {
          benchmark.setOperation("TFQMR (Jacobi)");
          benchmarkSolver< TFQMR, Diagonal >( benchmark, parameters, matrixPointer, x0, b );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkSolver< TFQMR, Diagonal >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
          #endif
       }
@@ -192,7 +196,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( solvers.count( "bicgstab" ) ) {
          benchmark.setOperation("BiCGstab (Jacobi)");
          benchmarkSolver< BICGStab, Diagonal >( benchmark, parameters, matrixPointer, x0, b );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkSolver< BICGStab, Diagonal >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
          #endif
       }
@@ -203,10 +207,18 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
             parameters.template setParameter< int >( "bicgstab-ell", ell );
             benchmark.setOperation("BiCGstab(" + convertToString(ell) + ") (Jacobi)");
             benchmarkSolver< BICGStabL, Diagonal >( benchmark, parameters, matrixPointer, x0, b );
-            #ifdef HAVE_CUDA
+            #ifdef __CUDACC__
             benchmarkSolver< BICGStabL, Diagonal >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
             #endif
          }
+      }
+
+      if( solvers.count( "idrs" ) ) {
+         benchmark.setOperation("IDRs (Jacobi)");
+         benchmarkSolver< IDRs, Diagonal >( benchmark, parameters, matrixPointer, x0, b );
+         #ifdef __CUDACC__
+         benchmarkSolver< IDRs, Diagonal >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
+         #endif
       }
    }
 
@@ -215,7 +227,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( with_preconditioner_update ) {
          benchmark.setOperation("preconditioner update (ILU0)");
          benchmarkPreconditionerUpdate< ILU0 >( benchmark, parameters, matrixPointer );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkPreconditionerUpdate< ILU0 >( benchmark, parameters, cudaMatrixPointer );
          #endif
       }
@@ -225,7 +237,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
             benchmark.setOperation(variant + "-GMRES (ILU0)");
             parameters.template setParameter< String >( "gmres-variant", variant );
             benchmarkSolver< GMRES, ILU0 >( benchmark, parameters, matrixPointer, x0, b );
-            #ifdef HAVE_CUDA
+            #ifdef __CUDACC__
             benchmarkSolver< GMRES, ILU0 >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
             #endif
          }
@@ -234,7 +246,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( solvers.count( "tfqmr" ) ) {
          benchmark.setOperation("TFQMR (ILU0)");
          benchmarkSolver< TFQMR, ILU0 >( benchmark, parameters, matrixPointer, x0, b );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkSolver< TFQMR, ILU0 >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
          #endif
       }
@@ -242,7 +254,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( solvers.count( "bicgstab" ) ) {
          benchmark.setOperation("BiCGstab (ILU0)");
          benchmarkSolver< BICGStab, ILU0 >( benchmark, parameters, matrixPointer, x0, b );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkSolver< BICGStab, ILU0 >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
          #endif
       }
@@ -252,10 +264,18 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
             parameters.template setParameter< int >( "bicgstab-ell", ell );
             benchmark.setOperation("BiCGstab(" + convertToString(ell) + ") (ILU0)");
             benchmarkSolver< BICGStabL, ILU0 >( benchmark, parameters, matrixPointer, x0, b );
-            #ifdef HAVE_CUDA
+            #ifdef __CUDACC__
             benchmarkSolver< BICGStabL, ILU0 >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
             #endif
          }
+      }
+
+      if( solvers.count( "idrs" ) ) {
+         benchmark.setOperation("IDRs (ILU0)");
+         benchmarkSolver< IDRs, ILU0 >( benchmark, parameters, matrixPointer, x0, b );
+         #ifdef __CUDACC__
+         benchmarkSolver< IDRs, ILU0 >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
+         #endif
       }
    }
 
@@ -264,7 +284,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( with_preconditioner_update ) {
          benchmark.setOperation("preconditioner update (ILUT)");
          benchmarkPreconditionerUpdate< ILUT >( benchmark, parameters, matrixPointer );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkPreconditionerUpdate< ILUT >( benchmark, parameters, cudaMatrixPointer );
          #endif
       }
@@ -274,7 +294,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
             benchmark.setOperation(variant + "-GMRES (ILUT)");
             parameters.template setParameter< String >( "gmres-variant", variant );
             benchmarkSolver< GMRES, ILUT >( benchmark, parameters, matrixPointer, x0, b );
-            #ifdef HAVE_CUDA
+            #ifdef __CUDACC__
             benchmarkSolver< GMRES, ILUT >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
             #endif
          }
@@ -283,7 +303,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( solvers.count( "tfqmr" ) ) {
          benchmark.setOperation("TFQMR (ILUT)");
          benchmarkSolver< TFQMR, ILUT >( benchmark, parameters, matrixPointer, x0, b );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkSolver< TFQMR, ILUT >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
          #endif
       }
@@ -291,7 +311,7 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
       if( solvers.count( "bicgstab" ) ) {
          benchmark.setOperation("BiCGstab (ILUT)");
          benchmarkSolver< BICGStab, ILUT >( benchmark, parameters, matrixPointer, x0, b );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
          benchmarkSolver< BICGStab, ILUT >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
          #endif
       }
@@ -301,10 +321,18 @@ benchmarkIterativeSolvers( Benchmark<>& benchmark,
             parameters.template setParameter< int >( "bicgstab-ell", ell );
             benchmark.setOperation("BiCGstab(" + convertToString(ell) + ") (ILUT)");
             benchmarkSolver< BICGStabL, ILUT >( benchmark, parameters, matrixPointer, x0, b );
-            #ifdef HAVE_CUDA
+            #ifdef __CUDACC__
             benchmarkSolver< BICGStabL, ILUT >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
             #endif
          }
+      }
+
+      if( solvers.count( "idrs" ) ) {
+         benchmark.setOperation("IDRs (ILUT)");
+         benchmarkSolver< IDRs, ILUT >( benchmark, parameters, matrixPointer, x0, b );
+         #ifdef __CUDACC__
+         benchmarkSolver< IDRs, ILUT >( benchmark, parameters, cudaMatrixPointer, cuda_x0, cuda_b );
+         #endif
       }
    }
 }
@@ -535,14 +563,14 @@ configSetup( Config::ConfigDescription& config )
    config.addEntry< int >( "verbose", "Verbose mode.", 1 );
    config.addEntry< bool >( "reorder-dofs", "Reorder matrix entries corresponding to the same DOF together.", false );
    config.addEntry< bool >( "with-direct", "Includes the 3rd party direct solvers in the benchmark.", false );
-   config.addEntry< String >( "solvers", "Comma-separated list of solvers to run benchmarks for. Options: gmres, tfqmr, bicgstab, bicgstab-ell.", "all" );
+   config.addEntry< String >( "solvers", "Comma-separated list of solvers to run benchmarks for. Options: gmres, tfqmr, bicgstab, bicgstab-ell, idrs.", "all" );
    config.addEntry< String >( "gmres-variants", "Comma-separated list of GMRES variants to run benchmarks for. Options: CGS, CGSR, MGS, MGSR, CWY.", "all" );
    config.addEntry< String >( "preconditioners", "Comma-separated list of preconditioners to run benchmarks for. Options: jacobi, ilu0, ilut.", "all" );
    config.addEntry< bool >( "with-preconditioner-update", "Run benchmark for the preconditioner update.", true );
    config.addEntry< String >( "devices", "Run benchmarks on these devices.", "all" );
    config.addEntryEnum( "all" );
    config.addEntryEnum( "host" );
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    config.addEntryEnum( "cuda" );
    #endif
 
