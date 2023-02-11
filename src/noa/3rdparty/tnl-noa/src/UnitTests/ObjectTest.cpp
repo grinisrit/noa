@@ -21,6 +21,7 @@ TEST( ObjectTest, SaveAndLoadTest )
    ASSERT_NO_THROW( file.close() );
    ASSERT_NO_THROW( file.open( TEST_FILE_NAME, std::ios_base::in ) );
    ASSERT_NO_THROW( testObject.load( file ) );
+   ASSERT_NO_THROW( file.close() );
 
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
 }
@@ -79,6 +80,7 @@ TEST( HeaderTest, SaveAndLoadTest )
    String type;
    ASSERT_NO_THROW( type = getObjectType( file ) );
    EXPECT_EQ( type, "TYPE" );
+   ASSERT_NO_THROW( file.close() );
 
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
 }

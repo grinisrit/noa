@@ -26,7 +26,7 @@ protected:
 // types for which VectorTest is instantiated
 // TODO: Quad must be fixed
 using VectorTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    Vector< int,            Devices::Sequential, short >,
    Vector< long,           Devices::Sequential, short >,
    Vector< float,          Devices::Sequential, short >,
@@ -65,7 +65,7 @@ using VectorTypes = ::testing::Types<
    //Vector< Quad< float >,  Devices::Host, long >,
    //Vector< Quad< double >, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    Vector< int,            Devices::Cuda, short >,
    Vector< long,           Devices::Cuda, short >,
    Vector< float,          Devices::Cuda, short >,

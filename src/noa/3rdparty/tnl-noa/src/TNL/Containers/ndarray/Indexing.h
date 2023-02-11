@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -12,7 +12,7 @@
 
 namespace noa::TNL {
 namespace Containers {
-namespace __ndarray_impl {
+namespace detail {
 
 template< typename OffsetsHolder, typename Sequence >
 struct OffsetsHelper
@@ -158,7 +158,7 @@ struct SlicedIndexer< Permutation, Overlaps, Alignment, SliceInfo, level, false 
    getIndex( const SizesHolder& sizes, const StridesHolder& strides, Indices&&... indices )
    {
       static constexpr std::size_t idx = get< level >( Permutation{} );
-      static constexpr std::size_t overlap = __ndarray_impl::get< idx >( Overlaps{} );
+      static constexpr std::size_t overlap = detail::get< idx >( Overlaps{} );
       const auto alpha = get_from_pack< idx >( std::forward< Indices >( indices )... );
       const auto size = Alignment::template getAlignedSize< idx >( sizes ) + 2 * overlap;
       const auto previous = SlicedIndexer< Permutation, Overlaps, Alignment, SliceInfo, level - 1 >::getIndex(
@@ -180,7 +180,7 @@ struct SlicedIndexer< Permutation, Overlaps, Alignment, SliceInfo, level, true >
                      "Invalid SliceInfo: static dimension cannot be sliced." );
 
       static constexpr std::size_t idx = get< level >( Permutation{} );
-      static constexpr std::size_t overlap = __ndarray_impl::get< idx >( Overlaps{} );
+      static constexpr std::size_t overlap = detail::get< idx >( Overlaps{} );
       const auto alpha = get_from_pack< idx >( std::forward< Indices >( indices )... );
       static constexpr std::size_t S = SliceInfo::getSliceSize( idx );
       // TODO: check the calculation with strides and overlaps
@@ -204,7 +204,7 @@ struct SlicedIndexer< Permutation, Overlaps, Alignment, SliceInfo, 0, false >
    getIndex( const SizesHolder& sizes, const StridesHolder& strides, Indices&&... indices )
    {
       static constexpr std::size_t idx = get< 0 >( Permutation{} );
-      static constexpr std::size_t overlap = __ndarray_impl::get< idx >( Overlaps{} );
+      static constexpr std::size_t overlap = detail::get< idx >( Overlaps{} );
       const auto alpha = get_from_pack< idx >( std::forward< Indices >( indices )... );
       return strides.template getStride< idx >( alpha ) * ( alpha + overlap );
    }
@@ -219,7 +219,7 @@ struct SlicedIndexer< Permutation, Overlaps, Alignment, SliceInfo, 0, true >
    getIndex( const SizesHolder& sizes, const StridesHolder& strides, Indices&&... indices )
    {
       static constexpr std::size_t idx = get< 0 >( Permutation{} );
-      static constexpr std::size_t overlap = __ndarray_impl::get< idx >( Overlaps{} );
+      static constexpr std::size_t overlap = detail::get< idx >( Overlaps{} );
       const auto alpha = get_from_pack< idx >( std::forward< Indices >( indices )... );
       return strides.template getStride< idx >( alpha ) * ( alpha + overlap );
    }
@@ -312,6 +312,6 @@ struct SlicedNDArrayBase
    }
 };
 
-}  // namespace __ndarray_impl
+}  // namespace detail
 }  // namespace Containers
 }  // namespace noa::TNL

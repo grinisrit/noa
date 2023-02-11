@@ -35,9 +35,7 @@ void cuda_test_GetType()
 template< typename Matrix >
 void test_Constructors()
 {
-   using RealType = typename Matrix::RealType;
    using DeviceType = typename Matrix::DeviceType;
-   using IndexType = typename Matrix::IndexType;
 
    Matrix m1( 5, 6 );
    EXPECT_EQ( m1.getRows(), 5 );
@@ -221,8 +219,6 @@ void test_Constructors()
 template< typename Matrix >
 void test_SetDimensions()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    const IndexType rows = 9;
@@ -242,7 +238,6 @@ template< typename Matrix >
 void test_SetRowCapacities()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    const IndexType rows = 10;
@@ -299,8 +294,6 @@ void test_SetRowCapacities()
 template< typename Matrix1, typename Matrix2 >
 void test_SetLike()
 {
-   using RealType = typename Matrix1::RealType;
-   using DeviceType = typename Matrix1::DeviceType;
    using IndexType = typename Matrix1::IndexType;
 
    const IndexType rows = 8;
@@ -319,7 +312,6 @@ template< typename Matrix >
 void test_GetNonzeroElementsCount()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -371,8 +363,6 @@ void test_GetNonzeroElementsCount()
 template< typename Matrix >
 void test_Reset()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -705,7 +695,6 @@ template< typename Matrix >
 void test_SetElement()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -869,7 +858,6 @@ template< typename Matrix >
 void test_AddElement()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -1023,7 +1011,6 @@ template< typename Matrix >
 void test_ForElements()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -1056,8 +1043,6 @@ void test_ForElements()
 template< typename Matrix >
 void test_ForRows()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /////
@@ -1200,82 +1185,9 @@ void test_reduceRows()
 }
 
 template< typename Matrix >
-void test_PerformSORIteration()
-{
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
-   using IndexType = typename Matrix::IndexType;
-
-   /*
-    * Sets up the following 4x4 sparse matrix:
-    *
-    *    /  4  1  0  0 \
-    *    |  1  4  1  0 |
-    *    |  0  1  4  1 |
-    *    \  0  0  1  4 /
-    */
-
-   const IndexType m_rows = 4;
-   const IndexType m_cols = 4;
-
-   Matrix m( m_rows, m_cols );
-   typename Matrix::RowsCapacitiesType rowLengths( m_rows, 3 );
-   m.setRowCapacities( rowLengths );
-
-   m.setElement( 0, 0, 4.0 );        // 0th row
-   m.setElement( 0, 1, 1.0);
-
-   m.setElement( 1, 0, 1.0 );        // 1st row
-   m.setElement( 1, 1, 4.0 );
-   m.setElement( 1, 2, 1.0 );
-
-   m.setElement( 2, 1, 1.0 );        // 2nd row
-   m.setElement( 2, 2, 4.0 );
-   m.setElement( 2, 3, 1.0 );
-
-   m.setElement( 3, 2, 1.0 );        // 3rd row
-   m.setElement( 3, 3, 4.0 );
-
-   RealType bVector [ 4 ] = { 1, 1, 1, 1 };
-   RealType xVector [ 4 ] = { 1, 1, 1, 1 };
-
-   IndexType row = 0;
-   RealType omega = 1;
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 1.0 );
-   EXPECT_EQ( xVector[ 2 ], 1.0 );
-   EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 0.0 );
-   EXPECT_EQ( xVector[ 2 ], 1.0 );
-   EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 0.0 );
-   EXPECT_EQ( xVector[ 2 ], 0.0 );
-   EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 0.0 );
-   EXPECT_EQ( xVector[ 2 ], 0.0 );
-   EXPECT_EQ( xVector[ 3 ], 0.25 );
-}
-
-template< typename Matrix >
 void test_SaveAndLoad( const char* filename )
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -1354,6 +1266,70 @@ void test_SaveAndLoad( const char* filename )
    EXPECT_EQ( savedMatrix.getElement( 3, 3 ), 11 );
 
    EXPECT_EQ( std::remove( filename ), 0 );
+}
+
+template< typename Matrix >
+void test_getTransposition()
+{
+   using RealType = typename Matrix::RealType;
+   using IndexType = typename Matrix::IndexType;
+
+   /*
+    * Sets up the following 5x4 sparse matrix:
+    *
+    *    /  1  2  3  0 \
+    *    |  0  4  0  5 |
+    *    |  6  7  8  0 |
+    *    |  0  9 10 11 |
+    *    \ 12  0  0  0 /
+    */
+
+   const IndexType m_rows = 5;
+   const IndexType m_cols = 4;
+
+   Matrix matrix( m_rows, m_cols );
+   typename Matrix::RowsCapacitiesType capacities( m_rows, 4 );
+   matrix.setRowCapacities( capacities );
+
+   RealType value = 1;
+   for( IndexType i = 0; i < m_cols - 1; i++ )   // 0th row
+      matrix.setElement( 0, i, value++ );
+
+   matrix.setElement( 1, 1, value++ );      // 1st row
+   matrix.setElement( 1, 3, value++ );
+
+   for( IndexType i = 0; i < m_cols - 1; i++ )   // 2nd row
+      matrix.setElement( 2, i, value++ );
+
+   for( IndexType i = 1; i < m_cols; i++ )       // 3rd row
+      matrix.setElement( 3, i, value++ );
+
+   matrix.setElement( 4, 0, value++ );      // 4th row
+
+   Matrix transposed;
+   transposed.getTransposition( matrix );
+
+   EXPECT_EQ( transposed.getElement( 0, 0 ),  1 );
+   EXPECT_EQ( transposed.getElement( 1, 0 ),  2 );
+   EXPECT_EQ( transposed.getElement( 2, 0 ),  3 );
+   EXPECT_EQ( transposed.getElement( 3, 0 ),  0 );
+
+   EXPECT_EQ( transposed.getElement( 0, 1 ),  0 );
+   EXPECT_EQ( transposed.getElement( 1, 1 ),  4 );
+   EXPECT_EQ( transposed.getElement( 2, 1 ),  0 );
+   EXPECT_EQ( transposed.getElement( 3, 1 ),  5 );
+
+   EXPECT_EQ( transposed.getElement( 0, 2 ),  6 );
+   EXPECT_EQ( transposed.getElement( 1, 2 ),  7 );
+   EXPECT_EQ( transposed.getElement( 2, 2 ),  8 );
+   EXPECT_EQ( transposed.getElement( 3, 2 ),  0 );
+
+   EXPECT_EQ( transposed.getElement( 0, 3 ),  0 );
+   EXPECT_EQ( transposed.getElement( 1, 3 ),  9 );
+   EXPECT_EQ( transposed.getElement( 2, 3 ), 10 );
+   EXPECT_EQ( transposed.getElement( 3, 3 ), 11 );
+
+   EXPECT_EQ( transposed.getElement( 0, 4 ), 12 );
 }
 
 #endif

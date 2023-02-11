@@ -1,3 +1,6 @@
+add_subdirectory( Ginkgo )
+add_subdirectory( Hypre )
+
 #add_subdirectory( simple-examples )
 #add_subdirectory( Hamilton-Jacobi )
 #add_subdirectory( heat-equation )
@@ -11,17 +14,35 @@
 #add_subdirectory( flow-sw )
 #add_subdirectory( flow-vl )
 
-set( CPP_TARGETS  tnl-optimize-ranks )
-set( CUDA_TARGETS  tnl-optimize-ranks-cuda )
+set( CPP_TARGETS  tnl-optimize-ranks tnl-turbulence-generator )
+set( CUDA_TARGETS  tnl-optimize-ranks-cuda tnl-turbulence-generator-cuda )
 
-foreach( target IN ITEMS ${CPP_TARGETS} )
-   add_executable( ${target} ${target}.cpp )
-endforeach()
-install( TARGETS ${CPP_TARGETS} RUNTIME DESTINATION bin )
+# skip building host-only targets in CUDA-enabled CI jobs
+if( TNL_BUILD_CPP_TARGETS )
+   foreach( target IN ITEMS ${CPP_TARGETS} )
+      add_executable( ${target} ${target}.cpp )
+      target_link_libraries( ${target} PUBLIC TNL::TNL_CXX )
+   endforeach()
+   install( TARGETS ${CPP_TARGETS} RUNTIME DESTINATION bin )
+endif()
 
-if( BUILD_CUDA )
+if( TNL_BUILD_CUDA )
    foreach( target IN ITEMS ${CUDA_TARGETS} )
-      cuda_add_executable( ${target} ${target}.cu )
+      add_executable( ${target} ${target}.cu )
+      target_link_libraries( ${target} PUBLIC TNL::TNL_CUDA )
    endforeach()
    install( TARGETS ${CUDA_TARGETS} RUNTIME DESTINATION bin )
+endif()
+
+if( TNL_BUILD_MPI )
+   # enable MPI support in TNL and add MPI to the targets:
+   # https://cliutils.gitlab.io/modern-cmake/chapters/packages/MPI.html
+   if( TNL_BUILD_CPP_TARGETS )
+      target_compile_definitions( tnl-optimize-ranks PUBLIC "-DHAVE_MPI" )
+      target_link_libraries( tnl-optimize-ranks PUBLIC MPI::MPI_CXX )
+   endif()
+   if( TNL_BUILD_CUDA )
+      target_compile_definitions( tnl-optimize-ranks-cuda PUBLIC "-DHAVE_MPI" )
+      target_link_libraries( tnl-optimize-ranks-cuda PUBLIC MPI::MPI_CXX )
+   endif()
 endif()

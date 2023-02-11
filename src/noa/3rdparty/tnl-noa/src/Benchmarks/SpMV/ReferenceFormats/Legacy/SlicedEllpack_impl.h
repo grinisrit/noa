@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/SlicedEllpack.h>
+#include "SlicedEllpack.h"
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/scan.h>
 #include <TNL/Math.h>
 #include <TNL/Exceptions/NotImplementedError.h>
+#include "MemoryHelpers.h"
 
 namespace TNL {
     namespace Benchmarks {
@@ -566,49 +567,6 @@ void SlicedEllpack< Real, Device, Index, SliceSize >::getTransposition( const Sl
    // TODO: implement
 }
 
-template< typename Real,
-          typename Device,
-          typename Index,
-          int SliceSize >
-   template< typename Vector1, typename Vector2 >
-bool SlicedEllpack< Real, Device, Index, SliceSize >::performSORIteration( const Vector1& b,
-                                                                           const IndexType row,
-                                                                           Vector2& x,
-                                                                           const RealType& omega ) const
-{
-   TNL_ASSERT( row >=0 && row < this->getRows(),
-              std::cerr << "row = " << row
-                   << " this->getRows() = " << this->getRows() << std::endl );
-
-   RealType diagonalValue( 0.0 );
-   RealType sum( 0.0 );
-
-   /*const IndexType sliceIdx = row / SliceSize;
-   const IndexType rowLength = this->sliceCompressedRowLengths[ sliceIdx ];
-   IndexType elementPtr = this->slicePointers[ sliceIdx ] +
-                          rowLength * ( row - sliceIdx * SliceSize );
-   const IndexType rowEnd( elementPtr + rowLength );*/
-   IndexType elementPtr, rowEnd, step;
-   DeviceDependentCode::initRowTraverseFast( *this, row, elementPtr, rowEnd, step );
-   IndexType column;
-   while( elementPtr < rowEnd && ( column = this->columnIndexes[ elementPtr ] ) < this->columns )
-   {
-      if( column == row )
-         diagonalValue = this->values[  elementPtr ];
-      else
-         sum += this->values[ elementPtr ] * x[ column ];
-      elementPtr += step;
-   }
-   if( diagonalValue == ( Real ) 0.0 )
-   {
-      std::cerr << "There is zero on the diagonal in " << row << "-th row of a matrix. I cannot perform SOR iteration." << std::endl;
-      return false;
-   }
-   x[ row ] = ( 1.0 - omega ) * x[ row ] + omega / diagonalValue * ( b[ row ] - sum );
-   return true;
-}
-
-
 // copy assignment
 template< typename Real,
           typename Device,
@@ -760,7 +718,7 @@ void SlicedEllpack< Real, Device, Index, SliceSize >::print( std::ostream& str )
    }
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Device,
           typename Index,
@@ -878,7 +836,7 @@ class SlicedEllpackDeviceDependentCode
 
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index,
           int SliceSize >
@@ -886,12 +844,12 @@ __global__ void SlicedEllpack_computeMaximalRowLengthInSlices_CudaKernel( Sliced
                                                                           typename SlicedEllpack< Real, Devices::Cuda, Index, SliceSize >::ConstRowsCapacitiesTypeView rowLengths,
                                                                           int gridIdx )
 {
-   const Index sliceIdx = gridIdx * Cuda::getMaxGridSize() * blockDim.x + blockIdx.x * blockDim.x + threadIdx.x;
+   const Index sliceIdx = gridIdx * Cuda::getMaxGridXSize() * blockDim.x + blockIdx.x * blockDim.x + threadIdx.x;
    matrix->computeMaximalRowLengthInSlicesCuda( rowLengths, sliceIdx );
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template<
    typename Real,
    typename Index,
@@ -909,7 +867,7 @@ __global__ void SlicedEllpackVectorProductCudaKernel(
    Real multiplicator,
    const Index gridIdx )
 {
-   const Index rowIdx = ( gridIdx * Cuda::getMaxGridSize() + blockIdx.x ) * blockDim.x + threadIdx.x;
+   const Index rowIdx = ( gridIdx * Cuda::getMaxGridXSize() + blockIdx.x ) * blockDim.x + threadIdx.x;
    if( rowIdx >= rows )
       return;
    const Index sliceIdx = rowIdx / SliceSize;
@@ -982,18 +940,17 @@ class SlicedEllpackDeviceDependentCode< Devices::Cuda >
       static bool computeMaximalRowLengthInSlices( SlicedEllpack< Real, Device, Index, SliceSize >& matrix,
                                                    typename SlicedEllpack< Real, Device, Index >::ConstRowsCapacitiesTypeView rowLengths )
       {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
          typedef SlicedEllpack< Real, Device, Index, SliceSize > Matrix;
-         typedef typename Matrix::RowsCapacitiesType RowsCapacitiesType;
          Matrix* kernel_matrix = Cuda::passToDevice( matrix );
          const Index numberOfSlices = roundUpDivision( matrix.getRows(), SliceSize );
-         dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridSize() );
+         dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridXSize() );
          const Index cudaBlocks = roundUpDivision( numberOfSlices, cudaBlockSize.x );
-         const Index cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+         const Index cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
          for( int gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
          {
             if( gridIdx == cudaGrids - 1 )
-               cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+               cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
             SlicedEllpack_computeMaximalRowLengthInSlices_CudaKernel< Real, Index, SliceSize ><<< cudaGridSize, cudaBlockSize >>>
                                                                              ( kernel_matrix,
                                                                                rowLengths,
@@ -1016,19 +973,19 @@ class SlicedEllpackDeviceDependentCode< Devices::Cuda >
                                  Real multiplicator )
       {
          //MatrixVectorProductCuda( matrix, inVector, outVector );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
             typedef SlicedEllpack< Real, Device, Index, SliceSize > Matrix;
             typedef typename Matrix::IndexType IndexType;
             //Matrix* kernel_this = Cuda::passToDevice( matrix );
             //InVector* kernel_inVector = Cuda::passToDevice( inVector );
             //OutVector* kernel_outVector = Cuda::passToDevice( outVector );
-            dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridSize() );
+            dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridXSize() );
             const IndexType cudaBlocks = roundUpDivision( matrix.getRows(), cudaBlockSize.x );
-            const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+            const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
             for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
             {
                if( gridIdx == cudaGrids - 1 )
-                  cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+                  cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
                SlicedEllpackVectorProductCudaKernel
                < Real, Index, SliceSize >
                 <<< cudaGridSize, cudaBlockSize >>>

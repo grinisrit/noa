@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -353,8 +351,8 @@ public:
    {
 #ifdef HAVE_TINYXML2
       using namespace tinyxml2;
-
       namespace fs = std::filesystem;
+
       if( ! fs::exists( fileName ) )
          throw MeshReaderError( "XMLVTK", "file '" + fileName + "' does not exist" );
       if( fs::is_directory( fileName ) )
@@ -403,7 +401,7 @@ public:
    }
 
    VariantVector
-   readPointData( std::string arrayName ) override
+   readPointData( const std::string& arrayName ) override
    {
 #ifdef HAVE_TINYXML2
       return readPointOrCellData( "PointData", arrayName );
@@ -413,7 +411,7 @@ public:
    }
 
    VariantVector
-   readCellData( std::string arrayName ) override
+   readCellData( const std::string& arrayName ) override
    {
 #ifdef HAVE_TINYXML2
       return readPointOrCellData( "CellData", arrayName );

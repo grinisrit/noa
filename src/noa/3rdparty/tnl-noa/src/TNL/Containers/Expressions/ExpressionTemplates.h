@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -286,8 +286,11 @@ TNL_MAKE_BINARY_EXPRESSION( max, TNL::Max )
 
 TNL_MAKE_UNARY_EXPRESSION( operator+, TNL::UnaryPlus )
 TNL_MAKE_UNARY_EXPRESSION( operator-, TNL::UnaryMinus )
+TNL_MAKE_UNARY_EXPRESSION( operator!, TNL::LogicalNot )
+TNL_MAKE_UNARY_EXPRESSION( operator~, TNL::BitNot )
 TNL_MAKE_UNARY_EXPRESSION( abs, TNL::Abs )
 TNL_MAKE_UNARY_EXPRESSION( exp, TNL::Exp )
+TNL_MAKE_UNARY_EXPRESSION( sqr, TNL::Sqr )
 TNL_MAKE_UNARY_EXPRESSION( sqrt, TNL::Sqrt )
 TNL_MAKE_UNARY_EXPRESSION( cbrt, TNL::Cbrt )
 TNL_MAKE_UNARY_EXPRESSION( log, TNL::Log )
@@ -458,7 +461,7 @@ auto
 l2Norm( const ET1& a )
 {
    using TNL::sqrt;
-   return sqrt( sum( a * a ) );
+   return sqrt( sum( sqr( a ) ) );
 }
 
 template< typename ET1, typename Real, typename..., EnableIfUnaryExpression_t< ET1, bool > = true >
@@ -547,6 +550,8 @@ operator<<( std::ostream& str, const UnaryExpressionTemplate< T, Operation >& ex
 
 // Make all operators visible in the TNL::Containers namespace to be considered
 // even for Vector and VectorView
+using Expressions::operator!;
+using Expressions::operator~;
 using Expressions::operator+;
 using Expressions::operator-;
 using Expressions::operator*;
@@ -596,6 +601,7 @@ using Expressions::product;
 using Expressions::sign;
 using Expressions::sin;
 using Expressions::sinh;
+using Expressions::sqr;
 using Expressions::sqrt;
 using Expressions::sum;
 using Expressions::tan;
@@ -639,6 +645,7 @@ using Containers::product;
 using Containers::sign;
 using Containers::sin;
 using Containers::sinh;
+using Containers::sqr;
 using Containers::sqrt;
 using Containers::sum;
 using Containers::tan;

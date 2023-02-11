@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -11,7 +11,6 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Containers/Vector.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Matrices/LambdaMatrix.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Algorithms/ParallelFor.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Matrices/LambdaMatrix.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Matrices/details/SparseMatrix.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Exceptions/NotImplementedError.h>
 
@@ -27,8 +26,8 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
 
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
 LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::LambdaMatrix(
-   const IndexType& rows,
-   const IndexType& columns,
+   IndexType rows,
+   IndexType columns,
    MatrixElementsLambda& matrixElements,
    CompressedRowLengthsLambda& compressedRowLengths )
 : rows( rows ), columns( columns ), matrixElementsLambda( matrixElements ), compressedRowLengthsLambda( compressedRowLengths )
@@ -36,8 +35,8 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
 
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
 void
-LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::setDimensions( const IndexType& rows,
-                                                                                                      const IndexType& columns )
+LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::setDimensions( IndexType rows,
+                                                                                                      IndexType columns )
 {
    this->rows = rows;
    this->columns = columns;
@@ -97,7 +96,7 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
    {
       return ( value != 0.0 );
    };
-   auto keep = [ = ] __cuda_callable__( const IndexType rowIdx, const IndexType value ) mutable
+   auto keep = [ = ] __cuda_callable__( IndexType rowIdx, IndexType value ) mutable
    {
       rowLengths_view[ rowIdx ] = value;
    };
@@ -115,9 +114,8 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
 
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
 Real
-LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::getElement(
-   const IndexType row,
-   const IndexType column ) const
+LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::getElement( IndexType row,
+                                                                                                   IndexType column ) const
 {
    Containers::Array< RealType, DeviceType > value( 1 );
    auto valueView = value.getView();
@@ -146,8 +144,8 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
 __cuda_callable__
 auto
-LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::getRow( const IndexType& rowIdx ) const
-   -> const RowView
+LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::getRow( IndexType rowIdx ) const
+   -> ConstRowView
 {
    return RowView(
       this->getMatrixElementsLambda(), this->getCompressedRowLengthsLambda(), this->getRows(), this->getColumns(), rowIdx );
@@ -161,7 +159,7 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
    OutVector& outVector,
    const RealType& matrixMultiplicator,
    const RealType& outVectorMultiplicator,
-   const IndexType begin,
+   IndexType begin,
    IndexType end ) const
 {
    TNL_ASSERT_EQ( this->getColumns(), inVector.getSize(), "Matrix columns do not fit with input vector." );
@@ -195,8 +193,8 @@ template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, ty
 template< typename Fetch, typename Reduce, typename Keep, typename FetchReal >
 void
 LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::reduceRows(
-   IndexType first,
-   IndexType last,
+   IndexType begin,
+   IndexType end,
    Fetch& fetch,
    const Reduce& reduce,
    Keep& keep,
@@ -223,7 +221,7 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
       }
       keep( rowIdx, result );
    };
-   Algorithms::ParallelFor< DeviceType >::exec( first, last, processRow );
+   Algorithms::ParallelFor< DeviceType >::exec( begin, end, processRow );
 }
 
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
@@ -241,8 +239,8 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
 template< typename Function >
 void
-LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::forElements( IndexType first,
-                                                                                                    IndexType last,
+LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >::forElements( IndexType begin,
+                                                                                                    IndexType end,
                                                                                                     Function& function ) const
 {
    const IndexType rows = this->getRows();
@@ -260,7 +258,7 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
             function( rowIdx, localIdx, elementColumn, elementValue );
       }
    };
-   Algorithms::ParallelFor< DeviceType >::exec( first, last, processRow );
+   Algorithms::ParallelFor< DeviceType >::exec( begin, end, processRow );
 }
 
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
@@ -280,7 +278,7 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
                                                                                                 Function&& function ) const
 {
    auto view = *this;
-   auto f = [ = ] __cuda_callable__( const IndexType rowIdx ) mutable
+   auto f = [ = ] __cuda_callable__( IndexType rowIdx ) mutable
    {
       auto rowView = view.getRow( rowIdx );
       function( rowView );
@@ -335,13 +333,6 @@ LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, In
    }
 }
 
-/**
- * \brief Insertion operator for dense matrix and output stream.
- *
- * \param str is the output stream.
- * \param matrix is the lambda matrix.
- * \return reference to the stream.
- */
 template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda, typename Real, typename Device, typename Index >
 std::ostream&
 operator<<( std::ostream& str,

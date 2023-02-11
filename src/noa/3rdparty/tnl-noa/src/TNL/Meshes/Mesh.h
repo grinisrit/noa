@@ -1,14 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
 
 #pragma once
 
@@ -86,7 +80,7 @@ public:
 
    Mesh( const Mesh& mesh ) = default;
 
-   Mesh( Mesh&& mesh ) = default;
+   Mesh( Mesh&& mesh ) noexcept = default;
 
    template< typename Device_ >
    Mesh( const Mesh< MeshConfig, Device_ >& mesh );
@@ -95,7 +89,7 @@ public:
    operator=( const Mesh& mesh ) = default;
 
    Mesh&
-   operator=( Mesh&& mesh ) = default;
+   operator=( Mesh&& mesh ) noexcept( false ) = default;
 
    template< typename Device_ >
    Mesh&
@@ -131,7 +125,7 @@ public:
 
    template< int Dimension >
    void
-   setEntitiesCount( const typename MeshTraitsType::GlobalIndexType& entitiesCount );
+   setEntitiesCount( GlobalIndexType entitiesCount );
 
    // duplicated for compatibility with grids
    template< typename EntityType >
@@ -307,6 +301,10 @@ protected:
    template< int EntityDimension, int SubentityDimension >
    void
    setSubentitiesCounts( const typename MeshTraitsType::NeighborCountsArray& counts );
+
+   template< int EntityDimension, int SubentityDimension >
+   void
+   setSubentitiesCounts( typename MeshTraitsType::NeighborCountsArray&& counts );
 };
 
 template< typename MeshConfig, typename Device >

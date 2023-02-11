@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -8,7 +8,9 @@
 
 #include <ostream>
 #include <iostream>
+
 #include <noa/3rdparty/tnl-noa/src/TNL/String.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Devices/Host.h>
 
 namespace noa::TNL {
 namespace Matrices {
@@ -65,7 +67,7 @@ public:
    /**
     * \brief Method for exporting matrix to STL output stream using Gnuplot format.
     *
-    * \param file is the output stream.
+    * \param str is the output stream.
     * \param matrix is the source matrix.
     * \param verbose controls verbosity of the matrix export.
     */
@@ -85,7 +87,7 @@ public:
    /**
     * \brief Method for exporting matrix to STL output stream using EPS format.
     *
-    * \param file is the output stream.
+    * \param str is the output stream.
     * \param matrix is the source matrix.
     * \param verbose controls verbosity of the matrix export.
     */
@@ -105,7 +107,7 @@ public:
    /**
     * \brief Method for exporting matrix to STL output stream using MTX format.
     *
-    * \param file is the output stream.
+    * \param str is the output stream.
     * \param matrix is the source matrix.
     * \param verbose controls verbosity of the matrix export.
     */
@@ -116,14 +118,14 @@ protected:
    using HostMatrix = typename Matrix::template Self< RealType, TNL::Devices::Host >;
 };
 
-/// This is to prevent from appearing in Doxygen documentation.
-/// \cond HIDDEN_CLASS
+// This is to prevent from appearing in Doxygen documentation.
+/// \cond
 template< typename Matrix >
 class MatrixWriter< Matrix, TNL::Devices::Host >
 {
 public:
-   typedef typename Matrix::IndexType IndexType;
-   typedef typename Matrix::RealType RealType;
+   using IndexType = typename Matrix::IndexType;
+   using RealType = typename Matrix::RealType;
 
    static void
    writeGnuplot( const TNL::String& fileName, const Matrix& matrix, bool verbose = false );
@@ -145,10 +147,10 @@ public:
 
 protected:
    static void
-   writeEpsHeader( std::ostream& str, const Matrix& matrix, const int elementSize );
+   writeEpsHeader( std::ostream& str, const Matrix& matrix, int elementSize );
 
    static void
-   writeEpsBody( std::ostream& str, const Matrix& matrix, const int elementSize, bool verbose );
+   writeEpsBody( std::ostream& str, const Matrix& matrix, int elementSize, bool verbose );
 };
 /// \endcond
 

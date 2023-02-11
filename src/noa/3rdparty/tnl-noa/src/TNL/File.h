@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -53,8 +53,8 @@ public:
     * \brief Open given file.
     *
     * Opens file with given \e fileName in some \e mode from \ref std::ios_base::openmode.
-    * Note that the file is always opened in binary mode, i.e. \ref std::ios_base::binary
-    * is always added to \e mode.
+    * Note that the file is always opened in binary mode, i.e. \ref std::ios_base::openmode
+    * "std::ios_base::binary" is always added to \e mode.
     *
     * Throws \ref std::ios_base::failure on failure.
     *
@@ -140,6 +140,18 @@ public:
    void
    save( const Type* buffer, std::streamsize elements = 1 );
 
+   /**
+    * \brief Extracts and discards characters from the file.
+    *
+    * Throws \ref std::ios_base::failure on failure.
+    *
+    * \tparam SourceType type of data stored on the file,
+    * \param elements number of elements to be read and ignored.
+    */
+   template< typename SourceType >
+   void
+   ignore( std::streamsize elements = 1 );
+
 protected:
    // implementation for all allocators which allocate data accessible from host
    template< typename Type,
@@ -178,16 +190,6 @@ protected:
    std::fstream file;
    String fileName;
 };
-
-/**
- * \brief Returns true if the file exists and false otherwise.
- *
- * Finds out if the file \e fileName exists.
- * \param fileName Name of the file to check.
- * \return returns true if the file exists and false othervise
- */
-bool
-fileExists( const String& fileName );
 
 /**
  * \brief Serialization of strings

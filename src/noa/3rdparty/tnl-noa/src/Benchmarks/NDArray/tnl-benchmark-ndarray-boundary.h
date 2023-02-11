@@ -87,7 +87,7 @@ void benchmark_1D( Benchmark<>& benchmark, index_type size = 500000000 )
 
    auto f = [&]() {
       a.forBoundary( [=] __cuda_callable__ ( index_type i ) mutable { a_view( i ) = b_view( i ); } );
-      a.forInternal( [=] __cuda_callable__ ( index_type i ) mutable { a_view( i ) = b_view( i ); } );
+      a.forInterior( [=] __cuda_callable__ ( index_type i ) mutable { a_view( i ) = b_view( i ); } );
    };
 
    const double datasetSize = 2 * size * sizeof(value_type) / oneGB;
@@ -114,7 +114,7 @@ void benchmark_2D( Benchmark<>& benchmark, index_type size = 22333 )
 
    auto f = [&]() {
       a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j ) mutable { a_view( i, j ) = b_view( i, j ); } );
-      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j ) mutable { a_view( i, j ) = b_view( i, j ); } );
+      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j ) mutable { a_view( i, j ) = b_view( i, j ); } );
    };
 
    const double datasetSize = 2 * std::pow( size, 2 ) * sizeof(value_type) / oneGB;
@@ -141,7 +141,7 @@ void benchmark_3D( Benchmark<>& benchmark, index_type size = 800 )
 
    auto f = [&]() {
       a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k ) mutable { a_view( i, j, k ) = b_view( i, j, k ); } );
-      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k ) mutable { a_view( i, j, k ) = b_view( i, j, k ); } );
+      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k ) mutable { a_view( i, j, k ) = b_view( i, j, k ); } );
    };
 
    const double datasetSize = 2 * std::pow( size, 3 ) * sizeof(value_type) / oneGB;
@@ -169,7 +169,7 @@ void benchmark_3D( Benchmark<>& benchmark, index_type size = 800 )
 //
 //   auto f = [&]() {
 //      a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l ) mutable { a_view( i, j, k, l ) = b_view( i, j, k, l ); } );
-//      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l ) mutable { a_view( i, j, k, l ) = b_view( i, j, k, l ); } );
+//      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l ) mutable { a_view( i, j, k, l ) = b_view( i, j, k, l ); } );
 //   };
 //
 //   const double datasetSize = 2 * std::pow( size, 4 ) * sizeof(value_type) / oneGB;
@@ -196,7 +196,7 @@ void benchmark_3D( Benchmark<>& benchmark, index_type size = 800 )
 //
 //   auto f = [&]() {
 //      a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m ) mutable { a_view( i, j, k, l, m ) = b_view( i, j, k, l, m ); } );
-//      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m ) mutable { a_view( i, j, k, l, m ) = b_view( i, j, k, l, m ); } );
+//      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m ) mutable { a_view( i, j, k, l, m ) = b_view( i, j, k, l, m ); } );
 //   };
 //
 //   const double datasetSize = 2 * std::pow( size, 5 ) * sizeof(value_type) / oneGB;
@@ -223,7 +223,7 @@ void benchmark_3D( Benchmark<>& benchmark, index_type size = 800 )
 //
 //   auto f = [&]() {
 //      a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m, index_type n ) mutable { a_view( i, j, k, l, m, n ) = b_view( i, j, k, l, m, n ); } );
-//      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m, index_type n ) mutable { a_view( i, j, k, l, m, n ) = b_view( i, j, k, l, m, n ); } );
+//      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m, index_type n ) mutable { a_view( i, j, k, l, m, n ) = b_view( i, j, k, l, m, n ); } );
 //   };
 //
 //   const double datasetSize = 2 * std::pow( size, 6 ) * sizeof(value_type) / oneGB;
@@ -251,7 +251,7 @@ void benchmark_2D_perm( Benchmark<>& benchmark, index_type size = 22333 )
 
    auto f = [&]() {
       a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j ) mutable { a_view( i, j ) = b_view( i, j ); } );
-      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j ) mutable { a_view( i, j ) = b_view( i, j ); } );
+      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j ) mutable { a_view( i, j ) = b_view( i, j ); } );
    };
 
    const double datasetSize = 2 * std::pow( size, 2 ) * sizeof(value_type) / oneGB;
@@ -278,7 +278,7 @@ void benchmark_3D_perm( Benchmark<>& benchmark, index_type size = 800 )
 
    auto f = [&]() {
       a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k ) mutable { a_view( i, j, k ) = b_view( i, j, k ); } );
-      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k ) mutable { a_view( i, j, k ) = b_view( i, j, k ); } );
+      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k ) mutable { a_view( i, j, k ) = b_view( i, j, k ); } );
    };
 
    const double datasetSize = 2 * std::pow( size, 3 ) * sizeof(value_type) / oneGB;
@@ -306,7 +306,7 @@ void benchmark_3D_perm( Benchmark<>& benchmark, index_type size = 800 )
 //
 //   auto f = [&]() {
 //      a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l ) mutable { a_view( i, j, k, l ) = b_view( i, j, k, l ); } );
-//      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l ) mutable { a_view( i, j, k, l ) = b_view( i, j, k, l ); } );
+//      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l ) mutable { a_view( i, j, k, l ) = b_view( i, j, k, l ); } );
 //   };
 //
 //   const double datasetSize = 2 * std::pow( size, 4 ) * sizeof(value_type) / oneGB;
@@ -333,7 +333,7 @@ void benchmark_3D_perm( Benchmark<>& benchmark, index_type size = 800 )
 //
 //   auto f = [&]() {
 //      a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m ) mutable { a_view( i, j, k, l, m ) = b_view( i, j, k, l, m ); } );
-//      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m ) mutable { a_view( i, j, k, l, m ) = b_view( i, j, k, l, m ); } );
+//      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m ) mutable { a_view( i, j, k, l, m ) = b_view( i, j, k, l, m ); } );
 //   };
 //
 //   const double datasetSize = 2 * std::pow( size, 5 ) * sizeof(value_type) / oneGB;
@@ -360,7 +360,7 @@ void benchmark_3D_perm( Benchmark<>& benchmark, index_type size = 800 )
 //
 //   auto f = [&]() {
 //      a.forBoundary( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m, index_type n ) mutable { a_view( i, j, k, l, m, n ) = b_view( i, j, k, l, m, n ); } );
-//      a.forInternal( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m, index_type n ) mutable { a_view( i, j, k, l, m, n ) = b_view( i, j, k, l, m, n ); } );
+//      a.forInterior( [=] __cuda_callable__ ( index_type i, index_type j, index_type k, index_type l, index_type m, index_type n ) mutable { a_view( i, j, k, l, m, n ) = b_view( i, j, k, l, m, n ); } );
 //   };
 //
 //   const double datasetSize = 2 * std::pow( size, 6 ) * sizeof(value_type) / oneGB;
@@ -398,7 +398,7 @@ void setupConfig( Config::ConfigDescription & config )
    config.addEntry< String >( "devices", "Run benchmarks on these devices.", "all" );
    config.addEntryEnum( "all" );
    config.addEntryEnum( "host" );
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    config.addEntryEnum( "cuda" );
    #endif
 
@@ -442,7 +442,7 @@ int main( int argc, char* argv[] )
    const String devices = parameters.getParameter< String >( "devices" );
    if( devices == "all" || devices == "host" )
       run_benchmarks< Devices::Host >( benchmark );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( devices == "all" || devices == "cuda" )
       run_benchmarks< Devices::Cuda >( benchmark );
 #endif

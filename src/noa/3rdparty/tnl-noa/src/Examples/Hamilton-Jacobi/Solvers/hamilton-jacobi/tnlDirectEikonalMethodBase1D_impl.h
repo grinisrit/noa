@@ -11,7 +11,7 @@ initInterface( const MeshFunctionPointer& _input,
 {
   if( std::is_same< Device, Devices::Cuda >::value )
   {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     const MeshType& mesh = _input->getMesh();
     
     const int cudaBlockSize( 16 );
@@ -140,7 +140,7 @@ updateCell( volatile Real sArray[18], int thri, const Real h, const Real v )
     return false;
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template < typename Real, typename Device, typename Index >
 __global__ void CudaInitCaller( const Functions::MeshFunctionView< Meshes::Grid< 1, Real, Device, Index > >& input, 
         Functions::MeshFunctionView< Meshes::Grid< 1, Real, Device, Index > >& output,

@@ -18,4 +18,4 @@
 #include <noa/utils/common.hh>
 
 // Local headers
-#include "common.hh"
+#include "utils/common.hh"

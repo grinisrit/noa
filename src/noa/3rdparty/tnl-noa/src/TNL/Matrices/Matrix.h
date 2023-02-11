@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -229,21 +229,10 @@ public:
    virtual void
    print( std::ostream& str ) const;
 
-   // TODO: method for symmetric matrices, should not be in general Matrix interface
-   //[[deprecated]]
-   //__cuda_callable__
-   // const IndexType& getNumberOfColors() const;
-
-   // TODO: method for symmetric matrices, should not be in general Matrix interface
-   //[[deprecated]]
-   // void computeColorsVector(Containers::Vector<Index, Device, Index> &colorsVector);
-
 protected:
    IndexType rows, columns;
 
-   // TODO: remove
-   // IndexType numberOfColors;
-
+   //! \brief Array containing the allocated matrix elements.
    ValuesType values;
 };
 
@@ -257,7 +246,7 @@ protected:
  * \param str is a output stream.
  * \param matrix is the matrix to be printed.
  *
- * \return a reference on the output stream \ref std::ostream&.
+ * \return a reference to the output stream \ref std::ostream.
  */
 template< typename Real, typename Device, typename Index >
 std::ostream&

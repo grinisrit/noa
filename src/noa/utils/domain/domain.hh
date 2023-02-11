@@ -188,7 +188,8 @@ struct Domain {
         /// Only supports loading of the cell layers (layers for dimension reported by getMeshDimension()).
         /// Layers are loaded in order in which they were specified in \p layersRequest.
         void loadFrom(const Path& filename, const LayersRequest& layersRequest = {}) {
-                assert(("Mesh data is not empty, cannot load!", isClean()));
+		if (!isClean())
+			throw std::runtime_error("Mesh data is not empty, cannot load!");
 
                 if (!std::filesystem::exists(filename))
                         throw std::runtime_error("Mesh file not found: " + filename.string() + "!");
@@ -196,50 +197,51 @@ struct Domain {
                 auto loader = [&] (auto& reader, auto&& loadedMesh) {
                         using LoadedTypeRef = decltype(loadedMesh);
                         using LoadedType = typename std::remove_reference<LoadedTypeRef>::type;
+
                         if constexpr (std::is_same_v<MeshType, LoadedType>) {
                                 mesh = loadedMesh;
                                 updateLayerSizes();
                         } else throw std::runtime_error("Read mesh type differs from expected!");
 
                         // Load cell layers
-                        for (auto& lp : layersRequest) {
-                                const auto data = reader.readCellData(lp.first);
+                        for (auto& [ name, index ] : layersRequest) {
+                                const auto data = reader.readCellData(name);
 
                                 switch (data.index()) {
                                         case 0: /* int8_t */
-                                                load_layer<std::int8_t>(lp.second, data);
+                                                load_layer<std::int8_t>(index, data);
                                                 break;
                                         case 1: /* uint8_t */
-                                                load_layer<std::uint8_t>(lp.second, data);
+                                                load_layer<std::uint8_t>(index, data);
                                                 break;
                                         case 2: /* int16_t */
-                                                load_layer<std::int16_t>(lp.second, data);
+                                                load_layer<std::int16_t>(index, data);
                                                 break;
                                         case 3: /* uint16_t */
-                                                load_layer<std::uint16_t>(lp.second, data);
+                                                load_layer<std::uint16_t>(index, data);
                                                 break;
                                         case 4: /* int32_t */
-                                                load_layer<std::int32_t>(lp.second, data);
+                                                load_layer<std::int32_t>(index, data);
                                                 break;
                                         case 5: /* uint32_t */
-                                                load_layer<std::uint32_t>(lp.second, data);
+                                                load_layer<std::uint32_t>(index, data);
                                                 break;
                                         case 6: /* int64_t */
-                                                load_layer<std::int64_t>(lp.second, data);
+                                                load_layer<std::int64_t>(index, data);
                                                 break;
                                         case 7: /* uint64_t */
-                                                load_layer<std::uint64_t>(lp.second, data);
+                                                load_layer<std::uint64_t>(index, data);
                                                 break;
                                         case 8: /* float */
-                                                load_layer<float>(lp.second, data);
+                                                load_layer<float>(index, data);
                                                 break;
                                         case 9: /* double */
-                                                load_layer<double>(lp.second, data);
+                                                load_layer<double>(index, data);
                                                 break;
                                 }
 
-                                this->getLayers(this->getMeshDimension()).getLayer(lp.second).alias = lp.first;
-                                this->getLayers(this->getMeshDimension()).getLayer(lp.second).exportHint = true;
+                                this->getLayers(this->getMeshDimension()).getLayer(index).alias = name;
+                                this->getLayers(this->getMeshDimension()).getLayer(index).exportHint = true;
                         }
 
                         return true;
@@ -258,7 +260,12 @@ struct Domain {
                 if (!file.is_open())
                         throw std::runtime_error("Cannot open file " + filename.string() + "!");
 
-                MeshWriter writer(file);
+                writeStream(file);
+        }
+
+        /// Write domain to an ostream
+        void writeStream(std::ostream& stream) {
+                MeshWriter writer(stream);
                 writer.template writeEntities<getMeshDimension()>(mesh.value());
 
                 // Write layers
@@ -279,29 +286,35 @@ struct Domain {
         // Declare as friends since they're supposed to modify mesh
         template <typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
         friend void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
-                                const int& Nx,
-                                const int& Ny,
-                                const float& dx,
-                                const float& dy);
+                                std::size_t Nx,
+                                std::size_t Ny,
+                                float dx,
+                                float dy,
+                                float offsetX,
+                                float offsetY);
 }; // <-- struct Domain
 
 /// \brief Generates a uniform 2D grid mesh for the domain. Implementation depends on \p CellTopology2
 template <typename CellTopology2, typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
 void generate2DGrid(Domain<CellTopology2, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
-                        const int& Nx,
-                        const int& Ny,
-                        const float& dx,
-                        const float& dy) {
+                        std::size_t Nx,
+                        std::size_t Ny,
+                        float dx,
+                        float dy,
+                        float offsetX = 0,
+                        float offsetY = 0) {
         throw std::runtime_error("generate2DGrid is not implemented for this topology!");
 }
 
 /// \brief Specialization for Triangle topology
 template <typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
 void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
-                        const int& Nx,
-                        const int& Ny,
-                        const float& dx,
-                        const float& dy) {
+                        std::size_t Nx,
+                        std::size_t Ny,
+                        float dx,
+                        float dy,
+                        float offsetX = 0,
+                        float offsetY = 0) {
         assert(("Mesh data is not empty, cannot create grid!", domain.isClean()));
 
         using CellTopology = TNL::Meshes::Topologies::Triangle;
@@ -322,9 +335,9 @@ void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, Gl
                 return ix + (Nx + 1) * iy;
         };
         const auto fillPoints = [&] (const int& ix, const int& iy) {
-                builder.setPoint(pointId(ix, iy), PointType(ix * dx, iy * dy));
+                builder.setPoint(pointId(ix, iy), PointType(ix * dx + offsetX, iy * dy + offsetY));
         };
-        TNL::Algorithms::ParallelFor2D<TNL::Devices::Host>::exec(0, 0, Nx + 1, Ny + 1, fillPoints);
+        TNL::Algorithms::ParallelFor2D<TNL::Devices::Host>::exec(std::size_t{0}, std::size_t{0}, Nx + 1, Ny + 1, fillPoints);
 
         const auto fillElems = [&] (const int& ix, const int& iy, const int& u) {
                 const auto cell = 2 * (ix + Nx * iy) + u;
@@ -343,7 +356,7 @@ void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, Gl
                                 break;
                 }
         };
-        TNL::Algorithms::ParallelFor3D<TNL::Devices::Host>::exec(0, 0, 0, Nx, Ny, 2, fillElems);
+        TNL::Algorithms::ParallelFor3D<TNL::Devices::Host>::exec(std::size_t{0}, std::size_t{0}, std::size_t{0}, Nx, Ny, std::size_t{2}, fillElems);
 
         builder.build(domain.mesh.value());
 

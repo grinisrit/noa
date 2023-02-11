@@ -282,18 +282,6 @@ vectorProduct( const InVector& inVector,
    }
 }
 
-template< typename Matrix >
-   template< typename Vector1, typename Vector2 >
-bool
-DistributedMatrix< Matrix >::
-performSORIteration( const Vector1& b,
-                     const IndexType row,
-                     Vector2& x,
-                     const RealType& omega ) const
-{
-   return getLocalMatrix().performSORIteration( b, row, x, omega );
-}
-
 } // namespace Legacy
 } // namespace Matrices
 } // namespace TNL

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -7,13 +7,14 @@
 // Implemented by: Xuan Thang Nguyen
 
 #pragma once
+
 #include <noa/3rdparty/tnl-noa/src/TNL/Math.h>
 
 namespace noa::TNL {
 namespace Algorithms {
 namespace Sorting {
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 // Inline PTX call to return index of highest non-zero bit in a word
 static __device__
@@ -26,15 +27,15 @@ __btflo( unsigned int word )
 }
 
 __device__
-int
+inline int
 closestPow2_ptx( int bitonicLen )
 {
    return 1 << ( __btflo( (unsigned) bitonicLen - 1U ) + 1 );
 }
+#endif
 
-__host__
-__device__
-int
+__cuda_callable__
+inline int
 closestPow2( int x )
 {
    if( x == 0 )
@@ -56,7 +57,6 @@ cmpSwap( Value& a, Value& b, bool ascending, const CMP& Cmp )
       TNL::swap( a, b );
 }
 
-#endif
 }  // namespace Sorting
 }  // namespace Algorithms
 }  // namespace noa::TNL

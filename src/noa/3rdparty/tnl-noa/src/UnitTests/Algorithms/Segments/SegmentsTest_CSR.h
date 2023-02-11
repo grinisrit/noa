@@ -19,7 +19,7 @@ using CSRSegmentsTypes = ::testing::Types
 <
     TNL::Algorithms::Segments::CSR< TNL::Devices::Host, int    >,
     TNL::Algorithms::Segments::CSR< TNL::Devices::Host, long   >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,TNL::Algorithms::Segments::CSR< TNL::Devices::Cuda, int    >,
     TNL::Algorithms::Segments::CSR< TNL::Devices::Cuda, long   >
 #endif

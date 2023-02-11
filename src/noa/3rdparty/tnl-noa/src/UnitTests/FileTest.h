@@ -18,11 +18,13 @@ TEST( FileTest, WriteAndRead )
    File file;
    ASSERT_NO_THROW( file.open( String( TEST_FILE_NAME ), std::ios_base::out ) );
 
-   int intData( 5 );
+   int intData = 5;
    double doubleData[ 3 ] = { 1.0, 2.0, 3.0 };
+   const int ignoredValue = 42;
    const double constDoubleData = 3.14;
    ASSERT_NO_THROW( file.save( &intData ) );
    ASSERT_NO_THROW( file.save( doubleData, 3 ) );
+   ASSERT_NO_THROW( file.save( &ignoredValue ) );
    ASSERT_NO_THROW( file.save( &constDoubleData ) );
    ASSERT_NO_THROW( file.close() );
 
@@ -32,7 +34,9 @@ TEST( FileTest, WriteAndRead )
    double newConstDoubleData;
    ASSERT_NO_THROW( file.load( &newIntData, 1 ) );
    ASSERT_NO_THROW( file.load( newDoubleData, 3 ) );
+   ASSERT_NO_THROW( file.ignore< decltype(ignoredValue) >( 1 ) );
    ASSERT_NO_THROW( file.load( &newConstDoubleData, 1 ) );
+   ASSERT_NO_THROW( file.close() );
 
    EXPECT_EQ( newIntData, intData );
    for( int i = 0; i < 3; i ++ )
@@ -40,7 +44,7 @@ TEST( FileTest, WriteAndRead )
    EXPECT_EQ( newConstDoubleData, constDoubleData );
 
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
-};
+}
 
 TEST( FileTest, WriteAndReadWithConversion )
 {
@@ -73,7 +77,7 @@ TEST( FileTest, WriteAndReadWithConversion )
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( FileTest, WriteAndReadCUDA )
 {
    int intData( 5 );
@@ -117,9 +121,12 @@ TEST( FileTest, WriteAndReadCUDA )
    cudaMalloc( ( void** ) &newCudaIntData, sizeof( int ) );
    cudaMalloc( ( void** ) &newCudaFloatData, 3 * sizeof( float ) );
    cudaMalloc( ( void** ) &newCudaDoubleData, sizeof( double ) );
+
    file.load< int, int, Allocators::Cuda<int> >( newCudaIntData, 1 );
    file.load< float, float, Allocators::Cuda<float> >( newCudaFloatData, 3 );
    file.load< double, double, Allocators::Cuda<double> >( newCudaDoubleData, 1 );
+   ASSERT_NO_THROW( file.close() );
+
    cudaMemcpy( &newIntData,
                newCudaIntData,
                sizeof( int ),

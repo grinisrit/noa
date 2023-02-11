@@ -4,15 +4,15 @@ set( tnl_heat_equation_SOURCES
      tnl-heat-equation.cu
      tnl-heat-equation-eoc.cu )
 
-IF( BUILD_CUDA )
+IF( TNL_BUILD_CUDA )
    CUDA_ADD_EXECUTABLE(tnl-heat-equation tnl-heat-equation.cu)
    CUDA_ADD_EXECUTABLE(tnl-heat-equation-eoc-test tnl-heat-equation-eoc.cu)
    target_link_libraries (tnl-heat-equation ${CUSPARSE_LIBRARY} )
    target_link_libraries (tnl-heat-equation-eoc-test ${CUSPARSE_LIBRARY} )
-ELSE(  BUILD_CUDA )
+ELSE()
    ADD_EXECUTABLE(tnl-heat-equation tnl-heat-equation.cpp)
    ADD_EXECUTABLE(tnl-heat-equation-eoc-test tnl-heat-equation-eoc.cpp)
-ENDIF( BUILD_CUDA )
+ENDIF()
 
 
 INSTALL( TARGETS tnl-heat-equation

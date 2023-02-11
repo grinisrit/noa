@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -75,7 +75,7 @@ PGMImage< Index >::read( const RegionOfInterest< Index > roi,
 {
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
    const GridType& grid = function.getMesh();
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    Index i, j;
    for( i = 0; i < this->height; i++ )
@@ -139,7 +139,7 @@ bool
 PGMImage< Index >::write( const Meshes::Grid< 2, Real, Device, Index >& grid, Vector& vector )
 {
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    Index i, j;
    for( i = 0; i < grid.getDimensions().y(); i++ ) {
@@ -173,7 +173,7 @@ PGMImage< Index >::write( const Functions::MeshFunction< Meshes::Grid< 2, MeshRe
 {
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
    const GridType& grid = function.getMesh();
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    Index i, j;
    for( i = 0; i < grid.getDimensions().y(); i++ ) {

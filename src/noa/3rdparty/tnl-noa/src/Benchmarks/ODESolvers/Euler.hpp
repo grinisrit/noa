@@ -5,7 +5,7 @@
 namespace TNL {
 namespace Benchmarks {
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename RealType, typename Index >
 __global__ void updateUEuler( const Index size,
                               const RealType tau,
@@ -155,12 +155,12 @@ void Euler< Problem, SolverMonitor >::computeNewTimeLevel( DofVectorPointer& u,
    }
    if( std::is_same< DeviceType, Devices::Cuda >::value )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       dim3 cudaBlockSize( 512 );
       const IndexType cudaBlocks = Cuda::getNumberOfBlocks( size, cudaBlockSize.x );
-      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks );
-      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridSize() ) );
-      const IndexType threadsPerGrid = Cuda::getMaxGridSize() * cudaBlockSize.x;
+      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks, Cuda::getMaxGridXSize() );
+      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridXSize() ) );
+      const IndexType threadsPerGrid = Cuda::getMaxGridXSize() * cudaBlockSize.x;
 
       localResidue = 0.0;
       for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx ++ )
@@ -187,7 +187,7 @@ void Euler< Problem, SolverMonitor >::computeNewTimeLevel( DofVectorPointer& u,
    //std::cerr << "Local residue = " << localResidue << " - globalResidue = " << currentResidue << std::endl;
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename RealType, typename IndexType >
 __global__ void updateUEuler( const IndexType size,
                               const RealType tau,

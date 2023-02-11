@@ -31,7 +31,7 @@ class LinearFunction<Real,1> : public Functions::Domain< 1, Functions::MeshDomai
    public:
       typedef Real RealType;
       LinearFunction( )
-      {};
+      {}
 
       template< typename EntityType >
       __cuda_callable__ RealType operator()( const EntityType& meshEntity,
@@ -51,7 +51,7 @@ class ConstFunction<Real,1> : public Functions::Domain< 1, Functions::MeshDomain
           Real Number;
           
       ConstFunction( )
-      {};
+      {}
 
       template< typename EntityType >
       __cuda_callable__ RealType operator()( const EntityType& meshEntity,
@@ -73,7 +73,7 @@ class Printer< GridType,DofType,1>
         sout<< dof[i] << " ";
     
     std::cout << rank << ":   " << sout.str() << std::endl;
-    };
+    }
 };
 
 //=================================2D======================================================
@@ -84,7 +84,7 @@ class LinearFunction<Real,2> : public Functions::Domain< 2, Functions::MeshDomai
    public:
       typedef Real RealType;
       LinearFunction( )
-      {};
+      {}
 
       template< typename EntityType >
       __cuda_callable__ RealType operator()( const EntityType& meshEntity,
@@ -103,7 +103,7 @@ class ConstFunction<Real,2> : public Functions::Domain< 2, Functions::MeshDomain
           
           Real Number;
       ConstFunction( )
-      {};
+      {}
           
       template< typename EntityType >
       __cuda_callable__ RealType operator()( const EntityType& meshEntity,
@@ -132,7 +132,7 @@ class Printer< GridType,DofType,2>
         sout<<std::endl;
     }
     std::cout << sout.str() << std::endl<< std::endl;
-    };
+    }
 };
 
 //============================3D============================================================
@@ -142,7 +142,7 @@ class LinearFunction<Real,3> : public Functions::Domain< 3, Functions::MeshDomai
    public:
       typedef Real RealType;
       LinearFunction( )
-      {};
+      {}
 
       template< typename EntityType >
       __cuda_callable__ RealType operator()( const EntityType& meshEntity,
@@ -161,7 +161,7 @@ class ConstFunction<Real,3> : public Functions::Domain< 3, Functions::MeshDomain
           
           Real Number;
       ConstFunction( )
-      {};
+      {}
           
       template< typename EntityType >
       __cuda_callable__ RealType operator()( const EntityType& meshEntity,
@@ -200,5 +200,5 @@ class Printer< GridType,DofType,3>
             }
       }
       std::cout << sout.str()<< std::endl<<std::endl;
-    };
+    }
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/CSR.h>
+#include "CSR.h"
 #include <TNL/Containers/VectorView.h>
 #include <TNL/Algorithms/scan.h>
 #include <TNL/Math.h>
@@ -37,7 +37,7 @@ CSR< Real, Device, Index, KernelType >::CSR()
   cudaWarpSize( 32 ), //Cuda::getWarpSize() )
   hybridModeSplit( 4 )
 {
-};
+}
 
 template< typename Real,
           typename Device,
@@ -622,44 +622,6 @@ void CSR< Real, Device, Index, KernelType >::getTransposition( const CSR< Real2,
    // TODO: implement
 }
 
-template< typename Real,
-          typename Device,
-          typename Index,
-          CSRKernel KernelType >
-   template< typename Vector1, typename Vector2 >
-bool CSR< Real, Device, Index, KernelType >::performSORIteration( const Vector1& b,
-                                                      const IndexType row,
-                                                      Vector2& x,
-                                                      const RealType& omega ) const
-{
-   TNL_ASSERT( row >=0 && row < this->getRows(),
-              std::cerr << "row = " << row
-                   << " this->getRows() = " << this->getRows() << std::endl );
-
-   RealType diagonalValue( 0.0 );
-   RealType sum( 0.0 );
-
-   IndexType elementPtr = this->rowPointers[ row ];
-   const IndexType rowEnd = this->rowPointers[ row + 1 ];
-   IndexType column;
-   while( elementPtr < rowEnd && ( column = this->columnIndexes[ elementPtr ] ) != this->getPaddingIndex() )
-   {
-      if( column == row )
-         diagonalValue = this->values[ elementPtr ];
-      else
-         sum += this->values[ elementPtr ] * x[ column ];
-      elementPtr++;
-   }
-   if( diagonalValue == ( Real ) 0.0 )
-   {
-      std::cerr << "There is zero on the diagonal in " << row << "-th row of the matrix. I cannot perform SOR iteration." << std::endl;
-      return false;
-   }
-   x[ row ] = ( 1.0 - omega ) * x[ row ] + omega / diagonalValue * ( b[ row ] - sum );
-   return true;
-}
-
-
 // copy assignment
 template< typename Real,
           typename Device,
@@ -824,7 +786,7 @@ Index CSR< Real, Device, Index, KernelType >::getHybridModeSplit() const
    return this->hybridModeSplit;
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 
 template< typename Real,
@@ -937,7 +899,7 @@ void SpMVCSRLight( const Real *inVector,
                    const Index rows,
                    unsigned *rowCnt) {
    Real sum;
-   Index row, i, rowStart, rowEnd;
+   Index row = 0, i, rowStart, rowEnd;
    const Index laneId = threadIdx.x % groupSize; /*lane index in the vector*/
    const Index vectorId = threadIdx.x / groupSize; /*vector index in the thread block*/
    const Index warpLaneId = threadIdx.x & 31;	/*lane index in the warp*/
@@ -1013,7 +975,7 @@ void SpMVCSRLight2( const Real *inVector,
                    const Index rows,
                    unsigned *rowCnt) {
    Real sum;
-   Index i, rowStart, rowEnd, row;
+   Index i, rowStart, rowEnd, row = 0;
    const Index laneId = threadIdx.x % groupSize; /*lane index in the vector*/
    const Index warpLaneId = threadIdx.x & 31;	/*lane index in the warp*/
    const Index warpVectorId = warpLaneId / groupSize;	/*vector index in the warp*/
@@ -1082,7 +1044,7 @@ void SpMVCSRLight3( const Real *inVector,
                    const Index rows,
                    unsigned *rowCnt) {
    Real sum;
-   Index i, rowEnd, row;
+   Index i, rowEnd, row = 0;
    const Index laneId = threadIdx.x % groupSize; /*lane index in the vector*/
    const Index warpLaneId = threadIdx.x & 31;	/*lane index in the warp*/
    const Index warpVectorId = warpLaneId / groupSize;	/*vector index in the warp*/
@@ -1967,7 +1929,7 @@ class CSRDeviceDependentCode< Devices::Cuda >
                                  const InVector& inVector,
                                  OutVector& outVector )
       {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #ifdef HAVE_CUSPARSE
          tnlCusparseCSRWrapper< Real, Index >::vectorProduct( matrix.getRows(),
                                                               matrix.getColumns(),
@@ -2016,7 +1978,7 @@ class CSRDeviceDependentCode< Devices::Cuda >
                );
                break;
          }
-#endif /* HAVE_CUDA */
+#endif /* __CUDACC__ */
 #endif
       }
 };

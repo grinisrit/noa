@@ -12,19 +12,21 @@ namespace noa::test::mhfe {
 struct CellLayers {
 	enum : std::size_t {
 		/// Computed solution (current step)
-		P		= 0,
+		P		    = 0,
 		/// Computed solution (previous step)
 		P_PREV		= 1,
 		/// `a` coefficient
-		A		= 2,
+		A		    = 2,
 		/// `c` coefficient
-		C		= 3,
+		C		    = 3,
 		/// Cell measure
 		MEASURE		= 4,
 		/// Precise solution
 		PRECISE		= 5,
 		/// `l` coefficient
-		L		= 6,
+		L		    = 6,
+        /// Scalar function sensitivity with respect to `a`
+        CHAIN       = 7,
 		/// B<sup>-1</sup> matrix coefficients.
 		/// It's an NxN matrix, where N is the number of edges per cell
 		/// needing NxN layers to store.

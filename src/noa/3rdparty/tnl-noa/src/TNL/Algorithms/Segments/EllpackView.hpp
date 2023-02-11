@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,7 +15,6 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace Segments {
 
-#ifdef HAVE_CUDA
 template< typename Index, typename Fetch, typename Reduction, typename ResultKeeper, typename Real >
 __global__
 void
@@ -27,6 +26,7 @@ EllpackCudaReductionKernelFull( Index first,
                                 const Real zero,
                                 Index segmentSize )
 {
+#ifdef __CUDACC__
    const int warpSize = 32;
    const int gridID = 0;
    const Index segmentIdx =
@@ -54,6 +54,7 @@ EllpackCudaReductionKernelFull( Index first,
    /* Write result */
    if( laneID == 0 )
       keep( segmentIdx, result );
+#endif
 }
 
 template< typename Index, typename Fetch, typename Reduction, typename ResultKeeper, typename Real >
@@ -67,6 +68,7 @@ EllpackCudaReductionKernelCompact( Index first,
                                    const Real zero,
                                    Index segmentSize )
 {
+#ifdef __CUDACC__
    const int warpSize = 32;
    const int gridID = 0;
    const Index segmentIdx =
@@ -93,69 +95,8 @@ EllpackCudaReductionKernelCompact( Index first,
    /* Write result */
    if( laneID == 0 )
       keep( segmentIdx, result );
+#endif
 }
-#endif
-
-template< typename Index,
-          typename Fetch,
-          typename Reduction,
-          typename ResultKeeper,
-          typename Real,
-          bool FullFetch = detail::CheckFetchLambda< Index, Fetch >::hasAllParameters() >
-struct EllpackCudaReductionDispatcher
-{
-   static void
-   exec( Index first,
-         Index last,
-         Fetch& fetch,
-         const Reduction& reduction,
-         ResultKeeper& keeper,
-         const Real& zero,
-         Index segmentSize )
-   {
-#ifdef HAVE_CUDA
-      if( last <= first )
-         return;
-      const Index segmentsCount = last - first;
-      const Index threadsCount = segmentsCount * 32;
-      const Index blocksCount = Cuda::getNumberOfBlocks( threadsCount, 256 );
-      dim3 blockSize( 256 );
-      dim3 gridSize( blocksCount );
-      EllpackCudaReductionKernelFull<<< gridSize,
-         blockSize >>>( first, last, fetch, reduction, keeper, zero, segmentSize );
-      cudaStreamSynchronize( 0 );
-      TNL_CHECK_CUDA_DEVICE;
-#endif
-   }
-};
-
-template< typename Index, typename Fetch, typename Reduction, typename ResultKeeper, typename Real >
-struct EllpackCudaReductionDispatcher< Index, Fetch, Reduction, ResultKeeper, Real, false >
-{
-   static void
-   exec( Index first,
-         Index last,
-         Fetch& fetch,
-         const Reduction& reduction,
-         ResultKeeper& keeper,
-         const Real& zero,
-         Index segmentSize )
-   {
-#ifdef HAVE_CUDA
-      if( last <= first )
-         return;
-      const Index segmentsCount = last - first;
-      const Index threadsCount = segmentsCount * 32;
-      const Index blocksCount = Cuda::getNumberOfBlocks( threadsCount, 256 );
-      dim3 blockSize( 256 );
-      dim3 gridSize( blocksCount );
-      EllpackCudaReductionKernelCompact<<< gridSize,
-         blockSize >>>( first, last, fetch, reduction, keeper, zero, segmentSize );
-      cudaStreamSynchronize( 0 );
-      TNL_CHECK_CUDA_DEVICE;
-#endif
-   }
-};
 
 template< typename Device, typename Index, ElementsOrganization Organization, int Alignment >
 __cuda_callable__
@@ -197,15 +138,15 @@ __cuda_callable__
 typename EllpackView< Device, Index, Organization, Alignment >::ViewType
 EllpackView< Device, Index, Organization, Alignment >::getView()
 {
-   return ViewType( segmentsCount, segmentSize, alignedSize );
+   return { segmentsCount, segmentSize, alignedSize };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization, int Alignment >
 __cuda_callable__
 auto
-EllpackView< Device, Index, Organization, Alignment >::getConstView() const -> const ConstViewType
+EllpackView< Device, Index, Organization, Alignment >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( segmentsCount, segmentSize, alignedSize );
+   return { segmentsCount, segmentSize, alignedSize };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization, int Alignment >
@@ -266,7 +207,7 @@ EllpackView< Device, Index, Organization, Alignment >::getSegmentView( const Ind
 template< typename Device, typename Index, ElementsOrganization Organization, int Alignment >
 template< typename Function >
 void
-EllpackView< Device, Index, Organization, Alignment >::forElements( IndexType first, IndexType last, Function&& f ) const
+EllpackView< Device, Index, Organization, Alignment >::forElements( IndexType begin, IndexType end, Function&& f ) const
 {
    if( Organization == RowMajorOrder ) {
       const IndexType segmentSize = this->segmentSize;
@@ -278,7 +219,7 @@ EllpackView< Device, Index, Organization, Alignment >::forElements( IndexType fi
          for( IndexType globalIdx = begin; globalIdx < end; globalIdx++ )
             f( segmentIdx, localIdx++, globalIdx );
       };
-      Algorithms::ParallelFor< Device >::exec( first, last, l );
+      Algorithms::ParallelFor< Device >::exec( begin, end, l );
    }
    else {
       const IndexType storageSize = this->getStorageSize();
@@ -291,7 +232,7 @@ EllpackView< Device, Index, Organization, Alignment >::forElements( IndexType fi
          for( IndexType globalIdx = begin; globalIdx < end; globalIdx += alignedSize )
             f( segmentIdx, localIdx++, globalIdx );
       };
-      Algorithms::ParallelFor< Device >::exec( first, last, l );
+      Algorithms::ParallelFor< Device >::exec( begin, end, l );
    }
 }
 
@@ -337,10 +278,27 @@ EllpackView< Device, Index, Organization, Alignment >::reduceSegments( IndexType
 {
    // using RealType = decltype( fetch( IndexType(), IndexType(), IndexType(), std::declval< bool& >() ) );
    using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
-   if( Organization == RowMajorOrder ) {
-      if( std::is_same< Device, Devices::Cuda >::value )
-         EllpackCudaReductionDispatcher< IndexType, Fetch, Reduction, ResultKeeper, Real >::exec(
-            first, last, fetch, reduction, keeper, zero, segmentSize );
+   if constexpr( Organization == RowMajorOrder ) {
+      if constexpr( std::is_same< Device, Devices::Cuda >::value ) {
+         if( last <= first )
+            return;
+         const Index segmentsCount = last - first;
+         const Index threadsCount = segmentsCount * 32;
+         const Index blocksCount = Cuda::getNumberOfBlocks( threadsCount, 256 );
+         Devices::Cuda::LaunchConfiguration launch_config;
+         launch_config.blockSize.x = 256;
+         launch_config.gridSize.x = blocksCount;
+
+         constexpr bool FullFetch = detail::CheckFetchLambda< IndexType, Fetch >::hasAllParameters();
+         if constexpr( FullFetch ) {
+            constexpr auto kernel = EllpackCudaReductionKernelFull< IndexType, Fetch, Reduction, ResultKeeper, RealType >;
+            Cuda::launchKernelSync( kernel, launch_config, first, last, fetch, reduction, keeper, zero, segmentSize );
+         }
+         else {
+            constexpr auto kernel = EllpackCudaReductionKernelCompact< IndexType, Fetch, Reduction, ResultKeeper, RealType >;
+            Cuda::launchKernelSync( kernel, launch_config, first, last, fetch, reduction, keeper, zero, segmentSize );
+         }
+      }
       else {
          const IndexType segmentSize = this->segmentSize;
          auto l = [ = ] __cuda_callable__( const IndexType segmentIdx ) mutable

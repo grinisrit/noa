@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,7 +17,6 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace Segments {
 
-#ifdef HAVE_CUDA
 template< typename Offsets,
           typename Index,
           typename Fetch,
@@ -37,10 +36,11 @@ reduceSegmentsCSRKernelVector( int gridIdx,
                                const Real zero,
                                Args... args )
 {
+#ifdef __CUDACC__
    /***
     * We map one warp to each segment
     */
-   const Index segmentIdx = TNL::Cuda::getGlobalThreadIdx( gridIdx ) / TNL::Cuda::getWarpSize() + first;
+   const Index segmentIdx = TNL::Cuda::getGlobalThreadIdx_x( gridIdx ) / TNL::Cuda::getWarpSize() + first;
    if( segmentIdx >= last )
       return;
 
@@ -68,8 +68,8 @@ reduceSegmentsCSRKernelVector( int gridIdx,
 
    if( laneIdx == 0 )
       keep( segmentIdx, aux );
-}
 #endif
+}
 
 template< typename Index, typename Device >
 template< typename Offsets >
@@ -83,6 +83,7 @@ CSRVectorKernel< Index, Device >::reset()
 {}
 
 template< typename Index, typename Device >
+__cuda_callable__
 auto
 CSRVectorKernel< Index, Device >::getView() -> ViewType
 {
@@ -90,11 +91,12 @@ CSRVectorKernel< Index, Device >::getView() -> ViewType
 }
 
 template< typename Index, typename Device >
+__cuda_callable__
 auto
 CSRVectorKernel< Index, Device >::getConstView() const -> ConstViewType
 {
    return *this;
-};
+}
 
 template< typename Index, typename Device >
 TNL::String
@@ -115,25 +117,23 @@ CSRVectorKernel< Index, Device >::reduceSegments( const OffsetsView& offsets,
                                                   const Real& zero,
                                                   Args... args )
 {
-#ifdef HAVE_CUDA
    if( last <= first )
       return;
 
    const Index warpsCount = last - first;
-   const size_t threadsCount = warpsCount * TNL::Cuda::getWarpSize();
-   dim3 blocksCount, gridsCount, blockSize( 256 );
-   TNL::Cuda::setupThreads( blockSize, blocksCount, gridsCount, threadsCount );
-   dim3 gridIdx;
-   for( gridIdx.x = 0; gridIdx.x < gridsCount.x; gridIdx.x++ ) {
-      dim3 gridSize;
-      TNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, gridSize );
-      reduceSegmentsCSRKernelVector< OffsetsView, IndexType, Fetch, Reduction, ResultKeeper, Real, Args... > <<<
-         gridSize,
-         blockSize >>>( gridIdx.x, offsets, first, last, fetch, reduction, keeper, zero, args... );
+   const std::size_t threadsCount = warpsCount * TNL::Cuda::getWarpSize();
+   Devices::Cuda::LaunchConfiguration launch_config;
+   launch_config.blockSize.x = 256;
+   dim3 blocksCount, gridsCount;
+   TNL::Cuda::setupThreads( launch_config.blockSize, blocksCount, gridsCount, threadsCount );
+   for( unsigned int gridIdx = 0; gridIdx < gridsCount.x; gridIdx++ ) {
+      TNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, launch_config.gridSize );
+      constexpr auto kernel =
+         reduceSegmentsCSRKernelVector< OffsetsView, IndexType, Fetch, Reduction, ResultKeeper, Real, Args... >;
+      Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero, args... );
    }
-   cudaStreamSynchronize( 0 );
+   cudaStreamSynchronize( launch_config.stream );
    TNL_CHECK_CUDA_DEVICE;
-#endif
 }
 
 }  // namespace Segments

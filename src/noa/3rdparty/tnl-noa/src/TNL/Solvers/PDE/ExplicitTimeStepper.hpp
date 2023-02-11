@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -12,10 +12,12 @@ namespace noa::TNL {
 namespace Solvers {
 namespace PDE {
 
+/*
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 void
 ExplicitTimeStepper< DofVector, OdeSolver >::configSetup( Config::ConfigDescription& config, const String& prefix )
 {}
+*/
 
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 bool
@@ -35,6 +37,7 @@ ExplicitTimeStepper< DofVector, OdeSolver >::init()
    return true;
 }
 
+/*
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 void
 ExplicitTimeStepper< DofVector, OdeSolver >::setSolver(
@@ -42,6 +45,7 @@ ExplicitTimeStepper< DofVector, OdeSolver >::setSolver(
 {
    this->odeSolver = &odeSolver;
 };
+*/
 
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 void
@@ -52,6 +56,7 @@ ExplicitTimeStepper< DofVector, OdeSolver >::setSolverMonitor( SolverMonitorType
       this->odeSolver->setSolverMonitor( solverMonitor );
 }
 
+/*
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 bool
 ExplicitTimeStepper< DofVector, OdeSolver >::setTimeStep( const RealType& timeStep )
@@ -63,6 +68,7 @@ ExplicitTimeStepper< DofVector, OdeSolver >::setTimeStep( const RealType& timeSt
    this->timeStep = timeStep;
    return true;
 };
+*/
 
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 bool
@@ -132,6 +138,7 @@ ExplicitTimeStepper< DofVector, OdeSolver >::applyBoundaryConditions( const Real
    this->problem->applyBoundaryConditions( time, u );
 }
 
+/*
 template< typename DofVector, template< typename DofVector_, typename SolverMonitor > class OdeSolver >
 bool
 ExplicitTimeStepper< DofVector, OdeSolver >::writeEpilog( Logger& logger ) const
@@ -147,6 +154,7 @@ ExplicitTimeStepper< DofVector, OdeSolver >::writeEpilog( Logger& logger ) const
    this->postIterateTimer.writeLog( logger, 1 );
    return true;
 }
+*/
 
 }  // namespace PDE
 }  // namespace Solvers

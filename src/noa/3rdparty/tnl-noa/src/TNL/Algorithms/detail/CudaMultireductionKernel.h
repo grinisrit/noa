@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -12,6 +12,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Math.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/DeviceInfo.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/KernelLaunch.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Cuda/LaunchHelpers.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/SharedMemory.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Algorithms/CudaReductionBuffer.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Exceptions/CudaSupportMissing.h>
@@ -20,36 +21,16 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
-/****
- * The performance of this kernel is very sensitive to register usage.
- * Compile with --ptxas-options=-v and configure these constants for given
- * architecture so that there are no local memory spills.
- */
-static constexpr int Multireduction_maxThreadsPerBlock = 256;  // must be a power of 2
-static constexpr int Multireduction_registersPerThread = 32;   // empirically determined optimal value
-
-// __CUDA_ARCH__ is defined only in device code!
-#if( __CUDA_ARCH__ == 750 )
-// Turing has a limit of 1024 threads per multiprocessor
-static constexpr int Multireduction_minBlocksPerMultiprocessor = 4;
-#elif( __CUDA_ARCH__ == 860 )
-// Ampere 8.6 has a limit of 1536 threads per multiprocessor
-static constexpr int Multireduction_minBlocksPerMultiprocessor = 6;
-#else
-static constexpr int Multireduction_minBlocksPerMultiprocessor = 8;
-#endif
-
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< int blockSizeX, typename Result, typename DataFetcher, typename Reduction, typename Index >
 __global__
 void
-__launch_bounds__( Multireduction_maxThreadsPerBlock, Multireduction_minBlocksPerMultiprocessor )
-   CudaMultireductionKernel( const Result identity,
-                             DataFetcher dataFetcher,
-                             const Reduction reduction,
-                             const Index size,
-                             const int n,
-                             Result* output )
+CudaMultireductionKernel( const Result identity,
+                          DataFetcher dataFetcher,
+                          const Reduction reduction,
+                          const Index size,
+                          const int n,
+                          Result* output )
 {
    Result* sdata = Cuda::getSharedMemory< Result >();
 
@@ -147,20 +128,22 @@ CudaMultireductionKernelLauncher( const Result identity,
                                   const int n,
                                   Result*& output )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
+   // must be a power of 2
+   static constexpr int maxThreadsPerBlock = 256;
+
    // The number of blocks should be a multiple of the number of multiprocessors
    // to ensure optimum balancing of the load. This is very important, because
    // we run the kernel with a fixed number of blocks, so the amount of work per
    // block increases with enlarging the problem, so even small imbalance can
    // cost us dearly.
    // Therefore,  desGridSize = blocksPerMultiprocessor * numberOfMultiprocessors
-   // where blocksPerMultiprocessor is determined according to the number of
-   // available registers on the multiprocessor.
-   // On Tesla K40c, desGridSize = 8 * 15 = 120.
+   // where the maximum value of blocksPerMultiprocessor can be determined
+   // according to the number of available registers on the multiprocessor.
+   // However, it seems to be better to map only one CUDA block per multiprocessor,
+   // or maybe just slightly more.
    const int activeDevice = Cuda::DeviceInfo::getActiveDevice();
-   const int blocksdPerMultiprocessor = Cuda::DeviceInfo::getRegistersPerMultiprocessor( activeDevice )
-                                      / ( Multireduction_maxThreadsPerBlock * Multireduction_registersPerThread );
-   const int desGridSizeX = blocksdPerMultiprocessor * Cuda::DeviceInfo::getCudaMultiprocessors( activeDevice );
+   const int desGridSizeX = Cuda::DeviceInfo::getCudaMultiprocessors( activeDevice );
    Cuda::LaunchConfiguration launch_config;
 
    // version A: max 16 rows of threads
@@ -182,17 +165,17 @@ CudaMultireductionKernelLauncher( const Result identity,
    //   }
 
    // launch_config.blockSize.x has to be a power of 2
-   launch_config.blockSize.x = Multireduction_maxThreadsPerBlock;
-   while( launch_config.blockSize.x * launch_config.blockSize.y > Multireduction_maxThreadsPerBlock )
+   launch_config.blockSize.x = maxThreadsPerBlock;
+   while( launch_config.blockSize.x * launch_config.blockSize.y > maxThreadsPerBlock )
       launch_config.blockSize.x /= 2;
 
    launch_config.gridSize.x = TNL::min( Cuda::getNumberOfBlocks( size, launch_config.blockSize.x ), desGridSizeX );
    launch_config.gridSize.y = Cuda::getNumberOfBlocks( n, launch_config.blockSize.y );
 
-   if( launch_config.gridSize.y > (unsigned) Cuda::getMaxGridSize() ) {
-      std::cerr << "Maximum launch_config.gridSize.y limit exceeded (limit is 65535, attempted " << launch_config.gridSize.y
-                << ")." << std::endl;
-      throw 1;
+   if( launch_config.gridSize.y > (unsigned) Cuda::getMaxGridYSize() ) {
+      throw std::logic_error( "Maximum launch_config.gridSize.y limit exceeded (limit is "
+                              + std::to_string( Cuda::getMaxGridYSize() ) + ", attempted "
+                              + std::to_string( launch_config.gridSize.y ) + ")." );
    }
 
    // create reference to the reduction buffer singleton and set size
@@ -212,7 +195,6 @@ CudaMultireductionKernelLauncher( const Result identity,
    switch( launch_config.blockSize.x ) {
       case 512:
          Cuda::launchKernelSync( CudaMultireductionKernel< 512, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -225,7 +207,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 256, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 256, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -238,7 +219,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 128, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 128, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -251,7 +231,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 64, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 64, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -264,7 +243,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 32, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 32, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -277,7 +255,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 16, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 16, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -290,7 +267,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 8, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 8, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -303,7 +279,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 4, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 4, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,
@@ -316,7 +291,6 @@ CudaMultireductionKernelLauncher( const Result identity,
          cudaFuncSetCacheConfig( CudaMultireductionKernel< 2, Result, DataFetcher, Reduction, Index >,
                                  cudaFuncCachePreferShared );
          Cuda::launchKernelSync( CudaMultireductionKernel< 2, Result, DataFetcher, Reduction, Index >,
-                                 0,
                                  launch_config,
                                  identity,
                                  dataFetcher,

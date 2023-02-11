@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -27,7 +27,7 @@ struct CSRAdaptiveKernelParameters
    getSizeOfValue()
    {
       return SizeOfValue;
-   };
+   }
 
    static constexpr int SizeOfValueLog = getSizeValueLogConstexpr( SizeOfValue );
 
@@ -42,7 +42,7 @@ struct CSRAdaptiveKernelParameters
    CudaBlockSize()
    {
       return CSRAdaptiveKernelParametersCudaBlockSizes[ SizeOfValueLog ];
-   };
+   }
    //{ return SizeOfValue == 8 ? 128 : 256; };
 
    /**
@@ -54,7 +54,7 @@ struct CSRAdaptiveKernelParameters
    StreamedSharedMemory()
    {
       return StreamedSharedMemory_;
-   };
+   }
 
    /**
     * \brief Number of elements fitting into streamed shared memory.
@@ -63,7 +63,7 @@ struct CSRAdaptiveKernelParameters
    StreamedSharedElementsCount()
    {
       return StreamedSharedMemory() / SizeOfValue;
-   };
+   }
 
    /**
     * \brief Computes number of warps in one CUDA block.
@@ -72,7 +72,7 @@ struct CSRAdaptiveKernelParameters
    WarpsCount()
    {
       return CudaBlockSize() / Cuda::getWarpSize();
-   };
+   }
 
    /**
     * \brief Computes number of elements to be streamed into the shared memory.
@@ -83,7 +83,7 @@ struct CSRAdaptiveKernelParameters
    StreamedSharedElementsPerWarp()
    {
       return StreamedSharedElementsCount() / WarpsCount();
-   };
+   }
 
    /**
     * \brief Returns maximum number of elements per warp for vector and hybrid kernel.
@@ -94,7 +94,7 @@ struct CSRAdaptiveKernelParameters
    MaxVectorElementsPerWarp()
    {
       return 384;
-   };
+   }
 
    /**
     * \brief Returns maximum number of elements per warp for adaptive kernel.
@@ -105,7 +105,7 @@ struct CSRAdaptiveKernelParameters
    MaxAdaptiveElementsPerWarp()
    {
       return 512;
-   };
+   }
 
    static int
    getSizeValueLog( const int i )
@@ -141,7 +141,7 @@ CSRAdaptiveKernelParameters< SizeOfValue, StreamedSharedMemory_ >::getSizeValueL
    if( i <= 32 )
       return 5;
    return 6;
-};
+}
 
 }  // namespace detail
 }  // namespace Segments

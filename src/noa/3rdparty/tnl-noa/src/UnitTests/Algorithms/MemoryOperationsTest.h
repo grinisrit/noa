@@ -135,7 +135,7 @@ TYPED_TEST( MemoryOperationsTest, compareWithConversion_host )
 }
 
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TYPED_TEST( MemoryOperationsTest, allocateMemory_cuda )
 {
    using ValueType = typename TestFixture::ValueType;
@@ -305,7 +305,7 @@ TYPED_TEST( MemoryOperationsTest, compareWithConversions_cuda )
    cudaAllocator1.deallocate( deviceData, ARRAY_TEST_SIZE );
    cudaAllocator2.deallocate( deviceData2, ARRAY_TEST_SIZE );
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 #endif // HAVE_GTEST
 
 

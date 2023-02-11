@@ -46,9 +46,9 @@ class SparseRow
       const Index& getColumnIndex( const Index& elementIndex ) const
       {
          return getElementColumn( elementIndex );
-      };
+      }
 
-      
+
       __cuda_callable__
       const Real& getElementValue( const Index& elementIndex ) const;
 
@@ -56,14 +56,14 @@ class SparseRow
       const Real& getValue( const Index& elementIndex ) const
       {
          return getElementValue( elementIndex );
-      };
+      }
 
 
       __cuda_callable__
       Index getLength() const;
 
       __cuda_callable__
-      Index getSize() const { return length; };
+      Index getSize() const { return length; }
 
 
       __cuda_callable__
@@ -93,4 +93,4 @@ std::ostream& operator<<( std::ostream& str, const SparseRow< Real, Index >& row
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/SparseRow_impl.h>
+#include "SparseRow_impl.h"

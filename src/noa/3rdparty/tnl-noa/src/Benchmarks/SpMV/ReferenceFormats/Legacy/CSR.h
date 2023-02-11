@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse.h>
+#include "Sparse.h"
 #include <TNL/Containers/Vector.h>
 
 #include <TNL/Devices/Cuda.h>
@@ -104,9 +104,9 @@ public:
              typename _Index = Index >
    using Self = CSR< _Real, _Device, _Index >;
 
-   constexpr CSRKernel getSpMVKernelType() { return KernelType; };
+   constexpr CSRKernel getSpMVKernelType() { return KernelType; }
 
-   static constexpr bool isSymmetric() { return false; };
+   static constexpr bool isSymmetric() { return false; }
 
    Containers::Vector< Block<Index>, Device, Index > blocks;
 
@@ -254,12 +254,6 @@ public:
    void getTransposition( const CSR< Real2, Device, Index2, KernelType2 >& matrix,
                           const RealType& matrixMultiplicator = 1.0 );
 
-   template< typename Vector1, typename Vector2 >
-   bool performSORIteration( const Vector1& b,
-                             const IndexType row,
-                             Vector2& x,
-                             const RealType& omega = 1.0 ) const;
-
    // copy assignment
    CSR& operator=( const CSR& matrix );
 
@@ -344,4 +338,4 @@ protected:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/CSR_impl.h>
+#include "CSR_impl.h"

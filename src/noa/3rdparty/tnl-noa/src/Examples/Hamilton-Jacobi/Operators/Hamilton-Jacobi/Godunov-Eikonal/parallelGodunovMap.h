@@ -39,25 +39,25 @@ public:
 	typedef typename MeshType::CoordinatesType CoordinatesType;
 
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	static String getType();
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	RealType positivePart(const RealType arg) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	RealType negativePart(const RealType arg) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	RealType sign(const RealType x, const RealType eps) const;
 
     template< typename Vector >
- #ifdef HAVE_CUDA
+ #ifdef __CUDACC__
     __device__ __host__
  #endif
     Real getValue( const MeshType& mesh,
@@ -66,7 +66,7 @@ public:
                    const Vector& u,
                    const RealType& time,
                    const IndexType boundaryCondition) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	bool init( const Config::ParameterContainer& parameters );
@@ -106,25 +106,25 @@ public:
 	typedef tnlGrid< 2, Real, Device, Index > MeshType;
 	typedef TNL::Containers::Vector< RealType, DeviceType, IndexType> DofVectorType;
 	typedef typename MeshType::CoordinatesType CoordinatesType;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	static String getType();
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     RealType positivePart(const RealType arg) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     RealType negativePart(const RealType arg) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     RealType sign(const RealType x, const Real eps) const;
 
     template< typename Vector >
- #ifdef HAVE_CUDA
+ #ifdef __CUDACC__
     __device__ __host__
  #endif
     Real getValue( const MeshType& mesh,
@@ -136,7 +136,7 @@ public:
                    const tnlNeighborGridEntityGetter<tnlGridEntity< MeshType, 2, tnlGridEntityNoStencilStorage >,2> neighborEntities,
                    const Vector& map) const;
 
- #ifdef HAVE_CUDA
+ #ifdef __CUDACC__
     __device__
  #endif
     Real getValueDev( const MeshType& mesh,
@@ -147,7 +147,7 @@ public:
                    const IndexType boundaryCondition,
                    const tnlNeighborGridEntityGetter<tnlGridEntity< MeshType, 2, tnlGridEntityNoStencilStorage >,2> neighborEntities,
   	  	  	       const RealType* map) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	bool init( const Config::ParameterContainer& parameters );
@@ -185,25 +185,25 @@ public:
 	typedef TNL::Containers::Vector< RealType, DeviceType, IndexType> DofVectorType;
 	typedef typename MeshType::CoordinatesType CoordinatesType;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 	static String getType();
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     RealType positivePart(const RealType arg) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     RealType negativePart(const RealType arg) const;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     RealType sign(const RealType x, const Real eps) const;
 
     template< typename Vector >
- #ifdef HAVE_CUDA
+ #ifdef __CUDACC__
     __device__ __host__
  #endif
     Real getValue( const MeshType& mesh,
@@ -214,7 +214,7 @@ public:
                    const IndexType boundaryCondition,
   	  	  	       const tnlNeighborGridEntityGetter<tnlGridEntity< MeshType, 3, tnlGridEntityNoStencilStorage >,3> neighborEntities  ) const;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__
 #endif
    Real getValueDev( const MeshType& mesh,
@@ -225,7 +225,7 @@ public:
                   const IndexType boundaryCondition,
  	  	  	      const tnlNeighborGridEntityGetter<tnlGridEntity< MeshType, 3, tnlGridEntityNoStencilStorage >,3> neighborEntities) const;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
     bool init( const Config::ParameterContainer& parameters );

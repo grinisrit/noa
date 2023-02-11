@@ -87,7 +87,7 @@ solve( const Meshes::DistributedMeshes::DistributedMesh< MeshType >& distributed
       if( std::is_same< DeviceType, Devices::Cuda >::value )
       {
          // TODO: CUDA code
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
           const int cudaBlockSize( 16 );
           int numBlocksX = Cuda::getNumberOfBlocks( mesh->getDimensions().x(), cudaBlockSize );
           dim3 blockSize( cudaBlockSize );
@@ -134,7 +134,7 @@ solve( const Meshes::DistributedMeshes::DistributedMesh< MeshType >& distributed
    aux.write( "aux", "aux-final.vti" );
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template < typename Real, typename Device, typename Index >
 __global__ void CudaUpdateCellCaller( tnlDirectEikonalMethodsBase< Meshes::Grid< 1, Real, Device, Index > > ptr,
                                       const Functions::MeshFunctionView< Meshes::Grid< 1, Real, Device, Index >, 1, bool >& interfaceMap,

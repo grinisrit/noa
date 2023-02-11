@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,7 +17,7 @@ namespace Linear {
  *
  * See [Wikipedia](https://en.wikipedia.org/wiki/Jacobi_method) for more details.
  *
- * See \ref TNL::Solvers::Linear::IterativeSolver for example of showing how to use the linear solvers.
+ * See \ref TNL::Solvers::Linear::LinearSolver for example of showing how to use the linear solvers.
  *
  * \tparam Matrix is type of matrix describing the linear system.
  */

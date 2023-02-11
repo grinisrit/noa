@@ -27,7 +27,7 @@ TEST( SharedPointerHostTest, ConstructorTest )
    ptr1 = ptr2;
    ASSERT_EQ( ptr1->x(), 1 );
    ASSERT_EQ( ptr1->y(), 2 );
-};
+}
 
 TEST( SharedPointerCudaTest, nullptrAssignement )
 {

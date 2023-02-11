@@ -108,7 +108,7 @@ template< typename MeshReal,
           typename Index,
 		  typename Function >
 template< typename Vector >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 __device__ __host__
 #endif
 Real godunovScheme< tnlGrid< 2, MeshReal, Device, MeshIndex >, Real, Index, Function >:: getValue( const MeshType& mesh,

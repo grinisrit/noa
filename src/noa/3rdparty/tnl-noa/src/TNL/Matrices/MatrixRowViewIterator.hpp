@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -14,7 +14,7 @@ namespace Matrices {
 
 template< typename RowView >
 __cuda_callable__
-MatrixRowViewIterator< RowView >::MatrixRowViewIterator( RowViewType& rowView, const IndexType& localIdx )
+MatrixRowViewIterator< RowView >::MatrixRowViewIterator( RowViewType& rowView, IndexType localIdx )
 : rowView( rowView ), localIdx( localIdx )
 {}
 
@@ -68,7 +68,7 @@ MatrixRowViewIterator< RowView >::operator*() -> MatrixElementType
 template< typename RowView >
 __cuda_callable__
 auto
-MatrixRowViewIterator< RowView >::operator*() const -> const MatrixElementType
+MatrixRowViewIterator< RowView >::operator*() const -> MatrixElementType
 {
    return MatrixElementType( this->rowView.getValue( this->localIdx ),
                              this->rowView.getRowIndex(),

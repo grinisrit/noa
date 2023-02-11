@@ -90,4 +90,4 @@ class LegacyMatrixReader
    } // namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/LegacyMatrixReader.hpp>
+#include "LegacyMatrixReader.hpp"

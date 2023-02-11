@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -19,7 +19,6 @@
 namespace noa::TNL {
 namespace Matrices {
 
-#ifdef HAVE_CUDA
 template< typename Vector, typename Matrix >
 __global__
 void
@@ -28,6 +27,7 @@ SparseMatrixSetRowLengthsVectorKernel( Vector* rowLengths,
                                        typename Matrix::IndexType rows,
                                        typename Matrix::IndexType cols )
 {
+#ifdef __CUDACC__
    using IndexType = typename Matrix::IndexType;
 
    IndexType rowIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -44,6 +44,7 @@ SparseMatrixSetRowLengthsVectorKernel( Vector* rowLengths,
       rowLengths[ rowIdx ] = length;
       rowIdx += gridSize;
    }
+#endif
 }
 
 template< typename Matrix1, typename Matrix2 >
@@ -54,6 +55,7 @@ SparseMatrixCopyKernel( Matrix1* A,
                         const typename Matrix2::IndexType* rowLengths,
                         typename Matrix2::IndexType rows )
 {
+#ifdef __CUDACC__
    using IndexType = typename Matrix2::IndexType;
 
    IndexType rowIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -67,8 +69,8 @@ SparseMatrixCopyKernel( Matrix1* A,
          rowA.setElement( c, rowB.getColumnIndex( c ), rowB.getValue( c ) );
       rowIdx += gridSize;
    }
-}
 #endif
+}
 
 // copy on the same device
 template< typename Matrix1, typename Matrix2 >
@@ -82,7 +84,6 @@ copySparseMatrix_impl( Matrix1& A, const Matrix2& B )
    static_assert( std::is_same< typename Matrix1::IndexType, typename Matrix2::IndexType >::value,
                   "The matrices must have the same IndexType." );
 
-   using RealType = typename Matrix1::RealType;
    using DeviceType = typename Matrix1::DeviceType;
    using IndexType = typename Matrix1::IndexType;
 
@@ -91,7 +92,7 @@ copySparseMatrix_impl( Matrix1& A, const Matrix2& B )
 
    A.setDimensions( rows, cols );
 
-   if( std::is_same< DeviceType, Devices::Host >::value ) {
+   if constexpr( std::is_same< DeviceType, Devices::Host >::value ) {
       // set row lengths
       typename Matrix1::RowsCapacitiesType rowLengths;
       rowLengths.setSize( rows );
@@ -122,12 +123,11 @@ copySparseMatrix_impl( Matrix1& A, const Matrix2& B )
       }
    }
 
-   if( std::is_same< DeviceType, Devices::Cuda >::value ) {
-#ifdef HAVE_CUDA
-      dim3 blockSize( 256 );
-      dim3 gridSize;
+   if constexpr( std::is_same< DeviceType, Devices::Cuda >::value ) {
+      Cuda::LaunchConfiguration launch_config;
+      launch_config.blockSize.x = 256;
       const IndexType desGridSize = 32 * Cuda::DeviceInfo::getCudaMultiprocessors( Cuda::DeviceInfo::getActiveDevice() );
-      gridSize.x = min( desGridSize, Cuda::getNumberOfBlocks( rows, blockSize.x ) );
+      launch_config.gridSize.x = min( desGridSize, Cuda::getNumberOfBlocks( rows, launch_config.blockSize.x ) );
 
       typename Matrix1::RowsCapacitiesType rowLengths;
       rowLengths.setSize( rows );
@@ -137,22 +137,25 @@ copySparseMatrix_impl( Matrix1& A, const Matrix2& B )
 
       // set row lengths
       Pointers::synchronizeSmartPointersOnDevice< Devices::Cuda >();
-      SparseMatrixSetRowLengthsVectorKernel<<< gridSize,
-         blockSize >>>( rowLengths.getData(), &Bpointer.template getData< TNL::Devices::Cuda >(), rows, cols );
-      TNL_CHECK_CUDA_DEVICE;
+      constexpr auto kernelRowLenghts =
+         SparseMatrixSetRowLengthsVectorKernel< typename Matrix1::RowsCapacitiesType::ValueType, Matrix2 >;
+      Cuda::launchKernelSync( kernelRowLenghts,
+                              launch_config,
+                              rowLengths.getData(),
+                              &Bpointer.template getData< TNL::Devices::Cuda >(),
+                              rows,
+                              cols );
       Apointer->setRowCapacities( rowLengths );
 
       // copy rows
       Pointers::synchronizeSmartPointersOnDevice< Devices::Cuda >();
-      SparseMatrixCopyKernel<<< gridSize,
-         blockSize >>>( &Apointer.template modifyData< TNL::Devices::Cuda >(),
-                                       &Bpointer.template getData< TNL::Devices::Cuda >(),
-                                       rowLengths.getData(),
-                                       rows );
-      TNL_CHECK_CUDA_DEVICE;
-#else
-      throw Exceptions::CudaSupportMissing();
-#endif
+      constexpr auto kernelCopy = SparseMatrixCopyKernel< Matrix1, Matrix2 >;
+      Cuda::launchKernelSync( kernelCopy,
+                              launch_config,
+                              &Apointer.template modifyData< TNL::Devices::Cuda >(),
+                              &Bpointer.template getData< TNL::Devices::Cuda >(),
+                              rowLengths.getData(),
+                              rows );
    }
 }
 
