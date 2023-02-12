@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -156,9 +156,9 @@ public:
    }
 
    /**
-    * \brief Adds delimeter/section to the configuration description.
+    * \brief Adds delimiter/section to the configuration description.
     *
-    * \param delimeter String that defines how the delimeter looks like.
+    * \param delimiter String that defines how the delimiter looks like.
     */
    void
    addDelimiter( const std::string& delimiter )

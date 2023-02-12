@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -19,7 +19,7 @@ void
 StaticEuler< Real >::configSetup( Config::ConfigDescription& config, const String& prefix )
 {
    config.addEntry< double >( prefix + "euler-cfl", "Coefficient C in the Courant–Friedrichs–Lewy condition.", 0.0 );
-};
+}
 
 template< typename Real >
 bool
@@ -116,7 +116,7 @@ StaticEuler< Real >::solve( VectorType& u, RHSFunction&& rhsFunction, Args... ar
       }
    }
    return false;  // just to avoid warnings
-};
+}
 
 ////
 // Specialization for static vectors
@@ -125,7 +125,7 @@ void
 StaticEuler< Containers::StaticVector< Size_, Real > >::configSetup( Config::ConfigDescription& config, const String& prefix )
 {
    config.addEntry< double >( prefix + "euler-cfl", "Coefficient C in the Courant–Friedrichs–Lewy condition.", 0.0 );
-};
+}
 
 template< int Size_, typename Real >
 bool
@@ -222,7 +222,7 @@ StaticEuler< Containers::StaticVector< Size_, Real > >::solve( VectorType& u, RH
       }
    }
    return false;  // just to avoid warnings
-};
+}
 
 }  // namespace ODE
 }  // namespace Solvers

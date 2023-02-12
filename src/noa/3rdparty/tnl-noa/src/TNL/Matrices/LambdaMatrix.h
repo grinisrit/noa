@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -96,12 +96,12 @@ public:
    isSymmetric()
    {
       return false;
-   };
+   }
    static constexpr bool
    isBinary()
    {
       return false;
-   };
+   }
 
    /**
     * \brief Constructor with lambda functions defining the matrix elements.
@@ -110,14 +110,14 @@ public:
     * \e LambdaMatrix you may use \ref LambdaMatrixFactory.
     *
     * \param matrixElements is a lambda function giving matrix elements position and value.
-    * \param compressedRowLentghs is a lambda function returning how many non-zero matrix elements are in given row.
+    * \param compressedRowLengths is a lambda function returning how many non-zero matrix elements are in given row.
     *
     * \par Example
     * \include Matrices/LambdaMatrix/LambdaMatrixExample_Constructor.cpp
     * \par Output
     * \include LambdaMatrixExample_Constructor.out
     */
-   LambdaMatrix( MatrixElementsLambda& matrixElements, CompressedRowLengthsLambda& compressedRowLentghs );
+   LambdaMatrix( MatrixElementsLambda& matrixElements, CompressedRowLengthsLambda& compressedRowLengths );
 
    /**
     * \brief Constructor with matrix dimensions and lambda functions defining the matrix elements.
@@ -128,17 +128,17 @@ public:
     * \param rows is a number of the matrix rows.
     * \param columns is a number of the matrix columns.
     * \param matrixElements is a lambda function giving matrix elements position and value.
-    * \param compressedRowLentghs is a lambda function returning how many non-zero matrix elements are in given row.
+    * \param compressedRowLengths is a lambda function returning how many non-zero matrix elements are in given row.
     *
     * \par Example
     * \include Matrices/LambdaMatrix/LambdaMatrixExample_Constructor.cpp
     * \par Output
     * \include LambdaMatrixExample_Constructor.out
     */
-   LambdaMatrix( const IndexType& rows,
-                 const IndexType& columns,
+   LambdaMatrix( IndexType rows,
+                 IndexType columns,
                  MatrixElementsLambda& matrixElements,
-                 CompressedRowLengthsLambda& compressedRowLentghs );
+                 CompressedRowLengthsLambda& compressedRowLengths );
 
    /**
     * \brief Copy constructor.
@@ -152,7 +152,7 @@ public:
     *
     * \param matrix is input matrix.
     */
-   LambdaMatrix( LambdaMatrix&& matrix ) = default;
+   LambdaMatrix( LambdaMatrix&& matrix ) noexcept = default;
 
    /**
     * \brief Set number of rows and columns of this matrix.
@@ -161,7 +161,7 @@ public:
     * \param columns is the number of matrix columns.
     */
    void
-   setDimensions( const IndexType& rows, const IndexType& columns );
+   setDimensions( IndexType rows, IndexType columns );
 
    /**
     * \brief Returns a number of matrix rows.
@@ -221,9 +221,9 @@ public:
     * \par Output
     * \include LambdaMatrixExample_getCompressedRowLengths.out
     */
-   template< typename RowLentghsVector >
+   template< typename RowLengthsVector >
    void
-   getCompressedRowLengths( RowLentghsVector& rowLengths ) const;
+   getCompressedRowLengths( RowLengthsVector& rowLengths ) const;
 
    /**
     * \brief Returns number of non-zero matrix elements.
@@ -231,9 +231,9 @@ public:
     * \return number of all non-zero matrix elements.
     *
     * \par Example
-    * \include Matrices/LambdaMatrix/LambdaMatrixExample_getElementsCount.cpp
+    * \include Matrices/LambdaMatrix/LambdaMatrixExample_getNonzeroElementsCount.cpp
     * \par Output
-    * \include LambdaMatrixExample_getElementsCount.out
+    * \include LambdaMatrixExample_getNonzeroElementsCount.out
     */
    IndexType
    getNonzeroElementsCount() const;
@@ -246,15 +246,15 @@ public:
     * \return RowView for accessing given matrix row.
     *
     * \par Example
-    * \include Matrices/SparseMatrix/LambdaMatrixExample_getRow.cpp
+    * \include Matrices/LambdaMatrix/LambdaMatrixExample_getRow.cpp
     * \par Output
     * \include LambdaMatrixExample_getRow.out
     *
     * See \ref LambdaMatrixRowView.
     */
    __cuda_callable__
-   const RowView
-   getRow( const IndexType& rowIdx ) const;
+   ConstRowView
+   getRow( IndexType rowIdx ) const;
 
    /**
     * \brief Returns value of matrix element at position given by its row and column index.
@@ -265,7 +265,7 @@ public:
     * \return value of given matrix element.
     */
    RealType
-   getElement( const IndexType row, const IndexType column ) const;
+   getElement( IndexType row, IndexType column ) const;
 
    /**
     * \brief Method for iteration over all matrix rows for constant instances.
@@ -285,9 +285,9 @@ public:
     * \param function is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/LambdaMatrix/LambdaMatrixExample_forRows.cpp
+    * \include Matrices/LambdaMatrix/LambdaMatrixExample_forElements.cpp
     * \par Output
-    * \include LambdaMatrixExample_forRows.out
+    * \include LambdaMatrixExample_forElements.out
     */
    template< typename Function >
    void
@@ -302,9 +302,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/LambdaMatrix/LambdaMatrixExample_forAllRows.cpp
+    * \include Matrices/LambdaMatrix/LambdaMatrixExample_forAllElements.cpp
     * \par Output
-    * \include LambdaMatrixExample_forAllRows.out
+    * \include LambdaMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -414,7 +414,7 @@ public:
     *    It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value )
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value )
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -435,7 +435,8 @@ public:
     */
    template< typename Fetch, typename Reduce, typename Keep, typename FetchReal >
    void
-   reduceRows( IndexType begin, IndexType end, Fetch& fetch, const Reduce& reduce, Keep& keep, const FetchReal& zero ) const;
+   reduceRows( IndexType begin, IndexType end, Fetch& fetch, const Reduce& reduce, Keep& keep, const FetchReal& identity )
+      const;
 
    /**
     * \brief Method for performing general reduction on ALL matrix rows.
@@ -457,7 +458,7 @@ public:
     *   It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value )
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value )
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -487,10 +488,14 @@ public:
     * outVector = matrixMultiplicator * ( *this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
@@ -508,7 +513,7 @@ public:
                   OutVector& outVector,
                   const RealType& matrixMultiplicator = 1.0,
                   const RealType& outVectorMultiplicator = 0.0,
-                  const IndexType begin = 0,
+                  IndexType begin = 0,
                   IndexType end = 0 ) const;
 
    /**
@@ -528,7 +533,7 @@ protected:
 };
 
 /**
- * \brief Insertion operator for dense matrix and output stream.
+ * \brief Insertion operator for lambda matrix and output stream.
  *
  * \param str is the output stream.
  * \param matrix is the lambda matrix.
@@ -586,7 +591,7 @@ struct LambdaMatrixFactory
                      "Index rowIdx )" );
       return LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >(
          matrixElementsLambda, compressedRowLengthsLambda );
-   };
+   }
 
    /**
     * \brief Creates lambda matrix with given dimensions and lambda functions.
@@ -605,8 +610,8 @@ struct LambdaMatrixFactory
     */
    template< typename MatrixElementsLambda, typename CompressedRowLengthsLambda >
    static auto
-   create( const IndexType& rows,
-           const IndexType& columns,
+   create( IndexType rows,
+           IndexType columns,
            MatrixElementsLambda& matrixElementsLambda,
            CompressedRowLengthsLambda& compressedRowLengthsLambda )
       -> LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >
@@ -627,7 +632,7 @@ struct LambdaMatrixFactory
 
       return LambdaMatrix< MatrixElementsLambda, CompressedRowLengthsLambda, Real, Device, Index >(
          rows, columns, matrixElementsLambda, compressedRowLengthsLambda );
-   };
+   }
 };
 
 }  // namespace Matrices

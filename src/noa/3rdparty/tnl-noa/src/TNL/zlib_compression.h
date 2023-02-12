@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <memory>
 #include <cstdint>  // std::uint64_t
+#include <memory>
+#include <istream>
 
 #include <zlib.h>
 

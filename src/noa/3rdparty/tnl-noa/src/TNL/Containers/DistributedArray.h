@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -14,6 +14,14 @@
 namespace noa::TNL {
 namespace Containers {
 
+/**
+ * \brief Distributed array.
+ *
+ * \par Example
+ * \include Containers/DistributedArrayExample.cpp
+ * \par Output
+ * \include DistributedArrayExample.out
+ */
 template< typename Value,
           typename Device = Devices::Host,
           typename Index = int,
@@ -35,7 +43,9 @@ public:
    using SynchronizerType = typename ViewType::SynchronizerType;
 
    /**
-    * \brief A template which allows to quickly obtain a \ref DistributedArray type with changed template parameters.
+    * \brief A template which allows to quickly obtain a
+    * \ref TNL::Containers::DistributedArray "DistributedArray" type with
+    * changed template parameters.
     */
    template< typename _Value,
              typename _Device = Device,
@@ -81,18 +91,35 @@ public:
                      const MPI::Comm& communicator,
                      const AllocatorType& allocator = AllocatorType() );
 
+   /**
+    * \brief Set new global size and distribution of the array.
+    *
+    * \param localRange The range of elements in the global array that is owned by this rank.
+    * \param ghosts Number of ghost elements allocated by this rank.
+    * \param globalSize The size of the global array.
+    * \param communicator Reference to the MPI communicator on which the array is distributed.
+    */
    void
    setDistribution( LocalRangeType localRange, Index ghosts, Index globalSize, const MPI::Comm& communicator );
 
+   /**
+    * \brief Returns the local range of the distributed array.
+    */
    const LocalRangeType&
    getLocalRange() const;
 
    IndexType
    getGhosts() const;
 
+   /**
+    * \brief Returns the MPI communicator associated to the array.
+    */
    const MPI::Comm&
    getCommunicator() const;
 
+   /**
+    * \brief Returns the allocator associated to the array.
+    */
    AllocatorType
    getAllocator() const;
 
@@ -211,7 +238,7 @@ public:
 
    // Move-assignment operator
    DistributedArray&
-   operator=( DistributedArray&& ) noexcept = default;
+   operator=( DistributedArray&& ) noexcept( false ) = default;
 
    template< typename Array, typename..., typename = std::enable_if_t< HasSubscriptOperator< Array >::value > >
    DistributedArray&
@@ -276,6 +303,12 @@ public:
    template< typename Function >
    void
    forElements( IndexType begin, IndexType end, Function&& f ) const;
+
+   void
+   loadFromGlobalFile( const String& fileName, bool allowCasting = false );
+
+   void
+   loadFromGlobalFile( File& file, bool allowCasting = false );
 
 protected:
    ViewType view;

@@ -2,7 +2,7 @@
 #include <TNL/Functions/MeshFunctionView.h>
 
 
-#ifdef HAVE_GTEST 
+#ifdef HAVE_GTEST
 #include <gtest/gtest.h>
 
 #include "../../Functions/Functions.h"
@@ -20,7 +20,7 @@ class TestMovedMeshfunction
 {
 	public:
 		static void Test(MeshFunctionType &meshFunction)
-		{};
+		{}
 };
 
 template <typename MeshFunctionType>
@@ -47,11 +47,11 @@ class TestMovedMeshfunction<MeshFunctionType,2>
 				for(int i=0;i<size.x();i++)
 				{
 				    entity.getCoordinates().x()=i;
-					entity.getCoordinates().y()=j;			
+					entity.getCoordinates().y()=j;
 				    entity.refresh();
 					EXPECT_EQ( meshFunction.getData()[entity.getIndex()], 10*(j+1)+(i+1)) << "Copy entities Failed for: "<< i;
-				}				
-		};
+				}
+		}
 };
 
 template <typename MeshFunctionType>
@@ -68,11 +68,11 @@ class TestMovedMeshfunction<MeshFunctionType,3>
 					{
 				    	entity.getCoordinates().x()=i;
 						entity.getCoordinates().y()=j;
-						entity.getCoordinates().z()=k;			
+						entity.getCoordinates().z()=k;
 				    	entity.refresh();
 						EXPECT_EQ( meshFunction.getData()[entity.getIndex()], 100*(k+1)+10*(j+1)+(i+1)) << "Copy entities Failed for: "<< i;
-					}				
-		};
+					}
+		}
 };
 
 //================================SET INPUT============================================
@@ -83,7 +83,7 @@ class EvalMeshFunction
 {
 	public:
 		static void Eval(MeshFunctionType &meshFunction)
-		{};
+		{}
 };
 
 template <typename MeshFunctionType>
@@ -109,11 +109,11 @@ class EvalMeshFunction<MeshFunctionType,2>
 				for(int i=0;i<size.x();i++)
 				{
 				    entity.getCoordinates().x()=i;
-					entity.getCoordinates().y()=j;			
+					entity.getCoordinates().y()=j;
 				    entity.refresh();
 					meshFunction.getData()[entity.getIndex()]= 10*j+i;
-				}				
-		};
+				}
+		}
 };
 
 template <typename MeshFunctionType>
@@ -130,11 +130,11 @@ class EvalMeshFunction<MeshFunctionType,3>
 					{
 				    	entity.getCoordinates().x()=i;
 						entity.getCoordinates().y()=j;
-						entity.getCoordinates().z()=k;			
+						entity.getCoordinates().z()=k;
 				    	entity.refresh();
 						meshFunction.getData()[entity.getIndex()]=100*k+10*j+i;
-					}				
-		};
+					}
+		}
 };
 
 
@@ -150,7 +150,7 @@ class TestCopyEntities
 			typedef MeshFunctionView<MeshType> MeshFunctionType;
 			typedef Vector<double,Host,int> DofType;
 
-			typedef typename MeshType::PointType PointType; 
+			typedef typename MeshType::PointType PointType;
 			typedef typename MeshType::CoordinatesType CoordinatesType;
 			typedef typename MeshType::Cell Cell;
 
@@ -163,12 +163,12 @@ class TestCopyEntities
 
 			gridptr->setDimensions(proportions);
 			gridptr->setDomain(origin,proportions);
-	
+
 			DofType inputDof(gridptr-> template getEntitiesCount< Cell >());
 
 			MeshFunctionType inputMeshFunction;
-			inputMeshFunction.bind(gridptr,inputDof); 
-	
+			inputMeshFunction.bind(gridptr,inputDof);
+
 			EvalMeshFunction<MeshFunctionType> :: Eval(inputMeshFunction);
 
 
@@ -176,14 +176,14 @@ class TestCopyEntities
 			PointType proportionsOut;
 			Pointers::SharedPointer<MeshType> gridOutPtr;
 
-			originOut.setValue(0.5);	
-			proportionsOut.setValue(8);		
+			originOut.setValue(0.5);
+			proportionsOut.setValue(8);
 			gridOutPtr->setDimensions(proportionsOut);
 			gridOutPtr->setDomain(originOut,proportionsOut);
 			DofType outDof(gridOutPtr-> template getEntitiesCount< Cell >());
 
 			MeshFunctionType outputMeshFunction;
-			outputMeshFunction.bind(gridOutPtr,outDof); 
+			outputMeshFunction.bind(gridOutPtr,outDof);
 
 			CoordinatesType zero;
 			zero.setValue(0);
@@ -195,7 +195,7 @@ class TestCopyEntities
 			CopyEntitiesHelper< MeshFunctionType >::Copy(inputMeshFunction,outputMeshFunction, begin,zero, size);
 
 			TestMovedMeshfunction<MeshFunctionType>::Test(outputMeshFunction);
-		};
+		}
 };
 
 TEST( CopyEntitiesTest, 1D )

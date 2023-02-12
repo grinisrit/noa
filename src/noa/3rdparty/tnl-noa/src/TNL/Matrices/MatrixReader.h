@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -60,19 +60,19 @@ public:
    /**
     * \brief Method for importing matrix from STL input stream.
     *
-    * \param file is the input stream.
+    * \param str is the input stream.
     * \param matrix is the target matrix.
     * \param verbose controls verbosity of the matrix import.
     */
    static void
-   readMtx( std::istream& file, Matrix& matrix, bool verbose = false );
+   readMtx( std::istream& str, Matrix& matrix, bool verbose = false );
 
 protected:
    using HostMatrix = typename Matrix::template Self< RealType, TNL::Devices::Host >;
 };
 
-/// This is to prevent from appearing in Doxygen documentation.
-/// \cond HIDDEN_CLASS
+// This is to prevent from appearing in Doxygen documentation.
+/// \cond
 template< typename Matrix >
 class MatrixReader< Matrix, TNL::Devices::Host >
 {

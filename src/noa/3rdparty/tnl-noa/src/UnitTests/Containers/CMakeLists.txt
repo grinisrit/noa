@@ -23,67 +23,87 @@ set( CUDA_TESTS
          VectorUnaryOperationsTestCuda
          VectorVerticalOperationsTestCuda
          # FIXME: fails due to unspecified launch failure in the CUDA reduction kernel for scalar product,
-         #        see https://mmg-gitlab.fjfi.cvut.cz/gitlab/tnl/tnl-dev/-/issues/82
+         #        see https://gitlab.com/tnl-project/tnl/-/issues/82
          #VectorOfStaticVectorsTestCuda
 )
 
 foreach( target IN ITEMS ${CPP_TESTS} )
    add_executable( ${target} ${target}.cpp )
-   target_compile_options( ${target} PRIVATE ${CXX_TESTS_FLAGS} )
-   target_link_libraries( ${target} ${TESTS_LIBRARIES} )
-   target_link_options( ${target} PRIVATE ${TESTS_LINKER_FLAGS} )
+   target_compile_options( ${target} PUBLIC ${CXX_TESTS_FLAGS} )
+   target_link_libraries( ${target} PUBLIC TNL::TNL_CXX ${TESTS_LIBRARIES} )
+   target_link_options( ${target} PUBLIC ${TESTS_LINKER_FLAGS} )
    add_test( ${target} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}${CMAKE_EXECUTABLE_SUFFIX} )
 endforeach()
 
-if( BUILD_CUDA )
+if( TNL_BUILD_CUDA )
    foreach( target IN ITEMS ${CUDA_TESTS} )
-      cuda_add_executable( ${target} ${target}.cu OPTIONS ${CUDA_TESTS_FLAGS} )
-      target_link_libraries( ${target} ${TESTS_LIBRARIES} )
-      target_link_options( ${target} PRIVATE ${TESTS_LINKER_FLAGS} )
+      add_executable( ${target} ${target}.cu )
+      target_compile_options( ${target} PUBLIC ${CUDA_TESTS_FLAGS} )
+      target_link_libraries( ${target} PUBLIC TNL::TNL_CUDA ${TESTS_LIBRARIES} )
+      target_link_options( ${target} PUBLIC ${TESTS_LINKER_FLAGS} )
       add_test( ${target} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}${CMAKE_EXECUTABLE_SUFFIX} )
    endforeach()
 endif()
 
 
-if( ${BUILD_MPI} )
-   if( BUILD_CUDA )
-      CUDA_ADD_EXECUTABLE( DistributedArrayTest DistributedArrayTestCuda.cu
-                           OPTIONS ${CUDA_TESTS_FLAGS} )
+if( TNL_BUILD_MPI )
+   if( TNL_BUILD_CUDA )
+      add_executable( DistributedArrayTest DistributedArrayTestCuda.cu )
+      target_compile_options( DistributedArrayTest PUBLIC ${CUDA_TESTS_FLAGS} )
+      target_link_libraries( DistributedArrayTest PUBLIC TNL::TNL_CUDA )
    else()
-      ADD_EXECUTABLE( DistributedArrayTest DistributedArrayTest.cpp )
-      TARGET_COMPILE_OPTIONS( DistributedArrayTest PRIVATE ${CXX_TESTS_FLAGS} )
+      add_executable( DistributedArrayTest DistributedArrayTest.cpp )
+      target_compile_options( DistributedArrayTest PUBLIC ${CXX_TESTS_FLAGS} )
+      target_link_libraries( DistributedArrayTest PUBLIC TNL::TNL_CXX )
    endif()
-   target_link_libraries( DistributedArrayTest ${TESTS_LIBRARIES} )
-   target_link_options( DistributedArrayTest PRIVATE ${TESTS_LINKER_FLAGS} )
+   target_link_libraries( DistributedArrayTest PUBLIC ${TESTS_LIBRARIES} )
+   target_link_options( DistributedArrayTest PUBLIC ${TESTS_LINKER_FLAGS} )
 
    ADD_EXECUTABLE( DistributedVectorBinaryOperationsTest DistributedVectorBinaryOperationsTest.cpp )
-   TARGET_COMPILE_OPTIONS( DistributedVectorBinaryOperationsTest PRIVATE ${CXX_TESTS_FLAGS} )
-   TARGET_LINK_LIBRARIES( DistributedVectorBinaryOperationsTest ${TESTS_LIBRARIES} )
-   target_link_options( DistributedVectorBinaryOperationsTest PRIVATE ${TESTS_LINKER_FLAGS} )
+   TARGET_COMPILE_OPTIONS( DistributedVectorBinaryOperationsTest PUBLIC ${CXX_TESTS_FLAGS} )
+   TARGET_LINK_LIBRARIES( DistributedVectorBinaryOperationsTest PUBLIC TNL::TNL_CXX ${TESTS_LIBRARIES} )
+   target_link_options( DistributedVectorBinaryOperationsTest PUBLIC ${TESTS_LINKER_FLAGS} )
 
    ADD_EXECUTABLE( DistributedVectorUnaryOperationsTest DistributedVectorUnaryOperationsTest.cpp )
-   TARGET_COMPILE_OPTIONS( DistributedVectorUnaryOperationsTest PRIVATE ${CXX_TESTS_FLAGS} )
-   TARGET_LINK_LIBRARIES( DistributedVectorUnaryOperationsTest ${TESTS_LIBRARIES} )
-   target_link_options( DistributedVectorUnaryOperationsTest PRIVATE ${TESTS_LINKER_FLAGS} )
+   TARGET_COMPILE_OPTIONS( DistributedVectorUnaryOperationsTest PUBLIC ${CXX_TESTS_FLAGS} )
+   TARGET_LINK_LIBRARIES( DistributedVectorUnaryOperationsTest PUBLIC TNL::TNL_CXX ${TESTS_LIBRARIES} )
+   target_link_options( DistributedVectorUnaryOperationsTest PUBLIC ${TESTS_LINKER_FLAGS} )
 
    ADD_EXECUTABLE( DistributedVectorVerticalOperationsTest DistributedVectorVerticalOperationsTest.cpp )
-   TARGET_COMPILE_OPTIONS( DistributedVectorVerticalOperationsTest PRIVATE ${CXX_TESTS_FLAGS} )
-   TARGET_LINK_LIBRARIES( DistributedVectorVerticalOperationsTest ${TESTS_LIBRARIES} )
-   target_link_options( DistributedVectorVerticalOperationsTest PRIVATE ${TESTS_LINKER_FLAGS} )
+   TARGET_COMPILE_OPTIONS( DistributedVectorVerticalOperationsTest PUBLIC ${CXX_TESTS_FLAGS} )
+   TARGET_LINK_LIBRARIES( DistributedVectorVerticalOperationsTest PUBLIC TNL::TNL_CXX ${TESTS_LIBRARIES} )
+   target_link_options( DistributedVectorVerticalOperationsTest PUBLIC ${TESTS_LINKER_FLAGS} )
 
-   if( BUILD_CUDA )
-      CUDA_ADD_EXECUTABLE( DistributedVectorBinaryOperationsTestCuda DistributedVectorBinaryOperationsTestCuda.cu OPTIONS ${CUDA_TESTS_FLAGS} )
-      TARGET_LINK_LIBRARIES( DistributedVectorBinaryOperationsTestCuda ${TESTS_LIBRARIES} )
-      target_link_options( DistributedVectorBinaryOperationsTestCuda PRIVATE ${TESTS_LINKER_FLAGS} )
+   foreach( target IN ITEMS DistributedArrayTest DistributedVectorBinaryOperationsTest DistributedVectorUnaryOperationsTest DistributedVectorVerticalOperationsTest )
+      # enable MPI support in TNL
+      target_compile_definitions( ${target} PUBLIC "-DHAVE_MPI" )
+      # add MPI to the target: https://cliutils.gitlab.io/modern-cmake/chapters/packages/MPI.html
+      target_link_libraries( ${target} PUBLIC MPI::MPI_CXX )
+   endforeach()
 
-      CUDA_ADD_EXECUTABLE( DistributedVectorUnaryOperationsTestCuda DistributedVectorUnaryOperationsTestCuda.cu OPTIONS ${CUDA_TESTS_FLAGS} )
-      TARGET_LINK_LIBRARIES( DistributedVectorUnaryOperationsTestCuda ${TESTS_LIBRARIES} )
-      target_link_options( DistributedVectorUnaryOperationsTestCuda PRIVATE ${TESTS_LINKER_FLAGS} )
+   if( TNL_BUILD_CUDA )
+      add_executable( DistributedVectorBinaryOperationsTestCuda DistributedVectorBinaryOperationsTestCuda.cu )
+      target_compile_options( DistributedVectorBinaryOperationsTestCuda PUBLIC ${CUDA_TESTS_FLAGS} )
+      target_link_libraries( DistributedVectorBinaryOperationsTestCuda PUBLIC TNL::TNL_CUDA ${TESTS_LIBRARIES} )
+      target_link_options( DistributedVectorBinaryOperationsTestCuda PUBLIC ${TESTS_LINKER_FLAGS} )
 
-      CUDA_ADD_EXECUTABLE( DistributedVectorVerticalOperationsTestCuda DistributedVectorVerticalOperationsTestCuda.cu OPTIONS ${CUDA_TESTS_FLAGS} )
-      TARGET_LINK_LIBRARIES( DistributedVectorVerticalOperationsTestCuda ${TESTS_LIBRARIES} )
-      target_link_options( DistributedVectorVerticalOperationsTestCuda PRIVATE ${TESTS_LINKER_FLAGS} )
-   endif( BUILD_CUDA )
+      add_executable( DistributedVectorUnaryOperationsTestCuda DistributedVectorUnaryOperationsTestCuda.cu )
+      target_compile_options( DistributedVectorUnaryOperationsTestCuda PUBLIC ${CUDA_TESTS_FLAGS} )
+      target_link_libraries( DistributedVectorUnaryOperationsTestCuda PUBLIC TNL::TNL_CUDA ${TESTS_LIBRARIES} )
+      target_link_options( DistributedVectorUnaryOperationsTestCuda PUBLIC ${TESTS_LINKER_FLAGS} )
+
+      add_executable( DistributedVectorVerticalOperationsTestCuda DistributedVectorVerticalOperationsTestCuda.cu )
+      target_compile_options( DistributedVectorVerticalOperationsTestCuda PUBLIC ${CUDA_TESTS_FLAGS} )
+      target_link_libraries( DistributedVectorVerticalOperationsTestCuda PUBLIC TNL::TNL_CUDA ${TESTS_LIBRARIES} )
+      target_link_options( DistributedVectorVerticalOperationsTestCuda PUBLIC ${TESTS_LINKER_FLAGS} )
+
+      foreach( target IN ITEMS DistributedVectorBinaryOperationsTestCuda DistributedVectorUnaryOperationsTestCuda DistributedVectorVerticalOperationsTestCuda )
+         # enable MPI support in TNL
+         target_compile_definitions( ${target} PUBLIC "-DHAVE_MPI" )
+         # add MPI to the target: https://cliutils.gitlab.io/modern-cmake/chapters/packages/MPI.html
+         target_link_libraries( ${target} PUBLIC MPI::MPI_CXX )
+      endforeach()
+   endif()
 
    SET( mpi_test_parameters -np 4 -H localhost:4 "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/DistributedArrayTest${CMAKE_EXECUTABLE_SUFFIX}" )
    ADD_TEST( NAME DistributedArrayTest COMMAND "mpirun" ${mpi_test_parameters})
@@ -101,7 +121,7 @@ if( ${BUILD_MPI} )
    ADD_TEST( NAME DistributedVectorVerticalOperationsTest COMMAND "mpirun" ${mpi_test_parameters})
    ADD_TEST( NAME DistributedVectorVerticalOperationsTest_nodistr COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/DistributedVectorVerticalOperationsTest${CMAKE_EXECUTABLE_SUFFIX}" )
 
-   if( BUILD_CUDA )
+   if( TNL_BUILD_CUDA )
       SET( mpi_test_parameters -np 4 -H localhost:4 "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/DistributedVectorBinaryOperationsTestCuda${CMAKE_EXECUTABLE_SUFFIX}" )
       ADD_TEST( NAME DistributedVectorBinaryOperationsTestCuda COMMAND "mpirun" ${mpi_test_parameters})
       ADD_TEST( NAME DistributedVectorBinaryOperationsTestCuda_nodistr COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/DistributedVectorBinaryOperationsTestCuda${CMAKE_EXECUTABLE_SUFFIX}" )

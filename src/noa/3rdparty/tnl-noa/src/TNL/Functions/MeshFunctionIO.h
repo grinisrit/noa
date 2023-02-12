@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -141,9 +141,10 @@ writeMeshFunction( const MeshFunction& function,
    }
 
    namespace fs = std::filesystem;
+
    std::string format = fileFormat;
    if( format == "auto" ) {
-      format = fs::path( fileName ).extension();
+      format = fs::path( fileName ).extension().string();
       if( format.length() > 0 )
          // remove dot from the extension
          format = format.substr( 1 );
@@ -182,9 +183,10 @@ writeMeshFunction( const MeshFunction& function,
    }
 
    namespace fs = std::filesystem;
+
    std::string format = fileFormat;
    if( format == "auto" ) {
-      format = fs::path( fileName ).extension();
+      format = fs::path( fileName ).extension().string();
       if( format.length() > 0 )
          // remove dot from the extension
          format = format.substr( 1 );
@@ -226,9 +228,10 @@ writeDistributedMeshFunction(
    const std::string& fileFormat = "auto" )
 {
    namespace fs = std::filesystem;
+
    std::string format = fileFormat;
    if( format == "auto" ) {
-      format = fs::path( fileName ).extension();
+      format = fs::path( fileName ).extension().string();
       if( format.length() > 0 )
          // remove dot from the extension
          format = format.substr( 1 );

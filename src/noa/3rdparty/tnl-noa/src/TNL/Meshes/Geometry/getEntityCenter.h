@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,10 +15,10 @@ namespace noa::TNL {
 namespace Meshes {
 
 // compatibility wrapper
-template< typename Grid, int EntityDimension, typename Config >
+template< typename Grid, int EntityDimension >
 __cuda_callable__
 typename Grid::PointType
-getEntityCenter( const Grid& grid, const GridEntity< Grid, EntityDimension, Config >& entity )
+getEntityCenter( const Grid& grid, const GridEntity< Grid, EntityDimension >& entity )
 {
    return entity.getCenter();
 }
@@ -43,7 +43,6 @@ __cuda_callable__
 typename MeshTraits< MeshConfig >::PointType
 getEntityCenter( const Mesh< MeshConfig, Device >& mesh, const MeshEntity< MeshConfig, Device, EntityTopology >& entity )
 {
-   using EntityType = MeshEntity< MeshConfig, Device, EntityTopology >;
    const typename MeshConfig::LocalIndexType subvertices = entity.template getSubentitiesCount< 0 >();
    typename MeshTraits< MeshConfig >::PointType c = 0;
    for( typename MeshConfig::LocalIndexType i = 0; i < subvertices; i++ ) {

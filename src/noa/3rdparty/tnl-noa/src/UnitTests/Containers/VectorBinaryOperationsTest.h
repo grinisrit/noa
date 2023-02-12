@@ -122,7 +122,7 @@ protected:
    }
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    // ignore useless nvcc warning: https://stackoverflow.com/a/49997636
    // https://developer.nvidia.com/blog/reducing-application-build-times-using-cuda-c-compilation-aids/
    #ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
@@ -139,8 +139,8 @@ protected:
 #define SETUP_BINARY_TEST_ALIASES \
    using Left = typename TestFixture::Left;                 \
    using Right = typename TestFixture::Right;               \
-   using LeftReal = typename TestFixture::LeftReal;         \
-   using RightReal = typename TestFixture::RightReal;       \
+   using LeftReal [[maybe_unused]] = typename TestFixture::LeftReal; \
+   using RightReal [[maybe_unused]] = typename TestFixture::RightReal; \
    Left& L1 = this->L1;                                     \
    Left& L2 = this->L2;                                     \
    Right& R1 = this->R1;                                    \
@@ -149,11 +149,12 @@ protected:
    MAYBE_UNUSED(L2);                                        \
    MAYBE_UNUSED(R1);                                        \
    MAYBE_UNUSED(R2);                                        \
+   (void) 0  // dummy statement here enforces ';' after the macro use
 
 // types for which VectorBinaryOperationsTest is instantiated
 #if defined(DISTRIBUTED_VECTOR)
    using VectorPairs = ::testing::Types<
-   #ifndef HAVE_CUDA
+   #ifndef __CUDACC__
       Pair< DistributedVector<     int,   Devices::Host, int >,
             DistributedVector<     short, Devices::Host, int > >,
       Pair< DistributedVector<     int,   Devices::Host, int >,
@@ -200,7 +201,7 @@ protected:
 #else
    #ifdef VECTOR_OF_STATIC_VECTORS
       using VectorPairs = ::testing::Types<
-      #ifndef HAVE_CUDA
+      #ifndef __CUDACC__
          Pair< Vector<     StaticVector< 3, int >, Devices::Host >, Vector<     StaticVector< 3, short >, Devices::Host > >,
          Pair< VectorView< StaticVector< 3, int >, Devices::Host >, Vector<     StaticVector< 3, short >, Devices::Host > >,
          Pair< Vector<     StaticVector< 3, int >, Devices::Host >, VectorView< StaticVector< 3, short >, Devices::Host > >,
@@ -214,7 +215,7 @@ protected:
       >;
    #else
       using VectorPairs = ::testing::Types<
-      #ifndef HAVE_CUDA
+      #ifndef __CUDACC__
          Pair< Vector<     int,                 Devices::Host >, Vector<     int,                          Devices::Host > >,
          Pair< VectorView< int,                 Devices::Host >, Vector<     int,                          Devices::Host > >,
          Pair< VectorView< const int,           Devices::Host >, Vector<     int,                          Devices::Host > >,
@@ -684,7 +685,7 @@ TYPED_TEST( VectorBinaryOperationsTest, max )
    EXPECT_EQ( max(LeftReal(1), R1 + R1), L2 );
 }
 
-#if defined(HAVE_CUDA) && !defined(STATIC_VECTOR)
+#if defined(__CUDACC__) && !defined(STATIC_VECTOR)
 TYPED_TEST( VectorBinaryOperationsTest, comparisonOnDifferentDevices )
 {
    SETUP_BINARY_TEST_ALIASES;
@@ -701,7 +702,7 @@ TYPED_TEST( VectorBinaryOperationsTest, comparisonOnDifferentDevices )
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    #ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
       #pragma nv_diagnostic pop
    #else

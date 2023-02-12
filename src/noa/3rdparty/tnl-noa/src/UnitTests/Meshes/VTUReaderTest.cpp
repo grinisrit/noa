@@ -264,8 +264,8 @@ TEST( VTUReaderTest, cube1m_1 )
    const auto vertices = mesh.template getEntitiesCount< 0 >();
    const auto faces = mesh.template getEntitiesCount< MeshType::getMeshDimension() - 1 >();
    const auto cells = mesh.template getEntitiesCount< MeshType::getMeshDimension() >();
-   EXPECT_EQ( vertices, 2358 );
-   EXPECT_EQ( faces, 2690 );
+   EXPECT_EQ( vertices, 2018 );
+   EXPECT_EQ( faces, 2410 );
    EXPECT_EQ( cells, 395 );
 
    test_reader< Readers::VTUReader, Writers::VTUWriter >( mesh, TEST_FILE_NAME );

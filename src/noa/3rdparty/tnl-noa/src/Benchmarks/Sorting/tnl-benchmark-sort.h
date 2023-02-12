@@ -85,11 +85,14 @@ int main(int argc, char *argv[])
 {
    if(argc == 1)
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       std::cout << "Quicksort on GPU ... " << std::endl;
       start< Quicksort >(cout, "\t");
       std::cout << "Bitonic sort on GPU ... " << std::endl;
       start< BitonicSort >( cout, "\t" );
+
+// FIXME: clang 14 fails to compile the reference algorithms (e.g. due to compile errors in thrust or cub)
+#if defined(__CUDA__) && !defined(__clang__)
 #ifdef HAVE_CUDA_SAMPLES
       std::cout << "Manca quicksort on GPU ... " << std::endl;
       start< MancaQuicksort >( cout, "\t" );
@@ -101,18 +104,22 @@ int main(int argc, char *argv[])
       std::cout << "Thrust radixsort on GPU ... " << std::endl;
       start< ThrustRadixsort >( cout, "\t" );
 #endif
+#endif
+
       std::cout << "STL sort on CPU ... " << std::endl;
       start< STLSort >( cout, "\t" );
    }
    else
    {
       std::ofstream out(argv[1]);
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       std::cout << "Quicksort on GPU ... " << std::endl;
       start< Quicksort >(out, ",");
       std::cout << "Bitonic sort on GPU ... " << std::endl;
       start< BitonicSort >(out, ",");
 
+// FIXME: clang 14 fails to compile the reference algorithms (e.g. due to compile errors in thrust or cub)
+#if defined(__CUDA__) && !defined(__clang__)
 #ifdef HAVE_CUDA_SAMPLES
       std::cout << "Manca quicksort on GPU ... " << std::endl;
       start< MancaQuicksort >( out, "," );
@@ -124,6 +131,8 @@ int main(int argc, char *argv[])
       std::cout << "Thrust radixsort on GPU ... " << std::endl;
       start< ThrustRadixsort >( out, "," );
 #endif
+#endif
+
       std::cout << "STL sort on CPU ... " << std::endl;
       start< STLSort >( out, "," );
     }

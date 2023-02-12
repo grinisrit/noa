@@ -1,7 +1,7 @@
 # Documentation: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 ---
 Language: Cpp
-Standard: c++14
+Standard: c++17
 #BasedOnStyle: Mozilla
 
 # max line length
@@ -115,7 +115,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortEnumsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortLambdasOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false

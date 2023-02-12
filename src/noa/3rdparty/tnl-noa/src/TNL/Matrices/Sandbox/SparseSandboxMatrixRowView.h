@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -76,7 +76,7 @@ public:
    /**
     * \brief Type of constant sparse matrix row view.
     */
-   using ConstView = SparseSandboxMatrixRowView< ConstValuesViewType, ConstColumnsIndexesViewType, isBinary_ >;
+   using ConstRowView = SparseSandboxMatrixRowView< ConstValuesViewType, ConstColumnsIndexesViewType, isBinary_ >;
 
    /**
     * \brief The type of related matrix element.
@@ -96,7 +96,7 @@ public:
    isBinary()
    {
       return isBinary_;
-   };
+   }
 
    /**
     * \brief Constructor with \e segmentView, \e values and \e columnIndexes.

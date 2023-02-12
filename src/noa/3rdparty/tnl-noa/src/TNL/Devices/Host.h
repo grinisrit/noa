@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -20,6 +20,11 @@ namespace Devices {
 class Host
 {
 public:
+   //! For compatibility with \ref TNL::Devices::Cuda only. In the future, it may be used to specify parameters for OpenMP
+   //! execution.
+   struct LaunchConfiguration
+   {};
+
    static void
    disableOMP()
    {

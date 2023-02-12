@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -49,10 +49,15 @@ restoreRedirection()
 inline void
 selectGPU()
 {
-#ifdef HAVE_MPI
-   #ifdef HAVE_CUDA
+#ifdef __CUDACC__
    int gpuCount;
    cudaGetDeviceCount( &gpuCount );
+
+   // avoid division by zero
+   if( gpuCount == 0 ) {
+      std::cout << "Rank " << GetRank() << " detected 0 GPUs." << std::endl;
+      return;
+   }
 
    const int local_rank = getRankOnNode();
    const int gpuNumber = local_rank % gpuCount;
@@ -66,7 +71,6 @@ selectGPU()
 
    cudaSetDevice( gpuNumber );
    TNL_CHECK_CUDA_DEVICE;
-   #endif
 #endif
 }
 

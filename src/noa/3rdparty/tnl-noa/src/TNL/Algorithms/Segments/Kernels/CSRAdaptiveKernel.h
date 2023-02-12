@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -19,7 +19,7 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace Segments {
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 template< int CudaBlockSize,
           int warpSize,
@@ -62,13 +62,13 @@ struct CSRAdaptiveKernel
    MaxValueSizeLog()
    {
       return ViewType::MaxValueSizeLog;
-   };
+   }
 
    static int
    getSizeValueLog( const int& i )
    {
       return detail::CSRAdaptiveKernelParameters<>::getSizeValueLog( i );
-   };
+   }
 
    static TNL::String
    getKernelType();
@@ -80,9 +80,11 @@ struct CSRAdaptiveKernel
    void
    reset();
 
+   __cuda_callable__
    ViewType
    getView();
 
+   __cuda_callable__
    ConstViewType
    getConstView() const;
 

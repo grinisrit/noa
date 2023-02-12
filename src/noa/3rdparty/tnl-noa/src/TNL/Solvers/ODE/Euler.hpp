@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,7 +17,7 @@ void
 Euler< Vector, SolverMonitor >::configSetup( Config::ConfigDescription& config, const String& prefix )
 {
    config.addEntry< double >( prefix + "euler-cfl", "Coefficient C in the Courant–Friedrichs–Lewy condition.", 0.0 );
-};
+}
 
 template< typename Vector, typename SolverMonitor >
 bool
@@ -114,7 +114,7 @@ Euler< Vector, SolverMonitor >::solve( VectorType& _u, RHSFunction&& rhsFunction
       }
    }
    return false;  // just to avoid warnings
-};
+}
 
 }  // namespace ODE
 }  // namespace Solvers

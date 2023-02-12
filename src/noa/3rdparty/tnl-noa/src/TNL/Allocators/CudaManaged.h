@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -64,7 +64,7 @@ struct CudaManaged
    value_type*
    allocate( size_type n )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       TNL_CHECK_CUDA_DEVICE;
       value_type* result = nullptr;
       if( cudaMallocManaged( &result, n * sizeof( value_type ) ) != cudaSuccess )
@@ -79,7 +79,7 @@ struct CudaManaged
    void
    deallocate( value_type* ptr, size_type )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       TNL_CHECK_CUDA_DEVICE;
       cudaFree( (void*) ptr );
       TNL_CHECK_CUDA_DEVICE;

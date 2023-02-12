@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -28,7 +28,7 @@ Diagonal< Matrix >::update( const MatrixPointer& matrixPointer )
 
    VectorViewType diag_view( diagonal );
 
-   const auto kernel_matrix = matrixPointer->getView();
+   const auto kernel_matrix = matrixPointer->getConstView();
 
    // TODO: Rewrite this with SparseMatrix::forAllElements
    auto kernel = [ = ] __cuda_callable__( IndexType i ) mutable
@@ -55,7 +55,7 @@ Diagonal< Matrices::DistributedMatrix< Matrix > >::update( const MatrixPointer& 
    LocalViewType diag_view( diagonal );
    // FIXME: SparseMatrix::getConstView is broken
    //   const auto matrix_view = matrixPointer->getLocalMatrix().getConstView();
-   const auto matrix_view = matrixPointer->getLocalMatrix().getView();
+   const auto matrix_view = matrixPointer->getLocalMatrix().getConstView();
 
    if( matrixPointer->getRows() == matrixPointer->getColumns() ) {
       // square matrix, assume global column indices

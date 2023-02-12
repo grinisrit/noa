@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -23,6 +21,10 @@
 namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
+
+template< typename Mesh >
+VTIWriter< Mesh >::VTIWriter( std::ostream& str, VTK::FileFormat format ) : str( str.rdbuf() ), format( format )
+{}
 
 template< typename Mesh >
 void

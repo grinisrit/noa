@@ -75,7 +75,7 @@ protected:
 using VectorTypes = ::testing::Types<
    Vector< int,   Devices::Host >,
    Vector< float, Devices::Host >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,
    Vector< int,   Devices::Cuda >,
    Vector< float, Devices::Cuda >

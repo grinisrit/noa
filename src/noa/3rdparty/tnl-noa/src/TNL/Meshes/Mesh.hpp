@@ -1,14 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
 
 #pragma once
 
@@ -28,8 +22,8 @@ MeshInitializableBase< MeshConfig, Device, MeshType >::init( typename MeshTraits
    MeshType* mesh = static_cast< MeshType* >( this );
    Initializer< typename MeshType::Config > initializer;
    initializer.createMesh( points, faceSeeds, cellSeeds, *mesh );
-   // init boundary tags
-   static_cast< EntityTags::LayerFamily< MeshConfig, Device, MeshType >* >( mesh )->initLayer();
+   // init entity tags
+   EntityTags::initializeEntityTags( *mesh );
    // init dual graph
    mesh->initializeDualGraph( *mesh );
 }
@@ -82,7 +76,7 @@ Mesh< MeshConfig, Device >::getEntity( GlobalIndexType entityIndex ) const
 template< typename MeshConfig, typename Device >
 template< int Dimension >
 void
-Mesh< MeshConfig, Device >::setEntitiesCount( const typename MeshTraitsType::GlobalIndexType& entitiesCount )
+Mesh< MeshConfig, Device >::setEntitiesCount( GlobalIndexType entitiesCount )
 {
    StorageBaseType::setEntitiesCount( DimensionTag< Dimension >(), entitiesCount );
    if( Dimension == 0 )
@@ -148,6 +142,14 @@ void
 Mesh< MeshConfig, Device >::setSubentitiesCounts( const typename MeshTraitsType::NeighborCountsArray& counts )
 {
    StorageBaseType::template setSubentitiesCounts< EntityDimension, SubentityDimension >( counts );
+}
+
+template< typename MeshConfig, typename Device >
+template< int EntityDimension, int SubentityDimension >
+void
+Mesh< MeshConfig, Device >::setSubentitiesCounts( typename MeshTraitsType::NeighborCountsArray&& counts )
+{
+   StorageBaseType::template setSubentitiesCounts< EntityDimension, SubentityDimension >( std::move( counts ) );
 }
 
 template< typename MeshConfig, typename Device >

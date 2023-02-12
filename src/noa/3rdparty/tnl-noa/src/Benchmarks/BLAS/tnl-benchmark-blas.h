@@ -41,7 +41,7 @@ runBlasBenchmarks( Benchmark<> & benchmark,
       } ));
       benchmarkArrayOperations< Real >( benchmark, size );
    }
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    for( std::size_t size = minSize; size <= maxSize; size *= 2 ) {
       benchmark.setMetadataColumns( Benchmark<>::MetadataColumns({
          { "precision", getType< Real >() },
@@ -71,7 +71,7 @@ runBlasBenchmarks( Benchmark<> & benchmark,
    }
 
    // Triad benchmark: copy from host, compute, copy to host
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    std::cout << "\n== Triad ==\n" << std::endl;
    for( std::size_t size = minSize; size <= maxSize; size *= 2 ) {
       benchmark.setMetadataColumns( Benchmark<>::MetadataColumns({

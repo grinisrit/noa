@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,7 +17,7 @@ namespace Cuda {
 inline int
 DeviceInfo::getNumberOfDevices()
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    int devices;
    cudaGetDeviceCount( &devices );
    return devices;
@@ -29,7 +29,7 @@ DeviceInfo::getNumberOfDevices()
 inline int
 DeviceInfo::getActiveDevice()
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    int device;
    cudaGetDevice( &device );
    return device;
@@ -41,7 +41,7 @@ DeviceInfo::getActiveDevice()
 inline String
 DeviceInfo::getDeviceName( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return String( properties.name );
@@ -53,7 +53,7 @@ DeviceInfo::getDeviceName( int deviceNum )
 inline int
 DeviceInfo::getArchitectureMajor( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return properties.major;
@@ -65,7 +65,7 @@ DeviceInfo::getArchitectureMajor( int deviceNum )
 inline int
 DeviceInfo::getArchitectureMinor( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return properties.minor;
@@ -77,7 +77,7 @@ DeviceInfo::getArchitectureMinor( int deviceNum )
 inline int
 DeviceInfo::getClockRate( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return properties.clockRate;
@@ -89,7 +89,7 @@ DeviceInfo::getClockRate( int deviceNum )
 inline std::size_t
 DeviceInfo::getGlobalMemory( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return properties.totalGlobalMem;
@@ -101,7 +101,7 @@ DeviceInfo::getGlobalMemory( int deviceNum )
 inline std::size_t
 DeviceInfo::getFreeGlobalMemory()
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    std::size_t free = 0;
    std::size_t total = 0;
    cudaMemGetInfo( &free, &total );
@@ -114,7 +114,7 @@ DeviceInfo::getFreeGlobalMemory()
 inline int
 DeviceInfo::getMemoryClockRate( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return properties.memoryClockRate;
@@ -126,7 +126,7 @@ DeviceInfo::getMemoryClockRate( int deviceNum )
 inline bool
 DeviceInfo::getECCEnabled( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    cudaDeviceProp properties;
    cudaGetDeviceProperties( &properties, deviceNum );
    return properties.ECCEnabled;
@@ -138,7 +138,7 @@ DeviceInfo::getECCEnabled( int deviceNum )
 inline int
 DeviceInfo::getCudaMultiprocessors( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    // results are cached because they are used for configuration of some kernels
    static std::unordered_map< int, int > results;
    if( results.count( deviceNum ) == 0 ) {
@@ -156,7 +156,7 @@ DeviceInfo::getCudaMultiprocessors( int deviceNum )
 inline int
 DeviceInfo::getCudaCoresPerMultiprocessors( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    int major = DeviceInfo::getArchitectureMajor( deviceNum );
    int minor = DeviceInfo::getArchitectureMinor( deviceNum );
    switch( major ) {
@@ -207,7 +207,7 @@ DeviceInfo::getCudaCoresPerMultiprocessors( int deviceNum )
 inline int
 DeviceInfo::getCudaCores( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    return DeviceInfo::getCudaMultiprocessors( deviceNum ) * DeviceInfo::getCudaCoresPerMultiprocessors( deviceNum );
 #else
    throw Exceptions::CudaSupportMissing();
@@ -217,7 +217,7 @@ DeviceInfo::getCudaCores( int deviceNum )
 inline int
 DeviceInfo::getRegistersPerMultiprocessor( int deviceNum )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    // results are cached because they are used for configuration of some kernels
    static std::unordered_map< int, int > results;
    if( results.count( deviceNum ) == 0 ) {

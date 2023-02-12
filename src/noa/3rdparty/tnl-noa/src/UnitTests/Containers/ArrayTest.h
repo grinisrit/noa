@@ -12,7 +12,7 @@
 using namespace TNL;
 using namespace TNL::Containers;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 static const char* TEST_FILE_NAME = "test_ArrayTestCuda.tnl";
 #else
 static const char* TEST_FILE_NAME = "test_ArrayTest.tnl";
@@ -35,6 +35,12 @@ struct MyData
    // operator used in tests, not necessary for Array to work
    template< typename T >
    bool operator==( T v ) const { return data == v; }
+
+   // operator used in ArrayIO::loadSubrange (due to casting requested from the tests)
+   operator double() const
+   {
+      return data;
+   }
 };
 
 std::ostream& operator<<( std::ostream& str, const MyData& v )
@@ -53,7 +59,7 @@ protected:
 
 // types for which ArrayTest is instantiated
 using ArrayTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    // we can't test all types because the argument list would be too long...
 //   Array< int,    Devices::Sequential, short >,
 //   Array< long,   Devices::Sequential, short >,
@@ -87,7 +93,7 @@ using ArrayTypes = ::testing::Types<
    Array< double, Devices::Host, long >,
    Array< MyData, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    Array< int,    Devices::Cuda, short >,
    Array< long,   Devices::Cuda, short >,
    Array< float,  Devices::Cuda, short >,
@@ -107,14 +113,14 @@ using ArrayTypes = ::testing::Types<
 
    // all array tests should also work with Vector
    // (but we can't test all types because the argument list would be too long...)
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    ,
    Vector< float,  Devices::Sequential, long >,
    Vector< double, Devices::Sequential, long >,
    Vector< float,  Devices::Host, long >,
    Vector< double, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,
    Vector< float,  Devices::Cuda, long >,
    Vector< double, Devices::Cuda, long >
@@ -393,7 +399,7 @@ void testArrayElementwiseAccess( Array< Value, Devices::Host, Index >&& u )
    }
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename ValueType, typename IndexType >
 __global__ void testSetGetElementKernel( Array< ValueType, Devices::Cuda, IndexType >* u,
                                          Array< ValueType, Devices::Cuda, IndexType >* v )
@@ -401,12 +407,12 @@ __global__ void testSetGetElementKernel( Array< ValueType, Devices::Cuda, IndexT
    if( threadIdx.x < u->getSize() )
       ( *u )[ threadIdx.x ] = ( *v )( threadIdx.x ) = threadIdx.x;
 }
-#endif /* HAVE_CUDA */
+#endif /* __CUDACC__ */
 
 template< typename Value, typename Index >
 void testArrayElementwiseAccess( Array< Value, Devices::Cuda, Index >&& u )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using ArrayType = Array< Value, Devices::Cuda, Index >;
    u.setSize( 10 );
    ArrayType v( 10 );
@@ -438,7 +444,7 @@ void test_setElement_on_device( const Array< Value, Devices::Host, Index >& )
 {
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename ValueType, typename IndexType >
 __global__ void test_setElement_on_device_kernel( Array< ValueType, Devices::Cuda, IndexType >* a,
                                                   Array< ValueType, Devices::Cuda, IndexType >* b )
@@ -448,12 +454,12 @@ __global__ void test_setElement_on_device_kernel( Array< ValueType, Devices::Cud
       b->setElement( threadIdx.x, a->getElement( threadIdx.x ) );
    }
 }
-#endif /* HAVE_CUDA */
+#endif /* __CUDACC__ */
 
 template< typename Value, typename Index >
 void test_setElement_on_device( const Array< Value, Devices::Cuda, Index >& )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using ArrayType = Array< Value, Devices::Cuda, Index >;
    ArrayType a( 10, 0 ), b( 10, 0 );
    Pointers::DevicePointer< ArrayType > kernel_a( a );
@@ -646,6 +652,49 @@ TYPED_TEST( ArrayTest, SaveAndLoad )
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
 }
 
+TYPED_TEST( ArrayTest, SaveAndLoadSubrangeWithCast )
+{
+   using ArrayType = typename TestFixture::ArrayType;
+   using Value = typename ArrayType::ValueType;
+   using Index = typename ArrayType::IndexType;
+   using namespace TNL::Containers::detail;
+
+   ArrayType v;
+   v.setSize( 100 );
+   for( int i = 0; i < 100; i ++ )
+      v.setElement( i, i );
+   ASSERT_NO_THROW( File( TEST_FILE_NAME, std::ios_base::out ) << v );
+
+   const int offset = 25;
+   const int subrangeSize = 50;
+   using CastValue = short int;
+   Array< CastValue, typename ArrayType::DeviceType, long > array;
+   array.setSize( subrangeSize );
+   File file( TEST_FILE_NAME, std::ios_base::in );
+   {
+      // read type
+      const std::string type = getObjectType( file );
+      ASSERT_EQ( type, ArrayType::getSerializationType() );
+      // read size
+      std::size_t elementsInFile;
+      file.load( &elementsInFile );
+      EXPECT_EQ( elementsInFile, static_cast< std::size_t >( v.getSize() ) );
+      // read data, cast from Value to short int
+      using IO = ArrayIO< CastValue, Index, typename Allocators::Default< typename ArrayType::DeviceType >::template Allocator< CastValue > >;
+      // hack for the test...
+      if( getType< Value >() == "MyData" )
+         IO::loadSubrange( file, elementsInFile, offset, array.getData(), array.getSize(), "double" );
+      else
+         IO::loadSubrange( file, elementsInFile, offset, array.getData(), array.getSize(), getType< Value >() );
+   }
+   for( Index i = 0; i < subrangeSize; i++ ) {
+      EXPECT_EQ( array.getElement( i ), offset + i );
+   }
+
+   ASSERT_NO_THROW( file.close() );
+   EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
+}
+
 TYPED_TEST( ArrayTest, LoadViaView )
 {
    using ArrayType = typename TestFixture::ArrayType;
@@ -667,6 +716,7 @@ TYPED_TEST( ArrayTest, LoadViaView )
    ASSERT_NO_THROW( file.open( TEST_FILE_NAME, std::ios_base::in ) );
    EXPECT_THROW( file >> z.getView(), Exceptions::FileDeserializationError );
 
+   ASSERT_NO_THROW( file.close() );
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
 }
 

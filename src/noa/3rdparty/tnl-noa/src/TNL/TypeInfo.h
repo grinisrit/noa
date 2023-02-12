@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -67,7 +67,7 @@ public:
 /**
  * \brief Returns a human-readable string representation of given type.
  *
- * Note that since we use the \ref typeid operator internally, the top-level
+ * Note that since we use the `typeid` operator internally, the top-level
  * cv-qualifiers are always ignored. See https://stackoverflow.com/a/8889143
  * for details.
  */
@@ -81,7 +81,7 @@ getType()
 /**
  * \brief Returns a human-readable string representation of given object's type.
  *
- * Note that since we use the \ref typeid operator internally, the top-level
+ * Note that since we use the `typeid` operator internally, the top-level
  * cv-qualifiers are always ignored. See https://stackoverflow.com/a/8889143
  * for details.
  */
@@ -97,7 +97,7 @@ getType( T&& obj )
  *
  * By default, this function returns the same string as \ref getType. However,
  * if a user-defined class has a static \e getSerializationType method, it is
- * called instead. This is useful for overriding the default \ref typeid name,
+ * called instead. This is useful for overriding the default `typeid` name,
  * which may be necessary e.g. for class templates which should have the same
  * serialization type for multiple devices.
  */
@@ -109,7 +109,7 @@ getSerializationType()
 }
 
 /**
- * \brief Specialization of \ref getSerializationType for types which provide a
+ * \brief Specialization of \e getSerializationType for types which provide a
  *        static \e getSerializationType method to override the default behaviour.
  */
 template< typename T, std::enable_if_t< detail::HasStaticGetSerializationType< T >::value, bool > = true >

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/ChunkedEllpack.h>
+#include "ChunkedEllpack.h"
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/scan.h>
 #include <TNL/Math.h>
 #include <TNL/Exceptions/NotImplementedError.h>
+#include "MemoryHelpers.h"
 
 namespace TNL {
     namespace Benchmarks {
@@ -28,7 +29,7 @@ ChunkedEllpack< Real, Device, Index >::ChunkedEllpack()
   desiredChunkSize( 16 ),
   numberOfSlices( 0 )
 {
-};
+}
 
 template< typename Real,
           typename Device,
@@ -1073,7 +1074,7 @@ typename Vector::RealType ChunkedEllpack< Real, Device, Index >::chunkVectorProd
 }
 
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Device,
           typename Index >
@@ -1147,46 +1148,6 @@ void ChunkedEllpack< Real, Device, Index >::getTransposition( const ChunkedEllpa
    throw Exceptions::NotImplementedError( "ChunkedEllpack::getTransposition is not implemented." );
    // TODO: implement
 }
-
-template< typename Real,
-          typename Device,
-          typename Index >
-   template< typename Vector1, typename Vector2 >
-bool ChunkedEllpack< Real, Device, Index >::performSORIteration( const Vector1& b,
-                                                                 const IndexType row,
-                                                                 Vector2& x,
-                                                                 const RealType& omega ) const
-{
-   TNL_ASSERT( row >=0 && row < this->getRows(),
-              std::cerr << "row = " << row
-                   << " this->getRows() = " << this->getRows() << std::endl );
-
-   RealType diagonalValue( 0.0 );
-   RealType sum( 0.0 );
-
-   const IndexType& sliceIndex = rowToSliceMapping[ row ];
-   TNL_ASSERT( sliceIndex < this->rows, );
-   const IndexType& chunkSize = slices.getElement( sliceIndex ).chunkSize;
-   IndexType elementPtr = rowPointers[ row ];
-   const IndexType rowEnd = rowPointers[ row + 1 ];
-   IndexType column;
-   while( elementPtr < rowEnd && ( column = this->columnIndexes[ elementPtr ] ) < this->columns )
-   {
-      if( column == row )
-         diagonalValue = this->values.getElement( elementPtr );
-      else
-         sum += this->values.getElement( row * this->diagonalsShift.getSize() + elementPtr ) * x. getElement( column );
-      elementPtr++;
-   }
-   if( diagonalValue == ( Real ) 0.0 )
-   {
-      std::cerr << "There is zero on the diagonal in " << row << "-th row of a matrix. I cannot perform SOR iteration." << std::endl;
-      return false;
-   }
-   x. setElement( row, x[ row ] + omega / diagonalValue * ( b[ row ] - sum ) );
-   return true;
-}
-
 
 // copy assignment
 template< typename Real,
@@ -1410,7 +1371,7 @@ class ChunkedEllpackDeviceDependentCode< Devices::Host >
       }
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index,
           typename InVector,
@@ -1420,7 +1381,7 @@ __global__ void ChunkedEllpackVectorProductCudaKernel( const ChunkedEllpack< Rea
                                                                 OutVector* outVector,
                                                                 int gridIdx )
 {
-   const Index sliceIdx = gridIdx * Cuda::getMaxGridSize() + blockIdx.x;
+   const Index sliceIdx = gridIdx * Cuda::getMaxGridXSize() + blockIdx.x;
    if( sliceIdx < matrix->getNumberOfSlices() )
       matrix->computeSliceVectorProduct( inVector, outVector, sliceIdx );
 
@@ -1469,7 +1430,7 @@ class ChunkedEllpackDeviceDependentCode< Devices::Cuda >
                                  const InVector& inVector,
                                  OutVector& outVector )
       {
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
             typedef ChunkedEllpack< Real, Devices::Cuda, Index > Matrix;
             typedef Index IndexType;
             typedef Real RealType;
@@ -1477,15 +1438,15 @@ class ChunkedEllpackDeviceDependentCode< Devices::Cuda >
             InVector* kernel_inVector = Cuda::passToDevice( inVector );
             OutVector* kernel_outVector = Cuda::passToDevice( outVector );
             dim3 cudaBlockSize( matrix.getNumberOfChunksInSlice() ),
-                 cudaGridSize( Cuda::getMaxGridSize() );
+                 cudaGridSize( Cuda::getMaxGridXSize() );
             const IndexType cudaBlocks = matrix.getNumberOfSlices();
-            const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+            const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
             const IndexType sharedMemory = cudaBlockSize.x * sizeof( RealType ) +
                                            sizeof( tnlChunkedEllpackSliceInfo< IndexType > );
             for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
             {
                if( gridIdx == cudaGrids - 1 )
-                  cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+                  cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
                ChunkedEllpackVectorProductCudaKernel< Real, Index, InVector, OutVector >
                                                              <<< cudaGridSize, cudaBlockSize, sharedMemory  >>>
                                                              ( kernel_this,

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,7 +15,47 @@
 
 namespace noa::TNL {
 namespace Containers {
-namespace __ndarray_impl {
+namespace detail {
+
+template< typename Permutation, typename Device2 >
+struct Functor_call_with_unpermuted_arguments
+{
+   template< typename Index, typename Func >
+   void
+   operator()( Index i1, Index i0, Func f )
+   {
+      call_with_unpermuted_arguments< Permutation >( f, i0, i1 );
+   }
+
+   template< typename Index, typename Func >
+   void
+   operator()( Index i2, Index i1, Index i0, Func f )
+   {
+      call_with_unpermuted_arguments< Permutation >( f, i0, i1, i2 );
+   }
+};
+
+// stupid specialization to avoid a shitpile of nvcc warnings
+// (nvcc does not like nested __cuda_callable__ and normal lambdas...)
+template< typename Permutation >
+struct Functor_call_with_unpermuted_arguments< Permutation, Devices::Cuda >
+{
+   template< typename Index, typename Func >
+   __cuda_callable__
+   void
+   operator()( Index i1, Index i0, Func f )
+   {
+      call_with_unpermuted_arguments< Permutation >( f, i0, i1 );
+   }
+
+   template< typename Index, typename Func >
+   __cuda_callable__
+   void
+   operator()( Index i2, Index i1, Index i0, Func f )
+   {
+      call_with_unpermuted_arguments< Permutation >( f, i0, i1, i2 );
+   }
+};
 
 template< typename Permutation, typename LevelTag = IndexTag< 0 > >
 struct SequentialExecutor
@@ -98,7 +138,10 @@ struct ParallelExecutorDeviceDispatch
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins,
+               const Ends& ends,
+               const typename Device::LaunchConfiguration& launch_configuration,
+               Func f )
    {
       static_assert( Begins::getDimension() == Ends::getDimension(), "wrong begins or ends" );
 
@@ -116,7 +159,7 @@ struct ParallelExecutorDeviceDispatch
       const Index end0 = ends.template getSize< get< 0 >( Permutation{} ) >();
       const Index end1 = ends.template getSize< get< 1 >( Permutation{} ) >();
       const Index end2 = ends.template getSize< get< 2 >( Permutation{} ) >();
-      Algorithms::ParallelFor3D< Device >::exec( begin2, begin1, begin0, end2, end1, end0, kernel );
+      Algorithms::ParallelFor3D< Device >::exec( begin2, begin1, begin0, end2, end1, end0, launch_configuration, kernel );
    }
 };
 
@@ -125,7 +168,7 @@ struct ParallelExecutorDeviceDispatch< Permutation, Devices::Cuda >
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins, const Ends& ends, const Devices::Cuda::LaunchConfiguration& launch_configuration, Func f )
    {
       static_assert( Begins::getDimension() == Ends::getDimension(), "wrong begins or ends" );
 
@@ -143,7 +186,8 @@ struct ParallelExecutorDeviceDispatch< Permutation, Devices::Cuda >
       const Index end0 = ends.template getSize< get< Ends::getDimension() - 3 >( Permutation{} ) >();
       const Index end1 = ends.template getSize< get< Ends::getDimension() - 2 >( Permutation{} ) >();
       const Index end2 = ends.template getSize< get< Ends::getDimension() - 1 >( Permutation{} ) >();
-      Algorithms::ParallelFor3D< Devices::Cuda >::exec( begin2, begin1, begin0, end2, end1, end0, kernel );
+      Algorithms::ParallelFor3D< Devices::Cuda >::exec(
+         begin2, begin1, begin0, end2, end1, end0, launch_configuration, kernel );
    }
 };
 
@@ -152,10 +196,13 @@ struct ParallelExecutor
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins,
+               const Ends& ends,
+               const typename Device::LaunchConfiguration& launch_configuration,
+               Func f )
    {
       ParallelExecutorDeviceDispatch< Permutation, Device > dispatch;
-      dispatch( begins, ends, f );
+      dispatch( begins, ends, launch_configuration, f );
    }
 };
 
@@ -164,18 +211,17 @@ struct ParallelExecutor< Permutation, Device, IndexTag< 3 > >
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins,
+               const Ends& ends,
+               const typename Device::LaunchConfiguration& launch_configuration,
+               Func f )
    {
       static_assert( Begins::getDimension() == Ends::getDimension(), "wrong begins or ends" );
 
       using Index = typename Ends::IndexType;
 
       // nvcc does not like nested __cuda_callable__ and normal lambdas...
-      //      auto kernel = [=] __cuda_callable__ ( Index i2, Index i1, Index i0 )
-      //      {
-      //         call_with_unpermuted_arguments< Permutation >( f, i0, i1, i2 );
-      //      };
-      Kernel< Device > kernel;
+      Functor_call_with_unpermuted_arguments< Permutation, Device > kernel;
 
       const Index begin0 = begins.template getSize< get< 0 >( Permutation{} ) >();
       const Index begin1 = begins.template getSize< get< 1 >( Permutation{} ) >();
@@ -183,32 +229,8 @@ struct ParallelExecutor< Permutation, Device, IndexTag< 3 > >
       const Index end0 = ends.template getSize< get< 0 >( Permutation{} ) >();
       const Index end1 = ends.template getSize< get< 1 >( Permutation{} ) >();
       const Index end2 = ends.template getSize< get< 2 >( Permutation{} ) >();
-      Algorithms::ParallelFor3D< Device >::exec( begin2, begin1, begin0, end2, end1, end0, kernel, f );
+      Algorithms::ParallelFor3D< Device >::exec( begin2, begin1, begin0, end2, end1, end0, launch_configuration, kernel, f );
    }
-
-   template< typename __Device, typename = void >
-   struct Kernel
-   {
-      template< typename Index, typename Func >
-      void
-      operator()( Index i2, Index i1, Index i0, Func f )
-      {
-         call_with_unpermuted_arguments< Permutation >( f, i0, i1, i2 );
-      }
-   };
-
-   // dummy specialization to avoid a shitpile of nvcc warnings
-   template< typename __unused >
-   struct Kernel< Devices::Cuda, __unused >
-   {
-      template< typename Index, typename Func >
-      __cuda_callable__
-      void
-      operator()( Index i2, Index i1, Index i0, Func f )
-      {
-         call_with_unpermuted_arguments< Permutation >( f, i0, i1, i2 );
-      }
-   };
 };
 
 template< typename Permutation, typename Device >
@@ -216,49 +238,24 @@ struct ParallelExecutor< Permutation, Device, IndexTag< 2 > >
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins,
+               const Ends& ends,
+               const typename Device::LaunchConfiguration& launch_configuration,
+               Func f )
    {
       static_assert( Begins::getDimension() == Ends::getDimension(), "wrong begins or ends" );
 
       using Index = typename Ends::IndexType;
 
       // nvcc does not like nested __cuda_callable__ and normal lambdas...
-      //      auto kernel = [=] __cuda_callable__ ( Index i1, Index i0 )
-      //      {
-      //         call_with_unpermuted_arguments< Permutation >( f, i0, i1 );
-      //      };
-      Kernel< Device > kernel;
+      Functor_call_with_unpermuted_arguments< Permutation, Device > kernel;
 
       const Index begin0 = begins.template getSize< get< 0 >( Permutation{} ) >();
       const Index begin1 = begins.template getSize< get< 1 >( Permutation{} ) >();
       const Index end0 = ends.template getSize< get< 0 >( Permutation{} ) >();
       const Index end1 = ends.template getSize< get< 1 >( Permutation{} ) >();
-      Algorithms::ParallelFor2D< Device >::exec( begin1, begin0, end1, end0, kernel, f );
+      Algorithms::ParallelFor2D< Device >::exec( begin1, begin0, end1, end0, launch_configuration, kernel, f );
    }
-
-   template< typename __Device, typename = void >
-   struct Kernel
-   {
-      template< typename Index, typename Func >
-      void
-      operator()( Index i1, Index i0, Func f )
-      {
-         call_with_unpermuted_arguments< Permutation >( f, i0, i1 );
-      }
-   };
-
-   // dummy specialization to avoid a shitpile of nvcc warnings
-   template< typename __unused >
-   struct Kernel< Devices::Cuda, __unused >
-   {
-      template< typename Index, typename Func >
-      __cuda_callable__
-      void
-      operator()( Index i1, Index i0, Func f )
-      {
-         call_with_unpermuted_arguments< Permutation >( f, i0, i1 );
-      }
-   };
 };
 
 template< typename Permutation, typename Device >
@@ -266,21 +263,18 @@ struct ParallelExecutor< Permutation, Device, IndexTag< 1 > >
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins,
+               const Ends& ends,
+               const typename Device::LaunchConfiguration& launch_configuration,
+               Func f )
    {
       static_assert( Begins::getDimension() == Ends::getDimension(), "wrong begins or ends" );
 
       using Index = typename Ends::IndexType;
 
-      //      auto kernel = [=] __cuda_callable__ ( Index i )
-      //      {
-      //         call_with_unpermuted_arguments< Permutation >( f, i );
-      //      };
-
       const Index begin = begins.template getSize< get< 0 >( Permutation{} ) >();
       const Index end = ends.template getSize< get< 0 >( Permutation{} ) >();
-      //      Algorithms::ParallelFor< Device >::exec( begin, end, kernel );
-      Algorithms::ParallelFor< Device >::exec( begin, end, f );
+      Algorithms::ParallelFor< Device >::exec( begin, end, launch_configuration, f );
    }
 };
 
@@ -290,7 +284,10 @@ struct ExecutorDispatcher
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins,
+               const Ends& ends,
+               const typename Device::LaunchConfiguration& launch_configuration,
+               Func f )
    {
       SequentialExecutor< Permutation >()( begins, ends, f );
    }
@@ -301,10 +298,10 @@ struct ExecutorDispatcher< Permutation, Devices::Host >
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins, const Ends& ends, const Devices::Host::LaunchConfiguration& launch_configuration, Func f )
    {
       if( Devices::Host::isOMPEnabled() && Devices::Host::getMaxThreadsCount() > 1 )
-         ParallelExecutor< Permutation, Devices::Host >()( begins, ends, f );
+         ParallelExecutor< Permutation, Devices::Host >()( begins, ends, launch_configuration, f );
       else
          SequentialExecutor< Permutation >()( begins, ends, f );
    }
@@ -315,12 +312,12 @@ struct ExecutorDispatcher< Permutation, Devices::Cuda >
 {
    template< typename Begins, typename Ends, typename Func >
    void
-   operator()( const Begins& begins, const Ends& ends, Func f )
+   operator()( const Begins& begins, const Ends& ends, const Devices::Cuda::LaunchConfiguration& launch_configuration, Func f )
    {
-      ParallelExecutor< Permutation, Devices::Cuda >()( begins, ends, f );
+      ParallelExecutor< Permutation, Devices::Cuda >()( begins, ends, launch_configuration, f );
    }
 };
 
-}  // namespace __ndarray_impl
+}  // namespace detail
 }  // namespace Containers
 }  // namespace noa::TNL

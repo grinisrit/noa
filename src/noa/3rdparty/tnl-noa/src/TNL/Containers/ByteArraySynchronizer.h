@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -10,7 +10,7 @@
 
 #include <future>
 // 3rd-party async library providing a thread-pool
-#include <noa/3rdparty/async/threadpool.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/3rdparty/async/threadpool.h>
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Containers/ArrayView.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/MPI/Wrappers.h>
@@ -50,6 +50,12 @@ public:
 
    ByteArraySynchronizer() : tp( 1 ) {}
 
+   /**
+    * \brief Main synchronization function.
+    *
+    * This is only a pure virtual function -- the functionality must be
+    * implemented in a subclass.
+    */
    virtual void
    synchronizeByteArray( ByteArrayView array, int bytesPerValue ) = 0;
 
@@ -57,7 +63,8 @@ public:
    synchronizeByteArrayAsyncWorker( ByteArrayView array, int bytesPerValue ) = 0;
 
    /**
-    * \brief An asynchronous version of \ref synchronizeByteArray.
+    * \brief An asynchronous version of \ref TNL::Containers::ByteArraySynchronizer::synchronizeByteArray
+    * "synchronizeByteArray".
     *
     * Note that this method is not thread-safe - only the thread which created
     * and "owns" the instance of this object can call this method.
@@ -78,21 +85,17 @@ public:
 
       async_start_timer.start();
 
-// GOTCHA: https://devblogs.nvidia.com/cuda-pro-tip-always-set-current-device-avoid-multithreading-bugs/
-#ifdef HAVE_CUDA
-      if( std::is_same< Device, Devices::Cuda >::value )
+      // GOTCHA: https://devblogs.nvidia.com/cuda-pro-tip-always-set-current-device-avoid-multithreading-bugs/
+      if constexpr( std::is_same< Device, Devices::Cuda >::value )
          cudaGetDevice( &gpu_id );
-#endif
 
       if( policy == AsyncPolicy::threadpool || policy == AsyncPolicy::async ) {
          // everything offloaded to a separate thread
          auto worker = [ = ]()
          {
-// GOTCHA: https://devblogs.nvidia.com/cuda-pro-tip-always-set-current-device-avoid-multithreading-bugs/
-#ifdef HAVE_CUDA
-            if( std::is_same< Device, Devices::Cuda >::value )
+            // GOTCHA: https://devblogs.nvidia.com/cuda-pro-tip-always-set-current-device-avoid-multithreading-bugs/
+            if constexpr( std::is_same< Device, Devices::Cuda >::value )
                cudaSetDevice( this->gpu_id );
-#endif
 
             this->synchronizeByteArray( array, bytesPerValue );
          };

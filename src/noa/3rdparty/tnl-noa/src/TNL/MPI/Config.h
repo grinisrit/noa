@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -47,7 +47,7 @@ setup( const Config::ParameterContainer& parameters, const String& prefix = "" )
       const String outputDirectory = parameters.getParameter< String >( "redirect-mpi-output-dir" );
       if( redirect )
          MPI::setupRedirection( outputDirectory );
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
       if( GetSize() > 1 ) {
       #if defined( MPIX_CUDA_AWARE_SUPPORT ) && MPIX_CUDA_AWARE_SUPPORT
          std::cout << "CUDA-aware MPI detected on this system ... " << std::endl;
@@ -58,7 +58,7 @@ setup( const Config::ParameterContainer& parameters, const String& prefix = "" )
          std::cerr << "WARNING: TNL cannot detect if you have CUDA-aware MPI. Some problems may occur." << std::endl;
       #endif
       }
-   #endif  // HAVE_CUDA
+   #endif  // __CUDACC__
       bool gdbDebug = parameters.getParameter< bool >( "mpi-gdb-debug" );
       int processToAttach = parameters.getParameter< int >( "mpi-process-to-attach" );
 

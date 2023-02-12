@@ -11,7 +11,7 @@
 
 using namespace TNL;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 // ignore useless nvcc warning: https://stackoverflow.com/a/49997636
 #pragma push
@@ -28,6 +28,14 @@ void kernel_##suffix( int* output )                               \
    /* pointers */                                                 \
    const double* data_null = nullptr;                             \
    const double** data_full = &data_null;                         \
+                                                                  \
+   /* ignore warnings due to potentially unused variables */      \
+   (void) tr;                                                     \
+   (void) fa;                                                     \
+   (void) two;                                                    \
+   (void) ten;                                                    \
+   (void) data_null;                                              \
+   (void) data_full;                                              \
                                                                   \
    statement                                                      \
                                                                   \

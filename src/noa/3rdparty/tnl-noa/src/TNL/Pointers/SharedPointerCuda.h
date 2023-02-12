@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -21,10 +21,6 @@
 
 namespace noa::TNL {
 namespace Pointers {
-
-//#define HAVE_CUDA_UNIFIED_MEMORY
-
-#if ! defined HAVE_CUDA_UNIFIED_MEMORY
 
 /**
  * \brief Specialization of the \ref SharedPointer for the CUDA device.
@@ -53,18 +49,17 @@ private:
 
 public:
    /**
-    * \typedef ObjectType is the type of object owned by the pointer.
+    * \brief Type of the object owned by the pointer.
     */
    using ObjectType = Object;
 
    /**
-    * \typedef DeviceType is the type of device where the object is to be
-    * mirrored.
+    * \brief Type of the device where the object is to be mirrored.
     */
    using DeviceType = Devices::Cuda;
 
    /**
-    * \typedef AllocatorType is the type of the allocator for \e DeviceType.
+    * \brief Type of the allocator for \e DeviceType.
     */
    using AllocatorType = typename Allocators::Default< DeviceType >::Allocator< ObjectType >;
 
@@ -126,8 +121,6 @@ public:
     *
     * This is specialization for compatible object types.
     *
-    * See \ref Enabler.
-    *
     * \param pointer is the source shared pointer.
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
@@ -154,8 +147,6 @@ public:
     *
     * This is specialization for compatible object types.
     *
-    * See \ref Enabler.
-    *
     * \param pointer is the source shared pointer.
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
@@ -178,9 +169,9 @@ public:
    bool
    recreate( Args... args )
    {
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
       std::cerr << "Recreating shared pointer to " << getType< ObjectType >() << std::endl;
-   #endif
+#endif
       if( ! this->pd )
          return this->allocate( args... );
 
@@ -190,9 +181,9 @@ public:
           */
          this->pd->data.~Object();
          new( &this->pd->data ) Object( args... );
-   #ifdef HAVE_CUDA
+#ifdef __CUDACC__
          cudaMemcpy( (void*) this->cuda_pointer, (void*) &this->pd->data, sizeof( Object ), cudaMemcpyHostToDevice );
-   #endif
+#endif
          this->set_last_sync_state();
          return true;
       }
@@ -215,11 +206,11 @@ public:
    operator->() const
    {
       TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-   #ifdef __CUDA_ARCH__
+#ifdef __CUDA_ARCH__
       return this->cuda_pointer;
-   #else
+#else
       return &this->pd->data;
-   #endif
+#endif
    }
 
    /**
@@ -234,12 +225,12 @@ public:
    operator->()
    {
       TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-   #ifdef __CUDA_ARCH__
+#ifdef __CUDA_ARCH__
       return this->cuda_pointer;
-   #else
+#else
       this->pd->maybe_modified = true;
       return &this->pd->data;
-   #endif
+#endif
    }
 
    /**
@@ -254,11 +245,11 @@ public:
    operator*() const
    {
       TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-   #ifdef __CUDA_ARCH__
+#ifdef __CUDA_ARCH__
       return *( this->cuda_pointer );
-   #else
+#else
       return this->pd->data;
-   #endif
+#endif
    }
 
    /**
@@ -273,12 +264,12 @@ public:
    operator*()
    {
       TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-   #ifdef __CUDA_ARCH__
+#ifdef __CUDA_ARCH__
       return *( this->cuda_pointer );
-   #else
+#else
       this->pd->maybe_modified = true;
       return this->pd->data;
-   #endif
+#endif
    }
 
    /**
@@ -361,10 +352,10 @@ public:
    /**
     * \brief Assignment operator.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    const SharedPointer&
    operator=( const SharedPointer& ptr )  // this is needed only to avoid the default compiler-generated operator
@@ -374,22 +365,20 @@ public:
       this->cuda_pointer = ptr.cuda_pointer;
       if( this->pd != nullptr )
          this->pd->counter += 1;
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
       std::cerr << "Copy-assigned shared pointer: counter = " << this->pd->counter << ", type: " << getType< ObjectType >()
                 << std::endl;
-   #endif
+#endif
       return *this;
    }
 
    /**
     * \brief Assignment operator for compatible object types.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
-    *
-    * See \ref Enabler.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
    const SharedPointer&
@@ -400,20 +389,20 @@ public:
       this->cuda_pointer = ptr.cuda_pointer;
       if( this->pd != nullptr )
          this->pd->counter += 1;
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
       std::cerr << "Copy-assigned shared pointer: counter = " << this->pd->counter << ", type: " << getType< ObjectType >()
                 << std::endl;
-   #endif
+#endif
       return *this;
    }
 
    /**
     * \brief Move operator.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    const SharedPointer&
    operator=( SharedPointer&& ptr ) noexcept  // this is needed only to avoid the default compiler-generated operator
@@ -423,22 +412,20 @@ public:
       this->cuda_pointer = ptr.cuda_pointer;
       ptr.pd = nullptr;
       ptr.cuda_pointer = nullptr;
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
       std::cerr << "Move-assigned shared pointer: counter = " << this->pd->counter << ", type: " << getType< ObjectType >()
                 << std::endl;
-   #endif
+#endif
       return *this;
    }
 
    /**
     * \brief Move operator.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
-    *
-    * See \ref Enabler.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
    const SharedPointer&
@@ -449,10 +436,10 @@ public:
       this->cuda_pointer = ptr.cuda_pointer;
       ptr.pd = nullptr;
       ptr.cuda_pointer = nullptr;
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
       std::cerr << "Move-assigned shared pointer: counter = " << this->pd->counter << ", type: " << getType< ObjectType >()
                 << std::endl;
-   #endif
+#endif
       return *this;
    }
 
@@ -469,13 +456,13 @@ public:
    {
       if( ! this->pd )
          return true;
-   #ifdef HAVE_CUDA
+#ifdef __CUDACC__
       if( this->modified() ) {
-      #ifdef TNL_DEBUG_SHARED_POINTERS
+   #ifdef TNL_DEBUG_SHARED_POINTERS
          std::cerr << "Synchronizing shared pointer: counter = " << this->pd->counter << ", type: " << getType< ObjectType >()
                    << std::endl;
          std::cerr << "   ( " << sizeof( Object ) << " bytes, CUDA adress " << this->cuda_pointer << " )" << std::endl;
-      #endif
+   #endif
          TNL_ASSERT( this->cuda_pointer, );
          cudaMemcpy( (void*) this->cuda_pointer, (void*) &this->pd->data, sizeof( Object ), cudaMemcpyHostToDevice );
          TNL_CHECK_CUDA_DEVICE;
@@ -483,9 +470,9 @@ public:
          return true;
       }
       return true;
-   #else
+#else
       return false;
-   #endif
+#endif
    }
 
    /**
@@ -540,10 +527,10 @@ protected:
       this->cuda_pointer = AllocatorType{}.allocate( 1 );
       // synchronize
       this->synchronize();
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
       std::cerr << "Created shared pointer to " << getType< ObjectType >() << " (cuda_pointer = " << this->cuda_pointer << ")"
                 << std::endl;
-   #endif
+#endif
       getSmartPointersRegister< DeviceType >().insert( this );
       return true;
    }
@@ -570,18 +557,18 @@ protected:
    free()
    {
       if( this->pd ) {
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
          std::cerr << "Freeing shared pointer: counter = " << this->pd->counter << ", cuda_pointer = " << this->cuda_pointer
                    << ", type: " << getType< ObjectType >() << std::endl;
-   #endif
+#endif
          if( ! --this->pd->counter ) {
             delete this->pd;
             this->pd = nullptr;
             if( this->cuda_pointer )
                AllocatorType{}.deallocate( this->cuda_pointer, 1 );
-   #ifdef TNL_DEBUG_SHARED_POINTERS
+#ifdef TNL_DEBUG_SHARED_POINTERS
             std::cerr << "...deleted data." << std::endl;
-   #endif
+#endif
          }
       }
    }
@@ -592,259 +579,6 @@ protected:
    // unable to dereference this-pd on the device
    Object* cuda_pointer;
 };
-
-#else
-// Implementation with CUDA unified memory. It is very slow, we keep it only for experimental reasons.
-template< typename Object >
-class SharedPointer< Object, Devices::Cuda > : public SmartPointer
-{
-private:
-   // Convenient template alias for controlling the selection of copy- and
-   // move-constructors and assignment operators using SFINAE.
-   // The type Object_ is "enabled" iff Object_ and Object are not the same,
-   // but after removing const and volatile qualifiers they are the same.
-   template< typename Object_ >
-   using Enabler = std::enable_if< ! std::is_same< Object_, Object >::value
-                                   && std::is_same< typename std::remove_cv< Object >::type, Object_ >::value >;
-
-   // friend class will be needed for templated assignment operators
-   template< typename Object_, typename Device_ >
-   friend class SharedPointer;
-
-public:
-   using ObjectType = Object;
-   using DeviceType = Devices::Cuda;
-
-   SharedPointer( std::nullptr_t ) : pd( nullptr ) {}
-
-   template< typename... Args >
-   explicit SharedPointer( Args... args ) : pd( nullptr )
-   {
-   #ifdef TNL_DEBUG_SHARED_POINTERS
-      std::cerr << "Creating shared pointer to " << getType< ObjectType >() << std::endl;
-   #endif
-      this->allocate( args... );
-   }
-
-   // this is needed only to avoid the default compiler-generated constructor
-   SharedPointer( const SharedPointer& pointer ) : pd( (PointerData*) pointer.pd )
-   {
-      this->pd->counter += 1;
-   }
-
-   // conditional constructor for non-const -> const data
-   template< typename Object_, typename = typename Enabler< Object_ >::type >
-   SharedPointer( const SharedPointer< Object_, DeviceType >& pointer ) : pd( (PointerData*) pointer.pd )
-   {
-      this->pd->counter += 1;
-   }
-
-   // this is needed only to avoid the default compiler-generated constructor
-   SharedPointer( SharedPointer&& pointer ) : pd( (PointerData*) pointer.pd )
-   {
-      pointer.pd = nullptr;
-   }
-
-   // conditional constructor for non-const -> const data
-   template< typename Object_, typename = typename Enabler< Object_ >::type >
-   SharedPointer( SharedPointer< Object_, DeviceType >&& pointer ) : pd( (PointerData*) pointer.pd )
-   {
-      pointer.pd = nullptr;
-   }
-
-   template< typename... Args >
-   bool
-   recreate( Args... args )
-   {
-   #ifdef TNL_DEBUG_SHARED_POINTERS
-      std::cerr << "Recreating shared pointer to " << getType< ObjectType >() << std::endl;
-   #endif
-      if( ! this->counter )
-         return this->allocate( args... );
-
-      if( *this->pd->counter == 1 ) {
-         /****
-          * The object is not shared -> recreate it in-place, without reallocation
-          */
-         this->pd->data.~ObjectType();
-         new( this->pd->data ) ObjectType( args... );
-         return true;
-      }
-
-      // free will just decrement the counter
-      this->free();
-
-      return this->allocate( args... );
-   }
-
-   const Object*
-   operator->() const
-   {
-      TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-      return &this->pd->data;
-   }
-
-   Object*
-   operator->()
-   {
-      TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-      return &this->pd->data;
-   }
-
-   const Object&
-   operator*() const
-   {
-      TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-      return this->pd->data;
-   }
-
-   Object&
-   operator*()
-   {
-      TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-      return this->pd->data;
-   }
-
-   __cuda_callable__
-   operator bool() const
-   {
-      return this->pd;
-   }
-
-   __cuda_callable__
-   bool
-   operator!() const
-   {
-      return ! this->pd;
-   }
-
-   template< typename Device = Devices::Host >
-   __cuda_callable__
-   const Object&
-   getData() const
-   {
-      TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-      return this->pd->data;
-   }
-
-   template< typename Device = Devices::Host >
-   __cuda_callable__
-   Object&
-   modifyData()
-   {
-      TNL_ASSERT_TRUE( this->pd, "Attempt to dereference a null pointer" );
-      return this->pd->data;
-   }
-
-   // this is needed only to avoid the default compiler-generated operator
-   const SharedPointer&
-   operator=( const SharedPointer& ptr )
-   {
-      this->free();
-      this->pd = (PointerData*) ptr.pd;
-      if( this->pd != nullptr )
-         this->pd->counter += 1;
-      return *this;
-   }
-
-   // conditional operator for non-const -> const data
-   template< typename Object_, typename = typename Enabler< Object_ >::type >
-   const SharedPointer&
-   operator=( const SharedPointer< Object_, DeviceType >& ptr )
-   {
-      this->free();
-      this->pd = (PointerData*) ptr.pd;
-      if( this->pd != nullptr )
-         this->pd->counter += 1;
-      return *this;
-   }
-
-   // this is needed only to avoid the default compiler-generated operator
-   const SharedPointer&
-   operator=( SharedPointer&& ptr )
-   {
-      this->free();
-      this->pd = (PointerData*) ptr.pd;
-      ptr.pd = nullptr;
-      return *this;
-   }
-
-   // conditional operator for non-const -> const data
-   template< typename Object_, typename = typename Enabler< Object_ >::type >
-   const SharedPointer&
-   operator=( SharedPointer< Object_, DeviceType >&& ptr )
-   {
-      this->free();
-      this->pd = (PointerData*) ptr.pd;
-      ptr.pd = nullptr;
-      return *this;
-   }
-
-   bool
-   synchronize()
-   {
-      return true;
-   }
-
-   void
-   clear()
-   {
-      this->free();
-   }
-
-   void
-   swap( SharedPointer& ptr2 )
-   {
-      std::swap( this->pd, ptr2.pd );
-   }
-
-   ~SharedPointer()
-   {
-      this->free();
-   }
-
-protected:
-   struct PointerData
-   {
-      Object data;
-      int counter;
-
-      template< typename... Args >
-      explicit PointerData( Args... args ) : data( args... ), counter( 1 )
-      {}
-   };
-
-   template< typename... Args >
-   bool
-   allocate( Args... args )
-   {
-   #ifdef HAVE_CUDA
-      if( cudaMallocManaged( (void**) &this->pd, sizeof( PointerData ) != cudaSuccess ) )
-         return false;
-      new( this->pd ) PointerData( args... );
-      return true;
-   #else
-      return false;
-   #endif
-   }
-
-   void
-   free()
-   {
-      if( this->pd ) {
-         if( ! --this->pd->counter ) {
-   #ifdef HAVE_CUDA
-            cudaFree( this->pd );
-   #endif
-            this->pd = nullptr;
-         }
-      }
-   }
-
-   PointerData* pd;
-};
-
-#endif  // ! HAVE_CUDA_UNIFIED_MEMORY
 
 }  // namespace Pointers
 }  // namespace noa::TNL

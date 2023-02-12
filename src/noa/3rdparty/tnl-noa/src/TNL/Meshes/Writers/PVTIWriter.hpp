@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -188,11 +186,11 @@ PVTIWriter< Grid >::addPiece( const std::string& mainFileName,
 
    // write <Piece> tag
    const std::string subfile = "subdomain." + std::to_string( subdomainIndex ) + ".vti";
-   const std::string source = basename / subfile;
+   const std::string source = ( basename / subfile ).string();
    str << "<Piece Extent=\"" << extent.str() << "\" Source=\"" << source << "\"/>\n";
 
    // return subfile path
-   return subdirectory / subfile;
+   return ( subdirectory / subfile ).string();
 }
 
 template< typename Grid >

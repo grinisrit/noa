@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -23,7 +23,7 @@ public:
 
    FPMAReader( const std::string& fileName ) : MeshReader( fileName ) {}
 
-   virtual void
+   void
    detectMesh() override
    {
       reset();
@@ -46,8 +46,10 @@ public:
 
       // arrays holding the data from the file
       std::vector< double > pointsArray;
-      std::vector< std::int32_t > cellConnectivityArray, cellOffsetsArray;
-      std::vector< std::int32_t > faceConnectivityArray, faceOffsetsArray;
+      std::vector< std::int32_t > cellConnectivityArray;
+      std::vector< std::int32_t > cellOffsetsArray;
+      std::vector< std::int32_t > faceConnectivityArray;
+      std::vector< std::int32_t > faceOffsetsArray;
 
       // read number of points
       NumberOfPoints = readValue< decltype( NumberOfPoints ) >( inputFile );
@@ -88,7 +90,7 @@ public:
       faceOffsetsArray.reserve( NumberOfFaces );
       for( std::size_t faceIndex = 0; faceIndex < NumberOfFaces; faceIndex++ ) {
          // read number of points of a face
-         size_t numberOfFacePoints = readValue< decltype( numberOfFacePoints ) >( inputFile );
+         const auto numberOfFacePoints = readValue< std::size_t >( inputFile );
          if( ! inputFile ) {
             reset();
             throw MeshReaderError( "FPMAReader", "unable to read enough faces, the file may be invalid or corrupted." );
@@ -96,7 +98,7 @@ public:
 
          // read points of a face
          for( std::size_t i = 0; i < numberOfFacePoints; i++ ) {
-            size_t pointIndex = readValue< decltype( pointIndex ) >( inputFile );
+            const auto pointIndex = readValue< std::size_t >( inputFile );
             if( ! inputFile ) {
                reset();
                throw MeshReaderError( "FPMAReader",
@@ -121,7 +123,7 @@ public:
       cellOffsetsArray.reserve( NumberOfCells );
       for( std::size_t cellIndex = 0; cellIndex < NumberOfCells; cellIndex++ ) {
          // read number of faces of a cell
-         size_t numberOfCellFaces = readValue< decltype( numberOfCellFaces ) >( inputFile );
+         const auto numberOfCellFaces = readValue< std::size_t >( inputFile );
          if( ! inputFile ) {
             reset();
             throw MeshReaderError( "FPMAReader", "unable to read enough cells, the file may be invalid or corrupted." );
@@ -129,7 +131,7 @@ public:
 
          // read faces of a cell
          for( std::size_t i = 0; i < numberOfCellFaces; i++ ) {
-            std::uint32_t faceIndex = readValue< decltype( faceIndex ) >( inputFile );
+            const auto faceIndex = readValue< std::uint32_t >( inputFile );
             if( ! iss ) {
                reset();
                throw MeshReaderError( "FPMAReader",
@@ -164,7 +166,7 @@ private:
       return val;
    }
 
-   void
+   static void
    skipComments( std::ifstream& ifs )
    {
       ifs >> std::ws;

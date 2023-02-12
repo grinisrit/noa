@@ -76,7 +76,7 @@ TEST( StringTest, SetSize )
    String str;
    str.setSize( 42 );
    EXPECT_EQ( str.getSize(), 42 );
-   EXPECT_EQ( str.getAllocatedSize(), 42 );
+   EXPECT_GE( str.getAllocatedSize(), 42 );
 }
 
 TEST( StringTest, GetString )
@@ -306,7 +306,7 @@ TEST( StringTest, SaveLoad )
    String str2;
    ASSERT_NO_THROW( file >> str2 );
    EXPECT_EQ( str1, str2 );
-
+   ASSERT_NO_THROW( file.close() );
    EXPECT_EQ( std::remove( TEST_FILE_NAME ), 0 );
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -91,7 +91,7 @@ MultiDeviceMemoryOperations< DeviceType, Devices::Cuda >::copy( DestinationEleme
       return;
    TNL_ASSERT_TRUE( destination, "Attempted to copy data to a nullptr." );
    TNL_ASSERT_TRUE( source, "Attempted to copy data from a nullptr." );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( std::is_same< std::remove_cv_t< DestinationElement >, std::remove_cv_t< SourceElement > >::value ) {
       if( cudaMemcpy( destination, source, size * sizeof( DestinationElement ), cudaMemcpyDeviceToHost ) != cudaSuccess )
          std::cerr << "Transfer of data from CUDA device to host failed." << std::endl;
@@ -138,7 +138,7 @@ MultiDeviceMemoryOperations< DeviceType, Devices::Cuda >::compare( const Element
    TNL_ASSERT_TRUE( destination, "Attempted to compare data through a nullptr." );
    TNL_ASSERT_TRUE( source, "Attempted to compare data through a nullptr." );
    TNL_ASSERT_GE( size, (Index) 0, "Array size must be non-negative." );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    const int buffer_size = TNL::min( Cuda::getTransferBufferSize() / sizeof( Element2 ), size );
    std::unique_ptr< Element2[] > host_buffer{ new Element2[ buffer_size ] };
    Index compared = 0;
@@ -174,7 +174,7 @@ MultiDeviceMemoryOperations< Devices::Cuda, DeviceType >::copy( DestinationEleme
    TNL_ASSERT_TRUE( destination, "Attempted to copy data to a nullptr." );
    TNL_ASSERT_TRUE( source, "Attempted to copy data from a nullptr." );
    TNL_ASSERT_GE( size, (Index) 0, "Array size must be non-negative." );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( std::is_same< std::remove_cv_t< DestinationElement >, std::remove_cv_t< SourceElement > >::value ) {
       if( cudaMemcpy( destination, source, size * sizeof( DestinationElement ), cudaMemcpyHostToDevice ) != cudaSuccess )
          std::cerr << "Transfer of data from host to CUDA device failed." << std::endl;

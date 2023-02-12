@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -47,7 +47,7 @@ struct TypeResolver< char >
    getType()
    {
       return MPI_CHAR;
-   };
+   }
 };
 
 template<>
@@ -57,7 +57,7 @@ struct TypeResolver< int >
    getType()
    {
       return MPI_INT;
-   };
+   }
 };
 
 template<>
@@ -67,7 +67,7 @@ struct TypeResolver< short int >
    getType()
    {
       return MPI_SHORT;
-   };
+   }
 };
 
 template<>
@@ -77,7 +77,7 @@ struct TypeResolver< long int >
    getType()
    {
       return MPI_LONG;
-   };
+   }
 };
 
 template<>
@@ -87,7 +87,7 @@ struct TypeResolver< unsigned char >
    getType()
    {
       return MPI_UNSIGNED_CHAR;
-   };
+   }
 };
 
 template<>
@@ -97,7 +97,7 @@ struct TypeResolver< unsigned short int >
    getType()
    {
       return MPI_UNSIGNED_SHORT;
-   };
+   }
 };
 
 template<>
@@ -107,7 +107,7 @@ struct TypeResolver< unsigned int >
    getType()
    {
       return MPI_UNSIGNED;
-   };
+   }
 };
 
 template<>
@@ -117,7 +117,7 @@ struct TypeResolver< unsigned long int >
    getType()
    {
       return MPI_UNSIGNED_LONG;
-   };
+   }
 };
 
 template<>
@@ -127,7 +127,7 @@ struct TypeResolver< float >
    getType()
    {
       return MPI_FLOAT;
-   };
+   }
 };
 
 template<>
@@ -137,7 +137,7 @@ struct TypeResolver< double >
    getType()
    {
       return MPI_DOUBLE;
-   };
+   }
 };
 
 template<>
@@ -147,7 +147,7 @@ struct TypeResolver< long double >
    getType()
    {
       return MPI_LONG_DOUBLE;
-   };
+   }
 };
 
 template<>
@@ -159,7 +159,7 @@ struct TypeResolver< bool >
    getType()
    {
       return MPI_C_BOOL;
-   };
+   }
 };
 
 template< typename T >

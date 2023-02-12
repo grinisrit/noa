@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -54,7 +54,7 @@ namespace Algorithms {
  * \tparam Device parameter says on what device the reduction is gonna be performed.
  * \tparam Type parameter says if inclusive or exclusive is scan is to be computed.
  *
- * See \ref Scan< Devices::Host, Type > and \ref Scan< Devices::Cuda, Type >.
+ * See \ref SegmentedScan< Devices::Host, Type > and \ref SegmentedScan< Devices::Cuda, Type >.
  *
  * **Note: Segmented scan is not implemented for CUDA yet.**
  */
@@ -98,10 +98,10 @@ struct SegmentedScan< Devices::Sequential, Type >
    static void
    perform( Vector& v,
             Flags& flags,
-            const typename Vector::IndexType begin,
-            const typename Vector::IndexType end,
+            typename Vector::IndexType begin,
+            typename Vector::IndexType end,
             const Reduction& reduction,
-            const typename Vector::ValueType identity );
+            typename Vector::ValueType identity );
 };
 
 template< detail::ScanType Type >
@@ -141,10 +141,10 @@ struct SegmentedScan< Devices::Host, Type >
    static void
    perform( Vector& v,
             Flags& flags,
-            const typename Vector::IndexType begin,
-            const typename Vector::IndexType end,
+            typename Vector::IndexType begin,
+            typename Vector::IndexType end,
             const Reduction& reduction,
-            const typename Vector::ValueType identity );
+            typename Vector::ValueType identity );
 };
 
 template< detail::ScanType Type >
@@ -186,10 +186,10 @@ struct SegmentedScan< Devices::Cuda, Type >
    static void
    perform( Vector& v,
             Flags& flags,
-            const typename Vector::IndexType begin,
-            const typename Vector::IndexType end,
+            typename Vector::IndexType begin,
+            typename Vector::IndexType end,
             const Reduction& reduction,
-            const typename Vector::ValueType identity );
+            typename Vector::ValueType identity );
 };
 
 }  // namespace Algorithms

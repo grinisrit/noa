@@ -25,7 +25,7 @@ using CSRMatrixTypes = ::testing::Types
    Legacy::CSR< int,    TNL::Devices::Host, long, Legacy::CSRAdaptive >,
    Legacy::CSR< float,  TNL::Devices::Host, long, Legacy::CSRAdaptive >,
    Legacy::CSR< double, TNL::Devices::Host, long, Legacy::CSRAdaptive >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
   ,Legacy::CSR< int,    TNL::Devices::Cuda, int,  Legacy::CSRAdaptive >,
    Legacy::CSR< float,  TNL::Devices::Cuda, int,  Legacy::CSRAdaptive >,
    Legacy::CSR< double, TNL::Devices::Cuda, int,  Legacy::CSRAdaptive >,

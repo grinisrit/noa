@@ -61,5 +61,6 @@ int main( int argc, char* argv[] )
       using MeshType = std::decay_t< decltype(mesh) >;
       return processFiles< MeshType >( parameters );
    };
-   return ! TNL::Meshes::resolveMeshType< TNLDiffBuildConfigTag, Devices::Host >( wrapper, meshFile, meshFileFormat );
+   const bool status = TNL::Meshes::resolveMeshType< TNLDiffBuildConfigTag, Devices::Host >( wrapper, meshFile, meshFileFormat );
+   return static_cast< int >( ! status );
 }

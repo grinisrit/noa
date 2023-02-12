@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -20,7 +20,7 @@ public:
    using RealType = Real;
    using PointType = Containers::StaticVector< Dimensions_, RealType >;
 
-   VectorNormBase() : center( 0.0 ), anisotropy( 1.0 ), power( 2.0 ), radius( 0.0 ), multiplicator( 1.0 ), maxNorm( false ){};
+   VectorNormBase() : center( 0.0 ), anisotropy( 1.0 ), power( 2.0 ), radius( 0.0 ), multiplicator( 1.0 ), maxNorm( false ) {}
 
    static void
    configSetup( Config::ConfigDescription& config, const String& prefix = "" )
@@ -54,7 +54,7 @@ public:
    setCenter( const PointType& center )
    {
       this->center = center;
-   };
+   }
 
    const RealType&
    getCenter() const
@@ -66,7 +66,7 @@ public:
    setAnisotropy( const PointType& anisotropy )
    {
       this->anisotropy = anisotropy;
-   };
+   }
 
    const RealType&
    getAnisotropy() const

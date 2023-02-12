@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -89,7 +89,7 @@ Scan< Devices::Sequential, Type, PhaseType >::performFirstPhase( const InputArra
             block_results[ 1 ] = reduce< Devices::Sequential >( begin, end, input, reduction, identity );
             return block_results;
          }
-   };
+   }
 }
 
 template< ScanType Type, ScanPhaseType PhaseType >
@@ -358,7 +358,7 @@ Scan< Devices::Cuda, Type, PhaseType >::perform( const InputArray& input,
                                                  Reduction&& reduction,
                                                  typename OutputArray::ValueType identity )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( end <= begin )
       return;
 
@@ -380,7 +380,7 @@ Scan< Devices::Cuda, Type, PhaseType >::performFirstPhase( const InputArray& inp
                                                            Reduction&& reduction,
                                                            typename OutputArray::ValueType identity )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( end <= begin ) {
       Containers::Array< typename OutputArray::ValueType, Devices::Cuda > block_results( 1 );
       block_results.setValue( identity );
@@ -407,7 +407,7 @@ Scan< Devices::Cuda, Type, PhaseType >::performSecondPhase( const InputArray& in
                                                             typename OutputArray::ValueType identity,
                                                             typename OutputArray::ValueType shift )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    if( end <= begin )
       return;
 

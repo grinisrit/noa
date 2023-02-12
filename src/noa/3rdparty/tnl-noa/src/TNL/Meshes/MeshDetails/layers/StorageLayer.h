@@ -1,14 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
 
 #pragma once
 
@@ -50,7 +44,7 @@ public:
 
    explicit StorageLayerFamily( const StorageLayerFamily& other ) = default;
 
-   StorageLayerFamily( StorageLayerFamily&& other ) = default;
+   StorageLayerFamily( StorageLayerFamily&& other ) noexcept = default;
 
    template< typename Device_ >
    StorageLayerFamily( const StorageLayerFamily< MeshConfig, Device_ >& other )
@@ -62,7 +56,7 @@ public:
    operator=( const StorageLayerFamily& layer ) = default;
 
    StorageLayerFamily&
-   operator=( StorageLayerFamily&& layer ) = default;
+   operator=( StorageLayerFamily&& layer ) noexcept( false ) = default;
 
    template< typename Device_ >
    StorageLayerFamily&
@@ -89,6 +83,18 @@ public:
                      "the mesh configuration." );
       using BaseType = SubentityStorageLayerFamily< MeshConfig, Device, typename EntityTraits< Dimension >::EntityTopology >;
       BaseType::template setSubentitiesCounts< Subdimension >( counts );
+   }
+
+   template< int Dimension, int Subdimension >
+   void
+   setSubentitiesCounts( typename MeshTraitsType::NeighborCountsArray&& counts )
+   {
+      static_assert( Dimension > Subdimension, "Invalid combination of Dimension and Subdimension." );
+      static_assert( SubentityTraits< Dimension, Subdimension >::storageEnabled,
+                     "You try to set subentitiesCounts for a combination of Dimension and Subdimension which is disabled in "
+                     "the mesh configuration." );
+      using BaseType = SubentityStorageLayerFamily< MeshConfig, Device, typename EntityTraits< Dimension >::EntityTopology >;
+      BaseType::template setSubentitiesCounts< Subdimension >( std::move( counts ) );
    }
 
    template< int Dimension, int Subdimension >
@@ -199,6 +205,8 @@ public:
 
    explicit StorageLayer( const StorageLayer& other ) = default;
 
+   StorageLayer( StorageLayer&& other ) noexcept = default;
+
    template< typename Device_ >
    StorageLayer( const StorageLayer< MeshConfig, Device_, DimensionTag >& other )
    {
@@ -209,7 +217,7 @@ public:
    operator=( const StorageLayer& other ) = default;
 
    StorageLayer&
-   operator=( StorageLayer&& other ) = default;
+   operator=( StorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    StorageLayer&
@@ -273,7 +281,7 @@ protected:
 
    explicit StorageLayer( const StorageLayer& other ) = default;
 
-   StorageLayer( StorageLayer&& other ) = default;
+   StorageLayer( StorageLayer&& other ) noexcept = default;
 
    template< typename Device_ >
    StorageLayer( const StorageLayer< MeshConfig, Device_, DimensionTag >& other )
@@ -283,7 +291,7 @@ protected:
    operator=( const StorageLayer& other ) = default;
 
    StorageLayer&
-   operator=( StorageLayer&& other ) = default;
+   operator=( StorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    StorageLayer&

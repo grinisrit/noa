@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdio>
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/BiEllpack.h>
+#include "BiEllpack.h"
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/scan.h>
 #include <TNL/Math.h>
-#include <cstdio>
+#include "MemoryHelpers.h"
 
 namespace TNL {
     namespace Benchmarks {
@@ -153,6 +154,7 @@ Index BiEllpack< Real, Device, Index >::getNumberOfGroups( const IndexType row )
     throw "bug - row was not found";
 #else
     TNL_ASSERT_TRUE( false, "bug - row was not found" );
+    return 0;
 #endif
 }
 
@@ -816,7 +818,9 @@ void BiEllpack< Real, Device, Index >::performRowBubbleSort( Containers::Vector<
         if( this->getRows() - 1 < end)
             end = this->getRows() - 1;
         bool sorted = false;
-        Index permIndex1, permIndex2, offset = 0;
+        Index permIndex1 = 0;
+        Index permIndex2 = 0;
+        Index offset = 0;
         while( !sorted )
         {
             sorted = true;
@@ -959,7 +963,8 @@ public:
 				end = matrix.getRows();
 			for( Index i = begin; i < end - 1; i++ )
 			{
-				Index permIndex1, permIndex2;
+				Index permIndex1 = 0;
+				Index permIndex2 = 0;
 				bool first = false;
 				bool second = false;
 				for( Index j = begin; j < end; j++ )
@@ -1059,7 +1064,9 @@ public:
 			if(matrix.getRows() - 1 < end)
 				end = matrix.getRows() - 1;
 			bool sorted = false;
-			Index permIndex1, permIndex2, offset = 0;
+			Index permIndex1 = 0;
+			Index permIndex2 = 0;
+			Index offset = 0;
 			while( !sorted )
 			{
 				sorted = true;
@@ -1103,7 +1110,7 @@ public:
 	}
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Device,
           typename Index >
@@ -1164,7 +1171,7 @@ void BiEllpack< Real, Device, Index >::spmvCuda( const InVector& inVector,
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index,
           typename InVector,
@@ -1176,12 +1183,12 @@ void BiEllpackVectorProductCuda( const BiEllpack< Real, Devices::Cuda, Index >* 
 				 int gridIdx,
 				 const int warpSize )
 {
-	Index globalIdx = ( gridIdx * Cuda::getMaxGridSize() + blockIdx.x ) * blockDim.x + threadIdx.x;
+	Index globalIdx = ( gridIdx * Cuda::getMaxGridXSize() + blockIdx.x ) * blockDim.x + threadIdx.x;
 	matrix->spmvCuda( *inVector, *outVector, globalIdx );
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Device,
           typename Index >
@@ -1194,7 +1201,9 @@ void BiEllpack< Real, Device, Index >::performRowBubbleSortCudaKernel( const typ
     if( this->getRows() - 1 < end )
         end = this->getRows() - 1;
     bool sorted = false;
-    IndexType permIndex1, permIndex2, offset = 0;
+    IndexType permIndex1 = 0;
+    IndexType permIndex2 = 0;
+    IndexType offset = 0;
     while( !sorted )
     {
         sorted = true;
@@ -1237,7 +1246,7 @@ void BiEllpack< Real, Device, Index >::performRowBubbleSortCudaKernel( const typ
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Device,
           typename Index >
@@ -1285,7 +1294,7 @@ void BiEllpack< Real, Device, Index >::computeColumnSizesCudaKernel( const typen
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index >
 __global__
@@ -1293,12 +1302,12 @@ void performRowBubbleSortCuda( BiEllpack< Real, Devices::Cuda, Index >* matrix,
                                const typename BiEllpack< Real, Devices::Cuda, Index >::RowsCapacitiesType* rowLengths,
                                int gridIdx )
 {
-	const Index stripIdx = gridIdx * Cuda::getMaxGridSize() * blockDim.x + blockIdx.x * blockDim.x + threadIdx.x;
+	const Index stripIdx = gridIdx * Cuda::getMaxGridXSize() * blockDim.x + blockIdx.x * blockDim.x + threadIdx.x;
 	matrix->performRowBubbleSortCudaKernel( *rowLengths, stripIdx );
 }
 #endif
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index >
 __global__
@@ -1307,7 +1316,7 @@ void computeColumnSizesCuda( BiEllpack< Real, Devices::Cuda, Index >* matrix,
                              const Index numberOfStrips,
                              int gridIdx )
 {
-	const Index stripIdx = gridIdx * Cuda::getMaxGridSize() * blockDim.x + blockIdx.x * blockDim.x + threadIdx.x;
+	const Index stripIdx = gridIdx * Cuda::getMaxGridXSize() * blockDim.x + blockIdx.x * blockDim.x + threadIdx.x;
 	matrix->computeColumnSizesCudaKernel( *rowLengths, numberOfStrips, stripIdx );
 }
 #endif
@@ -1372,7 +1381,8 @@ public:
 				end = matrix.getRows();
 			for( Index i = begin; i < end - 1; i++ )
 			{
-				Index permIndex1, permIndex2;
+				Index permIndex1 = 0;
+				Index permIndex2 = 0;
 				bool first = false;
 				bool second = false;
 				for( Index j = begin; j < end; j++ )
@@ -1407,19 +1417,19 @@ public:
 	static void performRowBubbleSort( BiEllpack< Real, Device, Index >& matrix,
                                           const typename BiEllpack< Real, Device, Index >::RowsCapacitiesType& rowLengths )
 	{
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 		Index numberOfStrips = matrix.virtualRows / matrix.warpSize;
 		typedef BiEllpack< Real, Devices::Cuda, Index > Matrix;
 		typedef typename Matrix::RowsCapacitiesType RowsCapacitiesType;
 		Matrix* kernel_this = Cuda::passToDevice( matrix );
 		RowsCapacitiesType* kernel_rowLengths = Cuda::passToDevice( rowLengths );
-		dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridSize() );
+		dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridXSize() );
 		const Index cudaBlocks = roundUpDivision( numberOfStrips, cudaBlockSize.x );
-		const Index cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+		const Index cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
 		for( int gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
 		{
 		     if( gridIdx == cudaGrids - 1 )
-		         cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+		         cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
 		     performRowBubbleSortCuda< Real, Index >
 		     	 	 	 	 	 	 <<< cudaGridSize, cudaBlockSize >>>
 		                             ( kernel_this,
@@ -1437,19 +1447,19 @@ public:
 	static void computeColumnSizes( BiEllpack< Real, Device, Index >& matrix,
 			 	 	const typename BiEllpack< Real, Device, Index >::RowsCapacitiesType& rowLengths )
 	{
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 		const Index numberOfStrips = matrix.virtualRows / matrix.warpSize;
 		typedef BiEllpack< Real, Devices::Cuda, Index > Matrix;
 		typedef typename Matrix::RowsCapacitiesType RowsCapacitiesType;
 		Matrix* kernel_this = Cuda::passToDevice( matrix );
 		RowsCapacitiesType* kernel_rowLengths = Cuda::passToDevice( rowLengths );
-		dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridSize() );
+		dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridXSize() );
 		const Index cudaBlocks = roundUpDivision( numberOfStrips, cudaBlockSize.x );
-		const Index cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+		const Index cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
 		for( int gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
 		{
 		     if( gridIdx == cudaGrids - 1 )
-		         cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+		         cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
 		     computeColumnSizesCuda< Real, Index >
 		     	 	 	 	 	   <<< cudaGridSize, cudaBlockSize >>>
 		                           ( kernel_this,
@@ -1472,19 +1482,19 @@ public:
 			   	   	   	   	   const InVector& inVector,
 			   	   	   	   	   OutVector& outVector )
 	{
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 		typedef BiEllpack< Real, Devices::Cuda, Index > Matrix;
 		typedef typename Matrix::IndexType IndexType;
 		Matrix* kernel_this = Cuda::passToDevice( matrix );
 		InVector* kernel_inVector = Cuda::passToDevice( inVector );
 		OutVector* kernel_outVector = Cuda::passToDevice( outVector );
-		dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridSize() );
+		dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridXSize() );
 		const IndexType cudaBlocks = roundUpDivision( matrix.getRows(), cudaBlockSize.x );
-		const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+		const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
 		for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
 		{
 			if( gridIdx == cudaGrids - 1 )
-				cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+				cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
 			const int sharedMemory = cudaBlockSize.x * sizeof( Real );
 			BiEllpackVectorProductCuda< Real, Index, InVector, OutVector >
 			                                   <<< cudaGridSize, cudaBlockSize, sharedMemory >>>

@@ -1,21 +1,14 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
 
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
-
 #pragma once
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/DimensionTag.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/MeshDetails/initializer/EntityInitializer.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/MeshDetails/initializer/SubentitySeedsCreator.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/MeshDetails/initializer/EntitySeed.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Mesh.h>
 
 /*
  * How this beast works:
@@ -58,7 +51,7 @@ template< typename MeshConfig, typename DimensionTag >
 class InitializerLayer;
 
 template< typename MeshConfig >
-class Initializer : public InitializerLayer< MeshConfig, typename MeshTraits< MeshConfig >::DimensionTag >
+class Initializer : public InitializerLayer< MeshConfig, typename MeshTraits< MeshConfig >::DimensionTag::Decrement >
 {
 protected:
    // must be declared before its use in expression with decltype()
@@ -67,8 +60,6 @@ protected:
 public:
    using MeshType = Mesh< MeshConfig >;
    using MeshTraitsType = MeshTraits< MeshConfig >;
-   using DimensionTag = Meshes::DimensionTag< MeshTraitsType::meshDimension >;
-   using BaseType = InitializerLayer< MeshConfig, DimensionTag >;
    using PointArrayType = typename MeshTraitsType::PointArrayType;
    using CellSeedMatrixType = typename MeshTraitsType::CellSeedMatrixType;
    using FaceSeedMatrixType = typename MeshTraitsType::FaceSeedMatrixType;
@@ -89,13 +80,38 @@ public:
       mesh.getPoints() = std::move( points );
 
       this->mesh = &mesh;
-      this->cellSeeds = &cellSeeds;
+      constexpr int meshDimension = MeshType::getMeshDimension();
 
-      if( faceSeeds.empty() )
-         BaseType::initEntities( *this, cellSeeds, mesh );
-      else {
-         BaseType::initEntities( *this, faceSeeds, mesh );
+      if constexpr( std::is_same_v< typename MeshType::Config::CellTopology, Topologies::Polyhedron > ) {
+         // initialize faces
+         setEntitiesCount< meshDimension - 1 >( faceSeeds.getEntitiesCount() );
+         initSubvertexMatrix< meshDimension - 1 >( faceSeeds );
+
+         // initialize links between faces and cells
+         initializeFacesOfPolyhedrons( *this, cellSeeds, mesh );
+
+         // initialize other entities
+         using BaseType = InitializerLayer< MeshConfig, DimensionTag< meshDimension - 2 > >;
+         BaseType::initEntities( *this, mesh );
       }
+      else {
+         // initialize cells
+         setEntitiesCount< meshDimension >( cellSeeds.getEntitiesCount() );
+         initSubvertexMatrix< meshDimension >( cellSeeds );
+
+         // initialize other entities
+         using BaseType = InitializerLayer< MeshConfig, DimensionTag< meshDimension - 1 > >;
+         BaseType::initEntities( *this, mesh );
+      }
+   }
+
+   template< int EntityDimension, typename SeedMatrixType >
+   void
+   initSubvertexMatrix( SeedMatrixType& seeds )
+   {
+      auto& subvertexMatrix = getSubentitiesMatrix< EntityDimension, 0 >();
+      subvertexMatrix = std::move( seeds.getMatrix() );
+      initSubentitiesCounts< EntityDimension, 0 >( seeds.getEntityCornerCounts() );
    }
 
    template< int Dimension, int Subdimension >
@@ -119,14 +135,14 @@ public:
 
    template< int Dimension >
    void
-   setEntitiesCount( const GlobalIndexType entitiesCount )
+   setEntitiesCount( GlobalIndexType entitiesCount )
    {
       mesh->template setEntitiesCount< Dimension >( entitiesCount );
    }
 
    template< int Dimension, int Subdimension >
    void
-   setSubentityIndex( const GlobalIndexType entityIndex, const LocalIndexType localIndex, const GlobalIndexType globalIndex )
+   setSubentityIndex( GlobalIndexType entityIndex, LocalIndexType localIndex, GlobalIndexType globalIndex )
    {
       mesh->template getSubentitiesMatrix< Dimension, Subdimension >()
          .getRow( entityIndex )
@@ -135,7 +151,7 @@ public:
 
    template< int Dimension >
    auto
-   getSubvertices( const GlobalIndexType entityIndex )
+   getSubvertices( GlobalIndexType entityIndex )
       -> decltype( this->mesh->template getSubentitiesMatrix< Dimension, 0 >().getRow( 0 ) )
    {
       return mesh->template getSubentitiesMatrix< Dimension, 0 >().getRow( entityIndex );
@@ -143,7 +159,7 @@ public:
 
    template< int Dimension >
    auto
-   getSubverticesCount( const GlobalIndexType entityIndex )
+   getSubverticesCount( GlobalIndexType entityIndex )
       -> decltype( this->mesh->template getSubentitiesCount< Dimension, 0 >( 0 ) )
    {
       return mesh->template getSubentitiesCount< Dimension, 0 >( entityIndex );
@@ -169,206 +185,61 @@ public:
    {
       return mesh->template getSuperentitiesMatrix< Dimension, Superdimension >();
    }
-
-   CellSeedMatrixType&
-   getCellSeeds()
-   {
-      return *( this->cellSeeds );
-   }
-
-protected:
-   CellSeedMatrixType* cellSeeds = nullptr;
 };
 
-/****
- * Mesh initializer layer for cells
- */
-template< typename MeshConfig >
-class InitializerLayer< MeshConfig, typename MeshTraits< MeshConfig >::DimensionTag >
-: public InitializerLayer< MeshConfig, typename MeshTraits< MeshConfig >::DimensionTag::Decrement >
-{
-protected:
-   using MeshTraitsType = MeshTraits< MeshConfig >;
-   using DimensionTag = typename MeshTraitsType::DimensionTag;
-   using BaseType = InitializerLayer< MeshConfig, typename DimensionTag::Decrement >;
-
-   using MeshType = Mesh< MeshConfig >;
-   using EntityTraitsType = typename MeshTraitsType::template EntityTraits< DimensionTag::value >;
-   using EntityTopology = typename EntityTraitsType::EntityTopology;
-   using GlobalIndexType = typename MeshTraitsType::GlobalIndexType;
-   using LocalIndexType = typename MeshTraitsType::LocalIndexType;
-
-   using InitializerType = Initializer< MeshConfig >;
-   using EntityInitializerType = EntityInitializer< MeshConfig, EntityTopology >;
-   using CellSeedMatrixType = typename MeshTraitsType::CellSeedMatrixType;
-   using FaceSeedMatrixType = typename MeshTraitsType::FaceSeedMatrixType;
-   using NeighborCountsArray = typename MeshTraitsType::NeighborCountsArray;
-
-public:
-   void
-   initEntities( InitializerType& initializer, CellSeedMatrixType& cellSeeds, MeshType& mesh )
-   {
-      // std::cout << " Initiating entities with dimension " << DimensionTag::value << " ... " << std::endl;
-      initializer.template setEntitiesCount< DimensionTag::value >( cellSeeds.getEntitiesCount() );
-      EntityInitializerType::initSubvertexMatrix( cellSeeds, initializer );
-      BaseType::initEntities( initializer, mesh );
-   }
-
-   void
-   initEntities( InitializerType& initializer, FaceSeedMatrixType& faceSeeds, MeshType& mesh )
-   {
-      // std::cout << " Initiating entities with dimension " << DimensionTag::value << " ... " << std::endl;
-      initializer.template setEntitiesCount< DimensionTag::value >( initializer.getCellSeeds().getEntitiesCount() );
-      BaseType::initEntities( initializer, faceSeeds, mesh );
-   }
-
-   using BaseType::findEntitySeedIndex;
-};
-
-/****
- * Mesh initializer layer for mesh entities other than cells
+/**
+ * \brief Mesh initializer layer for mesh entities other than vertices, cells and faces of polyhedral meshes.
  */
 template< typename MeshConfig, typename DimensionTag >
 class InitializerLayer : public InitializerLayer< MeshConfig, typename DimensionTag::Decrement >
 {
 protected:
-   using BaseType = InitializerLayer< MeshConfig, typename DimensionTag::Decrement >;
-   using MeshType = Mesh< MeshConfig >;
-   using MeshTraitsType = MeshTraits< MeshConfig >;
-
-   using EntityTraitsType = typename MeshTraitsType::template EntityTraits< DimensionTag::value >;
-   using EntityTopology = typename EntityTraitsType::EntityTopology;
-   using GlobalIndexType = typename MeshTraitsType::GlobalIndexType;
-   using LocalIndexType = typename MeshTraitsType::LocalIndexType;
-
    using InitializerType = Initializer< MeshConfig >;
-   using EntityInitializerType = EntityInitializer< MeshConfig, EntityTopology >;
-   using SeedType = EntitySeed< MeshConfig, EntityTopology >;
-   using SeedIndexedSet = typename MeshTraits< MeshConfig >::template EntityTraits< DimensionTag::value >::SeedIndexedSetType;
-   using SeedMatrixType = typename EntityTraitsType::SeedMatrixType;
-   using NeighborCountsArray = typename MeshTraitsType::NeighborCountsArray;
+   using MeshType = Mesh< MeshConfig >;
+   using BaseType = InitializerLayer< MeshConfig, typename DimensionTag::Decrement >;
+   using EntityInitializerType = EntityInitializer< MeshConfig, DimensionTag::value >;
 
 public:
-   void
-   createSeeds( InitializerType& initializer, MeshType& mesh )
-   {
-      this->seedsIndexedSet.reserve( mesh.template getEntitiesCount< MeshTraitsType::meshDimension >() );
-      using SubentitySeedsCreator = SubentitySeedsCreator< MeshConfig, typename MeshTraitsType::CellTopology, DimensionTag >;
-      for( GlobalIndexType i = 0; i < mesh.template getEntitiesCount< MeshType::getMeshDimension() >(); i++ ) {
-         SubentitySeedsCreator::iterate( initializer,
-                                         mesh,
-                                         i,
-                                         [ & ]( SeedType& seed )
-                                         {
-                                            this->seedsIndexedSet.insert( std::move( seed ) );
-                                         } );
-      }
-   }
-
-   using BaseType::findEntitySeedIndex;
-   GlobalIndexType
-   findEntitySeedIndex( const SeedType& seed ) const
-   {
-      GlobalIndexType index = -1;
-      this->seedsIndexedSet.find( seed, index );
-      return index;
-   }
-
    void
    initEntities( InitializerType& initializer, MeshType& mesh )
    {
       // skip initialization of entities which do not store their subvertices
       // (and hence do not participate in any other incidence matrix)
-      if( ! MeshConfig::subentityStorage( DimensionTag::value, 0 ) ) {
-         BaseType::initEntities( initializer, mesh );
-         return;
-      }
-      // std::cout << " Initiating entities with dimension " << DimensionTag::value << " ... " << std::endl;
-
-      // create seeds and set entities count
-      createSeeds( initializer, mesh );
-      const GlobalIndexType numberOfEntities = this->seedsIndexedSet.size();
-      initializer.template setEntitiesCount< DimensionTag::value >( numberOfEntities );
-
-      // allocate the subvertex matrix
-      NeighborCountsArray capacities( numberOfEntities );
-      for( auto& pair : this->seedsIndexedSet ) {
-         const auto& seed = pair.first;
-         const auto& entityIndex = pair.second;
-         capacities.setElement( entityIndex, seed.getCornersCount() );
-      }
-      EntityInitializerType::initSubvertexMatrix( capacities, initializer );
-
-      // initialize the entities
-      for( auto& pair : this->seedsIndexedSet ) {
-         const auto& seed = pair.first;
-         const auto& entityIndex = pair.second;
-         EntityInitializerType::initEntity( entityIndex, seed, initializer );
+      if constexpr( MeshConfig::subentityStorage( DimensionTag::value, 0 ) ) {
+         EntityInitializerType::createEntities( initializer, mesh );
       }
 
-      // initialize links between the entities and all superentities
-      EntityInitializerType::initSuperentities( initializer, mesh );
-
-      // deallocate the indexed set and continue with the next dimension
-      this->seedsIndexedSet.clear();
+      // continue with the next dimension
       BaseType::initEntities( initializer, mesh );
    }
-
-   // This overload of initEntities is only called when face seeds are required for initialization.
-   // Currently only polyhedral meshes use this function.
-   void
-   initEntities( InitializerType& initializer, SeedMatrixType& seeds, MeshType& mesh )
-   {
-      // std::cout << " Initiating entities with dimension " << DimensionTag::value << " ... " << std::endl;
-      initializer.template setEntitiesCount< DimensionTag::value >( seeds.getEntitiesCount() );
-      EntityInitializerType::initSubvertexMatrix( seeds, initializer );
-      EntityInitializerType::initSuperentities( initializer,
-                                                mesh );  // initialize links between the entities and all superentities
-      BaseType::initEntities( initializer, mesh );       // continue with the next dimension
-   }
-
-private:
-   SeedIndexedSet seedsIndexedSet;
 };
 
-/****
- * Mesh initializer layer for vertices
+/**
+ * \brief Mesh initializer layer for vertices
  */
 template< typename MeshConfig >
 class InitializerLayer< MeshConfig, DimensionTag< 0 > >
 {
-   using MeshType = Mesh< MeshConfig >;
-   using MeshTraitsType = MeshTraits< MeshConfig >;
-   using DimensionTag = Meshes::DimensionTag< 0 >;
-
-   using EntityTraitsType = typename MeshTraitsType::template EntityTraits< DimensionTag::value >;
-   using EntityTopology = typename EntityTraitsType::EntityTopology;
-   using GlobalIndexType = typename MeshTraitsType::GlobalIndexType;
-   using LocalIndexType = typename MeshTraitsType::LocalIndexType;
-
    using InitializerType = Initializer< MeshConfig >;
-   using EntityInitializerType = EntityInitializer< MeshConfig, EntityTopology >;
+   using MeshType = Mesh< MeshConfig >;
+   using DimensionTag = Meshes::DimensionTag< 0 >;
+   using EntityInitializerType = EntityInitializer< MeshConfig, DimensionTag::value >;
+
+   using EntityTraitsType = typename MeshType::MeshTraitsType::template EntityTraits< DimensionTag::value >;
+   using EntityTopology = typename EntityTraitsType::EntityTopology;
    using SeedType = EntitySeed< MeshConfig, EntityTopology >;
-   using SeedMatrixType = typename EntityTraitsType::SeedMatrixType;
 
 public:
-   GlobalIndexType
-   findEntitySeedIndex( const SeedType& seed )
-   {
-      return seed.getCornerIds()[ 0 ];
-   }
-
    void
    initEntities( InitializerType& initializer, MeshType& mesh )
    {
       // std::cout << " Initiating entities with dimension " << DimensionTag::value << " ... " << std::endl;
-      EntityInitializerType::initSuperentities( initializer, mesh );
+      auto getEntitySeedIndex = []( const SeedType& seed )
+      {
+         return seed.getCornerIds()[ 0 ];
+      };
+      EntityInitializerType::initSuperentities( initializer, mesh, getEntitySeedIndex );
    }
-
-   // This overload is only here for compatibility with Polyhedrons, it is never called
-   void
-   initEntities( InitializerType& initializer, SeedMatrixType& faceSeeds, MeshType& mesh )
-   {}
 };
 
 }  // namespace Meshes

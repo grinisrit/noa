@@ -17,6 +17,12 @@ using namespace TNL::Algorithms;
 using namespace TNL::Algorithms::detail;
 using namespace TNL::MPI;
 
+// this is a workaround for an nvcc 11.7 bug: it drops the scope of enum class members in template function calls
+#ifdef __CUDACC__
+static constexpr auto Inclusive = TNL::Algorithms::detail::ScanType::Inclusive;
+static constexpr auto Exclusive = TNL::Algorithms::detail::ScanType::Exclusive;
+#endif
+
 /*
  * Light check of DistributedArray.
  *
@@ -84,7 +90,7 @@ protected:
       cv_view.bind( c );
 
       // make sure that we perform tests with multiple CUDA grids
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       if( std::is_same< DeviceType, Devices::Cuda >::value )
       {
          CudaScanKernelLauncher< ScanType::Inclusive, ScanPhaseType::WriteInFirstPhase, ValueType >::resetMaxGridSize();
@@ -102,7 +108,7 @@ protected:
    template< Algorithms::detail::ScanType ScanType >
    void checkResult( const DistributedArrayType& array, bool check_cuda_grids = true )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       // skip the check for too small arrays
       if( check_cuda_grids && array.getLocalRange().getSize() > 256 ) {
          // we don't care which kernel launcher was actually used
@@ -121,11 +127,11 @@ protected:
 
 // types for which DistributedScanTest is instantiated
 using DistributedArrayTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    DistributedArray< double, Devices::Sequential, int >,
    DistributedArray< double, Devices::Host, int >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    DistributedArray< double, Devices::Cuda, int >
 #endif
 >;

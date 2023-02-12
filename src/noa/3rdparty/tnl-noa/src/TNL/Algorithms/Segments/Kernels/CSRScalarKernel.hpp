@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -50,11 +50,11 @@ struct CSRScalarKernelreduceSegmentsDispatcher< Index, Device, Fetch, Reduction,
          keep( segmentIdx, aux );
       };
 
-      if( std::is_same< Device, TNL::Devices::Sequential >::value ) {
+      if constexpr( std::is_same< Device, TNL::Devices::Sequential >::value ) {
          for( Index segmentIdx = first; segmentIdx < last; segmentIdx++ )
             l( segmentIdx );
       }
-      else if( std::is_same< Device, TNL::Devices::Host >::value ) {
+      else if constexpr( std::is_same< Device, TNL::Devices::Host >::value ) {
 #ifdef HAVE_OPENMP
          #pragma omp parallel for firstprivate( l ) schedule( dynamic, 100 ), if( Devices::Host::isOMPEnabled() )
 #endif
@@ -90,11 +90,11 @@ struct CSRScalarKernelreduceSegmentsDispatcher< Index, Device, Fetch, Reduce, Ke
          keep( segmentIdx, aux );
       };
 
-      if( std::is_same< Device, TNL::Devices::Sequential >::value ) {
+      if constexpr( std::is_same< Device, TNL::Devices::Sequential >::value ) {
          for( Index segmentIdx = first; segmentIdx < last; segmentIdx++ )
             l( segmentIdx );
       }
-      else if( std::is_same< Device, TNL::Devices::Host >::value ) {
+      else if constexpr( std::is_same< Device, TNL::Devices::Host >::value ) {
 #ifdef HAVE_OPENMP
          #pragma omp parallel for firstprivate( l ) schedule( dynamic, 100 ), if( Devices::Host::isOMPEnabled() )
 #endif
@@ -118,6 +118,7 @@ CSRScalarKernel< Index, Device >::reset()
 {}
 
 template< typename Index, typename Device >
+__cuda_callable__
 auto
 CSRScalarKernel< Index, Device >::getView() -> ViewType
 {
@@ -125,11 +126,12 @@ CSRScalarKernel< Index, Device >::getView() -> ViewType
 }
 
 template< typename Index, typename Device >
+__cuda_callable__
 auto
 CSRScalarKernel< Index, Device >::getConstView() const -> ConstViewType
 {
    return *this;
-};
+}
 
 template< typename Index, typename Device >
 TNL::String
@@ -164,7 +166,7 @@ CSRScalarKernel< Index, Device >::reduceSegments( const OffsetsView& offsets,
 globalIdx, compute ) ); keeper( segmentIdx, aux );
     };
 
-     if( std::is_same< DeviceType, TNL::Devices::Host >::value )
+    if constexpr( std::is_same< DeviceType, TNL::Devices::Host >::value )
     {
 #ifdef HAVE_OPENMP
         #pragma omp parallel for firstprivate( l ) schedule( dynamic, 100 ), if( Devices::Host::isOMPEnabled() )

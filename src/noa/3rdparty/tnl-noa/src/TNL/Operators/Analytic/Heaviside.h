@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -37,7 +37,7 @@ public:
    {
       this->multiplicator = parameters.getParameter< double >( prefix + "multiplicator" );
       return true;
-   };
+   }
 
    template< typename Function >
    __cuda_callable__

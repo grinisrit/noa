@@ -9,7 +9,7 @@
 #include <TNL/Algorithms/Sorting/BitonicSort.h>
 #include <TNL/Algorithms/sort.h>
 
-#if defined HAVE_GTEST && defined HAVE_CUDA
+#if defined HAVE_GTEST && defined __CUDACC__
 #include <gtest/gtest.h>
 
 
@@ -219,7 +219,7 @@ TEST(nonIntegerType, struct_128b)
 }
 
 //error bypassing
-//https://mmg-gitlab.fjfi.cvut.cz/gitlab/tnl/tnl-dev/blob/fbc34f6a97c13ec865ef7969b9704533222ed408/src/UnitTests/Containers/VectorTest-8.h
+//https://gitlab.com/tnl-project/tnl/blob/fbc34f6a97c13ec865ef7969b9704533222ed408/src/UnitTests/Containers/VectorTest-8.h
 void descendingSort(TNL::Containers::ArrayView<int, TNL::Devices::Cuda> view)
 {
     auto cmpDescending = [] __cuda_callable__ (int a, int b) {return a > b;};

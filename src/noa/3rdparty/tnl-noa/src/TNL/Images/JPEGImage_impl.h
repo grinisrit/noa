@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -94,7 +94,7 @@ JPEGImage< Index >::read( const RegionOfInterest< Index > roi,
 #ifdef HAVE_JPEG_H
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
    const GridType& grid = function.getMesh();
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    /***
     * Prepare the long jump back from libjpeg.
@@ -202,7 +202,7 @@ bool
 JPEGImage< Index >::write( const Meshes::Grid< 2, Real, Device, Index >& grid, Vector& vector )
 {
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
 #ifdef HAVE_JPEG_H
    Index i( 0 ), j;
@@ -238,7 +238,7 @@ JPEGImage< Index >::write( const Functions::MeshFunction< Meshes::Grid< 2, MeshR
 {
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
    const GridType& grid = function.getMesh();
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
 #ifdef HAVE_JPEG_H
    Index i( 0 ), j;

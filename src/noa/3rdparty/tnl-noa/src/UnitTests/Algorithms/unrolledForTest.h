@@ -65,7 +65,7 @@ TEST( unrolledForTest, host_empty )
    EXPECT_FALSE( called );
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< int N >
 void test_cuda()
 {

@@ -3,7 +3,7 @@
  */
 
 #include <stdexcept>
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #include "LightSpMV-1.0/SpMV.h"
 #endif
 #include <TNL/Matrices/SparseMatrix.h>
@@ -16,7 +16,7 @@ template< typename Real1, typename Real2 >
 struct LightSpMVVectorsBinder
 {
    template< typename Index >
-   static void bind( TNL::Containers::VectorView< Real1, TNL::Devices::Cuda, Index >& vectorView, Real2* data, Index size ){};
+   static void bind( TNL::Containers::VectorView< Real1, TNL::Devices::Cuda, Index >& vectorView, Real2* data, Index size ){}
 };
 
 template< typename Real >
@@ -45,7 +45,7 @@ struct LightSpMVBenchmark
      kernelType( kernelType )
    {
       static_assert( std::is_same< typename Matrix::DeviceType, TNL::Devices::Host >::value, "The only device type accepted here is TNL::Devices::Host." );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       cudaDeviceProp prop;
       cudaGetDeviceProperties(&prop, 0);
       opt._gpus.push_back(make_pair(0, prop));
@@ -124,7 +124,7 @@ struct LightSpMVBenchmark
 
    void vectorProduct()
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       this->spmv->spmvKernel();
       cudaDeviceSynchronize();
 #endif
@@ -138,7 +138,7 @@ struct LightSpMVBenchmark
 
    ~LightSpMVBenchmark()
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       if( spmv ) delete spmv;
       opt._rowOffsets = nullptr;
       opt._colIndexValues = nullptr;
@@ -149,7 +149,7 @@ struct LightSpMVBenchmark
    }
 
    protected:
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       Options opt;
       SpMV* spmv = nullptr;
 #endif

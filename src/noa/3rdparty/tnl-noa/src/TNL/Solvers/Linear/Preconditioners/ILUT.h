@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -12,6 +12,7 @@
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Containers/Vector.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Matrices/SparseMatrix.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Exceptions/NotImplementedError.h>
 
 namespace noa::TNL {
 namespace Solvers {
@@ -20,8 +21,7 @@ namespace Preconditioners {
 
 // implementation template
 template< typename Matrix, typename Real, typename Device, typename Index >
-class ILUT_impl
-{};
+class ILUT_impl;
 
 /**
  * \brief Implementation of a preconditioner based on Incomplete LU with thresholding.
@@ -113,10 +113,10 @@ public:
    bool
    setup( const Config::ParameterContainer& parameters, const String& prefix = "" ) override;
 
-   virtual void
+   void
    update( const MatrixPointer& matrixPointer ) override;
 
-   virtual void
+   void
    solve( ConstVectorViewType b, VectorViewType x ) const override;
 
 protected:
@@ -163,16 +163,16 @@ public:
    using typename Preconditioner< Matrix >::ConstVectorViewType;
    using typename Preconditioner< Matrix >::MatrixPointer;
 
-   virtual void
+   void
    update( const MatrixPointer& matrixPointer ) override
    {
-      throw std::runtime_error( "Not Iplemented yet for CUDA" );
+      throw Exceptions::NotImplementedError( "ILUT is not implemented for CUDA" );
    }
 
-   virtual void
+   void
    solve( ConstVectorViewType b, VectorViewType x ) const override
    {
-      throw std::runtime_error( "Not Iplemented yet for CUDA" );
+      throw Exceptions::NotImplementedError( "ILUT is not implemented for CUDA" );
    }
 };
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -15,6 +15,9 @@
 namespace noa::TNL {
 namespace Containers {
 
+/**
+ * \brief \e DistributedVectorView extends \ref DistributedArrayView with algebraic operations.
+ */
 template< typename Real, typename Device = Devices::Host, typename Index = int >
 class DistributedVectorView : public DistributedArrayView< Real, Device, Index >
 {

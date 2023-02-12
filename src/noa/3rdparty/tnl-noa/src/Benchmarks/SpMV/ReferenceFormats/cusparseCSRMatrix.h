@@ -1,7 +1,7 @@
 #include <TNL/Assert.h>
 #include <TNL/Devices/Cuda.h>
 #include <TNL/Matrices/SparseMatrix.h>
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #include <cusparse.h>
 #endif
 
@@ -18,9 +18,9 @@ class CusparseCSRBase
       CusparseCSRBase()
       : matrix( 0 )
       {
-      };
+      }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       void init( const MatrixType& matrix,
                  cusparseHandle_t* cusparseHandle )
       {
@@ -52,7 +52,7 @@ class CusparseCSRBase
                           OutVector& outVector ) const
       {
          TNL_ASSERT_TRUE( matrix, "matrix was not initialized" );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #if CUDART_VERSION >= 11000
          throw std::runtime_error("cusparseDcsrmv was removed in CUDA 11.");
 #else
@@ -76,7 +76,7 @@ class CusparseCSRBase
    protected:
 
       const MatrixType* matrix;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       cusparseHandle_t* cusparseHandle;
 
       cusparseMatDescr_t matrixDescriptor;
@@ -99,7 +99,7 @@ class CusparseCSR< double > : public CusparseCSRBase< double >
                           OutVector& outVector ) const
       {
          TNL_ASSERT_TRUE( matrix, "matrix was not initialized" );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #if CUDART_VERSION >= 11000
          throw std::runtime_error("cusparseDcsrmv was removed in CUDA 11.");
 #else
@@ -134,7 +134,7 @@ class CusparseCSR< float > : public CusparseCSRBase< float >
                           OutVector& outVector ) const
       {
          TNL_ASSERT_TRUE( matrix, "matrix was not initialized" );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #if CUDART_VERSION >= 11000
          throw std::runtime_error("cusparseScsrmv was removed in CUDA 11.");
 #else

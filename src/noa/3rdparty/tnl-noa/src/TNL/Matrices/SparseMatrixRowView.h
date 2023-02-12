@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -45,8 +45,8 @@ public:
    static constexpr bool
    isBinary()
    {
-      return std::is_same< std::remove_const_t< RealType >, bool >::value;
-   };
+      return std::is_same< std::decay_t< RealType >, bool >::value;
+   }
 
    /**
     * \brief The type of matrix elements.
@@ -86,12 +86,12 @@ public:
    /**
     * \brief Type of sparse matrix row view.
     */
-   using RowView = SparseMatrixRowView< SegmentView, ValuesViewType, ColumnsIndexesViewType >;
+   using RowView = SparseMatrixRowView< SegmentViewType, ValuesViewType, ColumnsIndexesViewType >;
 
    /**
     * \brief Type of constant sparse matrix row view.
     */
-   using ConstView = SparseMatrixRowView< SegmentView, ConstValuesViewType, ConstColumnsIndexesViewType >;
+   using ConstRowView = SparseMatrixRowView< SegmentViewType, ConstValuesViewType, ConstColumnsIndexesViewType >;
 
    /**
     * \brief The type of related matrix element.
@@ -132,7 +132,7 @@ public:
     * \return matrix row index.
     */
    __cuda_callable__
-   const IndexType&
+   IndexType
    getRowIndex() const;
 
    /**
@@ -264,7 +264,7 @@ public:
    getPaddingIndex() const
    {
       return -1;
-   };
+   }
 
 protected:
    SegmentViewType segmentView;

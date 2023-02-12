@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -320,20 +320,21 @@ struct MaxWithArg
       }                                                           \
    };
 
-#define TNL_MAKE_BINARY_FUNCTIONAL( name, function )                          \
-   struct name                                                                \
-   {                                                                          \
-      template< typename T1, typename T2 >                                    \
-      __cuda_callable__                                                       \
-      auto                                                                    \
-      operator()( const T1& x, const T2& y ) const -> decltype( pow( x, y ) ) \
-      {                                                                       \
-         return pow( x, y );                                                  \
-      }                                                                       \
+#define TNL_MAKE_BINARY_FUNCTIONAL( name, function )                               \
+   struct name                                                                     \
+   {                                                                               \
+      template< typename T1, typename T2 >                                         \
+      __cuda_callable__                                                            \
+      auto                                                                         \
+      operator()( const T1& x, const T2& y ) const -> decltype( function( x, y ) ) \
+      {                                                                            \
+         return function( x, y );                                                  \
+      }                                                                            \
    };
 
 TNL_MAKE_UNARY_FUNCTIONAL( Abs, abs )
 TNL_MAKE_UNARY_FUNCTIONAL( Exp, exp )
+TNL_MAKE_UNARY_FUNCTIONAL( Sqr, sqr )
 TNL_MAKE_UNARY_FUNCTIONAL( Sqrt, sqrt )
 TNL_MAKE_UNARY_FUNCTIONAL( Cbrt, cbrt )
 TNL_MAKE_UNARY_FUNCTIONAL( Log, log )
@@ -366,8 +367,7 @@ struct Cast
    struct Operation
    {
       template< typename T >
-      __cuda_callable__
-      auto
+      constexpr auto
       operator()( const T& a ) const -> ResultType
       {
          return static_cast< ResultType >( a );

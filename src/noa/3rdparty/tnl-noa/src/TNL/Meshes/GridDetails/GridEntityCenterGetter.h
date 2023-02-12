@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -6,166 +6,173 @@
 
 #pragma once
 
+#include <noa/3rdparty/tnl-noa/src/TNL/Cuda/CudaCallable.h>
+
 namespace noa::TNL {
 namespace Meshes {
 
-template< typename GridEntity >
-class GridEntityCenterGetter
-{};
+template< int Dimension, typename Real, typename Device, typename Index >
+class Grid;
+
+template< class, int >
+class GridEntity;
+
+template< class >
+class GridEntityCenterGetter;
 
 /***
  * 1D grids
  */
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 1, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 1 > >
 {
 public:
-   using GridType = Meshes::Grid< 1, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 1, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 1, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 1 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType( grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 ) * grid.getSpaceSteps().x() );
+      const Grid& grid = entity.getMesh();
+      return Point( grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 ) * grid.getSpaceSteps().x() );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 0, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 0 > >
 {
 public:
-   using GridType = Meshes::Grid< 1, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 0, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 1, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 0 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType( grid.getOrigin().x() + ( entity.getCoordinates().x() ) * grid.getSpaceSteps().x() );
+      const Grid& grid = entity.getMesh();
+      return Point( grid.getOrigin().x() + ( entity.getCoordinates().x() ) * grid.getSpaceSteps().x() );
    }
 };
 
 /****
  * 2D grids
  */
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 2, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 2 > >
 {
 public:
-   using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 2, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 2, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 2 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType( grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 ) * grid.getSpaceSteps().x(),
-                        grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 ) * grid.getSpaceSteps().y() );
+      const Grid& grid = entity.getMesh();
+      return Point( grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 ) * grid.getSpaceSteps().x(),
+                    grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 ) * grid.getSpaceSteps().y() );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 1, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 1 > >
 {
 public:
-   using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 1, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 2, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 1 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType(
-         grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 * entity.getBasis().x() ) * grid.getSpaceSteps().x(),
-         grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 * entity.getBasis().y() ) * grid.getSpaceSteps().y() );
+      const Grid& grid = entity.getMesh();
+      return Point(
+         grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 * ! entity.getNormals().x() ) * grid.getSpaceSteps().x(),
+         grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 * ! entity.getNormals().y() ) * grid.getSpaceSteps().y() );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 0, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 0 > >
 {
 public:
-   using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 0, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 2, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 0 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType( grid.getOrigin().x() + entity.getCoordinates().x() * grid.getSpaceSteps().x(),
-                        grid.getOrigin().y() + entity.getCoordinates().y() * grid.getSpaceSteps().y() );
+      const Grid& grid = entity.getMesh();
+      return Point( grid.getOrigin().x() + entity.getCoordinates().x() * grid.getSpaceSteps().x(),
+                    grid.getOrigin().y() + entity.getCoordinates().y() * grid.getSpaceSteps().y() );
    }
 };
 
 /***
  * 3D grid
  */
-template< typename Real, typename Device, typename Index, int EntityDimension, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 3, Real, Device, Index >, EntityDimension, Config > >
+template< typename Real, typename Device, typename Index, int EntityDimension >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 3, Real, Device, Index >, EntityDimension > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, EntityDimension, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 3, Real, Device, Index >;
+   using Entity = GridEntity< Grid, EntityDimension >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType(
-         grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 * entity.getBasis().x() ) * grid.getSpaceSteps().x(),
-         grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 * entity.getBasis().y() ) * grid.getSpaceSteps().y(),
-         grid.getOrigin().z() + ( entity.getCoordinates().z() + 0.5 * entity.getBasis().z() ) * grid.getSpaceSteps().z() );
+      const Grid& grid = entity.getMesh();
+      return Point(
+         grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 * ! entity.getNormals().x() ) * grid.getSpaceSteps().x(),
+         grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 * ! entity.getNormals().y() ) * grid.getSpaceSteps().y(),
+         grid.getOrigin().z() + ( entity.getCoordinates().z() + 0.5 * ! entity.getNormals().z() ) * grid.getSpaceSteps().z() );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 3, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 3 > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 3, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 3, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 3 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType( grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 ) * grid.getSpaceSteps().x(),
-                        grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 ) * grid.getSpaceSteps().y(),
-                        grid.getOrigin().z() + ( entity.getCoordinates().z() + 0.5 ) * grid.getSpaceSteps().z() );
+      const Grid& grid = entity.getMesh();
+      return Point( grid.getOrigin().x() + ( entity.getCoordinates().x() + 0.5 ) * grid.getSpaceSteps().x(),
+                    grid.getOrigin().y() + ( entity.getCoordinates().y() + 0.5 ) * grid.getSpaceSteps().y(),
+                    grid.getOrigin().z() + ( entity.getCoordinates().z() + 0.5 ) * grid.getSpaceSteps().z() );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class GridEntityCenterGetter< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 0, Config > >
+template< typename Real, typename Device, typename Index >
+class GridEntityCenterGetter< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 0 > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 0, Config >;
-   using PointType = typename GridType::PointType;
+   using Grid = Meshes::Grid< 3, Real, Device, Index >;
+   using Entity = GridEntity< Grid, 0 >;
+   using Point = typename Grid::PointType;
 
    __cuda_callable__
-   inline static PointType
-   getEntityCenter( const GridEntityType& entity )
+   inline static Point
+   getEntityCenter( const Entity& entity )
    {
-      const GridType& grid = entity.getMesh();
-      return PointType( grid.getOrigin().x() + ( entity.getCoordinates().x() ) * grid.getSpaceSteps().x(),
-                        grid.getOrigin().y() + ( entity.getCoordinates().y() ) * grid.getSpaceSteps().y(),
-                        grid.getOrigin().z() + ( entity.getCoordinates().z() ) * grid.getSpaceSteps().z() );
+      const Grid& grid = entity.getMesh();
+      return Point( grid.getOrigin().x() + ( entity.getCoordinates().x() ) * grid.getSpaceSteps().x(),
+                    grid.getOrigin().y() + ( entity.getCoordinates().y() ) * grid.getSpaceSteps().y(),
+                    grid.getOrigin().z() + ( entity.getCoordinates().z() ) * grid.getSpaceSteps().z() );
    }
 };
 
