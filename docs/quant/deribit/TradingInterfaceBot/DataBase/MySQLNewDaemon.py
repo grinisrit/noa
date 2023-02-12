@@ -1,30 +1,20 @@
 import asyncio
-import threading
+import logging
 import os
 import signal
 from datetime import datetime
 from typing import Optional
 
-from docs.quant.deribit.TradingInterfaceBot.DataBase.AbstractDataSaverManager import AbstractDataManager
-import logging
 import mysql.connector as connector
-from docs.quant.deribit.TradingInterfaceBot.DataBase.mysqlRecording.cleanUpRequestsUnlimited import *
-from docs.quant.deribit.TradingInterfaceBot.DataBase.mysqlRecording.postDataTemplateLimited import *
+from docs.quant.deribit.TradingInterfaceBot.Utils import *
+from docs.quant.deribit.TradingInterfaceBot.DataBase.AbstractDataSaverManager import AbstractDataManager
 from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription
-
-# Block with developing module | START
-import yaml
-import sys
-
-with open(sys.path[1] + "/docs/quant/deribit/TradingInterfaceBot/developerConfiguration.yaml", "r") as _file:
-    developConfiguration = yaml.load(_file, Loader=yaml.FullLoader)
-del _file
-# Block with developing module | END
 
 
 class MySqlDaemon(AbstractDataManager):
     """
     Daemon for MySQL record type.
+    TODO: insert docstring
     """
     connection: connector.connection.MySQLConnection
     database_cursor: connector.connection.MySQLCursor
@@ -54,6 +44,7 @@ class MySqlDaemon(AbstractDataManager):
             try:
                 self.connection = connector.connect(host=self.cfg["mysql"]["host"],
                                                     user=self.cfg["mysql"]["user"],
+                                                    password=self.cfg["mysql"]["password"],
                                                     database=self.cfg["mysql"]["database"])
                 self.database_cursor = self.connection.cursor()
                 logging.info("Success connection to MySQL database")
@@ -69,7 +60,7 @@ class MySqlDaemon(AbstractDataManager):
         :param query:
         :return:
         """
-        if developConfiguration["MY_SQL_DAEMON"]["SHOW_QUERY_FOR_POST"]:
+        if self.developConfiguration["MY_SQL_DAEMON"]["SHOW_QUERY_FOR_POST"]:
             print(f"POST MYSQL REQUEST: QUERY | {query} | TIME {datetime.now()}")
         flag = 0
         while flag <= self.cfg["mysql"]["reconnect_max_attempts"]:
@@ -94,7 +85,7 @@ class MySqlDaemon(AbstractDataManager):
         :param query:
         :return:
         """
-        if developConfiguration["MY_SQL_DAEMON"]["SHOW_QUERY_FOR_GET"]:
+        if self.developConfiguration["MY_SQL_DAEMON"]["SHOW_QUERY_FOR_GET"]:
             print(f"GET MYSQL REQUEST: QUERY | {query} | TIME {datetime.now()}")
         flag = 0
         while flag <= self.cfg["mysql"]["reconnect_max_attempts"]:

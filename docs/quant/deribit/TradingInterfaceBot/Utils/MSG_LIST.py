@@ -1,6 +1,6 @@
 import warnings
 
-from docs.quant.deribit.TradingInterfaceBot.Utils import AvailableCurrencies
+import docs.quant.deribit.TradingInterfaceBot.Utils.AvailableCurrencies as AvailableCurrencies
 
 
 def hello_message() -> dict:
@@ -178,4 +178,28 @@ def cancel_order_request(order_id: int) -> dict:
                 "order_id": f"{order_id}"
             }
         }
+    return _msg
+
+
+def get_ticker_by_instrument_request(instrument_request: str) -> dict:
+    _msg = {
+            "jsonrpc": "2.0",
+            "id": 8106,
+            "method": "public/ticker",
+            "params": {
+                "instrument_name": f"{instrument_request}"
+            }
+        }
+    return _msg
+
+
+def get_user_portfolio_request(currency: AvailableCurrencies.Currency) -> dict:
+    _msg = \
+        {"jsonrpc": "2.0",
+         "method": "private/subscribe",
+         "id": 42,
+         "params": {
+             "channels": [f"user.portfolio.{currency.currency.lower()}"]}
+         }
+
     return _msg

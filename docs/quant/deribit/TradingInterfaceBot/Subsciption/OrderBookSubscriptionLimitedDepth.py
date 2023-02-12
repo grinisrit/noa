@@ -1,10 +1,9 @@
-import asyncio
 
-from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription, flatten
-from docs.quant.deribit.TradingInterfaceBot.Utils import MSG_LIST
-from docs.quant.deribit.TradingInterfaceBot.DataBase.mysqlRecording.cleanUpRequestsLimited import \
-    REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT
-from docs.quant.deribit.TradingInterfaceBot.DataBase.AbstractDataSaverManager import AutoIncrementDict
+from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription, flatten, RequestTypo
+
+from docs.quant.deribit.TradingInterfaceBot.Utils import *
+from docs.quant.deribit.TradingInterfaceBot.Utils import REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT
+
 
 from numpy import ndarray
 from functools import partial
@@ -24,15 +23,13 @@ else:
 class OrderBookSubscriptionCONSTANT(AbstractSubscription):
     tables_names = ["TABLE_DEPTH_{}"]
 
-    instrument_name_instrument_id_map: AutoIncrementDict[str, int] = None
-
     def __init__(self, scrapper: scrapper_typing, order_book_depth: int):
         self.depth: int = order_book_depth
         self.tables_names = [f"TABLE_DEPTH_{self.depth}"]
         self.tables_names_creation = list(map(partial(REQUEST_TO_CREATE_LIMITED_ORDER_BOOK_CONTENT,
                                                       depth_size=self.depth), self.tables_names))
 
-        super(OrderBookSubscriptionCONSTANT, self).__init__(scrapper=scrapper)
+        super(OrderBookSubscriptionCONSTANT, self).__init__(scrapper=scrapper, request_typo=RequestTypo.PUBLIC)
         self.number_of_columns = self.depth * 4 + 3
 
         self.instrument_name_instrument_id_map = self.scrapper.instrument_name_instrument_id_map
@@ -110,7 +107,7 @@ class OrderBookSubscriptionCONSTANT(AbstractSubscription):
         else:
             logging.warning(f"Instrument {instrument_name} already subscribed")
 
-    def create_subscription_request(self):
+    def _create_subscription_request(self):
         # Send all subscriptions
         for _instrument_name in self.scrapper.instruments_list:
             self.make_new_subscribe_constant_depth_book(instrument_name=_instrument_name,

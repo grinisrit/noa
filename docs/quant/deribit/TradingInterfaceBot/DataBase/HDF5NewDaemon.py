@@ -1,27 +1,18 @@
 import asyncio
-
-from pandas import DataFrame
+from pandas import DataFrame, HDFStore
 
 from docs.quant.deribit.TradingInterfaceBot.DataBase.AbstractDataSaverManager import AbstractDataManager
 from docs.quant.deribit.TradingInterfaceBot.Subsciption.AbstractSubscription import AbstractSubscription
+
 from typing import Optional
 import logging
-
-# Block with developing module | START
-import yaml
-import sys
 import os
-from pandas import HDFStore
-
-with open(sys.path[1] + "/docs/quant/deribit/TradingInterfaceBot/developerConfiguration.yaml", "r") as _file:
-    developConfiguration = yaml.load(_file, Loader=yaml.FullLoader)
-del _file
-# Block with developing module | END
 
 
 class HDF5Daemon(AbstractDataManager):
     """
-    Daemon for MySQL record type.
+    Daemon for HDF5 record type.
+    TODO: insert docstring
     """
     connection: HDFStore = None
     database_cursor = None
@@ -39,7 +30,11 @@ class HDF5Daemon(AbstractDataManager):
     async def _connect_to_database(self):
         print("Connect HDF5")
         try:
-            self.path_to_hdf5_file = f"../dataStorage/{self.cfg['hdf5']['hdf5_database_file']}"
+            self.path_to_hdf5_file = \
+                f"../{self.cfg['hdf5']['hdf5_database_directory']}/{self.subscription_type.__class__.__name__}_{self.subscription_type.tables_names[0]}.h5"
+            if not os.path.exists(f"../{self.cfg['hdf5']['hdf5_database_directory']}/"):
+                os.mkdir(f"../{self.cfg['hdf5']['hdf5_database_directory']}/")
+                logging.warning("Create folder for storage")
             if not os.path.exists(self.path_to_hdf5_file):
                 logging.warning("Create HDF5 File")
                 self.connection = HDFStore(self.path_to_hdf5_file, mode='w')
@@ -55,7 +50,12 @@ class HDF5Daemon(AbstractDataManager):
             raise ConnectionError("Cannot connect to HDF5 database")
 
     async def _clean_exist_database(self):
-        logging.warning("CleanUp Not implemented with HDF5 now")
+        if os.path.exists(self.path_to_hdf5_file):
+            logging.warning("CleanUP HDF5 file")
+            os.remove(self.path_to_hdf5_file)
+
+            self.connection = HDFStore(self.path_to_hdf5_file, mode='w')
+            self.connection.close()
         return
         # if os.path.exists(f"../dataStorage/{self.cfg['hdf5']['hdf5_database_file']}"):
         #     os.remove(f"../dataStorage/{self.cfg['hdf5']['hdf5_database_file']}")
