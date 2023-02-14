@@ -1,4 +1,4 @@
-/** For data visualization see */
+/** For data visualization see docs/quant/heston.ipynb */
 
 #include <noa/quant/heston.hh>
 
@@ -126,80 +126,3 @@ int main(int argc, char* argv[]) {
     std::cout << "Done." << std::endl;
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

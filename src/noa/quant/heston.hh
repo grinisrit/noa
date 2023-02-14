@@ -172,15 +172,3 @@ generate_heston(int64_t n_paths, int64_t n_steps, double dt,
 }
 
 } // namespace noa::quant
-
-
-
-
-
-
-
-
-
-
-
-
