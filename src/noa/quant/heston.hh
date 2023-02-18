@@ -43,7 +43,7 @@ namespace noa::quant {
 using namespace torch::indexing;
 
 /**
- * Generate samples from a noncentral chi-square distribution using approximate
+ * Generates samples from a noncentral chi-square distribution using approximate
  * Quadratic Exponential scheme from [Andersen2007].
  *
  * @param df Degrees of freedom, must be > 0.

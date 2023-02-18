@@ -1,4 +1,4 @@
-/** For data visualization see docs/quant/heston.ipynb */
+/** For results visualization see docs/quant/heston.ipynb */
 
 #include <noa/quant/heston.hh>
 
@@ -100,8 +100,8 @@ void test_noncentral_chi2() {
 
 void test_cir() {
     std::cout << "Running functional test of `generate_cir()`" << std::endl;
-    torch::Tensor init_state_var = v0 * torch::ones(n_paths,torch::dtype<double>());
-    torch::Tensor cir_paths = noa::quant::generate_cir(n_paths, n_steps, dt,init_state_var, kappa, theta, xi);
+    torch::Tensor init_state_var = v0 * torch::ones(n_paths, torch::dtype<double>());
+    torch::Tensor cir_paths = noa::quant::generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, xi);
     torch::save(cir_paths, "cir_paths.pt");
 }
 
