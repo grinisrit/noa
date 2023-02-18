@@ -2,9 +2,6 @@ import numba as nb
 import numpy as np
 from typing import Final
 
-# global GLAW_DIM
-# GLAW_DIM = 64 // 2
-
 _spec_market_params = [
     ("S", nb.float64),
     ("r", nb.float64),
@@ -17,11 +14,6 @@ _spec_model_params = [
     ("c", nb.float64),
     ("rho", nb.float64),
     ("v0", nb.float64),
-]
-_spec_integral_settings = [
-    ("numgrid", nb.int32),
-    ("u", nb.float64[:]),
-    ("w", nb.float64[:]),
 ]
 _spec_TagMn = [
     ("M1", nb.float64[:]),
@@ -81,18 +73,6 @@ class ModelParameters(object):
         self.c = c
         self.rho = rho
         self.v0 = v0
-
-
-@nb.experimental.jitclass(_spec_integral_settings)
-class GLAW(object):
-    numgrid: nb.int32
-    u: nb.float64[:]
-    w: nb.float64[:]
-
-    def __init__(self, numgrid: nb.int32, u: nb.float64[:], w: nb.float64[:]):
-        self.numgrid = numgrid
-        self.u = u
-        self.w = w
 
 
 @nb.experimental.jitclass(_spec_TagMn)
@@ -162,6 +142,82 @@ lb: Final[np.float64] = np.float64(0.0)
 ub: Final[np.int32] = np.int32(200)
 Q: Final[np.float64] = np.float64(0.5 * (ub - lb))
 P: Final[np.float64] = np.float64(0.5 * (ub + lb))
+
+u64 = np.array(
+    [
+        0.0243502926634244325089558,
+        0.0729931217877990394495429,
+        0.1214628192961205544703765,
+        0.1696444204239928180373136,
+        0.2174236437400070841496487,
+        0.2646871622087674163739642,
+        0.3113228719902109561575127,
+        0.3572201583376681159504426,
+        0.4022701579639916036957668,
+        0.4463660172534640879849477,
+        0.4894031457070529574785263,
+        0.5312794640198945456580139,
+        0.5718956462026340342838781,
+        0.6111553551723932502488530,
+        0.6489654712546573398577612,
+        0.6852363130542332425635584,
+        0.7198818501716108268489402,
+        0.7528199072605318966118638,
+        0.7839723589433414076102205,
+        0.8132653151227975597419233,
+        0.8406292962525803627516915,
+        0.8659993981540928197607834,
+        0.8893154459951141058534040,
+        0.9105221370785028057563807,
+        0.9295691721319395758214902,
+        0.9464113748584028160624815,
+        0.9610087996520537189186141,
+        0.9733268277899109637418535,
+        0.9833362538846259569312993,
+        0.9910133714767443207393824,
+        0.9963401167719552793469245,
+        0.9993050417357721394569056,
+    ],
+    dtype=np.float64,
+)
+w64 = np.array(
+    [
+        0.0486909570091397203833654,
+        0.0485754674415034269347991,
+        0.0483447622348029571697695,
+        0.0479993885964583077281262,
+        0.0475401657148303086622822,
+        0.0469681828162100173253263,
+        0.0462847965813144172959532,
+        0.0454916279274181444797710,
+        0.0445905581637565630601347,
+        0.0435837245293234533768279,
+        0.0424735151236535890073398,
+        0.0412625632426235286101563,
+        0.0399537411327203413866569,
+        0.0385501531786156291289625,
+        0.0370551285402400460404151,
+        0.0354722132568823838106931,
+        0.0338051618371416093915655,
+        0.0320579283548515535854675,
+        0.0302346570724024788679741,
+        0.0283396726142594832275113,
+        0.0263774697150546586716918,
+        0.0243527025687108733381776,
+        0.0222701738083832541592983,
+        0.0201348231535302093723403,
+        0.0179517157756973430850453,
+        0.0157260304760247193219660,
+        0.0134630478967186425980608,
+        0.0111681394601311288185905,
+        0.0088467598263639477230309,
+        0.0065044579689783628561174,
+        0.0041470332605624676352875,
+        0.0017832807216964329472961,
+    ],
+    dtype=np.float64,
+)
+
 
 _tmp_values_HesIntMN = {
     "csqr": nb.float64,
@@ -361,20 +417,14 @@ _tmp_values_HesIntJac = {
     "Jacobian": tagMNJac.class_type.instance_type,
 }
 
-# TODO
-_tmp_values_JacHes = {}
-
-_signature_JacHes = []
 
 _signature_HesIntMN = TagMn.class_type.instance_type(
-    GLAW.class_type.instance_type,
     ModelParameters.class_type.instance_type,
     MarketParameters.class_type.instance_type,
     nb.int32,
 )
 
 _signature_HesIntJac = tagMNJac.class_type.instance_type(
-    GLAW.class_type.instance_type,
     ModelParameters.class_type.instance_type,
     MarketParameters.class_type.instance_type,
     nb.int32,
@@ -383,21 +433,19 @@ _signature_HesIntJac = tagMNJac.class_type.instance_type(
 
 @nb.njit(_signature_HesIntMN, locals=_tmp_values_HesIntMN)
 def HesIntMN(
-    glaw: GLAW,
     model_parameters: ModelParameters,
     market_parameters: MarketParameters,
     market_pointer: int,
 ):
     """
-
-    :param glaw:
     :param model_parameters:
     :param market_parameters:
     :param market_pointer:
     :return:
     """
     csqr = np.power(model_parameters.c, 2)
-    PQ_M, PQ_N = P + Q * glaw.u, P - Q * glaw.u
+
+    PQ_M, PQ_N = P + Q * u64, P - Q * u64
     imPQ_M = i * PQ_M
     imPQ_N = i * PQ_N
     _imPQ_M = i * (PQ_M - i)
@@ -435,6 +483,7 @@ def HesIntMN(
         / model_parameters.c
     )
 
+    tmp = np.exp(tmp1)
     g_M2 = np.exp(tmp1 * imPQ_M)
     g_N2 = np.exp(tmp1 * imPQ_N)
     g_M1 = g_M2 * tmp
@@ -534,7 +583,6 @@ def HesIntMN(
 
 
 _tmp_values_fHes = {
-    "num_grids": nb.int32,
     "disc": nb.float64,
     "tmp": nb.float64,
     "y1": nb.float64,
@@ -549,24 +597,16 @@ _tmp_values_fHes = {
 
 @nb.njit(locals=_tmp_values_fHes)
 def fHes(
-    model_parameters: ModelParameters,
-    market_parameters: MarketParameters,
-    integration_settings: GLAW,
-    m: int,
-    n: int,
-):
+    model_parameters: ModelParameters, market_parameters: MarketParameters
+) -> np.array:
     """
     Function to calculate price of option by Heston model.
     :param model_parameters: ModelParameters class
     :param market_parameters: MarketParameters class
-    :param integration_settings: GLAW class
-    :param x: Observation
-    :param m: dim_p
-    :param n: dim_x
     :return:
     """
+    n = len(market_parameters.K)
     x = np.zeros(n, dtype=np.float64)
-    num_grids = integration_settings.numgrid // 2
     for l in range(n):
         K = market_parameters.K[l]
         T = market_parameters.T[l]
@@ -574,14 +614,14 @@ def fHes(
         tmp = 0.5 * (market_parameters.S - K * disc)
         disc = disc / pi
         y1, y2 = nb.float64(0.0), nb.float64(0.0)
+
         MN: TagMn = HesIntMN(
-            glaw=integration_settings,
             model_parameters=model_parameters,
             market_parameters=market_parameters,
             market_pointer=np.int32(l),
         )
-        y1 = y1 + np.multiply(integration_settings.w, (MN.M1 + MN.N1)).sum()
-        y2 = y2 + np.multiply(integration_settings.w, (MN.M2 + MN.N2)).sum()
+        y1 = y1 + np.multiply(w64, (MN.M1 + MN.N1)).sum()
+        y2 = y2 + np.multiply(w64, (MN.M2 + MN.N2)).sum()
         Qv1, Qv2 = np.float64(0.0), nb.float64(0.0)
         Qv1 = Q * y1
         Qv2 = Q * y2
@@ -593,7 +633,6 @@ def fHes(
 
 @nb.njit(_signature_HesIntJac, locals=_tmp_values_HesIntJac)
 def HesIntJac(
-    glaw: GLAW,
     model_parameters: ModelParameters,
     market_parameters: MarketParameters,
     market_pointer: int,
@@ -602,10 +641,9 @@ def HesIntJac(
     Function to calculate integrands (real-valued) for Jacobian.
     :param model_parameters: ModelParameters class
     :param market_parameters: MarketParameters class
-    :param glaw: GLAW class
     :return:
     """
-    PQ_M, PQ_N = P + Q * glaw.u, P - Q * glaw.u
+    PQ_M, PQ_N = P + Q * u64, P - Q * u64
     imPQ_M = i * PQ_M
     imPQ_N = i * PQ_N
     _imPQ_M = i * (PQ_M - i)
@@ -953,27 +991,25 @@ def HesIntJac(
 
     return Jacobian
 
-# @nb.njit(_signature_JacHes, locals = _tmp_values_JacHes)
+
 @nb.njit
 def JacHes(
-    glaw: GLAW,
     model_parameters: ModelParameters,
     market_parameters: MarketParameters,
-    market_pointer: int,
-    n: int,
-) -> None:
+) -> np.asarray:
     """
     Jacobian
     :param model_parameters: ModelParameters class
     :param market_parameters: MarketParameters class
-    :param glaw: GLAW class
     :return:
     """
+    n = len(market_parameters.K)
     r = market_parameters.r
-    NumGrids = glaw.numgrid
     discpi = np.exp(-r * market_parameters.T) / pi
     jac = np.zeros(n, dtype=np.float64)
-    w = glaw.w
+
+    da, db, dc, drho, dv0 = 0.0, 0.0, 0.0, 0.0, 0.0
+
     for l in range(n):
         K = market_parameters.K[l]
         T = market_parameters.T[l]
@@ -991,103 +1027,54 @@ def JacHes(
             0.0,
         )
         jacint: tagMNJac = HesIntJac(
-            glaw=glaw,
             model_parameters=model_parameters,
             market_parameters=market_parameters,
             market_pointer=l,
         )
-        pa1 += np.multiply(w, jacint.pa1s).sum()
-        pa2 += np.multiply(w, jacint.pa2s).sum()
+        pa1 += np.multiply(w64, jacint.pa1s).sum()
+        pa2 += np.multiply(w64, jacint.pa2s).sum()
 
-        pb1 += np.multiply(w, jacint.pb1s).sum()
-        pb2 += np.multiply(w, jacint.pb2s).sum()
+        pb1 += np.multiply(w64, jacint.pb1s).sum()
+        pb2 += np.multiply(w64, jacint.pb2s).sum()
 
-        pc1 += np.multiply(w, jacint.pc1s).sum()
-        pc2 += np.multiply(w, jacint.pc2s).sum()
+        pc1 += np.multiply(w64, jacint.pc1s).sum()
+        pc2 += np.multiply(w64, jacint.pc2s).sum()
 
-        prho1 += np.multiply(w, jacint.prho1s).sum()
-        prho2 += np.multiply(w, jacint.prho2s).sum()
+        prho1 += np.multiply(w64, jacint.prho1s).sum()
+        prho2 += np.multiply(w64, jacint.prho2s).sum()
 
-        pv01 += np.multiply(w, jacint.pv01s).sum()
-        pv02 += np.multiply(w, jacint.pv02s).sum()
+        pv01 += np.multiply(w64, jacint.pv01s).sum()
+        pv02 += np.multiply(w64, jacint.pv02s).sum()
 
         Qv1 = Q * pa1
         Qv2 = Q * pa2
         jac[l] = discpi * (Qv1 - K * Qv2)
 
+        da += discpi * (Qv1 - K * Qv2)
+
         Qv1 = Q * pb1
         Qv2 = Q * pb2
         jac[l] = discpi * (Qv1 - K * Qv2)
+
+        db += discpi * (Qv1 - K * Qv2)
 
         Qv1 = Q * pc1
         Qv2 = Q * pc2
         jac[l] = discpi * (Qv1 - K * Qv2)
 
+        dc += discpi * (Qv1 - K * Qv2)
+
         Qv1 = Q * prho1
         Qv2 = Q * prho2
         jac[l] = discpi * (Qv1 - K * Qv2)
+
+        drho += discpi * (Qv1 - K * Qv2)
 
         Qv1 = Q * pv01
         Qv2 = Q * pv02
         jac[l] = discpi * (Qv1 - K * Qv2)
 
+        dv0 += discpi * (Qv1 - K * Qv2)
+
+    jac = np.asarray([da, db, dc, drho, dv0])
     return jac
-
-
-# examples of @molozey, example from original C++ implementation is in main.py
-
-# model = ModelParameters(
-#     a=np.float64(100.0),
-#     b=np.float64(10.0),
-#     c=np.float64(1.0),
-#     rho=np.float64(10.0),
-#     v0=np.float64(15.0),
-# )
-
-# market = MarketParameters(
-#     S=np.float64(1.2),
-#     r=np.float64(0.1),
-#     T=np.array([1.0, 1.0, 1.0], dtype=np.float64),
-#     K=np.array([1.0, 2.0, 3.0], dtype=np.float64),
-# )
-
-# glaw = GLAW(
-#     numgrid=64,
-#     u=np.array([1.0, 1.0, 2.0], dtype=np.float64),
-#     w=np.array([1.0, 1.0, 2.0], dtype=np.float64),
-# )
-
-# back: TagMn = HesIntMN(
-#     glaw=glaw,
-#     model_parameters=model,
-#     market_parameters=market,
-#     market_pointer=np.int32(1),
-# )
-# fHes(
-#     model_parameters=model,
-#     market_parameters=market,
-#     integration_settings=glaw,
-#     x=np.array([1.0, 2.0, 3.0], dtype=np.float64),
-#     m=10,
-#     n=10,
-# )
-
-
-# Jac: tagMNJac = HesIntJac(
-#     glaw=glaw,
-#     model_parameters=model,
-#     market_parameters=market,
-#     market_pointer=np.int32(1),
-# )
-# print(Jac.pa1s)
-# print(Jac.pa2s)
-# print(Jac.pc1s)
-# print(Jac.pc2s)
-# print(Jac.pb1s)
-# print(Jac.pb2s)
-# print(Jac.prho1s)
-# print(Jac.prho2s)
-# print(Jac.pv01s)
-# print(Jac.pv02s)
-
-# print("Worked out")
