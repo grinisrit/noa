@@ -483,7 +483,6 @@ def HesIntMN(
         / model_parameters.c
     )
 
-    # вот эта строка была пропущено и цены плохо считались 16.02.2023
     tmp = np.exp(tmp1)
     g_M2 = np.exp(tmp1 * imPQ_M)
     g_N2 = np.exp(tmp1 * imPQ_N)
