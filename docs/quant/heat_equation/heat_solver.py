@@ -10,7 +10,7 @@ from numpy import ndarray
 @njit()
 def g_func(t, x):
     # q = 2*r/sigma**2 == 0 as r = 0
-    return np.exp(t/2) * np.maximum(np.zeros_like(x), np.exp(-x/2) - np.exp(x/2))
+    return np.exp(t/4) * np.maximum(np.zeros_like(x), np.exp(-x/2) - np.exp(x/2))
 
 
 class HeatSolver(HeatGrid):
