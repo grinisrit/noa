@@ -2,7 +2,7 @@ import types
 from typing import Union, Callable
 
 from docs.quant.heat_equation.heat_grid import *
-from docs.quant.utils.optlib.numerical_utils import crank_nickolson_scheme, crank_nickolson_mod
+from docs.quant.utils.optlib.numerical_utils import crank_nickolson_mod, brennan_schwartz_scheme_mod
 from numba import njit
 from numpy import ndarray
 
@@ -48,6 +48,15 @@ class HeatSolver(HeatGrid):
     def CN(self):
         self.setBounds()
         self._net = crank_nickolson_mod(self.net, self.lambda_)
+        self._net_mod_map[Mode.MAIN] = self.net
+
+    def BS(self, g_func):
+        self.setBounds()
+        self._net = brennan_schwartz_scheme_mod(self.net,
+                                                self.lambda_,
+                                                self.tGrid,
+                                                self.xGrid,
+                                                g_func=g_func)
         self._net_mod_map[Mode.MAIN] = self.net
 
     # TODO: manage with cashing
