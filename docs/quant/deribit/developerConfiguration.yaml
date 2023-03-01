@@ -1,7 +1,0 @@
-DATA_MANAGER:
-  SHOW_WHEN_DATA_TRANSFERS: False
-
-MY_SQL_DAEMON:
-  # show content for queries
-  SHOW_QUERY_FOR_POST: False
-  SHOW_QUERY_FOR_GET: False

@@ -24,6 +24,8 @@ dist/
 # User data
 data/
 *.pt
+*.h5
+*.hdf5
 tmp*
 /docs/quant/deribit/dataStorage/
 /docs/quant/deribit/logs.txt
