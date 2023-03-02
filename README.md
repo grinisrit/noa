@@ -151,7 +151,7 @@ algorithm in PMS.
 in QUANT, implemented the PDE methods for the Black-Scholes 
 model and works on margin models.
 
-* [Danila Ryazanov]()https://github.com/DanilaSR) developed the XPU DCS 
+* [Danila Ryazanov](https://github.com/DanilaSR) developed the XPU DCS 
 computations for muons in PMS.
 
 * [Marksim Sosnin](https://github.com/mmssss) implemented the almost exact simulation
