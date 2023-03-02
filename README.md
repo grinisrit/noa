@@ -119,11 +119,49 @@ When referring to this library in scientific work please cite
 }
 ```
 
-We welcome contributions to the project 
-and would love to hear about any feature requests.
+### Contributors
 
-The JNI wrapper is being developed in collaboration with 
+* [Sabina Abdiganieva](https://github.com/abdiganieva) researched various DFT implementations 
+for QC.
+
+* [Sergey Barsegyan](https://github.com/scaevolabars) works on asymptotic implied 
+volatility formulas for QUANT. 
+
+* [Dmitry Bazanov](https://github.com/zugzvangg) developed the Heston volatility surface calibration
+routines in QUANT and works on its applications to real market data. 
+
+* [Gregory Dushkin](https://github.com/GregTheMadMonk) is the main developer for CFD, where he is developing 
+differentiable programming algorithms for MHFEM schemes, integrating TNL into the library. 
+He also works on muon simulations in PMS, where he intergrated pumas.
+He helped to implement the adjoint sensitivity algorithm for Kohn-Sham equations in QC.
+
+* [Anastasia Golovina](https://github.com/a-tass) wrapped LibTorch's optimizers
+into KMath.
+
+* [Eugen Kadilenko](https://github.com/ruthenium96) developed the adjoint sensitivity
+model for Kohn-Sham equations in QC.
+
+* [Andrey Lispkiy](https://github.com/Molozey) works on applications to real
+market data for QUANT.
+
+* [Oleg Mosyagin](https://github.com/F5DXWsqPme) implemented the XPU ray-tracing
+algorithm in PMS.
+
+* [Ivan Novikov](https://github.com/mrFendel) contributes to the documentation
+in QUANT, implemented the PDE methods for the Black-Scholes 
+model and works on margin models.
+
+* [Danila Ryazanov]()https://github.com/DanilaSR) developed the XPU DCS 
+computations for muons in PMS.
+
+* [Marksim Sosnin](https://github.com/mmssss) implemented the almost exact simulation
+scheme for the Heston Model in the QUANT component and works on integration with Deep Hedging.
+
+* The JNI wrapper is being developed in collaboration with 
 [KMath contributors](https://github.com/mipt-npm/kmath/graphs/contributors).
+
+We welcome contributions to the project 
+and would love to hear about any feature requests
 
 ## License
 
