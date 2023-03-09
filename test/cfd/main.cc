@@ -41,6 +41,12 @@ int main(int argc, char** argv) {
 	gflags::SetUsageMessage("Functional tests for the mass lumping technique in MHFEM");
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+#ifdef HAVE_OPENMP
+    std::cout << "Have OpenMP" << std::endl;
+#else
+    std::cout << "No OpenMP" << std::endl;
+#endif
+
 	// Check incompatible flags
 	if (FLAGS_chain && FLAGS_findiff) {
 		std::cerr << "--chain and --findiff are mutually exclusive" << std::endl;

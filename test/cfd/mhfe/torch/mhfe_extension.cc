@@ -356,7 +356,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
             if (r[0] == 0) { // x = const boundary
                 float x1v = 0;
 
-                auto mask = (p1[0] == 0) && (((p1 + r / 2)[1] > 4) && ((p1 + r / 2)[1] < 6));
+                const bool mask = (p1[0] == 0) && (((p1 + r / 2)[1] > 4) && ((p1 + r / 2)[1] < 6));
 
                 solver.dirichletMask[edge] = 1;
                 solver.dirichlet[edge] = mask;
