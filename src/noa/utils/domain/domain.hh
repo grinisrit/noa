@@ -36,6 +36,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/MeshBuilder.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/resolveMeshType.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Writers/VTUWriter.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Geometry/getEntityCenter.h>
 
 // NOA headers
 #include <noa/utils/common.hh>
@@ -51,6 +52,13 @@
 /// Full \ref Domain type with template arguments. To be used with \ref __domain_targs__
 #define __DomainType__  \
         noa::utils::domain::Domain<CellTopology, Device, Real, GlobalIndex, LocalIndex>
+/// Same as \ref __domain_targs__, but not including CellTopology
+#define __domain_targs_topospec__ \
+   typename Device, typename Real, typename GlobalIndex, typename LocalIndex
+/// Same as \ref __DomainType__, but accepts cell topology as an argument
+/// (for use with \ref __domain_targs__topospec__)
+#define __DomainTypeTopoSpec__(topology) \
+   noa::utils::domain::Domain<topology, Device, Real, GlobalIndex, LocalIndex>
 
 /// Namespace containing the domain-related code
 namespace noa::utils::domain {
@@ -74,10 +82,15 @@ struct Domain {
 
         /// Floating point numeric type
         using RealType          = Real;
+        /// TNL mesh device type
+        using DeviceType        = Device;
         /// Mesh global index type
         using GlobalIndexType   = GlobalIndex;
         /// Mesh local index type
         using LocalIndexType    = LocalIndex;
+
+        /// Mesh point type
+        using PointType         = typename MeshType::PointType;
 
         /// Get mesh dimensions
         static constexpr int getMeshDimension() { return MeshType::getMeshDimension(); }
@@ -128,6 +141,12 @@ struct Domain {
         /// Get mesh as a constant reference
         const MeshType& getMesh() const { return mesh.value(); }
 
+        /// Get center coordinates for entity with index
+        template <int dimension>
+        auto getEntityCenter(GlobalIndex idx) const {
+                return TNL::Meshes::getEntityCenter(*this->mesh, this->mesh->template getEntity<dimension>(idx));
+        }
+
         /// Get layers
         LayerManagerType& getLayers(const std::size_t& dimension) {
                 return layers.at(dimension);
@@ -138,8 +157,8 @@ struct Domain {
 
         /// \brief Cell layers requested for loadFrom() function
         ///
-        /// To be changed to std::unordered_map in feature/cfd
-        using LayersRequest = std::vector<std::string>;
+        /// Contains pairs of ( layer_name -> layer_key )
+        using LayersRequest = std::map<std::string, std::size_t>;
 
         private:
         /// \brief Layer loading helper
@@ -152,12 +171,10 @@ struct Domain {
         /// Handles loading a layer from a variant of `std::vector`'s when the
         /// layer data type is known
         template <typename DataType, typename FromType>
-        void load_layer(const FromType& from) {
-                auto& fromT = std::get<std::vector<DataType>>(from);
-                auto toIndex = this->getLayers(this->getMeshDimension()).
-                                                template add<DataType>();
+        void load_layer(std::size_t key, const FromType& from) {
+                const auto& fromT = std::get<std::vector<DataType>>(from);
                 auto& toT = this->getLayers(this->getMeshDimension()).
-                                                template get<DataType>(toIndex);
+                                                template add<DataType>(key).template get<DataType>();
 
                 for (std::size_t i = 0; i < fromT.size(); ++i)
                         toT[i] = fromT[i];
@@ -171,7 +188,8 @@ struct Domain {
         /// Only supports loading of the cell layers (layers for dimension reported by getMeshDimension()).
         /// Layers are loaded in order in which they were specified in \p layersRequest.
         void loadFrom(const Path& filename, const LayersRequest& layersRequest = {}) {
-                assert(("Mesh data is not empty, cannot load!", isClean()));
+		if (!isClean())
+			throw std::runtime_error("Mesh data is not empty, cannot load!");
 
                 if (!std::filesystem::exists(filename))
                         throw std::runtime_error("Mesh file not found: " + filename.string() + "!");
@@ -179,51 +197,51 @@ struct Domain {
                 auto loader = [&] (auto& reader, auto&& loadedMesh) {
                         using LoadedTypeRef = decltype(loadedMesh);
                         using LoadedType = typename std::remove_reference<LoadedTypeRef>::type;
+
                         if constexpr (std::is_same_v<MeshType, LoadedType>) {
                                 mesh = loadedMesh;
                                 updateLayerSizes();
                         } else throw std::runtime_error("Read mesh type differs from expected!");
 
                         // Load cell layers
-                        for (std::size_t i = 0; i < layersRequest.size(); ++i) {
-                                const auto& reqLayer = layersRequest[i];
-                                const auto data = reader.readCellData(reqLayer);
+                        for (auto& [ name, index ] : layersRequest) {
+                                const auto data = reader.readCellData(name);
 
                                 switch (data.index()) {
                                         case 0: /* int8_t */
-                                                load_layer<std::int8_t>(data);
+                                                load_layer<std::int8_t>(index, data);
                                                 break;
                                         case 1: /* uint8_t */
-                                                load_layer<std::uint8_t>(data);
+                                                load_layer<std::uint8_t>(index, data);
                                                 break;
                                         case 2: /* int16_t */
-                                                load_layer<std::int16_t>(data);
+                                                load_layer<std::int16_t>(index, data);
                                                 break;
                                         case 3: /* uint16_t */
-                                                load_layer<std::uint16_t>(data);
+                                                load_layer<std::uint16_t>(index, data);
                                                 break;
                                         case 4: /* int32_t */
-                                                load_layer<std::int32_t>(data);
+                                                load_layer<std::int32_t>(index, data);
                                                 break;
                                         case 5: /* uint32_t */
-                                                load_layer<std::uint32_t>(data);
+                                                load_layer<std::uint32_t>(index, data);
                                                 break;
                                         case 6: /* int64_t */
-                                                load_layer<std::int64_t>(data);
+                                                load_layer<std::int64_t>(index, data);
                                                 break;
                                         case 7: /* uint64_t */
-                                                load_layer<std::uint64_t>(data);
+                                                load_layer<std::uint64_t>(index, data);
                                                 break;
                                         case 8: /* float */
-                                                load_layer<float>(data);
+                                                load_layer<float>(index, data);
                                                 break;
                                         case 9: /* double */
-                                                load_layer<double>(data);
+                                                load_layer<double>(index, data);
                                                 break;
                                 }
 
-                                this->getLayers(this->getMeshDimension()).getLayer(i).alias = reqLayer;
-                                this->getLayers(this->getMeshDimension()).getLayer(i).exportHint = true;
+                                this->getLayers(this->getMeshDimension()).getLayer(index).alias = name;
+                                this->getLayers(this->getMeshDimension()).getLayer(index).exportHint = true;
                         }
 
                         return true;
@@ -242,20 +260,25 @@ struct Domain {
                 if (!file.is_open())
                         throw std::runtime_error("Cannot open file " + filename.string() + "!");
 
-                MeshWriter writer(file);
+                writeStream(file);
+        }
+
+        /// Write domain to an ostream
+        void writeStream(std::ostream& stream) {
+                MeshWriter writer(stream);
                 writer.template writeEntities<getMeshDimension()>(mesh.value());
 
                 // Write layers
                 for (int dim = 0; dim <= getMeshDimension(); ++dim)
-                        for (int i = 0; i < layers.at(dim).count(); ++i) {
-                                const auto& layer = layers.at(dim).getLayer(i);
+                        for (auto it : layers.at(dim)) {
+                                const auto& layer = it.second;
                                 if (!layer.exportHint) continue;
                                 if (dim == getMeshDimension())
-                                        layer.writeCellData(writer, "cell_layer_" + std::to_string(i));
+                                        layer.writeCellData(writer, "cell_layer_" + std::to_string(it.first));
                                 else if (dim == 0)
-                                        layer.writePointData(writer, "point_layer_" + std::to_string(i));
+                                        layer.writePointData(writer, "point_layer_" + std::to_string(it.first));
                                 else
-                                        layer.writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(i));
+                                        layer.writeDataArray(writer, "dim" + std::to_string(dim) + "_layer_" + std::to_string(it.first));
                         }
         }
 
@@ -263,29 +286,35 @@ struct Domain {
         // Declare as friends since they're supposed to modify mesh
         template <typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
         friend void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
-                                const int& Nx,
-                                const int& Ny,
-                                const float& dx,
-                                const float& dy);
+                                std::size_t Nx,
+                                std::size_t Ny,
+                                float dx,
+                                float dy,
+                                float offsetX,
+                                float offsetY);
 }; // <-- struct Domain
 
 /// \brief Generates a uniform 2D grid mesh for the domain. Implementation depends on \p CellTopology2
 template <typename CellTopology2, typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
 void generate2DGrid(Domain<CellTopology2, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
-                        const int& Nx,
-                        const int& Ny,
-                        const float& dx,
-                        const float& dy) {
+                        std::size_t Nx,
+                        std::size_t Ny,
+                        float dx,
+                        float dy,
+                        float offsetX = 0,
+                        float offsetY = 0) {
         throw std::runtime_error("generate2DGrid is not implemented for this topology!");
 }
 
 /// \brief Specialization for Triangle topology
 template <typename Device2, typename Real2, typename GlobalIndex2, typename LocalIndex2>
 void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, GlobalIndex2, LocalIndex2>& domain,
-                        const int& Nx,
-                        const int& Ny,
-                        const float& dx,
-                        const float& dy) {
+                        std::size_t Nx,
+                        std::size_t Ny,
+                        float dx,
+                        float dy,
+                        float offsetX = 0,
+                        float offsetY = 0) {
         assert(("Mesh data is not empty, cannot create grid!", domain.isClean()));
 
         using CellTopology = TNL::Meshes::Topologies::Triangle;
@@ -306,9 +335,9 @@ void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, Gl
                 return ix + (Nx + 1) * iy;
         };
         const auto fillPoints = [&] (const int& ix, const int& iy) {
-                builder.setPoint(pointId(ix, iy), PointType(ix * dx, iy * dy));
+                builder.setPoint(pointId(ix, iy), PointType(ix * dx + offsetX, iy * dy + offsetY));
         };
-        TNL::Algorithms::ParallelFor2D<TNL::Devices::Host>::exec(0, 0, Nx + 1, Ny + 1, fillPoints);
+        TNL::Algorithms::ParallelFor2D<TNL::Devices::Host>::exec(std::size_t{0}, std::size_t{0}, Nx + 1, Ny + 1, fillPoints);
 
         const auto fillElems = [&] (const int& ix, const int& iy, const int& u) {
                 const auto cell = 2 * (ix + Nx * iy) + u;
@@ -327,7 +356,7 @@ void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, Gl
                                 break;
                 }
         };
-        TNL::Algorithms::ParallelFor3D<TNL::Devices::Host>::exec(0, 0, 0, Nx, Ny, 2, fillElems);
+        TNL::Algorithms::ParallelFor3D<TNL::Devices::Host>::exec(std::size_t{0}, std::size_t{0}, std::size_t{0}, Nx, Ny, std::size_t{2}, fillElems);
 
         builder.build(domain.mesh.value());
 
