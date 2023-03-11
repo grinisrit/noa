@@ -19,3 +19,4 @@ dependencies:
       - pyscf
       - meshio
       - dqc
+      - sympy

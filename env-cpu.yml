@@ -1,4 +1,4 @@
-name: noa
+name: noa-cpu
 channels:
   - defaults
   - pytorch
@@ -8,11 +8,3 @@ dependencies:
   - python=3.9
   - pytorch
   - cpuonly # CPU only version for LibTorch
-  - pip
-  - pip:
-    - matplotlib
-    - numba
-    - numpy
-    - pyvista
-    - sympy
-    - jupyter
