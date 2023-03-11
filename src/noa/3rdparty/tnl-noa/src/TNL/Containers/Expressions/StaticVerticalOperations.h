@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -18,8 +18,7 @@ namespace Containers {
 namespace Expressions {
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionMin( const Expression& expression )
 {
    // use argument-dependent lookup and make TNL::min available for unqualified calls
@@ -32,8 +31,7 @@ StaticExpressionMin( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionArgMin( const Expression& expression )
 {
    using ResultType = RemoveET< typename Expression::RealType >;
@@ -49,8 +47,7 @@ StaticExpressionArgMin( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionMax( const Expression& expression )
 {
    // use argument-dependent lookup and make TNL::max available for unqualified calls
@@ -63,8 +60,7 @@ StaticExpressionMax( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionArgMax( const Expression& expression )
 {
    using ResultType = RemoveET< typename Expression::RealType >;
@@ -80,8 +76,7 @@ StaticExpressionArgMax( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionSum( const Expression& expression )
 {
    using ResultType = RemoveET< typename Expression::RealType >;
@@ -92,8 +87,7 @@ StaticExpressionSum( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionProduct( const Expression& expression )
 {
    using ResultType = RemoveET< typename Expression::RealType >;
@@ -104,8 +98,7 @@ StaticExpressionProduct( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-bool
+constexpr bool
 StaticExpressionLogicalAnd( const Expression& expression )
 {
    auto aux = expression[ 0 ];
@@ -115,8 +108,7 @@ StaticExpressionLogicalAnd( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-bool
+constexpr bool
 StaticExpressionLogicalOr( const Expression& expression )
 {
    auto aux = expression[ 0 ];
@@ -126,8 +118,7 @@ StaticExpressionLogicalOr( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionBinaryAnd( const Expression& expression )
 {
    auto aux = expression[ 0 ];
@@ -137,8 +128,7 @@ StaticExpressionBinaryAnd( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionBinaryOr( const Expression& expression )
 {
    auto aux = expression[ 0 ];
@@ -148,8 +138,7 @@ StaticExpressionBinaryOr( const Expression& expression )
 }
 
 template< typename Expression >
-__cuda_callable__
-auto
+constexpr auto
 StaticExpressionBinaryXor( const Expression& expression )
 {
    auto aux = expression[ 0 ];

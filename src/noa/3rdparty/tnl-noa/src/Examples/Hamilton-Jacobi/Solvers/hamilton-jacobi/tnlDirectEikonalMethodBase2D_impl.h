@@ -14,7 +14,7 @@ initInterface( const MeshFunctionPointer& _input,
   
   if( std::is_same< Device, Devices::Cuda >::value )
   {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     const MeshType& mesh = _input->getMesh();
     
     const int cudaBlockSize( 16 );
@@ -262,7 +262,7 @@ __cuda_callable__ void sortMinims( T1 pom[] )
   }   
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template < typename Real, typename Device, typename Index >
 __global__ void CudaInitCaller( const Functions::MeshFunctionView< Meshes::Grid< 2, Real, Device, Index > >& input, 
         Functions::MeshFunctionView< Meshes::Grid< 2, Real, Device, Index > >& output,

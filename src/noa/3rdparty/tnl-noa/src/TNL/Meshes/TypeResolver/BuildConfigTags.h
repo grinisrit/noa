@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -60,7 +60,7 @@ struct GridDeviceTag
 {
    static constexpr bool enabled = true;
 };
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
 template< typename ConfigTag >
 struct GridDeviceTag< ConfigTag, Devices::Cuda >
 {
@@ -116,7 +116,7 @@ struct MeshDeviceTag< ConfigTag, Devices::Host >
 {
    static constexpr bool enabled = true;
 };
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename ConfigTag >
 struct MeshDeviceTag< ConfigTag, Devices::Cuda >
 {

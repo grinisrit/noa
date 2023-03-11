@@ -15,6 +15,12 @@ using namespace TNL::Arithmetics;
 using namespace TNL::Algorithms;
 using namespace TNL::Algorithms::detail;
 
+// this is a workaround for an nvcc 11.7 bug: it drops the scope of enum class members in template function calls
+#ifdef __CUDACC__
+static constexpr auto Inclusive = TNL::Algorithms::detail::ScanType::Inclusive;
+static constexpr auto Exclusive = TNL::Algorithms::detail::ScanType::Exclusive;
+#endif
+
 // test fixture for typed tests
 template< typename Array >
 class ScanTest : public ::testing::Test
@@ -57,7 +63,7 @@ protected:
       cv_view.bind( c );
 
       // make sure that we perform tests with multiple CUDA grids
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       if( std::is_same< DeviceType, Devices::Cuda >::value )
       {
          CudaScanKernelLauncher< ScanType::Inclusive, ScanPhaseType::WriteInFirstPhase, ValueType >::resetMaxGridSize();
@@ -75,7 +81,7 @@ protected:
    template< Algorithms::detail::ScanType ScanType >
    void checkResult( const ArrayType& array )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       // skip the check for too small arrays
       if( array.getSize() > 256 ) {
          // we don't care which kernel launcher was actually used
@@ -95,7 +101,7 @@ protected:
 // types for which ScanTest is instantiated
 // TODO: Quad must be fixed
 using ArrayTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    Array< CustomScalar< int >, Devices::Sequential, short >,
    Array< int,            Devices::Sequential, short >,
    Array< long,           Devices::Sequential, short >,
@@ -134,7 +140,7 @@ using ArrayTypes = ::testing::Types<
    //Array< Quad< float >,  Devices::Host, long >,
    //Array< Quad< double >, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    Array< CustomScalar< int >, Devices::Cuda, short >,  // the scan kernel for CustomScalar is not specialized with __shfl instructions
    Array< int,            Devices::Cuda, short >,
    Array< long,           Devices::Cuda, short >,

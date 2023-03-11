@@ -61,7 +61,7 @@ __global__ void csr32DynamicWarp(uint32_t* __restrict cudaRowCounter, const uint
 #endif
 	uint32_t i;
 	T sum;
-	uint32_t row;
+	uint32_t row = 0;
 	uint32_t rowStart, rowEnd;
 	const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 	const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the thread block*/
@@ -144,7 +144,7 @@ __global__ void csr32DynamicVector(uint32_t* __restrict cudaRowCounter, const ui
 
 	uint32_t i;
 	T sum;
-	uint32_t row;
+	uint32_t row = 0;
 	uint32_t rowStart, rowEnd;
 	const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 	const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the block*/
@@ -219,7 +219,7 @@ __global__ void csr32DynamicVector(uint32_t* __restrict cudaRowCounter, const ui
 	#endif
 		uint32_t i;
 		T sum;
-		uint32_t row;
+		uint32_t row = 0;
 		uint32_t rowStart, rowEnd;
 		const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 		const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the thread block*/
@@ -303,7 +303,7 @@ __global__ void csr32DynamicVector(uint32_t* __restrict cudaRowCounter, const ui
 
 		uint32_t i;
 		T sum;
-		uint32_t row;
+		uint32_t row = 0;
 		uint32_t rowStart, rowEnd;
 		const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 		const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the block*/
@@ -380,7 +380,7 @@ __global__ void csr64DynamicVector(uint32_t* __restrict cudaRowCounter, const ui
 {
 	uint32_t i;
 	T sum;
-	uint32_t row;
+	uint32_t row = 0;
 	uint32_t rowStart, rowEnd;
 	const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 	const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the block*/
@@ -456,7 +456,7 @@ __global__ void csr64DynamicWarp(uint32_t* __restrict cudaRowCounter, const uint
 {
 	uint32_t i;
 	T sum;
-	uint32_t row;
+	uint32_t row = 0;
 	uint32_t rowStart, rowEnd;
 	const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 	const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the thread block*/
@@ -540,7 +540,7 @@ __global__ void csr64DynamicVectorBLAS(uint32_t* __restrict cudaRowCounter, cons
 {
 	uint32_t i;
 	T sum;
-	uint32_t row;
+	uint32_t row = 0;
 	uint32_t rowStart, rowEnd;
 	const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 	const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the block*/
@@ -617,7 +617,7 @@ __global__ void csr64DynamicWarpBLAS(uint32_t* __restrict cudaRowCounter, const 
 {
 	uint32_t i;
 	T sum;
-	uint32_t row;
+	uint32_t row = 0;
 	uint32_t rowStart, rowEnd;
 	const uint32_t laneId = threadIdx.x % THREADS_PER_VECTOR; /*lane index in the vector*/
 	const uint32_t vectorId = threadIdx.x / THREADS_PER_VECTOR; /*vector index in the thread block*/

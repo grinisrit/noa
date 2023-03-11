@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -26,7 +26,7 @@ namespace Matrices {
  * \tparam Index is a type for indexing of the matrix elements.
  */
 template< typename Real = double, typename Device = Devices::Host, typename Index = int >
-class MatrixView : public Object
+class MatrixView
 {
 public:
    using RowsCapacitiesType = Containers::Vector< Index, Device, Index >;
@@ -190,13 +190,32 @@ public:
    bool
    operator!=( const Matrix& matrix ) const;
 
+   /***
+    * \brief Virtual serialization type getter.
+    *
+    * Objects in TNL are saved as in a device independent manner. This method
+    * is supposed to return the object type but with the device type replaced
+    * by Devices::Host. For example \c Array< double, Devices::Cuda > is
+    * saved as \c Array< double, Devices::Host >.
+    */
+   virtual std::string
+   getSerializationTypeVirtual() const = 0;
+
    /**
     * \brief Method for saving the matrix view to a file.
     *
     * \param file is the output file.
     */
+   virtual void
+   save( File& file ) const;
+
+   /**
+    * \brief Method for saving the matrix view to a file.
+    *
+    * \param fileName String defining the name of a file.
+    */
    void
-   save( File& file ) const override;
+   save( const String& fileName ) const;
 
    /**
     * \brief Method for printing the matrix view to output stream.
@@ -205,15 +224,6 @@ public:
     */
    virtual void
    print( std::ostream& str ) const;
-
-   // TODO: method for symmetric matrices, should not be in general Matrix interface
-   //[[deprecated]]
-   //__cuda_callable__
-   // const IndexType& getNumberOfColors() const;
-
-   // TODO: method for symmetric matrices, should not be in general Matrix interface
-   //[[deprecated]]
-   // void computeColorsVector(Containers::Vector<Index, Device, Index> &colorsVector);
 
 protected:
    IndexType rows, columns;
@@ -231,13 +241,13 @@ protected:
  * \param str is a output stream.
  * \param matrix is the matrix to be printed.
  *
- * \return a reference on the output stream \ref std::ostream&.
+ * \return a reference to the output stream \ref std::ostream.
  */
 template< typename Real, typename Device, typename Index >
 std::ostream&
-operator<<( std::ostream& str, const MatrixView< Real, Device, Index >& m )
+operator<<( std::ostream& str, const MatrixView< Real, Device, Index >& matrix )
 {
-   m.print( str );
+   matrix.print( str );
    return str;
 }
 

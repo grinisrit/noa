@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -7,6 +7,8 @@
 #pragma once
 
 #include <limits>
+
+#include <noa/3rdparty/tnl-noa/src/TNL/Solvers/ODE/StaticExplicitSolver.h>
 
 namespace noa::TNL {
 namespace Solvers {
@@ -36,7 +38,7 @@ void
 StaticExplicitSolver< Real, Index >::setTime( const RealType& time )
 {
    this->time = time;
-};
+}
 
 template< typename Real, typename Index >
 __cuda_callable__
@@ -44,7 +46,7 @@ const Real&
 StaticExplicitSolver< Real, Index >::getTime() const
 {
    return this->time;
-};
+}
 
 template< typename Real, typename Index >
 __cuda_callable__
@@ -52,7 +54,7 @@ void
 StaticExplicitSolver< Real, Index >::setTau( const RealType& tau )
 {
    this->tau = tau;
-};
+}
 
 template< typename Real, typename Index >
 __cuda_callable__
@@ -60,7 +62,7 @@ const Real&
 StaticExplicitSolver< Real, Index >::getTau() const
 {
    return this->tau;
-};
+}
 
 template< typename Real, typename Index >
 __cuda_callable__
@@ -68,7 +70,7 @@ void
 StaticExplicitSolver< Real, Index >::setMaxTau( const RealType& maxTau )
 {
    this->maxTau = maxTau;
-};
+}
 
 template< typename Real, typename Index >
 __cuda_callable__
@@ -76,7 +78,7 @@ const Real&
 StaticExplicitSolver< Real, Index >::getMaxTau() const
 {
    return this->maxTau;
-};
+}
 
 template< typename Real, typename Index >
 __cuda_callable__
@@ -95,7 +97,8 @@ StaticExplicitSolver< Real, Index >::setStopTime( const RealType& stopTime )
 }
 
 template< typename Real, typename Index >
-bool __cuda_callable__
+__cuda_callable__
+bool
 StaticExplicitSolver< Real, Index >::checkNextIteration()
 {
    if( std::isnan( this->getResidue() ) || this->getIterations() > this->getMaxIterations()
@@ -107,6 +110,7 @@ StaticExplicitSolver< Real, Index >::checkNextIteration()
 }
 
 template< typename Real, typename Index >
+__cuda_callable__
 void
 StaticExplicitSolver< Real, Index >::setTestingMode( bool testingMode )
 {

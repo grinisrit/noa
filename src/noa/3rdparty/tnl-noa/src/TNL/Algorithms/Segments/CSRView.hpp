@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -18,14 +18,21 @@ namespace Segments {
 
 template< typename Device, typename Index, typename Kernel >
 __cuda_callable__
-CSRView< Device, Index, Kernel >::CSRView( const OffsetsView& offsets_view, const KernelView& kernel_view )
-: offsets( offsets_view ), kernel( kernel_view )
+CSRView< Device, Index, Kernel >::CSRView( const OffsetsView& offsets, const KernelView& kernel )
+: offsets( offsets ), kernel( kernel )
 {}
 
 template< typename Device, typename Index, typename Kernel >
 __cuda_callable__
-CSRView< Device, Index, Kernel >::CSRView( OffsetsView&& offsets_view, KernelView&& kernel_view )
-: offsets( std::move( offsets_view ) ), kernel( std::move( kernel_view ) )
+CSRView< Device, Index, Kernel >::CSRView( OffsetsView&& offsets, KernelView&& kernel )
+: offsets( std::move( offsets ) ), kernel( std::move( kernel ) )
+{}
+
+template< typename Device, typename Index, typename Kernel >
+template< typename Index2 >
+__cuda_callable__
+CSRView< Device, Index, Kernel >::CSRView( const CSRView< Device, Index2, Kernel >& csr_view )
+: offsets( csr_view.getOffsets() ), kernel( csr_view.getKernel() )
 {}
 
 template< typename Device, typename Index, typename Kernel >
@@ -49,15 +56,15 @@ __cuda_callable__
 typename CSRView< Device, Index, Kernel >::ViewType
 CSRView< Device, Index, Kernel >::getView()
 {
-   return ViewType( this->offsets, this->kernel );
+   return { this->offsets, this->kernel };
 }
 
 template< typename Device, typename Index, typename Kernel >
 __cuda_callable__
 auto
-CSRView< Device, Index, Kernel >::getConstView() const -> const ConstViewType
+CSRView< Device, Index, Kernel >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( this->offsets.getConstView(), this->kernel.getConstView() );
+   return { this->offsets.getConstView(), this->kernel.getConstView() };
 }
 
 template< typename Device, typename Index, typename Kernel >
@@ -189,7 +196,7 @@ CSRView< Device, Index, Kernel >::reduceSegments( IndexType first,
                                                   ResultKeeper& keeper,
                                                   const Real& zero ) const
 {
-   if( std::is_same< DeviceType, TNL::Devices::Host >::value )
+   if constexpr( ! std::is_same< DeviceType, Devices::Cuda >::value )
       TNL::Algorithms::Segments::CSRScalarKernel< IndexType, DeviceType >::reduceSegments(
          offsets, first, last, fetch, reduction, keeper, zero );
    else

@@ -51,7 +51,7 @@ bool processDicomSeries( const Config::ParameterContainer& parameters )
          if( ! roi.setup( parameters, &dicomSeries ) )
             return false;
          roi.setGrid( grid, verbose );
-         vector.setSize( grid.template getEntitiesCount< typename GridType::Cell >() );
+         vector.setSize( grid.template getEntitiesCount< 2 >() );
          std::cout << "Writing grid to file " << meshFile << std::endl;
          using Writer = Meshes::Writers::VTIWriter< GridType >;
          std::ofstream file( meshFile );

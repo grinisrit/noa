@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -24,7 +24,7 @@ namespace Matrices {
  * \par Example
  * \include Matrices/TridiagonalMatrix/TridiagonalMatrixExample_getRow.cpp
  * \par Output
- * \include TridiagonalatrixExample_getRow.out
+ * \include TridiagonalMatrixExample_getRow.out
  *
  * \par Example
  * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_getRow.cpp
@@ -111,7 +111,7 @@ public:
     * \return matrix row index.
     */
    __cuda_callable__
-   const IndexType&
+   IndexType
    getRowIndex() const;
 
    /**
@@ -122,7 +122,7 @@ public:
     * \return column index of matrix element on given subdiagonal.
     */
    __cuda_callable__
-   const IndexType
+   IndexType
    getColumnIndex( IndexType localIdx ) const;
 
    /**

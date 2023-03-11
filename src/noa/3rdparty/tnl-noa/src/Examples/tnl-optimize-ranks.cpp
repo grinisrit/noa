@@ -1,7 +1,7 @@
 #include <TNL/MPI/ScopedInitializer.h>
 #include <TNL/MPI/optimizeRanks.h>
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using DeviceType = TNL::Devices::Cuda;
 #else
    using DeviceType = TNL::Devices::Host;

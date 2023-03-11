@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -8,19 +8,13 @@
 
 #pragma once
 
-#ifdef HAVE_CUDA
-   #include <cuda.h>
-#endif
-#include <noa/3rdparty/tnl-noa/src/TNL/Devices/Sequential.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Devices/Host.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Devices/Cuda.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Atomic.h>
 
 namespace noa::TNL {
 namespace Algorithms {
 
 template< typename Device >
-struct AtomicOperations
-{};
+struct AtomicOperations;
 
 template<>
 struct AtomicOperations< Devices::Host >
@@ -31,11 +25,18 @@ struct AtomicOperations< Devices::Host >
    TNL_NVCC_HD_WARNING_DISABLE
    template< typename Value >
    __cuda_callable__
-   static void
+   static Value
    add( Value& v, const Value& a )
    {
-      #pragma omp atomic update
-      v += a;
+      Value old;
+#ifdef HAVE_OPENMP
+      #pragma omp atomic capture
+#endif
+      {
+         old = v;
+         v += a;
+      }
+      return old;
    }
 };
 
@@ -48,10 +49,12 @@ struct AtomicOperations< Devices::Sequential >
    TNL_NVCC_HD_WARNING_DISABLE
    template< typename Value >
    __cuda_callable__
-   static void
+   static Value
    add( Value& v, const Value& a )
    {
+      const Value old = v;
       v += a;
+      return old;
    }
 };
 
@@ -60,56 +63,27 @@ struct AtomicOperations< Devices::Cuda >
 {
    template< typename Value >
    __cuda_callable__
-   static void
+   static Value
    add( Value& v, const Value& a )
    {
-#ifdef HAVE_CUDA
-      atomicAdd( &v, a );
-#endif  // HAVE_CUDA
-   }
-
-#ifdef HAVE_CUDA
-   __device__
-   static void
-   add( double& v, const double& a )
-   {
-   #if __CUDA_ARCH__ < 600
-      unsigned long long int* v_as_ull = (unsigned long long int*) &v;
-      unsigned long long int old = *v_as_ull, assumed;
-
-      do {
-         assumed = old;
-         old = atomicCAS( v_as_ull, assumed, __double_as_longlong( a + __longlong_as_double( assumed ) ) );
-
-         // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
-      } while( assumed != old );
-   #else   // __CUDA_ARCH__ < 600
-      atomicAdd( &v, a );
-   #endif  //__CUDA_ARCH__ < 600
-   }
-#else   // HAVE_CUDA
-   static void
-   add( double& v, const double& a )
-   {}
-#endif  // HAVE_CUDA
-
-   __cuda_callable__
-   static void
-   add( long int& v, const long int& a )
-   {
-#ifdef HAVE_CUDA
-      TNL_ASSERT_TRUE( false, "Atomic add for long int is not supported on CUDA." );
-#endif  // HAVE_CUDA
+#ifdef __CUDA_ARCH__
+      // atomicAdd is __device__, cannot be used from the host side
+      return atomicAdd( &v, a );
+#else
+      return 0;
+#endif
    }
 
    __cuda_callable__
-   static void
+   static short int
    add( short int& v, const short int& a )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       TNL_ASSERT_TRUE( false, "Atomic add for short int is not supported on CUDA." );
-#endif  // HAVE_CUDA
+#endif
+      return 0;
    }
 };
+
 }  // namespace Algorithms
 }  // namespace noa::TNL

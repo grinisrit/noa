@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -9,7 +9,6 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Matrices/Matrix.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Assert.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/LaunchHelpers.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Cuda/MemoryHelpers.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/SharedMemory.h>
 
 #include <utility>
@@ -23,8 +22,8 @@ MatrixView< Real, Device, Index >::MatrixView() : rows( 0 ), columns( 0 ) {}
 
 template< typename Real, typename Device, typename Index >
 __cuda_callable__
-MatrixView< Real, Device, Index >::MatrixView( const IndexType rows_, const IndexType columns_, ValuesView values_ )
-: rows( rows_ ), columns( columns_ ), values( std::move( values_ ) )
+MatrixView< Real, Device, Index >::MatrixView( IndexType rows, IndexType columns, ValuesView values )
+: rows( rows ), columns( columns ), values( std::move( values ) )
 {}
 
 template< typename Real, typename Device, typename Index >
@@ -114,7 +113,8 @@ template< typename Real, typename Device, typename Index >
 void
 MatrixView< Real, Device, Index >::save( File& file ) const
 {
-   Object::save( file );
+   file.save( magic_number, strlen( magic_number ) );
+   file << this->getSerializationTypeVirtual();
    file.save( &this->rows );
    file.save( &this->columns );
    file << this->values;
@@ -122,42 +122,17 @@ MatrixView< Real, Device, Index >::save( File& file ) const
 
 template< typename Real, typename Device, typename Index >
 void
+MatrixView< Real, Device, Index >::save( const String& fileName ) const
+{
+   File file;
+   file.open( fileName, std::ios_base::out );
+   this->save( file );
+}
+
+template< typename Real, typename Device, typename Index >
+void
 MatrixView< Real, Device, Index >::print( std::ostream& str ) const
 {}
-
-/*void
-MatrixView< Real, Device, Index >::
-computeColorsVector(Containers::Vector<Index, Device, Index> &colorsVector)
-{
-    for( IndexType i = this->getRows() - 1; i >= 0; i-- )
-    {
-        // init color array
-        Containers::Vector< Index, Device, Index > usedColors;
-        usedColors.setSize( this->numberOfColors );
-        for( IndexType j = 0; j < this->numberOfColors; j++ )
-            usedColors.setElement( j, 0 );
-
-        // find all colors used in given row
-        for( IndexType j = i + 1; j < this->getColumns(); j++ )
-             if( this->getElement( i, j ) != 0.0 )
-                 usedColors.setElement( colorsVector.getElement( j ), 1 );
-
-        // find unused color
-        bool found = false;
-        for( IndexType j = 0; j < this->numberOfColors; j++ )
-            if( usedColors.getElement( j ) == 0 )
-            {
-                colorsVector.setElement( i, j );
-                found = true;
-                break;
-            }
-        if( !found )
-        {
-            colorsVector.setElement( i, this->numberOfColors );
-            this->numberOfColors++;
-        }
-    }
-} */
 
 }  // namespace Matrices
 }  // namespace noa::TNL

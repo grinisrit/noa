@@ -27,7 +27,7 @@ using ChEllpackMatrixTypes = ::testing::Types
     Legacy::ChunkedEllpack< long,   TNL::Devices::Host, long >,
     Legacy::ChunkedEllpack< float,  TNL::Devices::Host, long >,
     Legacy::ChunkedEllpack< double, TNL::Devices::Host, long >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,Legacy::ChunkedEllpack< int,    TNL::Devices::Cuda, int >,
     Legacy::ChunkedEllpack< long,   TNL::Devices::Cuda, int >,
     Legacy::ChunkedEllpack< float,  TNL::Devices::Cuda, int >,

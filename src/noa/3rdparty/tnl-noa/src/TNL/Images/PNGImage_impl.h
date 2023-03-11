@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -103,7 +103,7 @@ PNGImage< Index >::read( const RegionOfInterest< Index > roi,
 #ifdef HAVE_PNG_H
    using GridType = Meshes::Grid< 2, MeshReal, Device, Index >;
    const GridType& grid = function.getMesh();
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    /***
     * Prepare the long jump back from libpng.
@@ -250,7 +250,7 @@ PNGImage< Index >::write( const Meshes::Grid< 2, Real, Device, Index >& grid, Ve
 {
 #ifdef HAVE_PNG_H
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    /***
     * Prepare the long jump back from libpng.

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -89,7 +89,7 @@ public:
     * \brief Constructor with no parameters.
     */
    __cuda_callable__
-   TridiagonalMatrixView();
+   TridiagonalMatrixView() = default;
 
    /**
     * \brief Constructor with all necessary data and views.
@@ -103,7 +103,7 @@ public:
    /**
     * \brief Copy constructor.
     *
-    * \param matrix is an input tridiagonal matrix view.
+    * \param view is an input tridiagonal matrix view.
     */
    __cuda_callable__
    TridiagonalMatrixView( const TridiagonalMatrixView& view ) = default;
@@ -111,7 +111,7 @@ public:
    /**
     * \brief Move constructor.
     *
-    * \param matrix is an input tridiagonal matrix view.
+    * \param view is an input tridiagonal matrix view.
     */
    __cuda_callable__
    TridiagonalMatrixView( TridiagonalMatrixView&& view ) noexcept = default;
@@ -199,6 +199,8 @@ public:
     * \tparam Index_ is \e Index type of the source matrix.
     * \tparam Organization_ is \e Organization of the source matrix.
     *
+    * \param matrix is the source matrix view.
+    *
     * \return \e true if both matrices are identical and \e false otherwise.
     */
    template< typename Real_, typename Device_, typename Index_, ElementsOrganization Organization_ >
@@ -213,7 +215,7 @@ public:
     * \tparam Index_ is \e Index type of the source matrix.
     * \tparam Organization_ is \e Organization of the source matrix.
     *
-    * \param matrix is the source matrix.
+    * \param matrix is the source matrix view.
     *
     * \return \e true if both matrices are NOT identical and \e false otherwise.
     */
@@ -237,7 +239,7 @@ public:
     */
    __cuda_callable__
    RowView
-   getRow( const IndexType& rowIdx );
+   getRow( IndexType rowIdx );
 
    /**
     * \brief Constant getter of simple structure for accessing given matrix row.
@@ -254,8 +256,8 @@ public:
     * See \ref TridiagonalMatrixRowView.
     */
    __cuda_callable__
-   const ConstRowView
-   getRow( const IndexType& rowIdx ) const;
+   ConstRowView
+   getRow( IndexType rowIdx ) const;
 
    /**
     * \brief Set all matrix elements to given value.
@@ -263,7 +265,7 @@ public:
     * \param value is the new value of all matrix elements.
     */
    void
-   setValue( const RealType& v );
+   setValue( const RealType& value );
 
    /**
     * \brief Sets element at given \e row and \e column to given \e value.
@@ -359,7 +361,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -380,7 +382,7 @@ public:
     */
    template< typename Fetch, typename Reduce, typename Keep, typename FetchReal >
    void
-   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& zero ) const;
+   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& identity ) const;
 
    /**
     * \brief Method for performing general reduction on matrix rows.
@@ -402,7 +404,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -423,7 +425,7 @@ public:
     */
    template< typename Fetch, typename Reduce, typename Keep, typename FetchReal >
    void
-   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& zero );
+   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& identity );
 
    /**
     * \brief Method for performing general reduction on all matrix rows for constant instances.
@@ -445,7 +447,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -486,7 +488,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -566,9 +568,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forAllRows.cpp
+    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forAllElements.cpp
     * \par Output
-    * \include TridiagonalMatrixViewExample_forAllRows.out
+    * \include TridiagonalMatrixViewExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -583,9 +585,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forAllRows.cpp
+    * \include Matrices/TridiagonalMatrix/TridiagonalMatrixViewExample_forAllElements.cpp
     * \par Output
-    * \include TridiagonalMatrixViewExample_forAllRows.out
+    * \include TridiagonalMatrixViewExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -766,10 +768,14 @@ public:
     * outVector = matrixMultiplicator * ( * this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
@@ -803,7 +809,7 @@ public:
    /**
     * \brief Assignment of exactly the same matrix type.
     *
-    * \param matrix is input matrix for the assignment.
+    * \param view is input matrix view for the assignment.
     * \return reference to this matrix.
     */
    TridiagonalMatrixView&
@@ -865,7 +871,7 @@ public:
 protected:
    __cuda_callable__
    IndexType
-   getElementIndex( IndexType row, IndexType localIdx ) const;
+   getElementIndex( IndexType row, IndexType column ) const;
 
    IndexerType indexer;
 };

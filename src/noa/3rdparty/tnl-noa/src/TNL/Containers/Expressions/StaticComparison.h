@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -24,8 +24,7 @@ struct StaticComparison;
 template< typename T1, typename T2 >
 struct StaticComparison< T1, T2, VectorExpressionVariable, VectorExpressionVariable >
 {
-   __cuda_callable__
-   static bool
+   static constexpr bool
    EQ( const T1& a, const T2& b )
    {
       if( a.getSize() != b.getSize() )
@@ -36,15 +35,13 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, VectorExpressionVaria
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    NE( const T1& a, const T2& b )
    {
       return ! EQ( a, b );
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    GT( const T1& a, const T2& b )
    {
       TNL_ASSERT_EQ( a.getSize(), b.getSize(), "Sizes of expressions to be compared do not fit." );
@@ -54,8 +51,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, VectorExpressionVaria
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    GE( const T1& a, const T2& b )
    {
       TNL_ASSERT_EQ( a.getSize(), b.getSize(), "Sizes of expressions to be compared do not fit." );
@@ -65,8 +61,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, VectorExpressionVaria
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    LT( const T1& a, const T2& b )
    {
       TNL_ASSERT_EQ( a.getSize(), b.getSize(), "Sizes of expressions to be compared do not fit." );
@@ -76,8 +71,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, VectorExpressionVaria
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    LE( const T1& a, const T2& b )
    {
       TNL_ASSERT_EQ( a.getSize(), b.getSize(), "Sizes of expressions to be compared do not fit." );
@@ -93,8 +87,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, VectorExpressionVaria
 template< typename T1, typename T2 >
 struct StaticComparison< T1, T2, ArithmeticVariable, VectorExpressionVariable >
 {
-   __cuda_callable__
-   static bool
+   static constexpr bool
    EQ( const T1& a, const T2& b )
    {
       for( int i = 0; i < b.getSize(); i++ )
@@ -103,15 +96,13 @@ struct StaticComparison< T1, T2, ArithmeticVariable, VectorExpressionVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    NE( const T1& a, const T2& b )
    {
       return ! EQ( a, b );
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    GT( const T1& a, const T2& b )
    {
       for( int i = 0; i < b.getSize(); i++ )
@@ -120,8 +111,7 @@ struct StaticComparison< T1, T2, ArithmeticVariable, VectorExpressionVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    GE( const T1& a, const T2& b )
    {
       for( int i = 0; i < b.getSize(); i++ )
@@ -130,8 +120,7 @@ struct StaticComparison< T1, T2, ArithmeticVariable, VectorExpressionVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    LT( const T1& a, const T2& b )
    {
       for( int i = 0; i < b.getSize(); i++ )
@@ -140,8 +129,7 @@ struct StaticComparison< T1, T2, ArithmeticVariable, VectorExpressionVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    LE( const T1& a, const T2& b )
    {
       for( int i = 0; i < b.getSize(); i++ )
@@ -156,8 +144,7 @@ struct StaticComparison< T1, T2, ArithmeticVariable, VectorExpressionVariable >
 template< typename T1, typename T2 >
 struct StaticComparison< T1, T2, VectorExpressionVariable, ArithmeticVariable >
 {
-   __cuda_callable__
-   static bool
+   static constexpr bool
    EQ( const T1& a, const T2& b )
    {
       for( int i = 0; i < a.getSize(); i++ )
@@ -166,15 +153,13 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, ArithmeticVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    NE( const T1& a, const T2& b )
    {
       return ! EQ( a, b );
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    GT( const T1& a, const T2& b )
    {
       for( int i = 0; i < a.getSize(); i++ )
@@ -183,8 +168,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, ArithmeticVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    GE( const T1& a, const T2& b )
    {
       for( int i = 0; i < a.getSize(); i++ )
@@ -193,8 +177,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, ArithmeticVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    LT( const T1& a, const T2& b )
    {
       for( int i = 0; i < a.getSize(); i++ )
@@ -203,8 +186,7 @@ struct StaticComparison< T1, T2, VectorExpressionVariable, ArithmeticVariable >
       return true;
    }
 
-   __cuda_callable__
-   static bool
+   static constexpr bool
    LE( const T1& a, const T2& b )
    {
       for( int i = 0; i < a.getSize(); i++ )

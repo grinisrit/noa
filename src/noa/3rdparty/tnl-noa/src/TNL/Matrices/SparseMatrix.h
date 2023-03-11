@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -21,19 +21,26 @@ namespace Matrices {
 /**
  * \brief Implementation of sparse matrix, i.e. matrix storing only non-zero elements.
  *
- * \tparam Real is a type of matrix elements. If \e Real equals \e bool the matrix is treated
- *    as binary and so the matrix elements values are not stored in the memory since we need
- *    to remember only coordinates of non-zero elements( which equal one).
+ * \tparam Real is a type of matrix elements. If \e Real equals \e bool the
+ *         matrix is treated as binary and so the matrix elements values are
+ *         not stored in the memory since we need to remember only coordinates
+ *         of non-zero elements( which equal one).
  * \tparam Device is a device where the matrix is allocated.
  * \tparam Index is a type for indexing of the matrix elements.
- * \tparam MatrixType specifies a symmetry of matrix. See \ref MatrixType. Symmetric
- *    matrices store only lower part of the matrix and its diagonal. The upper part is reconstructed on the fly.
- *    GeneralMatrix with no symmetry is used by default.
- * \tparam Segments is a structure representing the sparse matrix format. Depending on the pattern of the non-zero elements
- *    different matrix formats can perform differently especially on GPUs. By default \ref CSR format is used. See also
- *    \ref Ellpack, \ref SlicedEllpack, \ref ChunkedEllpack or \ref BiEllpack.
- * \tparam ComputeReal is the same as \e Real mostly but for binary matrices it is set to \e Index type. This can be changed
- *    by the user, of course.
+ * \tparam MatrixType specifies a symmetry of matrix. See \ref MatrixType.
+ *         Symmetric matrices store only lower part of the matrix and its
+ *         diagonal. The upper part is reconstructed on the fly. GeneralMatrix
+ *         with no symmetry is used by default.
+ * \tparam Segments is a structure representing the sparse matrix format.
+ *         Depending on the pattern of the non-zero elements different matrix
+ *         formats can perform differently especially on GPUs. By default
+ *         \ref Algorithms::Segments::CSR format is used. See also
+ *         \ref Algorithms::Segments::Ellpack,
+ *         \ref Algorithms::Segments::SlicedEllpack,
+ *         \ref Algorithms::Segments::ChunkedEllpack, and
+ *         \ref Algorithms::Segments::BiEllpack.
+ * \tparam ComputeReal is the same as \e Real mostly but for binary matrices it
+ *         is set to \e Index type. This can be changed by the user, of course.
  * \tparam RealAllocator is allocator for the matrix elements values.
  * \tparam IndexAllocator is allocator for the matrix elements column indexes.
  */
@@ -77,7 +84,7 @@ public:
    isSymmetric()
    {
       return MatrixType::isSymmetric();
-   };
+   }
 
    /**
     * \brief Test of binary matrix type.
@@ -88,12 +95,12 @@ public:
    isBinary()
    {
       return std::is_same< Real, bool >::value;
-   };
+   }
 
    /**
     * \brief The type of matrix elements.
     */
-   using RealType = std::remove_const_t< Real >;
+   using RealType = Real;
 
    using ComputeRealType = ComputeReal;
 
@@ -323,7 +330,7 @@ public:
     * \return sparse matrix view.
     */
    ViewType
-   getView() const;  // TODO: remove const
+   getView();
 
    /**
     * \brief Returns a non-modifiable view of the sparse matrix.
@@ -385,7 +392,7 @@ public:
     * \param columns is the number of matrix columns.
     */
    virtual void
-   setColumnsWithoutReset( const IndexType columns );
+   setColumnsWithoutReset( IndexType columns );
 
    /**
     * \brief Set the number of matrix rows and columns by the given matrix.
@@ -531,8 +538,8 @@ public:
     * See \ref SparseMatrixRowView.
     */
    __cuda_callable__
-   const ConstRowView
-   getRow( const IndexType& rowIdx ) const;
+   ConstRowView
+   getRow( IndexType rowIdx ) const;
 
    /**
     * \brief Non-constant getter of simple structure for accessing given matrix row.
@@ -550,7 +557,7 @@ public:
     */
    __cuda_callable__
    RowView
-   getRow( const IndexType& rowIdx );
+   getRow( IndexType rowIdx );
 
    /**
     * \brief Sets element at given \e row and \e column to given \e value.
@@ -648,7 +655,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -691,7 +698,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -735,7 +742,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -776,7 +783,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value )
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value )
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -1060,10 +1067,14 @@ public:
     * outVector = matrixMultiplicator * ( * this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
@@ -1088,11 +1099,12 @@ public:
    void addMatrix( const SparseMatrix< Real2, Segments, Device, Index2 >& matrix,
                    const RealType& matrixMultiplicator = 1.0,
                    const RealType& thisMatrixMultiplicator = 1.0 );
-
-   template< typename Real2, typename Index2 >
-   void getTransposition( const SparseMatrix< Real2, Segments, Device, Index2 >& matrix,
-                          const RealType& matrixMultiplicator = 1.0 );
     */
+
+   template< typename Real2, typename Index2, template< typename, typename, typename > class Segments2 >
+   void
+   getTransposition( const SparseMatrix< Real2, Device, Index2, MatrixType, Segments2 >& matrix,
+                     const ComputeRealType& matrixMultiplicator = 1.0 );
 
    /**
     * \brief Copy-assignment of exactly the same matrix type.
@@ -1110,7 +1122,7 @@ public:
     * \return reference to this matrix.
     */
    SparseMatrix&
-   operator=( SparseMatrix&& matrix );
+   operator=( SparseMatrix&& matrix ) noexcept( false );
 
    /**
     * \brief Assignment of dense matrix
@@ -1143,7 +1155,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator==( const Matrix& m ) const;
+   operator==( const Matrix& matrix ) const;
 
    /**
     * \brief Comparison operator with another arbitrary matrix type.
@@ -1153,7 +1165,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator!=( const Matrix& m ) const;
+   operator!=( const Matrix& matrix ) const;
 
    /**
     * \brief Method for saving the matrix to the file with given filename.

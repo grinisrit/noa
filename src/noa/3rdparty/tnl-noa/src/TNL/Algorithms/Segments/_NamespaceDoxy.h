@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -118,7 +118,7 @@ Finally we show how to compute sum of all elemnts in each segment. Firstly, we c
 means of the method \ref TNL::Algorithms::Segments::CSR::getSegmentsCount (and \ref
 TNL::Algorithms::Segments::Ellpack::getSegmentsCount respectively). The sums are computed using the method \ref
 TNL::Algorithms::Segments::CSR::reduceAllSegments (and \ref TNL::Algorithms::Segments::Ellpack::reduceAllSegments respectively)
-which works the same way as the flexible parallel reduction (\ref TNL::Algorithms::Reduction). It requires lambda functions
+which works the same way as the flexible parallel reduction (\ref TNL::Algorithms::reduce). It requires lambda functions
 `fetch` for reading the data related to particular elements of the segments, function `reduce` which is \ref std::plus in this
 case and a function `keep` to store the result of sums in particular segments.
 

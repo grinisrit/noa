@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <string>
 #include <fstream>
+#include <sstream>
 
 namespace noa::TNL {
 namespace Benchmarks {
@@ -56,7 +57,7 @@ public:
    size() const noexcept
    {
       return elements.size();
-   };
+   }
 
    // iterators
    auto

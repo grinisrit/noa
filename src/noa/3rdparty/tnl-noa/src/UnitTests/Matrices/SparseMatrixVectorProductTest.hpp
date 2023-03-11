@@ -342,7 +342,6 @@ void test_VectorProduct_largeMatrix()
    using RealType = typename Matrix::RealType;
    using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
-   using VectorType = TNL::Containers::Vector< RealType, DeviceType, IndexType >;
 
    /////
    // Large test
@@ -406,14 +405,10 @@ void test_VectorProduct_longRowsMatrix()
    using RealType = typename Matrix::RealType;
    using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
-   using VectorType = TNL::Containers::Vector< RealType, DeviceType, IndexType >;
 
    /**
     * Long row test
     */
-   using MatrixSegmentsType = typename Matrix::SegmentsType;
-   constexpr TNL::Algorithms::Segments::ElementsOrganization organization = MatrixSegmentsType::getOrganization();
-   using ChunkedEllpackView_ = TNL::Algorithms::Segments::ChunkedEllpackView< DeviceType, IndexType, organization >;
    for( auto columns : { 64, 65, 128, 129, 256, 257, 512, 513, 1024, 1025, 2048, 2049, 3000 } )
    {
       const int rows = 33;

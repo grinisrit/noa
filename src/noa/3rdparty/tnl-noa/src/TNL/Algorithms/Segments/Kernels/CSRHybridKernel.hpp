@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,7 +17,6 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace Segments {
 
-#ifdef HAVE_CUDA
 template< int ThreadsPerSegment,
           typename Offsets,
           typename Index,
@@ -36,7 +35,8 @@ reduceSegmentsCSRHybridVectorKernel( int gridIdx,
                                      ResultKeeper keep,
                                      const Real zero )
 {
-   const Index segmentIdx = TNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
+#ifdef __CUDACC__
+   const Index segmentIdx = TNL::Cuda::getGlobalThreadIdx_x( gridIdx ) / ThreadsPerSegment + first;
    if( segmentIdx >= last )
       return;
 
@@ -67,6 +67,7 @@ reduceSegmentsCSRHybridVectorKernel( int gridIdx,
 
    if( laneIdx == 0 )
       keep( segmentIdx, aux );
+#endif
 }
 
 template< int BlockSize,
@@ -88,7 +89,8 @@ reduceSegmentsCSRHybridMultivectorKernel( int gridIdx,
                                           ResultKeeper keep,
                                           const Real zero )
 {
-   const Index segmentIdx = TNL::Cuda::getGlobalThreadIdx( gridIdx ) / ThreadsPerSegment + first;
+#ifdef __CUDACC__
+   const Index segmentIdx = TNL::Cuda::getGlobalThreadIdx_x( gridIdx ) / ThreadsPerSegment + first;
    if( segmentIdx >= last )
       return;
 
@@ -150,8 +152,8 @@ reduceSegmentsCSRHybridMultivectorKernel( int gridIdx,
          keep( segmentIdx + inWarpLaneIdx, shared[ inWarpLaneIdx * ThreadsPerSegment / 32 ] );
       }
    }
-}
 #endif
+}
 
 template< typename Index, typename Device, int ThreadsInBlock >
 template< typename Offsets >
@@ -177,6 +179,7 @@ CSRHybridKernel< Index, Device, ThreadsInBlock >::reset()
 }
 
 template< typename Index, typename Device, int ThreadsInBlock >
+__cuda_callable__
 auto
 CSRHybridKernel< Index, Device, ThreadsInBlock >::getView() -> ViewType
 {
@@ -191,11 +194,12 @@ CSRHybridKernel< Index, Device, ThreadsInBlock >::getKernelType()
 }
 
 template< typename Index, typename Device, int ThreadsInBlock >
+__cuda_callable__
 auto
 CSRHybridKernel< Index, Device, ThreadsInBlock >::getConstView() const -> ConstViewType
 {
    return *this;
-};
+}
 
 template< typename Index, typename Device, int ThreadsInBlock >
 template< typename OffsetsView, typename Fetch, typename Reduction, typename ResultKeeper, typename Real >
@@ -208,96 +212,108 @@ CSRHybridKernel< Index, Device, ThreadsInBlock >::reduceSegments( const OffsetsV
                                                                   ResultKeeper& keeper,
                                                                   const Real& zero ) const
 {
-   TNL_ASSERT_GE( this->threadsPerSegment, 0, "" );
-   TNL_ASSERT_LE( this->threadsPerSegment, ThreadsInBlock, "" );
-
-#ifdef HAVE_CUDA
    if( last <= first )
       return;
+
+   Devices::Cuda::LaunchConfiguration launch_config;
+   launch_config.blockSize.x = ThreadsInBlock;
    const size_t threadsCount = this->threadsPerSegment * ( last - first );
-   dim3 blocksCount, gridsCount, blockSize( ThreadsInBlock );
-   TNL::Cuda::setupThreads( blockSize, blocksCount, gridsCount, threadsCount );
-   // std::cerr << " this->threadsPerSegment = " << this->threadsPerSegment << " offsets = " << offsets << std::endl;
+   dim3 blocksCount, gridsCount;
+   TNL::Cuda::setupThreads( launch_config.blockSize, blocksCount, gridsCount, threadsCount );
+
    for( unsigned int gridIdx = 0; gridIdx < gridsCount.x; gridIdx++ ) {
-      dim3 gridSize;
-      TNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, gridSize );
+      TNL::Cuda::setupGrid( blocksCount, gridsCount, gridIdx, launch_config.gridSize );
       switch( this->threadsPerSegment ) {
          case 0:  // this means zero/empty matrix
             break;
          case 1:
-            reduceSegmentsCSRHybridVectorKernel< 1, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real > <<<
-               gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel =
+                  reduceSegmentsCSRHybridVectorKernel< 1, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 2:
-            reduceSegmentsCSRHybridVectorKernel< 2, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real > <<<
-               gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel =
+                  reduceSegmentsCSRHybridVectorKernel< 2, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 4:
-            reduceSegmentsCSRHybridVectorKernel< 4, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real > <<<
-               gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel =
+                  reduceSegmentsCSRHybridVectorKernel< 4, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 8:
-            reduceSegmentsCSRHybridVectorKernel< 8, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real > <<<
-               gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel =
+                  reduceSegmentsCSRHybridVectorKernel< 8, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 16:
-            reduceSegmentsCSRHybridVectorKernel< 16, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >
-               <<< gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel =
+                  reduceSegmentsCSRHybridVectorKernel< 16, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 32:
-            reduceSegmentsCSRHybridVectorKernel< 32, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >
-               <<< gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel =
+                  reduceSegmentsCSRHybridVectorKernel< 32, OffsetsView, Index, Fetch, Reduction, ResultKeeper, Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 64:
-            reduceSegmentsCSRHybridMultivectorKernel< ThreadsInBlock,
-                                                      64,
-                                                      OffsetsView,
-                                                      Index,
-                                                      Fetch,
-                                                      Reduction,
-                                                      ResultKeeper,
-                                                      Real >
-               <<< gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel = reduceSegmentsCSRHybridMultivectorKernel< ThreadsInBlock,
+                                                                                 64,
+                                                                                 OffsetsView,
+                                                                                 Index,
+                                                                                 Fetch,
+                                                                                 Reduction,
+                                                                                 ResultKeeper,
+                                                                                 Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 128:
-            reduceSegmentsCSRHybridMultivectorKernel< ThreadsInBlock,
-                                                      128,
-                                                      OffsetsView,
-                                                      Index,
-                                                      Fetch,
-                                                      Reduction,
-                                                      ResultKeeper,
-                                                      Real >
-               <<< gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel = reduceSegmentsCSRHybridMultivectorKernel< ThreadsInBlock,
+                                                                                 128,
+                                                                                 OffsetsView,
+                                                                                 Index,
+                                                                                 Fetch,
+                                                                                 Reduction,
+                                                                                 ResultKeeper,
+                                                                                 Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          case 256:
-            reduceSegmentsCSRHybridMultivectorKernel< ThreadsInBlock,
-                                                      256,
-                                                      OffsetsView,
-                                                      Index,
-                                                      Fetch,
-                                                      Reduction,
-                                                      ResultKeeper,
-                                                      Real >
-               <<< gridSize,
-               blockSize >>>( gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
-            break;
+            {
+               constexpr auto kernel = reduceSegmentsCSRHybridMultivectorKernel< ThreadsInBlock,
+                                                                                 256,
+                                                                                 OffsetsView,
+                                                                                 Index,
+                                                                                 Fetch,
+                                                                                 Reduction,
+                                                                                 ResultKeeper,
+                                                                                 Real >;
+               Cuda::launchKernelAsync( kernel, launch_config, gridIdx, offsets, first, last, fetch, reduction, keeper, zero );
+               break;
+            }
          default:
             throw std::runtime_error( std::string( "Wrong value of threadsPerSegment: " )
                                       + std::to_string( this->threadsPerSegment ) );
       }
    }
-   cudaStreamSynchronize( 0 );
+   cudaStreamSynchronize( launch_config.stream );
    TNL_CHECK_CUDA_DEVICE;
-#endif
 }
 
 }  // namespace Segments

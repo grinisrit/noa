@@ -17,7 +17,7 @@ namespace Benchmarks {
  *
  */
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 template< typename Real, typename Index >
 __global__ void computeK2Arg( const Index size,
@@ -269,12 +269,12 @@ void Merson< Problem, SolverMonitor >::computeKFunctions( DofVectorPointer& u,
    }
    if( std::is_same< DeviceType, Devices::Cuda >::value )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       dim3 cudaBlockSize( 512 );
       const IndexType cudaBlocks = Cuda::getNumberOfBlocks( size, cudaBlockSize.x );
-      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks );
-      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridSize() ) );
-      const IndexType threadsPerGrid = Cuda::getMaxGridSize() * cudaBlockSize.x;
+      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks, Cuda::getMaxGridXSize() );
+      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridXSize() ) );
+      const IndexType threadsPerGrid = Cuda::getMaxGridXSize() * cudaBlockSize.x;
 
       this->problem->getExplicitUpdate( time, tau, u, k1 );
       cudaDeviceSynchronize();
@@ -362,13 +362,13 @@ typename Problem :: RealType Merson< Problem, SolverMonitor >::computeError( con
    }
    if( std::is_same< DeviceType, Devices::Cuda >::value )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       RealType* _kAux = kAux->getData();
       dim3 cudaBlockSize( 512 );
       const IndexType cudaBlocks = Cuda::getNumberOfBlocks( size, cudaBlockSize.x );
-      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks );
-      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridSize() ) );
-      const IndexType threadsPerGrid = Cuda::getMaxGridSize() * cudaBlockSize.x;
+      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks, Cuda::getMaxGridXSize() );
+      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridXSize() ) );
+      const IndexType threadsPerGrid = Cuda::getMaxGridXSize() * cudaBlockSize.x;
 
       for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx ++ )
       {
@@ -418,12 +418,12 @@ void Merson< Problem, SolverMonitor >::computeNewTimeLevel( const RealType time,
    }
    if( std::is_same< DeviceType, Devices::Cuda >::value )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       dim3 cudaBlockSize( 512 );
       const IndexType cudaBlocks = Cuda::getNumberOfBlocks( size, cudaBlockSize.x );
-      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks );
-      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridSize() ) );
-      const IndexType threadsPerGrid = Cuda::getMaxGridSize() * cudaBlockSize.x;
+      const IndexType cudaGrids = Cuda::getNumberOfGrids( cudaBlocks, Cuda::getMaxGridXSize() );
+      this->cudaBlockResidue.setSize( min( cudaBlocks, Cuda::getMaxGridXSize() ) );
+      const IndexType threadsPerGrid = Cuda::getMaxGridXSize() * cudaBlockSize.x;
 
       localResidue = 0.0;
       for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx ++ )
@@ -471,7 +471,7 @@ void Merson< Problem, SolverMonitor >::writeGrids( const DofVectorPointer& u )
    getchar();
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 template< typename RealType, typename Index >
 __global__ void computeK2Arg( const Index size,

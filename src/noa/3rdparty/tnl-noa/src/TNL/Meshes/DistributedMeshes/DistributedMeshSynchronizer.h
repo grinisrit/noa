@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -82,7 +80,7 @@ public:
          mesh.getLocalMesh().template forGhost< EntityDimension, Devices::Sequential >(
             [ & ]( GlobalIndexType local_idx )
             {
-               if( ! std::is_same< DeviceType, Devices::Cuda >::value )
+               if constexpr( ! std::is_same< DeviceType, Devices::Cuda >::value )
                   if( ! mesh.getLocalMesh().template isGhostEntity< EntityDimension >( local_idx ) )
                      throw std::runtime_error( "encountered local entity while iterating over ghost entities - the mesh is "
                                                "probably inconsistent or there is a bug in the DistributedMeshSynchronizer" );
@@ -426,7 +424,7 @@ public:
          if( globalOffsets[ i ] <= global_idx && global_idx < globalOffsets[ i + 1 ] )
             return i;
       return nproc - 1;
-   };
+   }
 
    // public const accessors for the communication pattern matrix and index arrays which were
    // created in the `initialize` method

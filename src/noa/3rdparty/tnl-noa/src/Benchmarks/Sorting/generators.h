@@ -1,43 +1,43 @@
 #pragma once
 #include <numeric>
+#include <random>
 #include <vector>
 #include <algorithm>
 #include <cmath>
-using namespace std;
 
-vector<int> generateSorted(int size)
+std::vector<int> generateSorted(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
     iota(vec.begin(), vec.end(), 0);
 
     return vec;
 }
 
-vector<int> generateRandom(int size)
+std::vector<int> generateRandom(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
     srand(size + 2021);
-    generate(vec.begin(), vec.end(), [=](){return std::rand() % (2*size);});
+    std::generate(vec.begin(), vec.end(), [=](){return std::rand() % (2*size);});
 
     return vec;
 }
 
-vector<int> generateShuffle(int size)
+std::vector<int> generateShuffle(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
     iota(vec.begin(), vec.end(), 0);
     srand(size);
-    random_shuffle(vec.begin(), vec.end());
+    std::shuffle(vec.begin(), vec.end(), std::mt19937(std::random_device()()));
 
     return vec;
 }
 
-vector<int> generateAlmostSorted(int size)
+std::vector<int> generateAlmostSorted(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
     iota(vec.begin(), vec.end(), 0);
     srand(9451);
@@ -50,9 +50,9 @@ vector<int> generateAlmostSorted(int size)
     return vec;
 }
 
-vector<int> generateDecreasing(int size)
+std::vector<int> generateDecreasing(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
     for(int i = 0; i < size; i++)
         vec[i] = size - i;
@@ -60,15 +60,15 @@ vector<int> generateDecreasing(int size)
     return vec;
 }
 
-vector<int> generateZero_entropy(int size)
+std::vector<int> generateZero_entropy(int size)
 {
-    vector<int> vec(size, 515);
+    std::vector<int> vec(size, 515);
     return vec;
 }
 
-vector<int> generateGaussian(int size)
+std::vector<int> generateGaussian(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 	srand(size + 2000);
 
 	for (int i = 0; i < size; ++i)
@@ -83,9 +83,9 @@ vector<int> generateGaussian(int size)
     return vec;
 }
 
-vector<int> generateBucket(int size)
+std::vector<int> generateBucket(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
 	srand (size + 94215);
     double tmp = ((double)size)*3000000; //(RAND_MAX)/p; --> ((double)N)*30000;
@@ -114,9 +114,9 @@ vector<int> generateBucket(int size)
     return vec;
 }
 
-vector<int> generateStaggered(int size)
+std::vector<int> generateStaggered(int size)
 {
-    vector<int> vec(size);
+    std::vector<int> vec(size);
 
 	srand (size + 815618);
 	int tmp=4096; //(RAND_MAX)/p; --> size=2048

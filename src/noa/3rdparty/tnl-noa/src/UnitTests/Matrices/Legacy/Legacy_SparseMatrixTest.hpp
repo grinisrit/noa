@@ -33,8 +33,6 @@ void cuda_test_GetType()
 template< typename Matrix >
 void test_SetDimensions()
 {
-    using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
     const IndexType rows = 9;
@@ -51,7 +49,6 @@ template< typename Matrix >
 void test_SetCompressedRowLengths()
 {
     using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
     const IndexType rows = 10;
@@ -119,8 +116,6 @@ void test_SetCompressedRowLengths()
 template< typename Matrix1, typename Matrix2 >
 void test_SetLike()
 {
-    using RealType = typename Matrix1::RealType;
-    using DeviceType = typename Matrix1::DeviceType;
     using IndexType = typename Matrix1::IndexType;
 
     const IndexType rows = 8;
@@ -145,7 +140,6 @@ template< typename Matrix >
 void test_GetNumberOfNonzeroMatrixElements()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -213,8 +207,6 @@ void test_GetNumberOfNonzeroMatrixElements()
 template< typename Matrix >
 void test_Reset()
 {
-    using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
 /*
@@ -470,7 +462,6 @@ template< typename Matrix >
 void test_SetElement()
 {
     using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
 /*
@@ -647,7 +638,6 @@ template< typename Matrix >
 void test_AddElement()
 {
     using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
 /*
@@ -811,7 +801,6 @@ template< typename Matrix >
 void test_SetRow()
 {
     using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
 /*
@@ -1560,86 +1549,6 @@ void test_reduceRows()
    EXPECT_EQ( maxNorm, 260 ) ; // 29+30+31+32+33+34+35+36
 }
 
-template< typename Matrix >
-void test_PerformSORIteration()
-{
-    using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
-    using IndexType = typename Matrix::IndexType;
-
-/*
- * Sets up the following 4x4 sparse matrix:
- *
- *    /  4  1  0  0 \
- *    |  1  4  1  0 |
- *    |  0  1  4  1 |
- *    \  0  0  1  4 /
- */
-
-    const IndexType m_rows = 4;
-    const IndexType m_cols = 4;
-
-    Matrix m;
-    m.reset();
-    m.setDimensions( m_rows, m_cols );
-    typename Matrix::RowsCapacitiesType rowLengths;
-    rowLengths.setSize( m_rows );
-    rowLengths.setValue( 3 );
-    m.setCompressedRowLengths( rowLengths );
-
-    m.setElement( 0, 0, 4.0 );        // 0th row
-    m.setElement( 0, 1, 1.0);
-
-    m.setElement( 1, 0, 1.0 );        // 1st row
-    m.setElement( 1, 1, 4.0 );
-    m.setElement( 1, 2, 1.0 );
-
-    m.setElement( 2, 1, 1.0 );        // 2nd row
-    m.setElement( 2, 2, 4.0 );
-    m.setElement( 2, 3, 1.0 );
-
-    m.setElement( 3, 2, 1.0 );        // 3rd row
-    m.setElement( 3, 3, 4.0 );
-
-    RealType bVector [ 4 ] = { 1, 1, 1, 1 };
-    RealType xVector [ 4 ] = { 1, 1, 1, 1 };
-
-    IndexType row = 0;
-    RealType omega = 1;
-
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], 0.0 );
-    EXPECT_EQ( xVector[ 1 ], 1.0 );
-    EXPECT_EQ( xVector[ 2 ], 1.0 );
-    EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], 0.0 );
-    EXPECT_EQ( xVector[ 1 ], 0.0 );
-    EXPECT_EQ( xVector[ 2 ], 1.0 );
-    EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], 0.0 );
-    EXPECT_EQ( xVector[ 1 ], 0.0 );
-    EXPECT_EQ( xVector[ 2 ], 0.0 );
-    EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], 0.0 );
-    EXPECT_EQ( xVector[ 1 ], 0.0 );
-    EXPECT_EQ( xVector[ 2 ], 0.0 );
-    EXPECT_EQ( xVector[ 3 ], 0.25 );
-}
-
 // This test is only for AdEllpack
 template< typename Matrix >
 void test_OperatorEquals()
@@ -1907,7 +1816,6 @@ template< typename Matrix >
 void test_SaveAndLoad( const char* filename )
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -2004,7 +1912,6 @@ template< typename Matrix >
 void test_Print()
 {
     using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 
 /*

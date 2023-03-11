@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse.h>
+#include "Sparse.h"
 #include <TNL/Containers/Vector.h>
 
 namespace TNL {
@@ -49,7 +49,7 @@ public:
              typename _Index = Index >
    using Self = BiEllpack< _Real, _Device, _Index >;
 
-   static constexpr bool isSymmetric() { return false; };
+   static constexpr bool isSymmetric() { return false; }
 
 	BiEllpack();
 
@@ -170,7 +170,7 @@ public:
 
 	template< typename InVector,
 			  typename OutVector >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__
 #endif
 	void spmvCuda( const InVector& inVector,
@@ -219,5 +219,5 @@ private:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/BiEllpack_impl.h>
+#include "BiEllpack_impl.h"
 

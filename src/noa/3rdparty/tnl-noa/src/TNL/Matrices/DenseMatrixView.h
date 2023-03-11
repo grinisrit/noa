@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -38,8 +38,7 @@ template< typename Real = double,
 class DenseMatrixView : public MatrixView< Real, Device, Index >
 {
 protected:
-   using BaseType = Matrix< Real, Device, Index >;
-   using ValuesType = typename BaseType::ValuesType;
+   using BaseType = MatrixView< Real, Device, Index >;
    using SegmentsType = Algorithms::Segments::
       Ellpack< Device, Index, typename Allocators::Default< Device >::template Allocator< Index >, Organization, 1 >;
    using SegmentsViewType = typename SegmentsType::ViewType;
@@ -70,21 +69,21 @@ public:
    getOrganization()
    {
       return Organization;
-   };
+   }
 
    /**
     * \brief Matrix elements container view type.
     *
     * Use this for embedding of the matrix elements values.
     */
-   using ValuesViewType = typename ValuesType::ViewType;
+   using ValuesViewType = typename BaseType::ValuesView;
 
    /**
     * \brief Matrix elements container view type.
     *
     * Use this for embedding of the matrix elements values.
     */
-   using ConstValuesViewType = typename ValuesType::ConstViewType;
+   using ConstValuesViewType = typename ValuesViewType::ConstViewType;
 
    /**
     * \brief Matrix view type.
@@ -104,6 +103,11 @@ public:
     * \brief Type for accessing matrix row.
     */
    using RowView = DenseMatrixRowView< SegmentViewType, ValuesViewType >;
+
+   /**
+    * \brief Type for accessing immutable matrix row.
+    */
+   using ConstRowView = typename RowView::ConstRowView;
 
    /**
     * \brief Helper type for getting self type or its modifications.
@@ -269,8 +273,8 @@ public:
     * See \ref DenseMatrixRowView.
     */
    __cuda_callable__
-   const RowView
-   getRow( const IndexType& rowIdx ) const;
+   ConstRowView
+   getRow( IndexType rowIdx ) const;
 
    /**
     * \brief Non-constant getter of simple structure for accessing given matrix row.
@@ -288,7 +292,7 @@ public:
     */
    __cuda_callable__
    RowView
-   getRow( const IndexType& rowIdx );
+   getRow( IndexType rowIdx );
 
    /**
     * \brief Sets all matrix elements to value \e v.
@@ -422,7 +426,7 @@ public:
     *          It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -465,7 +469,7 @@ public:
     *          It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -509,7 +513,7 @@ public:
     *   It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -550,7 +554,7 @@ public:
     *  It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -632,9 +636,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/DenseMatrix/DenseMatrixViewExample_forAllRows.cpp
+    * \include Matrices/DenseMatrix/DenseMatrixViewExample_forAllElements.cpp
     * \par Output
-    * \include DenseMatrixViewExample_forAllRows.out
+    * \include DenseMatrixViewExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -649,9 +653,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/DenseMatrix/DenseMatrixExample_forAllRows.cpp
+    * \include Matrices/DenseMatrix/DenseMatrixExample_forAllElements.cpp
     * \par Output
-    * \include DenseMatrixExample_forAllRows.out
+    * \include DenseMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -834,10 +838,14 @@ public:
     * outVector = matrixMultiplicator * ( *this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
@@ -865,17 +873,6 @@ public:
    template< typename Matrix >
    void
    addMatrix( const Matrix& matrix, const RealType& matrixMultiplicator = 1.0, const RealType& thisMatrixMultiplicator = 1.0 );
-
-   template< typename Matrix1, typename Matrix2, int tileDim = 32 >
-   void
-   getMatrixProduct( const Matrix1& matrix1,
-                     const Matrix2& matrix2,
-                     const RealType& matrix1Multiplicator = 1.0,
-                     const RealType& matrix2Multiplicator = 1.0 );
-
-   template< typename Matrix, int tileDim = 32 >
-   void
-   getTransposition( const Matrix& matrix, const RealType& matrixMultiplicator = 1.0 );
 
    /**
     * \brief Assignment operator with DenseMatrix.
@@ -914,7 +911,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator==( const Matrix& m ) const;
+   operator==( const Matrix& matrix ) const;
 
    /**
     * \brief Comparison operator with another arbitrary matrix type.
@@ -924,7 +921,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator!=( const Matrix& m ) const;
+   operator!=( const Matrix& matrix ) const;
 
    /**
     * \brief Method for saving the matrix view to the file with given filename.
@@ -941,7 +938,7 @@ public:
     *
     * The ouput file can be loaded by \ref DenseMatrix.
     *
-    * \param fileName is name of the file.
+    * \param file is the file where the matrix will be saved.
     */
    void
    save( File& file ) const override;

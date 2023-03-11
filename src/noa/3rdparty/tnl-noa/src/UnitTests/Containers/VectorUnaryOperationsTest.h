@@ -64,7 +64,7 @@ protected:
 // types for which VectorUnaryOperationsTest is instantiated
 #if defined(DISTRIBUTED_VECTOR)
    using VectorTypes = ::testing::Types<
-   #ifndef HAVE_CUDA
+   #ifndef __CUDACC__
       DistributedVector<           double, Devices::Host, int >,
       DistributedVectorView<       double, Devices::Host, int >,
       DistributedVectorView< const double, Devices::Host, int >,
@@ -102,7 +102,7 @@ protected:
 #else
    #ifdef VECTOR_OF_STATIC_VECTORS
       using VectorTypes = ::testing::Types<
-      #ifndef HAVE_CUDA
+      #ifndef __CUDACC__
          Vector<     StaticVector< 3, double >, Devices::Host >,
          VectorView< StaticVector< 3, double >, Devices::Host >,
          VectorView< StaticVector< 3, CustomScalar< double > >, Devices::Host >
@@ -114,7 +114,7 @@ protected:
       >;
    #else
       using VectorTypes = ::testing::Types<
-      #ifndef HAVE_CUDA
+      #ifndef __CUDACC__
          Vector<     int,       Devices::Host >,
          VectorView< int,       Devices::Host >,
          VectorView< const int, Devices::Host >,
@@ -123,7 +123,7 @@ protected:
          Vector<     CustomScalar< int >, Devices::Host >,
          VectorView< CustomScalar< int >, Devices::Host >
       #endif
-      #ifdef HAVE_CUDA
+      #ifdef __CUDACC__
          Vector<     int,       Devices::Cuda >,
          VectorView< int,       Devices::Cuda >,
          VectorView< const int, Devices::Cuda >,
@@ -150,6 +150,7 @@ TYPED_TEST_SUITE( VectorUnaryOperationsTest, VectorTypes );
                                                                \
       V1 = 1;                                                  \
       V2 = 2;                                                  \
+      (void) 0  // dummy statement here enforces ';' after the macro use
 
    #define SETUP_UNARY_VECTOR_TEST_FUNCTION( _, begin, end, function ) \
       using VectorOrView = typename TestFixture::VectorOrView; \
@@ -167,6 +168,7 @@ TYPED_TEST_SUITE( VectorUnaryOperationsTest, VectorTypes );
          V1[ i ] = x;                                          \
          expected[ i ] = function(x);                          \
       }                                                        \
+      (void) 0  // dummy statement here enforces ';' after the macro use
 
 #elif defined(DISTRIBUTED_VECTOR)
    #define SETUP_UNARY_VECTOR_TEST( size ) \
@@ -188,6 +190,7 @@ TYPED_TEST_SUITE( VectorUnaryOperationsTest, VectorTypes );
       _V2 = 2;                                                 \
                                                                \
       VectorOrView V1( _V1 ), V2( _V2 );                       \
+      (void) 0  // dummy statement here enforces ';' after the macro use
 
    #define SETUP_UNARY_VECTOR_TEST_FUNCTION( size, begin, end, function ) \
       using VectorType = typename TestFixture::VectorType;     \
@@ -223,6 +226,7 @@ TYPED_TEST_SUITE( VectorUnaryOperationsTest, VectorTypes );
       _V1.setSynchronizer( _synchronizer );                    \
       expected.setSynchronizer( _synchronizer );               \
       expected.startSynchronization();                         \
+      (void) 0  // dummy statement here enforces ';' after the macro use
 
 #else
    #define SETUP_UNARY_VECTOR_TEST( size ) \
@@ -236,6 +240,7 @@ TYPED_TEST_SUITE( VectorUnaryOperationsTest, VectorTypes );
       _V2 = ValueType( 2 );                                    \
                                                                \
       VectorOrView V1( _V1 ), V2( _V2 );                       \
+      (void) 0  // dummy statement here enforces ';' after the macro use
 
    #define SETUP_UNARY_VECTOR_TEST_FUNCTION( size, begin, end, function ) \
       using VectorType = typename TestFixture::VectorType;     \
@@ -259,6 +264,7 @@ TYPED_TEST_SUITE( VectorUnaryOperationsTest, VectorTypes );
       VectorType _V1; _V1 = _V1h;                              \
       VectorOrView V1( _V1 );                                  \
       ExpectedVector expected; expected = expected_h;          \
+      (void) 0  // dummy statement here enforces ';' after the macro use
 
 #endif
 
@@ -304,6 +310,18 @@ void expect_vectors_near( const Left& _v1, const Right& _v2 )
 #endif
 }
 
+TYPED_TEST( VectorUnaryOperationsTest, plus )
+{
+   SETUP_UNARY_VECTOR_TEST( VECTOR_TEST_SIZE );
+
+   // vector or view
+   EXPECT_EQ( +V1, 1 );
+   // unary expression
+   EXPECT_EQ( +(+V2), 2 );
+   // binary expression
+   EXPECT_EQ( +(V1 + V1), 2 );
+}
+
 TYPED_TEST( VectorUnaryOperationsTest, minus )
 {
    SETUP_UNARY_VECTOR_TEST( VECTOR_TEST_SIZE );
@@ -311,9 +329,37 @@ TYPED_TEST( VectorUnaryOperationsTest, minus )
    // vector or view
    EXPECT_EQ( -V1, -1 );
    // unary expression
-   EXPECT_EQ( V2 * (-V1), -2 );
+   EXPECT_EQ( -(-V2), 2 );
    // binary expression
    EXPECT_EQ( -(V1 + V1), -2 );
+}
+
+TYPED_TEST( VectorUnaryOperationsTest, logicalNot )
+{
+   SETUP_UNARY_VECTOR_TEST( VECTOR_TEST_SIZE );
+
+   // vector or view
+   EXPECT_EQ( !V1, 0 );
+   // unary expression
+   EXPECT_EQ( !(!V2), 1 );
+   // binary expression
+   EXPECT_EQ( !(V1 + V1), 0 );
+}
+
+TYPED_TEST( VectorUnaryOperationsTest, bitNot )
+{
+   // binary negation is defined only for integral types
+   using ValueType = typename TestFixture::VectorOrView::ValueType;
+   if constexpr( std::is_integral_v< ValueType > ) {
+      SETUP_UNARY_VECTOR_TEST( VECTOR_TEST_SIZE );
+
+      // vector or view
+      EXPECT_EQ( ~V1, ~static_cast< ValueType >( 1 ) );
+      // unary expression
+      EXPECT_EQ( ~(~V2), 2 );
+      // binary expression
+      EXPECT_EQ( ~(V1 + V1), ~static_cast< ValueType >( 2 ) );
+   }
 }
 
 TYPED_TEST( VectorUnaryOperationsTest, abs )

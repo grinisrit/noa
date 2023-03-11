@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -18,17 +18,19 @@
 namespace noa::TNL {
 namespace Pointers {
 
-// Since TNL currently supports only execution on host (which does not need
-// to register and synchronize smart pointers) and CUDA GPU's, the smart
-// pointers register is implemented only for CUDA. If more execution types
-// which need to register smart pointers are implemented in the future, this
-// should beome a class template specialization.
+/**
+ * Since TNL currently supports only execution on host (which does not need
+ * to register and synchronize smart pointers) and CUDA GPU's, the smart
+ * pointers register is implemented only for CUDA. If more execution types
+ * which need to register smart pointers are implemented in the future, this
+ * should beome a class template specialization.
+ */
 class SmartPointersRegister
 {
 public:
    /**
-    * Negative deviceId means that \ref Cuda::DeviceInfo::getActiveDevice will be
-    * called to get the device ID.
+    * Negative deviceId means that \ref TNL::Cuda::DeviceInfo::getActiveDevice
+    * will be called to get the device ID.
     */
    void
    insert( SmartPointer* pointer, int deviceId = -1 )
@@ -39,8 +41,8 @@ public:
    }
 
    /**
-    * Negative deviceId means that \ref Cuda::DeviceInfo::getActiveDevice will be
-    * called to get the device ID.
+    * Negative deviceId means that \ref TNL::Cuda::DeviceInfo::getActiveDevice
+    * will be called to get the device ID.
     */
    void
    remove( SmartPointer* pointer, int deviceId = -1 )
@@ -59,8 +61,8 @@ public:
    }
 
    /**
-    * Negative deviceId means that \ref Cuda::DeviceInfo::getActiveDevice will be
-    * called to get the device ID.
+    * Negative deviceId means that \ref TNL::Cuda::DeviceInfo::getActiveDevice
+    * will be called to get the device ID.
     */
    bool
    synchronizeDevice( int deviceId = -1 )

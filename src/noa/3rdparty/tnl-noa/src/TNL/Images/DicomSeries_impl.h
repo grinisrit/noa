@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -6,7 +6,9 @@
 
 #pragma once
 
-#include <dirent.h>
+#ifndef _WIN32
+   #include <dirent.h>
+#endif
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Images/DicomSeries.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Images/DicomSeriesInfo.h>
@@ -25,6 +27,7 @@ findLastIndexOf( String& str, const char* c )
    return -1;
 }
 
+#ifndef _WIN32
 int
 filter( const struct dirent* dire )
 {
@@ -34,6 +37,7 @@ filter( const struct dirent* dire )
 
    return 1;
 }
+#endif
 
 inline DicomSeries::DicomSeries( const String& filePath )
 {
@@ -76,7 +80,7 @@ DicomSeries::getImage( const int imageIdx,
 #ifdef HAVE_DCMTK_H
    const Uint16* imageData = this->getData( imageIdx );
    using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   typename GridType::Cell cell( grid );
+   typename GridType::Cell cell( grid, { 0, 0 } );
 
    Index i, j;
    int position( 0 );
@@ -132,28 +136,33 @@ DicomSeries::retrieveFileList( const String& filePath )
    }
    if( separatorPosition == -1 )
       return false;
-   else {
-      // numbered files
-      String fileNamePrefix( fileName.getString(), 0, fileName.getLength() - separatorPosition );
 
-      struct dirent** dirp;
-      std::list< String > files;
+#ifndef _WIN32
+   // numbered files
+   String fileNamePrefix( fileName.getString(), 0, fileName.getLength() - separatorPosition );
 
-      // scan and sort directory
-      int ndirs = scandir( directoryPath.getString(), &dirp, filter, alphasort );
-      for( int i = 0; i < ndirs; ++i ) {
-         files.push_back( String( (char*) dirp[ i ]->d_name ) );
-         delete dirp[ i ];
-      }
+   struct dirent** dirp;
+   std::list< String > files;
 
-      for( auto& file : files ) {
-         // check if file prefix contained
-         if( strstr( file.getString(), fileNamePrefix.getString() ) ) {
-            fileList.push_back( directoryPath + file );
-         }
+   // scan and sort directory
+   int ndirs = scandir( directoryPath.getString(), &dirp, filter, alphasort );
+   for( int i = 0; i < ndirs; ++i ) {
+      files.push_back( String( (char*) dirp[ i ]->d_name ) );
+      delete dirp[ i ];
+   }
+
+   for( auto& file : files ) {
+      // check if file prefix contained
+      if( strstr( file.getString(), fileNamePrefix.getString() ) ) {
+         fileList.push_back( directoryPath + file );
       }
    }
+
    return true;
+#else
+   std::cerr << "Support for scanning a directory is not implemented for Windows." << std::endl;
+   return false;
+#endif
 }
 
 inline bool

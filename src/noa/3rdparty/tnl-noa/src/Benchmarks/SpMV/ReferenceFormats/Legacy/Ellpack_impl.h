@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Ellpack.h>
+#include "Ellpack.h"
 #include <TNL/Containers/Vector.h>
 #include <TNL/Math.h>
 #include <TNL/Exceptions/NotImplementedError.h>
@@ -17,7 +17,7 @@ template< typename Real,
 Ellpack< Real, Device, Index > :: Ellpack()
 : rowLengths( 0 ), alignedRows( 0 )
 {
-};
+}
 
 template< typename Real,
           typename Device,
@@ -556,85 +556,6 @@ void Ellpack< Real, Device, Index >::getTransposition( const Ellpack< Real2, Dev
    // TODO: implement
 }
 
-template< typename Real,
-          typename Device,
-          typename Index >
-   template< typename Vector1, typename Vector2 >
-bool Ellpack< Real, Device, Index > :: performSORIteration( const Vector1& b,
-                                                            const IndexType row,
-                                                            Vector2& x,
-                                                            const RealType& omega ) const
-{
-   TNL_ASSERT( row >=0 && row < this->getRows(),
-              std::cerr << "row = " << row
-                   << " this->getRows() = " << this->getRows() << std::endl );
-
-   RealType diagonalValue( 0.0 );
-   RealType sum( 0.0 );
-
-   IndexType i = DeviceDependentCode::getRowBegin( *this, row );
-   const IndexType rowEnd = DeviceDependentCode::getRowEnd( *this, row );
-   //const IndexType step = DeviceDependentCode::getElementStep( *this );
-
-   IndexType column;
-   while( i < rowEnd && ( column = this->columnIndexes[ i ] ) < this->columns )
-   {
-      if( column == row )
-         diagonalValue = this->values[ i ];
-      else
-         sum += this->values[ i ] * x[ column ];
-      i++;
-   }
-   if( diagonalValue == ( Real ) 0.0 )
-   {
-      std::cerr << "There is zero on the diagonal in " << row << "-th row of a matrix. I cannot perform SOR iteration." << std::endl;
-      return false;
-   }
-   x[ row ] = ( 1.0 - omega ) * x[ row ] + omega / diagonalValue * ( b[ row ] - sum );
-   return true;
-}
-
-template< typename Real,
-          typename Device,
-          typename Index >
-   template< typename Vector >
-bool
-Ellpack< Real, Device, Index >::
-performJacobiIteration( const Vector& b,
-                        const IndexType row,
-                        const Vector& old_x,
-                        Vector& x,
-                        const RealType& omega ) const
-{
-   TNL_ASSERT( row >=0 && row < this->getRows(),
-               std::cerr << "row = " << row << " this->getRows() = " << this->getRows() << std::endl );
-
-   RealType diagonalValue( 0.0 );
-   RealType sum( 0.0 );
-
-   IndexType i = DeviceDependentCode::getRowBegin( *this, row );
-   const IndexType rowEnd = DeviceDependentCode::getRowEnd( *this, row );
-   //const IndexType step = DeviceDependentCode::getElementStep( *this );
-
-   IndexType column;
-   while( i < rowEnd && ( column = this->columnIndexes[ i ] ) < this->columns )
-   {
-	  if( column == row )
-		 diagonalValue = this->values[ i ];
-	  else
-		 sum += this->values[ i ] * old_x[ column ];
-	  i++;
-   }
-   if( diagonalValue == ( Real ) 0.0 )
-   {
-	  std::cerr << "There is zero on the diagonal in " << row << "-th row of the matrix. I cannot perform the Jacobi iteration." << std::endl;
-	  return false;
-   }
-   x[ row ] = ( 1.0 - omega ) * old_x[ row ] + omega / diagonalValue * ( b[ row ] - sum );
-   return true;
-}
-
-
 // copy assignment
 template< typename Real,
           typename Device,
@@ -849,7 +770,7 @@ class EllpackDeviceDependentCode< Devices::Host >
       }
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template<
    typename Real,
    typename Index >
@@ -866,7 +787,7 @@ __global__ void EllpackVectorProductCudaKernel(
    Real multiplicator,
    const Index gridIdx )
 {
-   const Index rowIdx = ( gridIdx * Cuda::getMaxGridSize() + blockIdx.x ) * blockDim.x + threadIdx.x;
+   const Index rowIdx = ( gridIdx * Cuda::getMaxGridXSize() + blockIdx.x ) * blockDim.x + threadIdx.x;
    if( rowIdx >= rows )
       return;
    Index i = rowIdx;
@@ -929,19 +850,19 @@ class EllpackDeviceDependentCode< Devices::Cuda >
                                  Real multiplicator )
       {
          //MatrixVectorProductCuda( matrix, inVector, outVector );
-         #ifdef HAVE_CUDA
+         #ifdef __CUDACC__
             typedef Ellpack< Real, Device, Index > Matrix;
             typedef typename Matrix::IndexType IndexType;
             //Matrix* kernel_this = Cuda::passToDevice( matrix );
             //InVector* kernel_inVector = Cuda::passToDevice( inVector );
             //OutVector* kernel_outVector = Cuda::passToDevice( outVector );
-            dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridSize() );
+            dim3 cudaBlockSize( 256 ), cudaGridSize( Cuda::getMaxGridXSize() );
             const IndexType cudaBlocks = roundUpDivision( matrix.getRows(), cudaBlockSize.x );
-            const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
+            const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
             for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx++ )
             {
                if( gridIdx == cudaGrids - 1 )
-                  cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
+                  cudaGridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
                EllpackVectorProductCudaKernel
                < Real, Index >
                 <<< cudaGridSize, cudaBlockSize >>>

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -65,7 +65,7 @@ Twins< 2, Real >::getPartialDerivative( const Point& v, const Real& time ) const
    if( ZDiffOrder != 0 )
       return 0.0;
    if( XDiffOrder == 0 && YDiffOrder == 0 )
-      return -0.5 * ::sin( M_PI * x ) * ::sin( M_PI * x ) * ( 1 - ( y - 2 ) * ( y - 2 ) )
+      return -0.5 * ::sin( TNL::pi * x ) * ::sin( TNL::pi * x ) * ( 1 - ( y - 2 ) * ( y - 2 ) )
            * ( 1 - ::tanh( 10 * ( ::sqrt( x * x + y * y ) - 0.6 ) ) );
    return 0.0;
 }

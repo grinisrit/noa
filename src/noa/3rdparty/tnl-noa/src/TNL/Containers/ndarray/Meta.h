@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -13,7 +13,7 @@
 
 namespace noa::TNL {
 namespace Containers {
-namespace __ndarray_impl {
+namespace detail {
 
 /*
  * Generic function to get the N-th element from a variadic pack.
@@ -346,6 +346,6 @@ using make_constant_integer_sequence = gen_const_seq_t< T, std::integral_constan
 template< std::size_t N, std::size_t value >
 using make_constant_index_sequence = gen_const_seq_t< std::size_t, std::integral_constant< std::size_t, N >, value >;
 
-}  // namespace __ndarray_impl
+}  // namespace detail
 }  // namespace Containers
 }  // namespace noa::TNL

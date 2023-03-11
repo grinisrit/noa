@@ -9,7 +9,7 @@
 
 #ifdef HAVE_GTEST
 template< typename HeaderType >
-void test_compress( std::string input, std::string expected_output )
+void test_compress( const std::string& input, const std::string& expected_output )
 {
    std::stringstream str;
    TNL::write_compressed_block< HeaderType >( input.c_str(), input.length(), str );
@@ -18,7 +18,7 @@ void test_compress( std::string input, std::string expected_output )
 }
 
 template< typename HeaderType >
-void test_decompress( std::string input, std::string expected_output )
+void test_decompress( const std::string& input, const std::string& expected_output )
 {
    // decompress C string
    {

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -45,7 +45,7 @@ struct SolverConfig
       config.addEntry< String >( "device", "Device to use for the computations.", "host" );
       if( ConfigTagDevice< ConfigTag, Devices::Host >::enabled )
          config.addEntryEnum( "host" );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       if( ConfigTagDevice< ConfigTag, Devices::Cuda >::enabled )
          config.addEntryEnum( "cuda" );
 #endif
@@ -130,6 +130,7 @@ struct SolverConfig
          Linear::BICGStabL< MatrixType >::configSetup( config );
          Linear::GMRES< MatrixType >::configSetup( config );
          Linear::TFQMR< MatrixType >::configSetup( config );
+         Linear::IDRs< MatrixType >::configSetup( config );
          Linear::SOR< MatrixType >::configSetup( config );
 
          Linear::Preconditioners::Diagonal< MatrixType >::configSetup( config );

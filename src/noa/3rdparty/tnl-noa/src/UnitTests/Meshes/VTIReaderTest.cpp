@@ -1,3 +1,4 @@
+
 #ifdef HAVE_GTEST
 #include <gtest/gtest.h>
 
@@ -21,7 +22,9 @@ namespace BuildConfigTags {
 // enable all index types in the GridTypeResolver
 template<> struct GridIndexTag< MyConfigTag, short int >{ static constexpr bool enabled = true; };
 template<> struct GridIndexTag< MyConfigTag, int >{ static constexpr bool enabled = true; };
-template<> struct GridIndexTag< MyConfigTag, long int >{ static constexpr bool enabled = true; };
+// GOTCHA: the tests work only for integer types that have a fixed-width alias
+// (long int may be a 32-bit type, but different from int (e.g. on Windows), which would make some tests fail)
+template<> struct GridIndexTag< MyConfigTag, std::int64_t >{ static constexpr bool enabled = true; };
 
 // disable float and long double (RealType is not stored in VTI and double is the default)
 template<> struct GridRealTag< MyConfigTag, float > { static constexpr bool enabled = false; };
@@ -65,7 +68,7 @@ TEST( VTIReaderTest, Grid2D )
 
 TEST( VTIReaderTest, Grid3D )
 {
-   using GridType = Grid< 3, double, TNL::Devices::Host, long int >;
+   using GridType = Grid< 3, double, TNL::Devices::Host, std::int64_t >;
    using PointType = GridType::PointType;
    using CoordinatesType = GridType::CoordinatesType;
 
@@ -100,7 +103,7 @@ TEST( VTIReaderTest, Grid2D_vti )
 // ASCII data, produced by TNL writer
 TEST( VTIReaderTest, Grid3D_vti )
 {
-   using GridType = Grid< 3, double, TNL::Devices::Host, long int >;
+   using GridType = Grid< 3, double, TNL::Devices::Host, std::int64_t >;
    const GridType mesh = loadMeshFromFile< GridType, Readers::VTIReader >( "hexahedrons/grid_2x3x4.vti" );
 
    // test that the mesh was actually loaded

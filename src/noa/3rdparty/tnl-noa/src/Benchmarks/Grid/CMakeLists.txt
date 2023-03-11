@@ -1,0 +1,13 @@
+set( GRID_DIMS 1 2 3 )
+
+foreach( DIM IN ITEMS ${GRID_DIMS} )
+   if( TNL_BUILD_CUDA )
+      add_executable( tnl-benchmark-grid-${DIM}D tnl-benchmark-grid.cu )
+      target_link_libraries( tnl-benchmark-grid-${DIM}D PUBLIC TNL::TNL_CUDA )
+   else()
+      add_executable( tnl-benchmark-grid-${DIM}D tnl-benchmark-grid.cpp )
+      target_link_libraries( tnl-benchmark-grid-${DIM}D PUBLIC TNL::TNL_CXX )
+   endif()
+   target_compile_definitions( tnl-benchmark-grid-${DIM}D PUBLIC -DGRID_DIM=${DIM} )
+   install( TARGETS tnl-benchmark-grid-${DIM}D RUNTIME DESTINATION bin )
+endforeach()

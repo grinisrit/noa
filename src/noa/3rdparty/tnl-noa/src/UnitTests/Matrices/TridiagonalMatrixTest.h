@@ -39,8 +39,6 @@ void test_GetSerializationType()
 template< typename Matrix >
 void test_SetDimensions()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    const IndexType rows = 9;
@@ -56,8 +54,6 @@ void test_SetDimensions()
 template< typename Matrix1, typename Matrix2 >
 void test_SetLike()
 {
-   using RealType = typename Matrix1::RealType;
-   using DeviceType = typename Matrix1::DeviceType;
    using IndexType = typename Matrix1::IndexType;
 
    const IndexType rows = 8;
@@ -81,7 +77,6 @@ template< typename Matrix >
 void test_GetCompressedRowLengths()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    const IndexType rows = 10;
@@ -132,8 +127,6 @@ void test_GetCompressedRowLengths()
 template< typename Matrix >
 void test_GetAllocatedElementsCount()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    const IndexType rows = 7;
@@ -148,7 +141,6 @@ template< typename Matrix >
 void test_GetNonzeroElementsCount()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -180,8 +172,6 @@ void test_GetNonzeroElementsCount()
 template< typename Matrix >
 void test_Reset()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -208,7 +198,6 @@ template< typename Matrix >
 void test_SetValue()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -340,7 +329,6 @@ template< typename Matrix >
 void test_SetElement()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -404,7 +392,6 @@ template< typename Matrix >
 void test_AddElement()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -722,8 +709,6 @@ void test_AddRow()
 template< typename Matrix >
 void test_forRows()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /**
@@ -831,26 +816,24 @@ void test_VectorProduct()
 
    using VectorType = TNL::Containers::Vector< RealType, DeviceType, IndexType >;
 
-   VectorType inVector( 4 );
-   inVector = 2;
+   VectorType inVector = { 1, 2, 3, 4 };
 
    VectorType outVector( 5 );
    outVector = 0;
 
    m.vectorProduct( inVector, outVector);
 
-   EXPECT_EQ( outVector.getElement( 0 ),  6 );
-   EXPECT_EQ( outVector.getElement( 1 ), 36 );
-   EXPECT_EQ( outVector.getElement( 2 ), 66 );
-   EXPECT_EQ( outVector.getElement( 3 ), 62 );
-   EXPECT_EQ( outVector.getElement( 4 ), 40 );
+   EXPECT_EQ( outVector.getElement( 0 ),   5 );
+   EXPECT_EQ( outVector.getElement( 1 ),  38 );
+   EXPECT_EQ( outVector.getElement( 2 ), 101 );
+   EXPECT_EQ( outVector.getElement( 3 ), 109 );
+   EXPECT_EQ( outVector.getElement( 4 ),  80 );
 }
 
 template< typename Matrix1, typename Matrix2 = Matrix1 >
 void test_AddMatrix()
 {
    using RealType = typename Matrix1::RealType;
-   using DeviceType = typename Matrix1::DeviceType;
    using IndexType = typename Matrix1::IndexType;
 
    /*
@@ -966,115 +949,9 @@ void test_AddMatrix()
 }
 
 template< typename Matrix >
-void test_GetMatrixProduct()
-{
-    using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
-    using IndexType = typename Matrix::IndexType;
-/*
- * Sets up the following 5x4 matrix:
- *
- *    /  1  2  3  4 \
- *    |  5  6  7  8 |
- *    |  9 10 11 12 |
- *    | 13 14 15 16 |
- *    \ 17 18 19 20 /
- */
-    const IndexType leftRows = 5;
-    const IndexType leftCols = 4;
-
-    Matrix leftMatrix;
-    leftMatrix.reset();
-    leftMatrix.setDimensions( leftRows, leftCols );
-
-    RealType value = 1;
-    for( IndexType i = 0; i < leftRows; i++ )
-        for( IndexType j = 0; j < leftCols; j++)
-            leftMatrix.setElement( i, j, value++ );
-
-/*
- * Sets up the following 4x5 matrix:
- *
- *    /  1  2  3  4  5 \
- *    |  6  7  8  9 10 |
- *    | 11 12 13 14 15 |
- *    \ 16 17 18 19 20 /
- */
-    const IndexType rightRows = 4;
-    const IndexType rightCols = 5;
-
-    Matrix rightMatrix;
-    rightMatrix.reset();
-    rightMatrix.setDimensions( rightRows, rightCols );
-
-    RealType newValue = 1;
-    for( IndexType i = 0; i < rightRows; i++ )
-        for( IndexType j = 0; j < rightCols; j++)
-            rightMatrix.setElement( i, j, newValue++ );
-
-/*
- * Sets up the following 5x5 resulting matrix:
- *
- *    /  0  0  0  0 \
- *    |  0  0  0  0 |
- *    |  0  0  0  0 |
- *    |  0  0  0  0 |
- *    \  0  0  0  0 /
- */
-
-    Matrix mResult;
-    mResult.reset();
-    mResult.setDimensions( leftRows, rightCols );
-    mResult.setValue( 0 );
-
-    RealType leftMatrixMultiplicator = 1;
-    RealType rightMatrixMultiplicator = 2;
-/*
- *      /  1  2  3  4 \                            /  220  240  260  280  300 \
- *      |  5  6  7  8 |       /  1  2  3  4  5 \   |  492  544  596  648  700 |
- *  1 * |  9 10 11 12 | * 2 * |  6  7  8  9 10 | = |  764  848  932 1016 1100 |
- *      | 13 14 15 16 |       | 11 12 13 14 15 |   | 1036 1152 1268 1384 1500 |
- *      \ 17 18 19 20 /       \ 16 17 18 19 20 /   \ 1308 1456 1604 1752 1900 /
- */
-
-    mResult.getMatrixProduct( leftMatrix, rightMatrix, leftMatrixMultiplicator, rightMatrixMultiplicator );
-
-    EXPECT_EQ( mResult.getElement( 0, 0 ),  220 );
-    EXPECT_EQ( mResult.getElement( 0, 1 ),  240 );
-    EXPECT_EQ( mResult.getElement( 0, 2 ),  260 );
-    EXPECT_EQ( mResult.getElement( 0, 3 ),  280 );
-    EXPECT_EQ( mResult.getElement( 0, 4 ),  300 );
-
-    EXPECT_EQ( mResult.getElement( 1, 0 ),  492 );
-    EXPECT_EQ( mResult.getElement( 1, 1 ),  544 );
-    EXPECT_EQ( mResult.getElement( 1, 2 ),  596 );
-    EXPECT_EQ( mResult.getElement( 1, 3 ),  648 );
-    EXPECT_EQ( mResult.getElement( 1, 4 ),  700 );
-
-    EXPECT_EQ( mResult.getElement( 2, 0 ),  764 );
-    EXPECT_EQ( mResult.getElement( 2, 1 ),  848 );
-    EXPECT_EQ( mResult.getElement( 2, 2 ),  932 );
-    EXPECT_EQ( mResult.getElement( 2, 3 ), 1016 );
-    EXPECT_EQ( mResult.getElement( 2, 4 ), 1100 );
-
-    EXPECT_EQ( mResult.getElement( 3, 0 ), 1036 );
-    EXPECT_EQ( mResult.getElement( 3, 1 ), 1152 );
-    EXPECT_EQ( mResult.getElement( 3, 2 ), 1268 );
-    EXPECT_EQ( mResult.getElement( 3, 3 ), 1384 );
-    EXPECT_EQ( mResult.getElement( 3, 4 ), 1500 );
-
-    EXPECT_EQ( mResult.getElement( 4, 0 ), 1308 );
-    EXPECT_EQ( mResult.getElement( 4, 1 ), 1456 );
-    EXPECT_EQ( mResult.getElement( 4, 2 ), 1604 );
-    EXPECT_EQ( mResult.getElement( 4, 3 ), 1752 );
-    EXPECT_EQ( mResult.getElement( 4, 4 ), 1900 );
-}
-
-template< typename Matrix >
 void test_GetTransposition()
 {
     using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
     using IndexType = typename Matrix::IndexType;
 /*
  * Sets up the following 3x2 matrix:
@@ -1131,94 +1008,14 @@ void test_GetTransposition()
     EXPECT_EQ( mTransposed.getElement( 1, 2 ), 6 );
 }
 
-
-template< typename Matrix >
-void test_PerformSORIteration()
-{
-    using RealType = typename Matrix::RealType;
-    using DeviceType = typename Matrix::DeviceType;
-    using IndexType = typename Matrix::IndexType;
-/*
- * Sets up the following 4x4  matrix:
- *
- *    /  4  1  1  1 \
- *    |  1  4  1  1 |
- *    |  1  1  4  1 |
- *    \  1  1  1  4 /
- */
-    const IndexType rows = 4;
-    const IndexType cols = 4;
-
-    Matrix m;
-    m.reset();
-    m.setDimensions( rows, cols );
-
-    m.setElement( 0, 0, 4.0 );        // 0th row
-    m.setElement( 0, 1, 1.0 );
-    m.setElement( 0, 2, 1.0 );
-    m.setElement( 0, 3, 1.0 );
-
-    m.setElement( 1, 0, 1.0 );        // 1st row
-    m.setElement( 1, 1, 4.0 );
-    m.setElement( 1, 2, 1.0 );
-    m.setElement( 1, 3, 1.0 );
-
-    m.setElement( 2, 0, 1.0 );
-    m.setElement( 2, 1, 1.0 );        // 2nd row
-    m.setElement( 2, 2, 4.0 );
-    m.setElement( 2, 3, 1.0 );
-
-    m.setElement( 3, 0, 1.0 );        // 3rd row
-    m.setElement( 3, 1, 1.0 );
-    m.setElement( 3, 2, 1.0 );
-    m.setElement( 3, 3, 4.0 );
-
-    RealType bVector [ 4 ] = { 1.0, 1.0, 1.0, 1.0 };
-    RealType xVector [ 4 ] = { 1.0, 1.0, 1.0, 1.0 };
-
-    IndexType row = 0;
-    RealType omega = 1;
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], -0.5 );
-    EXPECT_EQ( xVector[ 1 ],  1.0 );
-    EXPECT_EQ( xVector[ 2 ],  1.0 );
-    EXPECT_EQ( xVector[ 3 ],  1.0 );
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], -0.5 );
-    EXPECT_EQ( xVector[ 1 ], -0.125 );
-    EXPECT_EQ( xVector[ 2 ],  1.0 );
-    EXPECT_EQ( xVector[ 3 ],  1.0 );
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], -0.5 );
-    EXPECT_EQ( xVector[ 1 ], -0.125 );
-    EXPECT_EQ( xVector[ 2 ],  0.15625 );
-    EXPECT_EQ( xVector[ 3 ],  1.0 );
-
-    m.performSORIteration( bVector, row++, xVector, omega);
-
-    EXPECT_EQ( xVector[ 0 ], -0.5 );
-    EXPECT_EQ( xVector[ 1 ], -0.125 );
-    EXPECT_EQ( xVector[ 2 ], 0.15625 );
-    EXPECT_EQ( xVector[ 3 ], 0.3671875 );
-}
-
 template< typename Matrix >
 void test_AssignmentOperator()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
    constexpr TNL::Algorithms::Segments::ElementsOrganization organization = Matrix::getOrganization();
 
    using TridiagonalHost = TNL::Matrices::TridiagonalMatrix< RealType, TNL::Devices::Host, IndexType, organization >;
-   using TridiagonalCuda = TNL::Matrices::TridiagonalMatrix< RealType, TNL::Devices::Cuda, IndexType,
-      organization == TNL::Algorithms::Segments::RowMajorOrder ? TNL::Algorithms::Segments::ColumnMajorOrder : TNL::Algorithms::Segments::RowMajorOrder >;
 
    const IndexType rows( 10 ), columns( 10 );
    TridiagonalHost hostMatrix( rows, columns );
@@ -1237,7 +1034,9 @@ void test_AssignmentOperator()
             else
                EXPECT_EQ( matrix.getElement( i, j ), 0.0 );
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
+   using TridiagonalCuda = TNL::Matrices::TridiagonalMatrix< RealType, TNL::Devices::Cuda, IndexType,
+      organization == TNL::Algorithms::Segments::RowMajorOrder ? TNL::Algorithms::Segments::ColumnMajorOrder : TNL::Algorithms::Segments::RowMajorOrder >;
    TridiagonalCuda cudaMatrix( rows, columns );
    for( IndexType i = 0; i < rows; i++ )
       for( IndexType j = 0; j < columns; j++ )
@@ -1262,7 +1061,6 @@ template< typename Matrix >
 void test_SaveAndLoad()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -1357,7 +1155,7 @@ using MatrixTypes = ::testing::Types
     TNL::Matrices::TridiagonalMatrix< long,   TNL::Devices::Host, long >,
     TNL::Matrices::TridiagonalMatrix< float,  TNL::Devices::Host, long >,
     TNL::Matrices::TridiagonalMatrix< double, TNL::Devices::Host, long >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     ,TNL::Matrices::TridiagonalMatrix< int,    TNL::Devices::Cuda, short >,
     TNL::Matrices::TridiagonalMatrix< long,   TNL::Devices::Cuda, short >,
     TNL::Matrices::TridiagonalMatrix< float,  TNL::Devices::Cuda, short >,
@@ -1514,45 +1312,14 @@ TYPED_TEST( MatrixTest, saveAndLoadTest )
 //    host_test_GetType< Tridiagonal_host_float, Tridiagonal_host_int >();
 //}
 //
-//#ifdef HAVE_CUDA
+//#ifdef __CUDACC__
 //TEST( TridiagonalMatrixTest, Tridiagonal_GetTypeTest_Cuda )
 //{
 //    cuda_test_GetType< Tridiagonal_cuda_float, Tridiagonal_cuda_int >();
 //}
 //#endif
 
-/*TEST( TridiagonalMatrixTest, Tridiagonal_getMatrixProductTest_Host )
-{
-    bool testRan = false;
-    EXPECT_TRUE( testRan );
-    std::cout << "\nTEST DID NOT RUN. NOT WORKING.\n\n";
-    std::cout << "If launched on CPU, this test will not build, but will print the following message: \n";
-    std::cout << "      /home/lukas/tnl-dev/src/TNL/Matrices/Tridiagonal_impl.h(609): error: no instance of function template \"TNL::Matrices::TridiagonalMatrixProductKernel\" matches the argument list\n";
-    std::cout << "              argument types are: (TNL::Matrices::Tridiagonal<int, TNL::Devices::Host, int> *, Tridiagonal_host_int *, Tridiagonal_host_int *, const int, const int, int, int)\n";
-    std::cout << "          detected during:\n";
-    std::cout << "              instantiation of \"void TNL::Matrices::Tridiagonal<Real, Device, Index>::getMatrixProduct(const Matrix1 &, const Matrix2 &, const TNL::Matrices::Tridiagonal<Real, Device, Index>::RealType &, const TNL::Matrices::Tridiagonal<Real, Device, Index>::RealType &) [with Real=int, Device=TNL::Devices::Host, Index=int, Matrix1=Tridiagonal_host_int, Matrix2=Tridiagonal_host_int, tileDim=32]\"\n";
-    std::cout << "              /home/lukas/tnl-dev/src/UnitTests/Matrices/TridiagonalMatrixTest.h(901): here\n";
-    std::cout << "                  instantiation of \"void test_GetMatrixProduct<Matrix>() [with Matrix=Tridiagonal_host_int]\"\n";
-    std::cout << "              /home/lukas/tnl-dev/src/UnitTests/Matrices/TridiagonalMatrixTest.h(1315): here\n\n";
-}
-
-#ifdef HAVE_CUDA
-TEST( TridiagonalMatrixTest, Tridiagonal_getMatrixProductTest_Cuda )
-{
-    bool testRan = false;
-    EXPECT_TRUE( testRan );
-    std::cout << "\nTEST DID NOT RUN. NOT WORKING.\n\n";
-    std::cout << "If launched on GPU, this test will not build, but will print the following message: \n";
-    std::cout << "      /home/lukas/tnl-dev/src/TNL/Matrices/Tridiagonal_impl.h(510): error: identifier \"tnlCudaMin\" is undefined\n";
-    std::cout << "          detected during:\n";
-    std::cout << "              instantiation of \"void TNL::Matrices::TridiagonalMatrixProductKernel<Real,Index,Matrix1,Matrix2,tileDim,tileRowBlockSize>(TNL::Matrices::Tridiagonal<Real, TNL::Devices::Cuda, Index> *, const Matrix1 *, const Matrix2 *, Real, Real, Index, Index) [with Real=int, Index=int, Matrix1=Tridiagonal_cuda_int, Matrix2=Tridiagonal_cuda_int, tileDim=32, tileRowBlockSize=8]\"\n";
-    std::cout << "              instantiation of \"void TNL::Matrices::Tridiagonal<Real, Device, Index>::getMatrixProduct(const Matrix1 &, const Matrix2 &, const TNL::Matrices::Tridiagonal<Real, Device, Index>::RealType &, const TNL::Matrices::Tridiagonal<Real, Device, Index>::RealType &) [with Real=int, Device=TNL::Devices::Cuda, Index=int, Matrix1=Tridiagonal_cuda_int, Matrix2=Tridiagonal_cuda_int, tileDim=32]\"\n";
-    std::cout << "              /home/lukas/tnl-dev/src/UnitTests/Matrices/TridiagonalMatrixTest.h(901): here\n";
-    std::cout << "                  instantiation of \"void test_GetMatrixProduct<Matrix>() [with Matrix=Tridiagonal_cuda_int]\"\n";
-    std::cout << "              /home/lukas/tnl-dev/src/UnitTests/Matrices/TridiagonalMatrixTest.h(1332): here\n\n";
-}
-#endif
-
+/*
 TEST( TridiagonalMatrixTest, Tridiagonal_getTranspositionTest_Host )
 {
 //    test_GetTransposition< Tridiagonal_host_int >();
@@ -1577,7 +1344,7 @@ TEST( TridiagonalMatrixTest, Tridiagonal_getTranspositionTest_Host )
     std::cout << "              /home/lukas/tnl-dev/src/UnitTests/Matrices/TridiagonalMatrixTest.h(1420): here\n\n";
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( TridiagonalMatrixTest, Tridiagonal_getTranspositionTest_Cuda )
 {
 //    test_GetTransposition< Tridiagonal_cuda_int >();
@@ -1605,24 +1372,6 @@ TEST( TridiagonalMatrixTest, Tridiagonal_getTranspositionTest_Cuda )
     std::cout << "          what():  CUDA ERROR 4 (cudaErrorLaunchFailure): unspecified launch failure.\n";
     std::cout << "  Source: line 57 in /home/lukas/tnl-dev/src/TNL/Containers/Algorithms/ArrayOperationsCuda_impl.h: unspecified launch failure\n";
     std::cout << "  [1]    4003 abort (core dumped)  ./TridiagonalMatrixTest-dbg\n";
-}
-#endif
-
-TEST( TridiagonalMatrixTest, Tridiagonal_performSORIterationTest_Host )
-{
-    test_PerformSORIteration< Tridiagonal_host_float >();
-}
-
-#ifdef HAVE_CUDA
-TEST( TridiagonalMatrixTest, Tridiagonal_performSORIterationTest_Cuda )
-{
-//    test_PerformSORIteration< Tridiagonal_cuda_float >();
-    bool testRan = false;
-    EXPECT_TRUE( testRan );
-    std::cout << "\nTEST DID NOT RUN. NOT WORKING.\n\n";
-    std::cout << "If launched, this test throws the following message: \n";
-    std::cout << "      [1]    6992 segmentation fault (core dumped)  ./SparseMatrixTest-dbg\n\n";
-    std::cout << "\n THIS IS NOT IMPLEMENTED FOR CUDA YET!!\n\n";
 }
 #endif
  * */

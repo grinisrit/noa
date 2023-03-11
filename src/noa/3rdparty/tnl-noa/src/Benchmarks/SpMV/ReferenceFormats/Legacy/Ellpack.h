@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse.h>
+#include "Sparse.h"
 #include <TNL/Containers/Vector.h>
 
 namespace TNL {
@@ -42,7 +42,7 @@ public:
              typename _Index = Index >
    using Self = Ellpack< _Real, _Device, _Index >;
 
-   static constexpr bool isSymmetric() { return false; };
+   static constexpr bool isSymmetric() { return false; }
 
    Ellpack();
 
@@ -163,19 +163,6 @@ public:
    void getTransposition( const Ellpack< Real2, Device, Index2 >& matrix,
                           const RealType& matrixMultiplicator = 1.0 );
 
-   template< typename Vector1, typename Vector2 >
-   bool performSORIteration( const Vector1& b,
-                             const IndexType row,
-                             Vector2& x,
-                             const RealType& omega = 1.0 ) const;
-
-   template< typename Vector >
-   bool performJacobiIteration( const Vector& b,
-								const IndexType row,
-								const Vector& old_x,
-								Vector& x,
-								const RealType& omega ) const;
-
    // copy assignment
    Ellpack& operator=( const Ellpack& matrix );
 
@@ -210,4 +197,4 @@ protected:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Ellpack_impl.h>
+#include "Ellpack_impl.h"

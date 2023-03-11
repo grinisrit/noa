@@ -7,7 +7,7 @@ template< typename MeshReal,
           typename MeshIndex,
           typename Real,
           typename Index >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 Real parallelGodunovMapScheme< tnlGrid< 2,MeshReal, Device, MeshIndex >, Real, Index >:: positivePart(const Real arg) const
@@ -23,7 +23,7 @@ template< typename MeshReal,
           typename MeshIndex,
           typename Real,
           typename Index >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 Real  parallelGodunovMapScheme< tnlGrid< 2,MeshReal, Device, MeshIndex >, Real, Index > :: negativePart(const Real arg) const
@@ -39,7 +39,7 @@ template< typename MeshReal,
           typename MeshIndex,
           typename Real,
           typename Index >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 Real parallelGodunovMapScheme< tnlGrid< 2,MeshReal, Device, MeshIndex >, Real, Index > :: sign(const Real x, const Real eps) const
@@ -64,7 +64,7 @@ template< typename MeshReal,
           typename MeshIndex,
           typename Real,
           typename Index >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 bool parallelGodunovMapScheme< tnlGrid< 2,MeshReal, Device, MeshIndex >, Real, Index > :: init( const Config::ParameterContainer& parameters )
@@ -102,7 +102,7 @@ template< typename MeshReal,
           typename MeshIndex,
           typename Real,
           typename Index >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    __device__ __host__
 #endif
 String parallelGodunovMapScheme< tnlGrid< 2, MeshReal, Device, MeshIndex >, Real, Index > :: getType()
@@ -120,7 +120,7 @@ template< typename MeshReal,
           typename Real,
           typename Index >
 template< typename Vector >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 __device__ __host__
 #endif
 Real parallelGodunovMapScheme< tnlGrid< 2, MeshReal, Device, MeshIndex >, Real, Index >:: getValue( const MeshType& mesh,
@@ -261,7 +261,7 @@ template< typename MeshReal,
           typename Real,
           typename Index >
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 __device__
 #endif
 Real parallelGodunovMapScheme< tnlGrid< 2, MeshReal, Device, MeshIndex >, Real, Index >:: getValueDev( const MeshType& mesh,

@@ -12,7 +12,8 @@ void test_reader( const MeshType& mesh, std::string outputFileName )
 {
    // write the mesh into the file (new scope is needed to properly close the file)
    {
-      std::ofstream file( outputFileName );
+      // NOTE: we must open the file in binary mode to avoid LF/CRLF conversions on Windows
+      std::ofstream file( outputFileName, std::ios_base::binary );
       WriterType< MeshType > writer( file );
       writer.writeEntities( mesh );
    }
@@ -34,7 +35,8 @@ void test_resolveAndLoadMesh( const MeshType& mesh, std::string outputFileName, 
 {
    // write the mesh into the file (new scope is needed to properly close the file)
    {
-      std::ofstream file( outputFileName );
+      // NOTE: we must open the file in binary mode to avoid LF/CRLF conversions on Windows
+      std::ofstream file( outputFileName, std::ios_base::binary );
       WriterType< MeshType > writer( file );
       writer.writeEntities( mesh );
    }
@@ -83,7 +85,8 @@ void test_meshfunction( const MeshType& mesh, std::string outputFileName, std::s
 
    // write the mesh into the file (new scope is needed to properly close the file)
    {
-      std::ofstream file( outputFileName );
+      // NOTE: we must open the file in binary mode to avoid LF/CRLF conversions on Windows
+      std::ofstream file( outputFileName, std::ios_base::binary );
       WriterType< MeshType > writer( file );
       writer.writeMetadata( 42, 3.14 );  // cycle, time
       writer.writeEntities( mesh );
@@ -112,7 +115,7 @@ void test_meshfunction( const MeshType& mesh, std::string outputFileName, std::s
       variant_scalars = reader.readCellData( "foo" );
       variant_vectors = reader.readCellData( "bar" );
    }
-   using mpark::visit;
+   using std::visit;
    visit( [&array_scalars_in](auto&& vector) {
             array_scalars_in = vector;
          },

@@ -1,6 +1,6 @@
 /**
  * \file main.cc
- * \brief Functional tests for the mass lumping technique and adjoint methods in MHFEM (entry point).
+ * \brief Functional tests for the mass lumping technique and chain methods in MHFEM (entry point).
  */
 
 // Precompile some headers
@@ -12,7 +12,7 @@
 using noa::utils::test::status_line;
 
 /// Set up GFlags
-DEFINE_string(	outputDir,	"./saved",	"Directory to output calculation results to");
+DEFINE_string(	outputDir,	"",		"Directory to output calculation results to. Leave empty to disable");
 DEFINE_bool(	clear,		false,		"Should the output directory be cleared if exists?");
 DEFINE_double(	T,		2.0,		"Simulation time");
 DEFINE_bool(	lumping,	false,		"Usees LMHFE over MHFE");
@@ -20,28 +20,16 @@ DEFINE_int32(	densify,	1,		"Grid density multiplier");
 DEFINE_double(	a,		1.0,		"a value");
 DEFINE_double(	da,		0.01,		"da value");
 DEFINE_bool(	findiff,	false,		"Calculate finite difference");
-DEFINE_bool(	adjoint,	false,		"Calculate 'adjoint' sensitivity");
+DEFINE_bool(	chain,		false,		"Calculate 'chain rule' sensitivity");
 
 template <typename SolverType>
-float solve(SolverType& solver, const noa::utils::Path& solverOutputPath, float av = 1.0f, bool ajoint = false);
+float solve(SolverType& solver, const noa::utils::Path& solverOutputPath);
+
 template <typename Container, typename IndexType>
 auto average(const Container& container, IndexType size) {
 	auto sum = container[IndexType{}];
 	for (std::size_t i = 1; i < size; ++i) sum += container[i];
 	return sum / size;
-}
-
-template <typename SolverType>
-float fdSensitivityAt(SolverType& solver, float av = 1.0f, float da = 0.001f) {
-	constexpr auto dimCell	= SolverType::dimCell;
-	using noa::utils::Path;
-
-	solve(solver, Path{}, av);
-	const auto av1 = average(solver.p, solver.getDomain().getMesh().template getEntitiesCount<dimCell>());
-	solve(solver, Path{}, av + da);
-	const auto av2 = average(solver.p, solver.getDomain().getMesh().template getEntitiesCount<dimCell>());
-
-	return (av2 - av1) / da;
 }
 
 // Our scalar function
@@ -53,29 +41,46 @@ int main(int argc, char** argv) {
 	gflags::SetUsageMessage("Functional tests for the mass lumping technique in MHFEM");
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+#ifdef HAVE_OPENMP
+    std::cout << "Have OpenMP" << std::endl;
+#else
+    std::cout << "No OpenMP" << std::endl;
+#endif
+
+	// Check incompatible flags
+	if (FLAGS_chain && FLAGS_findiff) {
+		std::cerr << "--chain and --findiff are mutually exclusive" << std::endl;
+		return EXIT_FAILURE;
+	}
+
 	using noa::utils::Path;
 	// Process outputDir, perform necessary checks
-	const Path outputPath(FLAGS_outputDir);
-	std::cout << "Output directory set to: " << outputPath << std::endl;
+	const Path outputPath = (FLAGS_outputDir.empty()) ? Path{} : Path{FLAGS_outputDir};
+	if (outputPath.empty())
+		std::cout << "Won't produce output files. Use --outputDir to change that." << std::endl;
+	else {
+		std::cout << "Output directory set to: " << outputPath << std::endl;
 
-	using noa::utils::DirectoryStatus;
-	switch (noa::utils::check_directory(outputPath)) {
-		case DirectoryStatus::NOT_A_DIR:
-			std::cerr << "Refusing to continue." << std::endl;
-			return EXIT_FAILURE;
-		case DirectoryStatus::EXISTS:
-			std::cerr << "Output directory exists!" << std::endl;
-			if (FLAGS_clear) {
-				std::cerr << "Clearing..." << std::endl;
-				std::filesystem::remove_all(outputPath);
-			} else return EXIT_FAILURE;
-		case DirectoryStatus::NOT_FOUND:
-			std::filesystem::create_directory(outputPath);
+		using noa::utils::DirectoryStatus;
+		switch (noa::utils::check_directory(outputPath)) {
+			case DirectoryStatus::NOT_A_DIR:
+				std::cerr << "Refusing to continue." << std::endl;
+				return EXIT_FAILURE;
+			case DirectoryStatus::EXISTS:
+				std::cerr << "Output directory exists!" << std::endl;
+				if (FLAGS_clear) {
+					std::cerr << "Clearing..." << std::endl;
+					std::filesystem::remove_all(outputPath);
+				} else return EXIT_FAILURE;
+			case DirectoryStatus::NOT_FOUND:
+				std::filesystem::create_directory(outputPath);
+		}
 	}
 
 	// outputPath is newly created and guaranteed to be empty
-	const auto solverOutputPath = outputPath / "solution";
-	std::filesystem::create_directory(solverOutputPath);
+	const auto solverOutputPath = outputPath.empty() ? Path{} : (outputPath / "solution");
+	if (!solverOutputPath.empty())
+		std::filesystem::create_directory(solverOutputPath);
 
 	using CellTopology	= noa::TNL::Meshes::Topologies::Triangle;
 	constexpr auto features	= noa::test::mhfe::Features{ true, true };
@@ -84,64 +89,86 @@ int main(int argc, char** argv) {
 
 	SolverType solver;
 
-	if (FLAGS_findiff || FLAGS_adjoint) {
-		if (FLAGS_findiff) {
-			const auto fdSens = fdSensitivityAt(solver, FLAGS_a, FLAGS_da);
-			std::cout << std::endl;
-			std::cout << "Finite difference:     " << fdSens << std::endl;
-		}
-
-		if (FLAGS_adjoint) {
-			const auto ajSens = solve(solver, Path{}, FLAGS_a, true);
-			std::cout << std::endl;
-			std::cout << "'Adjoint' sensitivity: " << ajSens << std::endl;
-		}
-	} else {
-		solve(solver, solverOutputPath, FLAGS_a);
+	const auto sensitivity = solve(solver, solverOutputPath);
+	std::cout << std::endl;
+	if (FLAGS_chain || FLAGS_findiff) {
+		std::cout << "Sensitivity: " << sensitivity << std::endl;
 	}
 
 	return EXIT_SUCCESS;
 }
 
 template <typename SolverType>
-float solve(SolverType& solver, const noa::utils::Path& solverOutputPath, float av, bool adjoint) {
+float solve(SolverType& solver, const noa::utils::Path& solverOutputPath) {
 	solver.reset();
 
 	// Set up the mesh
+	auto& domain = solver.getDomain();
 	noa::utils::domain::generate2DGrid(
-			solver.getDomain(),
-			20 * FLAGS_densify, 10 * FLAGS_densify,
-			1.0 / FLAGS_densify, 1.0 / FLAGS_densify);
-	solver.updateLayers();
+			domain,
+			4 * FLAGS_densify, 2 * FLAGS_densify,
+			5.0 / FLAGS_densify, 5.0 / FLAGS_densify);
 
-	// Set up initial & border conditions
-	const auto& mesh = solver.getDomain().getMesh();
+	static constexpr auto solverPostSetup = [] (SolverType& s) {
+		s.updateLayers();
 
-	mesh.template forBoundary<SolverType::dimEdge>([&solver, &mesh] (auto edge) {
-		const auto p1 = mesh.getPoint(mesh.template getSubentityIndex<SolverType::dimEdge, 0>(edge, 0));
-		const auto p2 = mesh.getPoint(mesh.template getSubentityIndex<SolverType::dimEdge, 0>(edge, 1));
+		// Set up initial & border conditions
+		const auto& mesh = s.getDomain().getMesh();
 
-		const auto r = p2 - p1;
+		mesh.template forBoundary<SolverType::dimEdge>([&s, &mesh] (auto edge) {
+			const auto p1 = mesh.getPoint(mesh.template getSubentityIndex<SolverType::dimEdge, 0>(edge, 0));
+			const auto p2 = mesh.getPoint(mesh.template getSubentityIndex<SolverType::dimEdge, 0>(edge, 1));
 
-		if (r[0] == 0) { // x = const boundary
-			float x1v = 0;
+			const auto r = p2 - p1;
 
-			auto mask = (p1[0] == 0) && (((p1 + r / 2)[1] > 1) && ((p1 + r / 2)[1] < 9));
+			if (r[0] == 0) { // x = const boundary
+				float x1v = 0;
 
-			solver.dirichletMask[edge] = 1;
-			solver.dirichlet[edge] = mask;
-			solver.tp[edge] = mask;
-		} else if (r[1] == 0) { // y = const boundary
-			solver.neumannMask[edge] = 1;
-			solver.neumann[edge] = 0;
+				auto mask = (p1[0] == 0) && (((p1 + r / 2)[1] > 1) && ((p1 + r / 2)[1] < 9));
+
+				s.dirichletMask[edge] = 1;
+				s.dirichlet[edge] = mask;
+				s.tp[edge] = mask;
+			} else if (r[1] == 0) { // y = const boundary
+				s.neumannMask[edge] = 1;
+				s.neumann[edge] = 0;
+			}
+		});
+		s.a.forAllElements([] (auto i, auto& v) { v = FLAGS_a; });
+		s.c.forAllElements([] (auto i, auto& v) { v = 1; });
+	};
+
+	constexpr auto dimCell	= SolverType::DomainType::getMeshDimension();
+	const auto numCells = solver.getDomain().getMesh().template getEntitiesCount<dimCell>();
+
+	std::optional<std::vector<SolverType>> compareSolvers = std::nullopt;
+	if (FLAGS_findiff) {
+		compareSolvers = std::vector<SolverType>(numCells);
+		for (std::size_t i = 0; i < numCells; ++i) {
+			auto& solver2 = compareSolvers->at(i);
+			solver2 = solver;
+			solverPostSetup(solver2);
+			solver2.a.forAllElements([idx=i] (auto i, auto& v) { v += FLAGS_da * (i == idx); });
+			solver2.cache();
 		}
-	});
-	solver.a.forAllElements([av] (auto i, auto& v) { v = av; });
-	solver.c.forAllElements([] (auto i, auto& v) { v = 1; });
+	}
+
+	solverPostSetup(solver);
 	solver.cache();
 
-	std::ofstream ajsens("ajsens.dat");
-	float sensitivity;
+	std::ofstream sensfile("sensfile.dat");
+	float sensitivity{};
+
+    using namespace noa::test::mhfe::methods;
+    if (FLAGS_chain) {
+        solver.template chainAInit<LMHFE>(
+            [] (auto view, auto size, auto output) {
+                output.forAllElements([size] (auto idx, auto& v) {
+                    v = 1.0 / size;
+                });
+            }
+        );
+    }
 
 	// Solution cycle
 	while (solver.t < FLAGS_T) {
@@ -153,14 +180,40 @@ float solve(SolverType& solver, const noa::utils::Path& solverOutputPath, float 
 			<< ((int(solver.t) % 5 == 4) ? "=" : " ") << "]"
 			<< " " << sensitivity;
 
-		using namespace noa::test::mhfe::methods;
 		if (FLAGS_lumping) {
 			solver.template step<LMHFE>();
-			if (adjoint) {
-				sensitivity = solver.template adjointA<LMHFE, g>();
-				ajsens << solver.t << ", " << sensitivity << std::endl;
+			if (FLAGS_findiff) for (auto& solver2 : *compareSolvers) solver2.template step<LMHFE>();
+
+			if (FLAGS_chain) {
+				sensitivity = solver.template chainA<LMHFE>(
+                        [] (auto view, auto size, auto output) {
+                            output.forAllElements([size] (auto idx, auto& v) {
+                                v = 1.0 / size;
+                            });
+                        }
+                );
 			}
-		} else solver.template step<MHFE>();
+		} else {
+			solver.template step<MHFE>();
+			if (FLAGS_findiff) for (auto& solver2 : *compareSolvers) solver2.template step<MHFE>();
+		}
+
+		if (FLAGS_findiff) {
+			const auto v1 = average(solver.p, solver.getDomain().getMesh().template getEntitiesCount<dimCell>());
+			
+			sensitivity = 0;
+
+			for (auto& solver2 : *compareSolvers) {
+				const auto v2 = average(solver2.p, solver2.getDomain().getMesh().template getEntitiesCount<dimCell>());
+				sensitivity += v2 - v1;
+			}
+
+			sensitivity /= FLAGS_da;
+		}
+
+		if (FLAGS_chain || FLAGS_findiff) {
+			sensfile << solver.t << ", " << sensitivity << std::endl;
+		}
 
 		if (!solverOutputPath.empty())
 			solver.getDomain().write(
@@ -185,10 +238,5 @@ struct g {
 		output.forAllElements([size] (auto idx, auto& v) {
 			v = Real{1} / size;
 		});
-	}
-
-	template <typename ConstViewType, typename IndexType, typename ViewType>
-	static inline void partial_A(ConstViewType view, IndexType size, ViewType output) {
-		output.forAllElements([] (auto idx, auto& v) { v = Real{}; });
 	}
 };

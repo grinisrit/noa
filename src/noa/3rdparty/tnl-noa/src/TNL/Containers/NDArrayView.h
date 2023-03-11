@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -20,46 +20,90 @@
 namespace noa::TNL {
 namespace Containers {
 
+/**
+ * \brief Simple data structure which provides a non-owning encapsulation of
+ * N-dimensional array data.
+ *
+ * \tparam Value Type of the values stored in the array.
+ * \tparam Device Type of the \ref TNL::Devices "device" that will be used for
+ *                running operations on the array.
+ * \tparam Type of the N-dimensional indexer, \ref NDArrayIndexer.
+ *
+ * \ingroup ndarray
+ */
 template< typename Value, typename Device, typename Indexer >
 class NDArrayView : public Indexer
 {
 public:
+   //! \brief Type of the values stored in the array.
    using ValueType = Value;
+
+   //! \brief Type of the \ref TNL::Devices "device" used for running operations on the array.
    using DeviceType = Device;
+
+   //! \brief Type of indices used for addressing the array elements.
    using IndexType = typename Indexer::IndexType;
+
+   //! \brief Type of the underlying object which represents the sizes of the N-dimensional array.
    using SizesHolderType = typename Indexer::SizesHolderType;
+
+   //! \brief Type of the base class which represents the strides of the N-dimensional array.
    using StridesHolderType = typename Indexer::StridesHolderType;
+
+   //! \brief Permutation that is applied to indices when accessing the array elements.
    using PermutationType = typename Indexer::PermutationType;
+
+   //! \brief Sequence of integers representing the overlaps in each dimension
+   //! of a distributed N-dimensional array.
    using OverlapsType = typename Indexer::OverlapsType;
+
+   //! \brief Type of the N-dimensional indexer, \ref NDArrayIndexer.
    using IndexerType = Indexer;
+
+   //! Compatible \ref NDArrayView type.
    using ViewType = NDArrayView< ValueType, DeviceType, IndexerType >;
+
+   //! Compatible constant \ref NDArrayView type.
    using ConstViewType = NDArrayView< std::add_const_t< ValueType >, DeviceType, IndexerType >;
 
+   //! \brief Constructs an array view with zero size.
    __cuda_callable__
    NDArrayView() = default;
 
-   // explicit initialization by raw data pointer and sizes and strides
+   //! \brief Constructs an array view initialized by a raw data pointer and
+   //! sizes and strides.
    __cuda_callable__
    NDArrayView( Value* data, SizesHolderType sizes, StridesHolderType strides = StridesHolderType{} )
    : IndexerType( sizes, strides ), array( data )
    {}
 
-   // explicit initialization by raw data pointer and indexer
+   //! \brief Constructs an array view initialized by a raw data pointer and an
+   //! indexer.
    __cuda_callable__
    NDArrayView( Value* data, IndexerType indexer ) : IndexerType( indexer ), array( data ) {}
 
-   // Copy-constructor does shallow copy, so views can be passed-by-value into
-   // CUDA kernels and they can be captured-by-value in __cuda_callable__
-   // lambda functions.
+   /**
+    * \brief A shallow-copy copy-constructor.
+    *
+    * This allows views to be passed-by-value into CUDA kernels and be
+    * captured-by-value in __cuda_callable__ lambda functions.
+    */
    __cuda_callable__
    NDArrayView( const NDArrayView& ) = default;
 
-   // default move-constructor
+   //! \brief Move constructor for initialization from \e rvalues.
    __cuda_callable__
-   NDArrayView( NDArrayView&& ) = default;
+   NDArrayView( NDArrayView&& ) noexcept = default;
 
-   // Copy-assignment does deep copy, just like regular array, but the sizes
-   // must match (i.e. copy-assignment cannot resize).
+   /**
+    * \brief Copy-assignment operator for deep-copying data from another array.
+    *
+    * This is just like the operator on a regular array, but the sizes must
+    * match (i.e. copy-assignment cannot resize).
+    *
+    * Note that there is no move-assignment operator, so expressions like
+    * `a = b.getView()` are resolved as copy-assignment.
+    */
    TNL_NVCC_HD_WARNING_DISABLE
    __cuda_callable__
    NDArrayView&
@@ -71,7 +115,7 @@ public:
       return *this;
    }
 
-   // Templated copy-assignment
+   //! \brief Templated copy-assignment operator for deep-copying data from another array.
    TNL_NVCC_HD_WARNING_DISABLE
    template< typename OtherView >
    __cuda_callable__
@@ -82,7 +126,7 @@ public:
                      "Arrays must have the same permutation of indices." );
       static_assert( NDArrayView::isContiguous() && OtherView::isContiguous(),
                      "Non-contiguous array views cannot be assigned." );
-      TNL_ASSERT_TRUE( __ndarray_impl::sizesWeakCompare( getSizes(), other.getSizes() ),
+      TNL_ASSERT_TRUE( detail::sizesWeakCompare( getSizes(), other.getSizes() ),
                        "The sizes of the array views must be equal, views are not resizable." );
       if( getStorageSize() > 0 ) {
          TNL_ASSERT_TRUE( array, "Attempted to assign to an empty view." );
@@ -92,10 +136,7 @@ public:
       return *this;
    }
 
-   // There is no move-assignment operator, so expressions like `a = b.getView()`
-   // are resolved as copy-assignment.
-
-   // methods for rebinding (reinitialization)
+   //! \brief Re-binds (re-initializes) the array view to a different view.
    __cuda_callable__
    void
    bind( NDArrayView view )
@@ -104,7 +145,8 @@ public:
       array = view.array;
    }
 
-   // binds to the given raw pointer and changes the indexer
+   //! \brief Re-binds (re-initializes) the array view to the given raw pointer
+   //! and changes the indexer.
    __cuda_callable__
    void
    bind( Value* data, IndexerType indexer )
@@ -113,7 +155,8 @@ public:
       array = data;
    }
 
-   // binds to the given raw pointer and preserves the current indexer
+   //! \brief Re-binds (re-initializes) the array view to the given raw pointer
+   //! and preserves the current indexer.
    __cuda_callable__
    void
    bind( Value* data )
@@ -121,6 +164,7 @@ public:
       array = data;
    }
 
+   //! \brief Resets the array view to the empty state.
    __cuda_callable__
    void
    reset()
@@ -129,6 +173,7 @@ public:
       array = nullptr;
    }
 
+   //! \brief Compares the array view with another N-dimensional array view.
    TNL_NVCC_HD_WARNING_DISABLE
    __cuda_callable__
    bool
@@ -141,6 +186,7 @@ public:
       return Algorithms::MemoryOperations< Device >::compare( array, other.array, getStorageSize() );
    }
 
+   //! \brief Compares the array view with another N-dimensional array view.
    TNL_NVCC_HD_WARNING_DISABLE
    __cuda_callable__
    bool
@@ -152,6 +198,7 @@ public:
       return ! Algorithms::MemoryOperations< Device >::compare( array, other.array, getStorageSize() );
    }
 
+   //! \brief Returns a raw pointer to the data.
    __cuda_callable__
    ValueType*
    getData()
@@ -159,6 +206,7 @@ public:
       return array;
    }
 
+   //! \brief Returns a \e const-qualified raw pointer to the data.
    __cuda_callable__
    std::add_const_t< ValueType >*
    getData() const
@@ -174,7 +222,9 @@ public:
    using IndexerType::getStorageIndex;
    using IndexerType::getStorageSize;
    using IndexerType::getStride;
+   using IndexerType::isContiguousBlock;
 
+   //! Returns a const-qualified reference to the underlying indexer.
    __cuda_callable__
    const IndexerType&
    getIndexer() const
@@ -182,6 +232,7 @@ public:
       return *this;
    }
 
+   //! \brief Returns a modifiable view of the array.
    __cuda_callable__
    ViewType
    getView()
@@ -189,6 +240,7 @@ public:
       return ViewType( *this );
    }
 
+   //! \brief Returns a non-modifiable view of the array.
    __cuda_callable__
    ConstViewType
    getConstView() const
@@ -196,6 +248,19 @@ public:
       return ConstViewType( array, getIndexer() );
    }
 
+   /**
+    * \brief Returns a modifiable view of a subarray.
+    *
+    * \tparam Dimensions Sequence of integers representing the dimensions of the
+    *                    array which selects the subset of dimensions to appear
+    *                    in the subarray.
+    * \param indices Indices of the _origin_ of the subarray in the whole array.
+    *                The number of indices supplied must be equal to \e N, i.e.
+    *                \ref NDArrayIndexer::getDimension "getDimension()".
+    * \returns \ref NDArrayView instantiated for \ref ValueType, \ref DeviceType
+    *          and an \ref NDArrayIndexer matching the specified dimensions and
+    *          subarray sizes.
+    */
    template< std::size_t... Dimensions, typename... IndexTypes >
    __cuda_callable__
    auto
@@ -206,13 +271,11 @@ public:
                      "got wrong number of dimensions" );
 // FIXME: nvcc chokes on the variadic brace-initialization
 #ifndef __NVCC__
-      static_assert( __ndarray_impl::all_elements_in_range( 0, PermutationType::size(), { Dimensions... } ),
-                     "invalid dimensions" );
-      static_assert( __ndarray_impl::is_increasing_sequence( { Dimensions... } ),
-                     "specifying permuted dimensions is not supported" );
+      static_assert( detail::all_elements_in_range( 0, PermutationType::size(), { Dimensions... } ), "invalid dimensions" );
+      static_assert( detail::is_increasing_sequence( { Dimensions... } ), "specifying permuted dimensions is not supported" );
 #endif
 
-      using Getter = __ndarray_impl::SubarrayGetter< typename Indexer::NDBaseType, PermutationType, Dimensions... >;
+      using Getter = detail::SubarrayGetter< typename Indexer::NDBaseType, PermutationType, Dimensions... >;
       using Subpermutation = typename Getter::Subpermutation;
       ValueType* begin = getData() + getStorageIndex( std::forward< IndexTypes >( indices )... );
       auto subarray_sizes = Getter::filterSizes( getSizes(), std::forward< IndexTypes >( indices )... );
@@ -228,6 +291,14 @@ public:
       return SubarrayView{ begin, subarray_sizes, strides };
    }
 
+   /**
+    * \brief Accesses an element of the array.
+    *
+    * \param indices Indices of the element in the N-dimensional array. The
+    *                number of indices supplied must be equal to \e N, i.e.
+    *                \ref NDArrayIndexer::getDimension "getDimension()".
+    * \returns Reference to the array element.
+    */
    template< typename... IndexTypes >
    __cuda_callable__
    ValueType&
@@ -237,6 +308,14 @@ public:
       return array[ getStorageIndex( std::forward< IndexTypes >( indices )... ) ];
    }
 
+   /**
+    * \brief Accesses an element of the array.
+    *
+    * \param indices Indices of the element in the N-dimensional array. The
+    *                number of indices supplied must be equal to \e N, i.e.
+    *                \ref NDArrayIndexer::getDimension "getDimension()".
+    * \returns Constant reference to the array element.
+    */
    template< typename... IndexTypes >
    __cuda_callable__
    const ValueType&
@@ -246,85 +325,184 @@ public:
       return array[ getStorageIndex( std::forward< IndexTypes >( indices )... ) ];
    }
 
-   // bracket operator for 1D arrays
+   /**
+    * \brief Accesses an element in a one-dimensional array.
+    *
+    * \warning This function can be used only when the dimension of the array is
+    *          equal to 1.
+    *
+    * \param index Index of the element in the one-dimensional array.
+    * \returns Reference to the array element.
+    */
    __cuda_callable__
    ValueType&
    operator[]( IndexType&& index )
    {
       static_assert( getDimension() == 1, "the access via operator[] is provided only for 1D arrays" );
-      __ndarray_impl::assertIndicesInBounds( getSizes(), OverlapsType{}, std::forward< IndexType >( index ) );
+      detail::assertIndicesInBounds( getSizes(), OverlapsType{}, std::forward< IndexType >( index ) );
       return array[ index ];
    }
 
+   /**
+    * \brief Accesses an element in a one-dimensional array.
+    *
+    * \warning This function can be used only when the dimension of the array is
+    *          equal to 1.
+    *
+    * \param index Index of the element in the one-dimensional array.
+    * \returns Constant reference to the array element.
+    */
    __cuda_callable__
    const ValueType&
    operator[]( IndexType index ) const
    {
       static_assert( getDimension() == 1, "the access via operator[] is provided only for 1D arrays" );
-      __ndarray_impl::assertIndicesInBounds( getSizes(), OverlapsType{}, std::forward< IndexType >( index ) );
+      detail::assertIndicesInBounds( getSizes(), OverlapsType{}, std::forward< IndexType >( index ) );
       return array[ index ];
    }
 
+   /**
+    * \brief Evaluates the function `f` in parallel for all elements of the
+    * array view.
+    *
+    * The function `f` is called as `f(indices...)`, where `indices...` are
+    * substituted by the actual indices of all array elements. For example,
+    * given a 3D array view `a` with `int` as \ref IndexType, the function can
+    * be defined and used as follows:
+    *
+    * \code{.cpp}
+    * auto setter = [&a] ( int i, int j, int k )
+    * {
+    *    a( i, j, k ) = 1;
+    * };
+    * a.forAll( setter );
+    * \endcode
+    */
    template< typename Device2 = DeviceType, typename Func >
    void
-   forAll( Func f ) const
+   forAll( Func f,
+           const typename Device2::LaunchConfiguration& launch_configuration = typename Device2::LaunchConfiguration{} ) const
    {
-      __ndarray_impl::ExecutorDispatcher< PermutationType, Device2 > dispatch;
-      using Begins = ConstStaticSizesHolder< IndexType, getDimension(), 0 >;
-      dispatch( Begins{}, getSizes(), f );
+      detail::ExecutorDispatcher< PermutationType, Device2 > dispatch;
+      using Begins = detail::ConstStaticSizesHolder< IndexType, getDimension(), 0 >;
+      dispatch( Begins{}, getSizes(), launch_configuration, f );
    }
 
+   /**
+    * \brief Evaluates the function `f` in parallel for all internal elements
+    * of the array view.
+    *
+    * The function `f` is called as `f(indices...)`, where `indices...` are
+    * substituted by the actual indices of all array elements. For example,
+    * given a 3D array view `a` with `int` as \ref IndexType, the function can
+    * be defined and used as follows:
+    *
+    * \code{.cpp}
+    * auto setter = [&a] ( int i, int j, int k )
+    * {
+    *    a( i, j, k ) = 1;
+    * };
+    * a.forInterior( setter );
+    * \endcode
+    */
    template< typename Device2 = DeviceType, typename Func >
    void
-   forInternal( Func f ) const
+   forInterior(
+      Func f,
+      const typename Device2::LaunchConfiguration& launch_configuration = typename Device2::LaunchConfiguration{} ) const
    {
-      __ndarray_impl::ExecutorDispatcher< PermutationType, Device2 > dispatch;
-      using Begins = ConstStaticSizesHolder< IndexType, getDimension(), 1 >;
+      detail::ExecutorDispatcher< PermutationType, Device2 > dispatch;
+      using Begins = detail::ConstStaticSizesHolder< IndexType, getDimension(), 1 >;
       // subtract static sizes
-      using Ends = typename __ndarray_impl::SubtractedSizesHolder< SizesHolderType, 1 >::type;
+      using Ends = typename detail::SubtractedSizesHolder< SizesHolderType, 1 >::type;
       // subtract dynamic sizes
       Ends ends;
-      __ndarray_impl::SetSizesSubtractHelper< 1, Ends, SizesHolderType >::subtract( ends, getSizes() );
-      dispatch( Begins{}, ends, f );
+      detail::SetSizesSubtractHelper< 1, Ends, SizesHolderType >::subtract( ends, getSizes() );
+      dispatch( Begins{}, ends, launch_configuration, f );
    }
 
-   template< typename Device2 = DeviceType, typename Func, typename Begins, typename Ends >
+   /**
+    * \brief Evaluates the function `f` in parallel for all elements of the
+    * array view inside the N-dimensional interval `[begins, ends)`.
+    *
+    * The function `f` is called as `f(indices...)`, where `indices...` are
+    * substituted by the actual indices of all array view elements.
+    */
+   template< typename Device2 = DeviceType, typename Begins, typename Ends, typename Func >
    void
-   forInternal( Func f, const Begins& begins, const Ends& ends ) const
+   forInterior(
+      const Begins& begins,
+      const Ends& ends,
+      Func f,
+      const typename Device2::LaunchConfiguration& launch_configuration = typename Device2::LaunchConfiguration{} ) const
    {
       // TODO: assert "begins <= getSizes()", "ends <= getSizes()"
-      __ndarray_impl::ExecutorDispatcher< PermutationType, Device2 > dispatch;
-      dispatch( begins, ends, f );
+      detail::ExecutorDispatcher< PermutationType, Device2 > dispatch;
+      dispatch( begins, ends, launch_configuration, f );
    }
 
+   /**
+    * \brief Evaluates the function `f` in parallel for all boundary elements
+    * of the array view.
+    *
+    * The function `f` is called as `f(indices...)`, where `indices...` are
+    * substituted by the actual indices of all array view elements. For
+    * example, given a 3D array view `a` with `int` as \ref IndexType, the
+    * function can be defined and used as follows:
+    *
+    * \code{.cpp}
+    * auto setter = [&a] ( int i, int j, int k )
+    * {
+    *    a( i, j, k ) = 1;
+    * };
+    * a.forBoundary( setter );
+    * \endcode
+    */
    template< typename Device2 = DeviceType, typename Func >
    void
-   forBoundary( Func f ) const
+   forBoundary(
+      Func f,
+      const typename Device2::LaunchConfiguration& launch_configuration = typename Device2::LaunchConfiguration{} ) const
    {
-      using Begins = ConstStaticSizesHolder< IndexType, getDimension(), 0 >;
-      using SkipBegins = ConstStaticSizesHolder< IndexType, getDimension(), 1 >;
+      using Begins = detail::ConstStaticSizesHolder< IndexType, getDimension(), 0 >;
+      using SkipBegins = detail::ConstStaticSizesHolder< IndexType, getDimension(), 1 >;
       // subtract static sizes
-      using SkipEnds = typename __ndarray_impl::SubtractedSizesHolder< SizesHolderType, 1 >::type;
+      using SkipEnds = typename detail::SubtractedSizesHolder< SizesHolderType, 1 >::type;
       // subtract dynamic sizes
       SkipEnds skipEnds;
-      __ndarray_impl::SetSizesSubtractHelper< 1, SkipEnds, SizesHolderType >::subtract( skipEnds, getSizes() );
+      detail::SetSizesSubtractHelper< 1, SkipEnds, SizesHolderType >::subtract( skipEnds, getSizes() );
 
-      __ndarray_impl::BoundaryExecutorDispatcher< PermutationType, Device2 > dispatch;
-      dispatch( Begins{}, SkipBegins{}, skipEnds, getSizes(), f );
+      detail::BoundaryExecutorDispatcher< PermutationType, Device2 > dispatch;
+      dispatch( Begins{}, SkipBegins{}, skipEnds, getSizes(), launch_configuration, f );
    }
 
-   template< typename Device2 = DeviceType, typename Func, typename SkipBegins, typename SkipEnds >
+   /**
+    * \brief Evaluates the function `f` in parallel for all elements of the
+    * array view outside the N-dimensional interval `[skipBegins, skipEnds)`.
+    *
+    * The function `f` is called as `f(indices...)`, where `indices...` are
+    * substituted by the actual indices of all array view elements.
+    */
+   template< typename Device2 = DeviceType, typename SkipBegins, typename SkipEnds, typename Func >
    void
-   forBoundary( Func f, const SkipBegins& skipBegins, const SkipEnds& skipEnds ) const
+   forBoundary(
+      const SkipBegins& skipBegins,
+      const SkipEnds& skipEnds,
+      Func f,
+      const typename Device2::LaunchConfiguration& launch_configuration = typename Device2::LaunchConfiguration{} ) const
    {
       // TODO: assert "skipBegins <= getSizes()", "skipEnds <= getSizes()"
-      using Begins = ConstStaticSizesHolder< IndexType, getDimension(), 0 >;
-      __ndarray_impl::BoundaryExecutorDispatcher< PermutationType, Device2 > dispatch;
-      dispatch( Begins{}, skipBegins, skipEnds, getSizes(), f );
+      using Begins = detail::ConstStaticSizesHolder< IndexType, getDimension(), 0 >;
+      detail::BoundaryExecutorDispatcher< PermutationType, Device2 > dispatch;
+      dispatch( Begins{}, skipBegins, skipEnds, getSizes(), launch_configuration, f );
    }
 
 protected:
+   //! \brief Pointer to the first element of the bound N-dimensional array.
    Value* array = nullptr;
+
+   //! \brief Object which transforms the multi-dimensional indices to a
+   //! one-dimensional index.
    IndexerType indexer;
 };
 
