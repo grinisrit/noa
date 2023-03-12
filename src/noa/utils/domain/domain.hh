@@ -337,7 +337,12 @@ void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, Gl
         const auto fillPoints = [&] (const int& ix, const int& iy) {
                 builder.setPoint(pointId(ix, iy), PointType(ix * dx + offsetX, iy * dy + offsetY));
         };
-        TNL::Algorithms::ParallelFor2D<TNL::Devices::Host>::exec(std::size_t{0}, std::size_t{0}, Nx + 1, Ny + 1, fillPoints);
+#ifdef HAVE_OPENMP
+        using HostDevice = TNL::Devices::Sequential;
+#else
+        using HostDevice = TNL::Devices::Host;
+#endif
+        TNL::Algorithms::ParallelFor2D<HostDevice>::exec(std::size_t{0}, std::size_t{0}, Nx + 1, Ny + 1, fillPoints);
 
         const auto fillElems = [&] (const int& ix, const int& iy, const int& u) {
                 const auto cell = 2 * (ix + Nx * iy) + u;
@@ -356,7 +361,7 @@ void generate2DGrid(Domain<TNL::Meshes::Topologies::Triangle, Device2, Real2, Gl
                                 break;
                 }
         };
-        TNL::Algorithms::ParallelFor3D<TNL::Devices::Host>::exec(std::size_t{0}, std::size_t{0}, std::size_t{0}, Nx, Ny, std::size_t{2}, fillElems);
+        TNL::Algorithms::ParallelFor3D<HostDevice>::exec(std::size_t{0}, std::size_t{0}, std::size_t{0}, Nx, Ny, std::size_t{2}, fillElems);
 
         builder.build(domain.mesh.value());
 
