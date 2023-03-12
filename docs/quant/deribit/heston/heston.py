@@ -1,12 +1,20 @@
 import numba as nb
 import numpy as np
-from typing import Final
+from typing import Final, Tuple
+import pandas as pd
+from levenberg_marquardt import LevenbergMarquardt
+from typing import Union
+from sklearn.linear_model import LinearRegression
+from scipy import stats as sps
+
 
 _spec_market_params = [
     ("S", nb.float64),
     ("r", nb.float64),
     ("T", nb.float64[:]),
     ("K", nb.float64[:]),
+    ("C", nb.float64[:]),
+    ("types", nb.boolean[:]),
 ]
 _spec_model_params = [
     ("a", nb.float64),
@@ -42,14 +50,24 @@ class MarketParameters(object):
     r: nb.float64
     T: nb.float64[:]
     K: nb.float64[:]
+    C: nb.float64[:]
+    types: nb.boolean[:]
 
     def __init__(
-        self, S: nb.float64, r: nb.float64, T: nb.float64[:], K: nb.float64[:]
+        self,
+        S: nb.float64,
+        r: nb.float64,
+        T: nb.float64[:],
+        K: nb.float64[:],
+        C: nb.float64[:],
+        types: nb.boolean[:],
     ):
         self.S = S
         self.r = r
         self.T = T
         self.K = K
+        self.C = C
+        self.types = types
 
 
 @nb.experimental.jitclass(_spec_model_params)
@@ -143,6 +161,7 @@ ub: Final[np.int32] = np.int32(200)
 Q: Final[np.float64] = np.float64(0.5 * (ub - lb))
 P: Final[np.float64] = np.float64(0.5 * (ub + lb))
 
+# точки, в которых считаеются квадратуры
 u64 = np.array(
     [
         0.0243502926634244325089558,
@@ -180,6 +199,8 @@ u64 = np.array(
     ],
     dtype=np.float64,
 )
+
+# веса квадратуры Гаусса, от 0 до 1, т.к. интеграл нужен от 0
 w64 = np.array(
     [
         0.0486909570091397203833654,
@@ -483,6 +504,7 @@ def HesIntMN(
         / model_parameters.c
     )
 
+    # вот эта строка была пропущено и цены плохо считались 16.02.2023
     tmp = np.exp(tmp1)
     g_M2 = np.exp(tmp1 * imPQ_M)
     g_N2 = np.exp(tmp1 * imPQ_N)
@@ -583,6 +605,7 @@ def HesIntMN(
 
 
 _tmp_values_fHes = {
+    # "num_grids": nb.int32,
     "disc": nb.float64,
     "tmp": nb.float64,
     "y1": nb.float64,
@@ -612,6 +635,7 @@ def fHes(
         T = market_parameters.T[l]
         disc = np.exp(-market_parameters.r * T)
         tmp = 0.5 * (market_parameters.S - K * disc)
+        # tmp = 0.5 * (market_parameters.S - K) * disc
         disc = disc / pi
         y1, y2 = nb.float64(0.0), nb.float64(0.0)
 
@@ -626,7 +650,22 @@ def fHes(
         Qv1 = Q * y1
         Qv2 = Q * y2
         pv = np.float64(0.0)
-        pv = tmp + disc * (Qv1 - K * Qv2)
+        delta = 0.5 + Qv1 / pi
+        # print(delta)
+
+        if market_parameters.types[l]:
+            # calls
+            # p1 = market_parameters.S*(0.5 + Qv1/pi)
+            # p2 = K*np.exp(-market_parameters.r * T)*(0.5 + Qv2/pi)
+            # orig = p1 - p2
+            pv = disc * (Qv1 - K * Qv2) + tmp
+            # print(pv, orig)
+        else:
+            # puts
+            # p1 = market_parameters.S*(- 0.5 + Qv1/pi)
+            # p2 = K*np.exp(-market_parameters.r * T)*(- 0.5 + Qv2/pi)
+            # orig = p1 - p2
+            pv = disc * (Qv1 - K * Qv2) - tmp
         x[l] = pv
     return x
 
@@ -992,39 +1031,71 @@ def HesIntJac(
     return Jacobian
 
 
-@nb.njit
+_tmp_values_JacHes = {
+    "n": nb.int32,
+    "r": nb.float64,
+    "discpi": nb.float64,
+    "da": nb.float64,
+    "db": nb.float64,
+    "dc": nb.float64,
+    "drho": nb.float64,
+    "dv0": nb.float64,
+    "jacs": nb.types.Array(nb.float64, 2, "A"),
+    "K": nb.float64,
+    "T": nb.float64,
+    "pa1": nb.float64,
+    "pa2": nb.float64,
+    "pb1": nb.float64,
+    "pb2": nb.float64,
+    "pc1": nb.float64,
+    "pc2": nb.float64,
+    "prho1": nb.float64,
+    "prho2": nb.float64,
+    "pv01": nb.float64,
+    "pv02": nb.float64,
+    # "jacint": tagMNJac,
+    "Qv1": nb.float64,
+    "Qv2": nb.float64,
+}
+
+
+@nb.njit(locals=_tmp_values_JacHes)
 def JacHes(
     model_parameters: ModelParameters,
     market_parameters: MarketParameters,
-) -> np.asarray:
+) -> np.array:
     """
     Jacobian
     :param model_parameters: ModelParameters class
     :param market_parameters: MarketParameters class
     :return:
     """
-    n = len(market_parameters.K)
+    n = np.int32(len(market_parameters.K))
     r = market_parameters.r
-    discpi = np.exp(-r * market_parameters.T) / pi
-    jac = np.zeros(n, dtype=np.float64)
 
-    da, db, dc, drho, dv0 = 0.0, 0.0, 0.0, 0.0, 0.0
-
+    da, db, dc, drho, dv0 = (
+        np.float64(0.0),
+        np.float64(0.0),
+        np.float64(0.0),
+        np.float64(0.0),
+        np.float64(0.0),
+    )
+    jacs = np.zeros((5, n), dtype=np.float64)
     for l in range(n):
         K = market_parameters.K[l]
         T = market_parameters.T[l]
         discpi = np.exp(-r * T) / pi
         pa1, pa2, pb1, pb2, pc1, pc2, prho1, prho2, pv01, pv02 = (
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
         )
         jacint: tagMNJac = HesIntJac(
             model_parameters=model_parameters,
@@ -1048,33 +1119,520 @@ def JacHes(
 
         Qv1 = Q * pa1
         Qv2 = Q * pa2
-        jac[l] = discpi * (Qv1 - K * Qv2)
-
-        da += discpi * (Qv1 - K * Qv2)
+        da = discpi * (Qv1 - K * Qv2)
+        jacs[0][l] = da
 
         Qv1 = Q * pb1
         Qv2 = Q * pb2
-        jac[l] = discpi * (Qv1 - K * Qv2)
-
-        db += discpi * (Qv1 - K * Qv2)
+        db = discpi * (Qv1 - K * Qv2)
+        jacs[1][l] = db
 
         Qv1 = Q * pc1
         Qv2 = Q * pc2
-        jac[l] = discpi * (Qv1 - K * Qv2)
-
-        dc += discpi * (Qv1 - K * Qv2)
+        dc = discpi * (Qv1 - K * Qv2)
+        jacs[2][l] = dc
 
         Qv1 = Q * prho1
         Qv2 = Q * prho2
-        jac[l] = discpi * (Qv1 - K * Qv2)
-
-        drho += discpi * (Qv1 - K * Qv2)
+        drho = discpi * (Qv1 - K * Qv2)
+        jacs[3][l] = drho
 
         Qv1 = Q * pv01
         Qv2 = Q * pv02
-        jac[l] = discpi * (Qv1 - K * Qv2)
+        dv0 = discpi * (Qv1 - K * Qv2)
+        jacs[4][l] = dv0
 
-        dv0 += discpi * (Qv1 - K * Qv2)
+    return jacs
 
-    jac = np.asarray([da, db, dc, drho, dv0])
-    return jac
+
+# Newton-Raphsen
+def get_implied_volatility(
+    option_type: str,
+    C: float,
+    K: float,
+    T: float,
+    F: float,
+    r: float = 0.0,
+    error: float = 0.001,
+) -> float:
+    """
+    Function to count implied volatility via given params of option, using Newton-Raphson method :
+
+    Args:
+        C (float): Option market price(USD).
+        K (float): Strike(USD).
+        T (float): Time to expiration in years.
+        F (float): Underlying price.
+        r (float): Risk-free rate.
+        error (float): Given threshhold of error.
+
+    Returns:
+        float: Implied volatility in percent.
+    """
+    vol = 1.0
+    dv = error + 1
+    while abs(dv) > error:
+        d1 = (np.log(F / K) + 0.5 * vol**2 * T) / (vol * np.sqrt(T))
+        d2 = d1 - vol * np.sqrt(T)
+        D = np.exp(-r * T)
+        if option_type.lower() == "call":
+            price = F * sps.norm.cdf(d1) - K * sps.norm.cdf(d2) * D
+        elif option_type.lower() == "put":
+            price = -F * sps.norm.cdf(-d1) + K * sps.norm.cdf(-d2) * D
+        else:
+            raise ValueError("Wrong option type, must be 'call' or 'put' ")
+        Vega = F * np.sqrt(T / np.pi / 2) * np.exp(-0.5 * d1**2)
+        PriceError = price - C
+        dv = PriceError / Vega
+        vol = vol - dv
+    return vol
+
+
+def get_nu0(df: pd.DataFrame):
+    tick = df.copy()
+    # get closrst expiration
+    tick = tick[tick["expiration"] == tick["expiration"].min()]
+    tick["dist"] = abs(tick["strike_price"] - tick["underlying_price"])
+    # get closest call
+    closest_call = tick[tick["type"] == "call"]
+    closest_call = closest_call[
+        closest_call["dist"] == closest_call["dist"].min()
+    ].iloc[0]
+    # get closest put
+    closest_put = tick[tick["type"] == "put"]
+    closest_put = closest_put[closest_put["dist"] == closest_put["dist"].min()].iloc[0]
+
+    call_iv = get_implied_volatility(
+        option_type=closest_call["type"],
+        C=closest_call["mark_price_usd"],
+        K=closest_call["strike_price"],
+        T=closest_call["tau"],
+        F=closest_call["underlying_price"],
+        r=0.0,
+        error=0.001,
+    )
+
+    put_iv = get_implied_volatility(
+        option_type=closest_put["type"],
+        C=closest_put["mark_price_usd"],
+        K=closest_put["strike_price"],
+        T=closest_put["tau"],
+        F=closest_put["underlying_price"],
+        r=0.0,
+        error=0.001,
+    )
+
+    forward = (closest_put["underlying_price"] + closest_call["underlying_price"]) / 2
+    strike_diff = abs(closest_call["strike_price"] - closest_put["strike_price"])
+    iv = (
+        call_iv * (closest_call["strike_price"] - forward) / strike_diff
+        + put_iv * (forward - closest_put["strike_price"]) / strike_diff
+    )
+    nu0 = iv**2
+    return nu0
+
+
+def get_alpha_bar(df: pd.DataFrame, timestamp: int = None):
+    if timestamp:
+        data = df.query(f"timestamp<={timestamp}").copy()
+    else:
+        data = df.copy()
+    forward = (
+        data[["dt", "timestamp", "underlying_price"]]
+        .drop_duplicates()
+        .sort_values("timestamp")
+    )
+    # need daily
+    forward["date"] = pd.to_datetime(forward["dt"]).dt.date
+    forward = forward.loc[forward.groupby("date").dt.idxmax()]
+
+    forward["underlying_price_prev"] = forward["underlying_price"].shift(1)
+    forward["timestamp_prev"] = forward["timestamp"].shift(1)
+    forward["residual"] = (
+        forward["underlying_price"] - forward["underlying_price_prev"]
+    ) / (
+        forward["underlying_price_prev"]
+        * (
+            np.sqrt(
+                (forward["timestamp"] - forward["timestamp_prev"])
+                / 1e6
+                / 3600
+                / 24
+                / 365
+            )
+        )
+    )
+
+    alpha_bar = (
+        forward["residual"] - forward["residual"].sum() / (forward.shape[0] + 1)
+    ).sum() ** 2 / forward.shape[0]
+    return alpha_bar
+
+
+def get_kappa(df, timestamp):
+    if timestamp:
+        data = df.query(f"timestamp<={timestamp}").copy()
+    else:
+        data = df.copy()
+
+    # need it for correct regression
+    alpha_bar_tmp = get_alpha_bar(df=data, timestamp=timestamp)
+
+    daily = (
+        data[["dt", "timestamp", "underlying_price"]]
+        .drop_duplicates()
+        .sort_values("timestamp")
+        .copy()
+    )
+    daily["date"] = pd.to_datetime(daily["dt"]).dt.date
+    daily = daily.loc[daily.groupby("date").dt.idxmax()]
+    # need it weekly
+    daily["rolling_variance"] = (daily["underlying_price"].rolling(window=7).std()) ** 2
+
+    daily["rolling_variance_next"] = daily["rolling_variance"].shift(-1)
+    daily["timestamp_next"] = daily["timestamp"].shift(-1)
+    daily["alpha"] = (
+        daily["rolling_variance_next"] - daily["rolling_variance"]
+    ) / np.sqrt(daily["rolling_variance"])
+    daily["k_coef"] = (
+        alpha_bar_tmp
+        * ((daily["timestamp_next"] - daily["timestamp"]) / 1e6 / 3600 / 24 / 365)
+        - daily["rolling_variance"]
+    ) / np.sqrt(daily["rolling_variance"])
+
+    daily["sigma_coef"] = np.sqrt(
+        (daily["timestamp_next"] - daily["timestamp"]) / 1e6 / 3600 / 24 / 365
+    )  # *np.random.normal(0.0, 1.0, size=len(daily))
+    daily = daily[~daily["alpha"].isna()]
+
+    lr = LinearRegression()
+    X = daily[["k_coef", "sigma_coef"]].values
+    y = daily["alpha"].values
+    lr.fit(X, y)
+
+    kappa = lr.coef_[0]
+    return kappa
+
+
+def get_tick(df: pd.DataFrame, timestamp: int = None):
+    """Function gets tick for each expiration and strike
+    from closest timestamp from given. If timestamp is None, it takes last one."""
+    if timestamp:
+        data = df[df["timestamp"] <= timestamp].copy()
+        # only not expired on curret tick
+        data = data[data["expiration"] > timestamp].copy()
+    else:
+        data = df.copy()
+        # only not expired on max available tick
+        data = data[data["expiration"] > data["timestamp"].max()].copy()
+    # tau is time before expiration in years
+    data["tau"] = (data.expiration - data.timestamp) / 1e6 / 3600 / 24 / 365
+
+    data_grouped = data.loc[
+        data.groupby(["type", "expiration", "strike_price"])["timestamp"].idxmax()
+    ]
+
+    data_grouped = data_grouped[data_grouped["tau"] > 0.0]
+    # We need Only out of the money to calibrate
+    data_grouped = data_grouped[
+        (
+            (data_grouped["type"] == "call")
+            & (data_grouped["underlying_price"] <= data_grouped["strike_price"])
+        )
+        | (
+            (data_grouped["type"] == "put")
+            & (data_grouped["underlying_price"] >= data_grouped["strike_price"])
+        )
+    ]
+    data_grouped["mark_price_usd"] = (
+        data_grouped["mark_price"] * data_grouped["underlying_price"]
+    )
+    data_grouped = data_grouped[data_grouped["strike_price"] <= 10_000]
+    # print(data_grouped)
+    return data_grouped
+
+
+def calibrate_heston(
+    df: pd.DataFrame,
+    start_params: np.array,
+    timestamp: int = None,
+    calibration_type: str = "all",
+) -> Tuple[np.ndarray, float]:
+    """
+    Function to calibrate Heston model.
+    Attributes:
+        @param df (pd.DataFrame): Dataframe with history
+        [
+            timestamp(ns),
+            type(put or call),
+            strike_price(usd),
+            expiration(ns),
+            mark_price(etc/btc),
+            underlying_price(usd)
+        ]
+        @param start_params (np.array): Params to start calibration via LM from
+        @param timestamp (int): On which timestamp to calibrate the model.
+            Should be in range of df timestamps.
+        @param calibration_type(str): Type of calibration. Should be one of: ["all", "nu0"]
+
+    Return:
+        calibrated_params (np.array): Array of optimal params on timestamp tick.
+        error (float): Value of error on calibration.
+    """
+
+    available_calibration_types = ["all", "nu0", "nu0_and_nu_bar", "nu0_and_k", "kappa"]
+    if calibration_type not in available_calibration_types:
+        raise ValueError(
+            f"calibration_type should be from {available_calibration_types}"
+        )
+    # get market params on this tick
+    tick = get_tick(df=df, timestamp=timestamp)
+    karr = tick.strike_price.to_numpy(dtype=np.float64)
+    carr = tick.mark_price_usd.to_numpy(dtype=np.float64)
+    tarr = tick.tau.to_numpy(dtype=np.float64)
+    types = np.where(tick["type"] == "call", True, False)
+    # take it zero as on deribit
+    r_val = np.float64(0.0)
+    # tick dataframes may have not similar timestamps -->
+    # not equal value if underlying --> take mean
+    S_val = np.float64(tick.underlying_price.mean())
+    market = MarketParameters(K=karr, T=tarr, S=S_val, r=r_val, C=carr, types=types)
+
+    def clip_params(heston_params: np.ndarray) -> np.ndarray:
+        """
+        This funciton project heston parameters into valid range
+        Attributes:
+            heston_params(np.ndarray): model parameters
+        Returns:
+            heston_params(np.ndarray): clipped parameters
+        """
+        eps = 1e-4
+
+        def clip_all(params):
+            heston_params = params
+            for i in range(len(heston_params) // 5):
+                a, b, c, rho, v0 = heston_params[i * 5 : i * 5 + 5]
+                a = np.clip(a, eps, 500.0)
+                b = np.clip(b, eps, 500.0)
+                c = np.clip(c, eps, 150.0)
+                rho = np.clip(rho, -1.0 + eps, 1.0 - eps)
+                v0 = np.clip(v0, eps, 10.0)
+                heston_params[i * 5 : i * 5 + 5] = a, b, c, rho, v0
+            return heston_params
+
+        if calibration_type == "all":
+            heston_params = clip_all(heston_params)
+
+        if calibration_type == "nu0":
+            heston_params = np.concatenate([heston_params, np.array([nu0])])
+            heston_params = clip_all(heston_params)[:-1]
+
+        elif calibration_type == "nu0_and_nu_bar":
+            heston_params = np.concatenate(
+                [
+                    heston_params[0:1],
+                    np.array([nu_bar]),
+                    heston_params[1:3],
+                    np.array([nu0]),
+                ]
+            )
+            heston_params = clip_all(heston_params)
+            heston_params = np.concatenate([heston_params[0:1], heston_params[2:-1]])
+
+        elif calibration_type == "nu0_and_k":
+            heston_params = np.concatenate(
+                [np.array([kappa]), heston_params, np.array([nu0])]
+            )
+            heston_params = clip_all(heston_params)[1:-1]
+
+        elif calibration_type == "kappa":
+            heston_params = np.concatenate([np.array([kappa]), heston_params])
+            heston_params = clip_all(heston_params)[1:]
+
+        return heston_params
+
+    def get_residuals(heston_params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Function calculates residuals of market prices and calibrated ones
+        and Jacobian matrix
+        Args:
+            heston_params(np.ndarray): model params
+        Returns:
+            res(np.ndarray) : vector or residuals
+            J(np.ndarray)   : Jacobian
+        """
+        # Get the needed format for calibration
+        if calibration_type == "all":
+            model_parameters = ModelParameters(
+                heston_params[0],
+                heston_params[1],
+                heston_params[2],
+                heston_params[3],
+                heston_params[4],
+            )
+            J = JacHes(model_parameters=model_parameters, market_parameters=market)
+
+        if calibration_type == "nu0":
+            model_parameters = ModelParameters(
+                heston_params[0],
+                heston_params[1],
+                heston_params[2],
+                heston_params[3],
+                nu0,
+            )
+            J = JacHes(model_parameters=model_parameters, market_parameters=market)[:-1]
+
+        elif calibration_type == "nu0_and_nu_bar":
+            model_parameters = ModelParameters(
+                heston_params[0],
+                nu_bar,
+                heston_params[1],
+                heston_params[2],
+                nu0,
+            )
+
+            J_tmp = JacHes(model_parameters=model_parameters, market_parameters=market)
+            J = np.concatenate([J_tmp[0:1], J_tmp[2:-1]])
+
+        elif calibration_type == "nu0_and_k":
+            model_parameters = ModelParameters(
+                kappa,
+                heston_params[0],
+                heston_params[1],
+                heston_params[2],
+                nu0,
+            )
+            J = JacHes(model_parameters=model_parameters, market_parameters=market)[
+                1:-1
+            ]
+
+        elif calibration_type == "kappa":
+            model_parameters = ModelParameters(
+                kappa,
+                heston_params[0],
+                heston_params[1],
+                heston_params[2],
+                heston_params[3],
+            )
+            J = JacHes(model_parameters=model_parameters, market_parameters=market)[1:]
+
+        # count prices for each option
+        C = fHes(
+            model_parameters=model_parameters,
+            market_parameters=market,
+        )
+        weights = np.ones_like(market.K)
+        weights = weights / np.sum(weights)
+        res = C - market.C
+        return res * weights, J @ np.diag(weights)
+
+    # function supports several calibration types
+    if calibration_type == "all":
+        res = LevenbergMarquardt(200, get_residuals, clip_params, start_params)
+        calibrated_params = np.array(res["x"], dtype=np.float64)
+
+    elif calibration_type == "nu0":
+        # finding nu0
+        nu0 = get_nu0(tick)
+        # all params exluding nu0 to LM
+        res = LevenbergMarquardt(200, get_residuals, clip_params, start_params[:-1])
+        calibrated_params = np.array(res["x"], dtype=np.float64)
+        calibrated_params = np.concatenate([calibrated_params, np.array([nu0])])
+
+    elif calibration_type == "nu0_and_nu_bar":
+        # finding nu0
+        nu0 = get_nu0(tick)
+        # finding nu0_bar
+        nu_bar = get_alpha_bar(df=df, timestamp=timestamp)
+        # nu_bar = get_alpha_bar(df=df)
+        res = LevenbergMarquardt(
+            200,
+            get_residuals,
+            clip_params,
+            np.concatenate([start_params[0:1], start_params[2:-1]]),
+        )
+        calibrated_params = np.array(res["x"], dtype=np.float64)
+        calibrated_params = np.concatenate(
+            [
+                calibrated_params[0:1],
+                np.array([nu_bar]),
+                calibrated_params[1:3],
+                np.array([nu0]),
+            ]
+        )
+
+    elif calibration_type == "nu0_and_k":
+        nu0 = get_nu0(tick)
+        kappa = get_kappa(df=df, timestamp=timestamp)
+        res = LevenbergMarquardt(200, get_residuals, clip_params, start_params[1:-1])
+        calibrated_params = np.array(res["x"], dtype=np.float64)
+        calibrated_params = np.concatenate(
+            [np.array([kappa]), calibrated_params, np.array([nu0])]
+        )
+
+    elif calibration_type == "kappa":
+        kappa = get_kappa(df=df, timestamp=timestamp)
+        res = LevenbergMarquardt(200, get_residuals, clip_params, start_params[1:])
+        calibrated_params = np.array(res["x"], dtype=np.float64)
+        calibrated_params = np.concatenate([np.array([kappa]), calibrated_params])
+
+    error = res["objective"][-1]
+
+    # decomm if you want to see colebrated prices
+    final_params = ModelParameters(
+        calibrated_params[0],
+        calibrated_params[1],
+        calibrated_params[2],
+        calibrated_params[3],
+        calibrated_params[4],
+    )
+    final_prices = fHes(
+        model_parameters=final_params,
+        market_parameters=market,
+    )
+
+    tick["calibrated_mark_price_usd"] = final_prices
+    market_ivs, calibrated_ivs = [], []
+
+    for index, t in tick.iterrows():
+        market_iv = get_implied_volatility(
+            option_type=t["type"],
+            C=t["mark_price_usd"],
+            K=t["strike_price"],
+            T=t["tau"],
+            F=t["underlying_price"],
+            r=0.0,
+            error=0.001,
+        )
+        market_ivs.append(market_iv)
+
+        calibrated_iv = get_implied_volatility(
+            option_type=t["type"],
+            C=t["calibrated_mark_price_usd"],
+            K=t["strike_price"],
+            T=t["tau"],
+            F=t["underlying_price"],
+            r=0.0,
+            error=0.001,
+        )
+        calibrated_ivs.append(calibrated_iv)
+    tick["market_iv"] = market_ivs
+    tick["market_iv"] = tick["market_iv"] * 100
+
+    tick["calibrated_iv"] = calibrated_ivs
+    tick["calibrated_iv"] = tick["calibrated_iv"] * 100
+
+    result = tick[
+        [
+            "type",
+            "strike_price",
+            "expiration",
+            "underlying_price",
+            "mark_price_usd",
+            "calibrated_mark_price_usd",
+            "market_iv",
+            "calibrated_iv",
+        ]
+    ].copy()
+
+    return calibrated_params, error, result
