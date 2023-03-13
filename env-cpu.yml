@@ -1,4 +1,4 @@
-name: noa
+name: noa-cpu
 channels:
   - defaults
   - pytorch

@@ -12,14 +12,10 @@ dependencies:
   - plotly
   - seaborn
   - pip:
-      - dqc
-      - jupyter
-      - matplotlib
-      - meshio
       - numba
-      - numpy
-      - pyscf
+      - torch
       - pythreejs
       - pyvista
-      - sympy
-      - torch
+      - pyscf
+      - meshio
+      - dqc
