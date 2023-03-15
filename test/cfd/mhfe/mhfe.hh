@@ -91,7 +91,11 @@ struct System {}; // <-- struct System
 template <
 	Features::Enum features_,
 	typename CellTopology,
+#ifdef HAVE_OPENMP
+    typename Device = TNL::Devices::Sequential,
+#else
 	typename Device = TNL::Devices::Host,
+#endif
 	typename Real = float,
 	typename GlobalIndex = long int,
 	typename LocalIndex = short int
@@ -314,7 +318,7 @@ public:
 
 			// B^-1
 			const auto edges = mesh.template getSubentitiesCount<dimCell, dimEdge>(cell);
-			TNL::Matrices::DenseMatrix<Real, TNL::Devices::Host, LocalIndex> mBinv(edges, edges);
+			TNL::Matrices::DenseMatrix<Real, Device, LocalIndex> mBinv(edges, edges);
 			geometry::Binv(this->domain, mBinv, cell, this->measure[cell], this->l[cell]);
 
 			for (LocalIndex i = 0; i < edges; ++i) for (LocalIndex j = 0; j < edges; ++j) {
