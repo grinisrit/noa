@@ -26,7 +26,9 @@ providing even newcomers with the necessary option pricing background.
 
 * Calibrating the volatility smile with the [SABR model](sabr.ipynb)
 
-* Calibrating the volatility surface with the [Heston model](heston.ipynb)
+* Calibrating the volatility surface with the [Heston model](heston_calibration.ipynb)
+
+* Monte-Carlo pricing with the [Heston model](heston_sim.ipynb)
  
 
-(c) 2022 GrinisRIT ltd.
+(c) 2023 GrinisRIT ltd.
