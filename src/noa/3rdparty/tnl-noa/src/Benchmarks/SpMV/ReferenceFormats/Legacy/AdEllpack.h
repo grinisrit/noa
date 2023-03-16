@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse.h>
+#include "Sparse.h"
 #include <TNL/Containers/Vector.h>
 
 namespace TNL {
@@ -122,7 +122,7 @@ public:
               typename _Index = Index >
     using Self = AdEllpack< _Real, _Device, _Index >;
 
-    static constexpr bool isSymmetric() { return false; };
+    static constexpr bool isSymmetric() { return false; }
 
     AdEllpack();
 
@@ -221,7 +221,7 @@ public:
 
     IndexType getTotalLoad() const;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     template< typename InVector,
               typename OutVector >
     __device__
@@ -296,4 +296,4 @@ protected:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/AdEllpack_impl.h>
+#include "AdEllpack_impl.h"

@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -14,7 +12,7 @@ namespace noa::TNL {
 namespace Meshes {
 
 /**
- * \brief Minimal class usable as \e Mesh in the \ref VTIWriter.
+ * \brief Minimal class usable as \e Mesh in the \ref Writers::VTIWriter.
  *
  * It does not have a \e Device template argument, because it does not describe
  * a data structure - it contains only the information describing the domain of

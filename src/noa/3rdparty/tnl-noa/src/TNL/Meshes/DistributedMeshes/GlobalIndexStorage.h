@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -59,8 +57,12 @@ protected:
 };
 
 template< typename Mesh, typename Device = typename Mesh::DeviceType, typename DimensionTag = Meshes::DimensionTag< 0 > >
-class GlobalIndexStorageFamily : public GlobalIndexStorage< Mesh, Device, DimensionTag::value >,
-                                 public GlobalIndexStorageFamily< Mesh, Device, typename DimensionTag::Increment >
+class GlobalIndexStorageFamily
+// Doxygen complains about recursive classes
+//! \cond
+: public GlobalIndexStorage< Mesh, Device, DimensionTag::value >,
+  public GlobalIndexStorageFamily< Mesh, Device, typename DimensionTag::Increment >
+//! \endcond
 {
 public:
    GlobalIndexStorageFamily() = default;

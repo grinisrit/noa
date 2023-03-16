@@ -1,6 +1,5 @@
 # compatibility with the CSR5 package
 
-set( CUDA_SAMPLES_DIR $ENV{CUDA_SAMPLES_DIR} )
 if( NOT DEFINED CUDA_SAMPLES_DIR )
     message( WARNING "CUDA_SAMPLES_DIR variable was not set and it is required by CSR5 benchmark - CSR5 benchmark is disabled.")
 else()

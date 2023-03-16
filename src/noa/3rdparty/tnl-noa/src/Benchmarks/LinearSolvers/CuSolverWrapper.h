@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 #include <cusolverSp.h>
 

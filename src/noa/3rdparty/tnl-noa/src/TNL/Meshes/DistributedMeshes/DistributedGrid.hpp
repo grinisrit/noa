@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -158,7 +158,7 @@ bool
 DistributedMesh< Grid< Dimension, Real, Device, Index > >::isDistributed() const
 {
    return this->distributed;
-};
+}
 
 template< int Dimension, typename Real, typename Device, typename Index >
 bool
@@ -175,14 +175,14 @@ const typename DistributedMesh< Grid< Dimension, Real, Device, Index > >::Coordi
 DistributedMesh< Grid< Dimension, Real, Device, Index > >::getLowerOverlap() const
 {
    return this->lowerOverlap;
-};
+}
 
 template< int Dimension, typename Real, typename Device, typename Index >
 const typename DistributedMesh< Grid< Dimension, Real, Device, Index > >::CoordinatesType&
 DistributedMesh< Grid< Dimension, Real, Device, Index > >::getUpperOverlap() const
 {
    return this->upperOverlap;
-};
+}
 
 template< int Dimension, typename Real, typename Device, typename Index >
 const typename DistributedMesh< Grid< Dimension, Real, Device, Index > >::GridType&
@@ -409,7 +409,7 @@ DistributedMesh< Grid< Dimension, Real, Device, Index > >::printProcessCoords() 
    for( int i = 1; i < Dimension; i++ )
       res = res + String( "-" ) + convertToString( this->subdomainCoordinates[ i ] );
    return res;
-};
+}
 
 template< int Dimension, typename Real, typename Device, typename Index >
 String
@@ -419,7 +419,7 @@ DistributedMesh< Grid< Dimension, Real, Device, Index > >::printProcessDistr() c
    for( int i = 1; i < Dimension; i++ )
       res = res + String( "-" ) + convertToString( this->domainDecomposition[ i ] );
    return res;
-};
+}
 
 template< int Dimension, typename Real, typename Device, typename Index >
 void

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -29,21 +29,29 @@ struct LaunchConfiguration
    // size of dynamic shared memory (in bytes per block)
    std::size_t dynamicSharedMemorySize = 0U;
 
+   // stream handle
+   cudaStream_t stream = 0;
+
+   // indicates whether host execution is blocked until the CUDA kernel execution is finished
+   bool blockHostUntilFinished = true;
+
    LaunchConfiguration() = default;
    constexpr LaunchConfiguration( const LaunchConfiguration& ) = default;
    constexpr LaunchConfiguration( LaunchConfiguration&& ) = default;
 
-   constexpr LaunchConfiguration( dim3 gridSize, dim3 blockSize, std::size_t dynamicSharedMemorySize = 0U )
-   : gridSize( gridSize ), blockSize( blockSize ), dynamicSharedMemorySize( dynamicSharedMemorySize )
+   constexpr LaunchConfiguration( dim3 gridSize,
+                                  dim3 blockSize,
+                                  std::size_t dynamicSharedMemorySize = 0U,
+                                  cudaStream_t stream = 0,
+                                  bool blockHostUntilFinished = true )
+   : gridSize( gridSize ), blockSize( blockSize ), dynamicSharedMemorySize( dynamicSharedMemorySize ), stream( stream ),
+     blockHostUntilFinished( blockHostUntilFinished )
    {}
 };
 
-template< bool synchronous = true, typename RawKernel, typename... KernelParameters >
+template< typename RawKernel, typename... KernelParameters >
 inline void
-launchKernel( RawKernel kernel_function,
-              cudaStream_t stream_id,
-              LaunchConfiguration launch_configuration,
-              KernelParameters&&... parameters )
+launchKernel( RawKernel kernel_function, LaunchConfiguration launch_configuration, KernelParameters&&... parameters )
 {
    static_assert(
       ::std::is_function< RawKernel >::value
@@ -67,7 +75,7 @@ launchKernel( RawKernel kernel_function,
                                    << launch_configuration.blockSize.y << " x "
                                    << launch_configuration.blockSize.z
              << "\n"
-//             << "\t- stream: " << stream_id << "\n"
+             << "\t- stream: " << launch_configuration.stream << "\n"
              << "\t- dynamic shared memory size: " << launch_configuration.dynamicSharedMemorySize << "\n";
    std::cout.flush();
    // clang-format on
@@ -81,12 +89,12 @@ launchKernel( RawKernel kernel_function,
          launch_configuration.gridSize,
          launch_configuration.blockSize,
          launch_configuration.dynamicSharedMemorySize,
-         stream_id
+         launch_configuration.stream
       >>>( ::std::forward< KernelParameters >( parameters )... );
    // clang-format on
 
-   if( synchronous )
-      cudaStreamSynchronize( stream_id );
+   if( launch_configuration.blockHostUntilFinished )
+      cudaStreamSynchronize( launch_configuration.stream );
 
    // use custom error handling instead of TNL_CHECK_CUDA_DEVICE
    // to add the kernel function type to the error message
@@ -103,22 +111,18 @@ launchKernel( RawKernel kernel_function,
 
 template< typename RawKernel, typename... KernelParameters >
 inline void
-launchKernelSync( RawKernel kernel_function,
-                  cudaStream_t stream_id,
-                  LaunchConfiguration launch_configuration,
-                  KernelParameters&&... parameters )
+launchKernelSync( RawKernel kernel_function, LaunchConfiguration launch_configuration, KernelParameters&&... parameters )
 {
-   launchKernel< true >( kernel_function, stream_id, launch_configuration, std::forward< KernelParameters >( parameters )... );
+   launch_configuration.blockHostUntilFinished = true;
+   launchKernel( kernel_function, launch_configuration, std::forward< KernelParameters >( parameters )... );
 }
 
 template< typename RawKernel, typename... KernelParameters >
 inline void
-launchKernelAsync( RawKernel kernel_function,
-                   cudaStream_t stream_id,
-                   LaunchConfiguration launch_configuration,
-                   KernelParameters&&... parameters )
+launchKernelAsync( RawKernel kernel_function, LaunchConfiguration launch_configuration, KernelParameters&&... parameters )
 {
-   launchKernel< false >( kernel_function, stream_id, launch_configuration, std::forward< KernelParameters >( parameters )... );
+   launch_configuration.blockHostUntilFinished = false;
+   launchKernel( kernel_function, launch_configuration, std::forward< KernelParameters >( parameters )... );
 }
 
 }  // namespace Cuda

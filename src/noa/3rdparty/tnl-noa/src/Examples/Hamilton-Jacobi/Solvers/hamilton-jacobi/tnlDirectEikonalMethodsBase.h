@@ -149,7 +149,7 @@ class tnlDirectEikonalMethodsBase< Meshes::Grid< 3, Real, Device, Index > >
 template < typename T1 >
 __cuda_callable__ void sortMinims( T1 pom[] );
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 // 1D
 template < typename Real, typename Device, typename Index >
 __global__ void CudaInitCaller( const Functions::MeshFunctionView< Meshes::Grid< 1, Real, Device, Index > >& input, 

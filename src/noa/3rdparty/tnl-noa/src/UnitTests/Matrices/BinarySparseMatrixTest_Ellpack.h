@@ -32,7 +32,7 @@ using EllpackMatrixTypes = ::testing::Types
 <
     TNL::Matrices::SparseMatrix< bool, TNL::Devices::Host, int,   TNL::Matrices::GeneralMatrix, RowMajorEllpack, int >,
     TNL::Matrices::SparseMatrix< bool, TNL::Devices::Host, long,  TNL::Matrices::GeneralMatrix, RowMajorEllpack, int >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,TNL::Matrices::SparseMatrix< bool, TNL::Devices::Cuda, int,   TNL::Matrices::GeneralMatrix, ColumnMajorEllpack, int >,
     TNL::Matrices::SparseMatrix< bool, TNL::Devices::Cuda, long,  TNL::Matrices::GeneralMatrix, ColumnMajorEllpack, int >
 #endif

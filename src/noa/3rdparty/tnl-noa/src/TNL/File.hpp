@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -90,7 +90,7 @@ template< typename Type, typename SourceType, typename Allocator, typename >
 void
 File::load_impl( Type* buffer, std::streamsize elements )
 {
-   if( std::is_same< Type, SourceType >::value )
+   if constexpr( std::is_same< Type, SourceType >::value )
       file.read( reinterpret_cast< char* >( buffer ), sizeof( Type ) * elements );
    else {
       const std::streamsize cast_buffer_size =
@@ -103,7 +103,6 @@ File::load_impl( Type* buffer, std::streamsize elements )
          file.read( reinterpret_cast< char* >( cast_buffer.get() ), sizeof( SourceType ) * transfer );
          for( std::streamsize i = 0; i < transfer; i++ )
             buffer[ readElements++ ] = static_cast< Type >( cast_buffer[ i ] );
-         readElements += transfer;
       }
    }
 }
@@ -113,14 +112,14 @@ template< typename Type, typename SourceType, typename Allocator, typename, type
 void
 File::load_impl( Type* buffer, std::streamsize elements )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    const std::streamsize host_buffer_size =
       std::min( Cuda::getTransferBufferSize() / (std::streamsize) sizeof( Type ), elements );
    using BaseType = typename std::remove_cv< Type >::type;
    std::unique_ptr< BaseType[] > host_buffer{ new BaseType[ host_buffer_size ] };
 
    std::streamsize readElements = 0;
-   if( std::is_same< Type, SourceType >::value ) {
+   if constexpr( std::is_same< Type, SourceType >::value ) {
       while( readElements < elements ) {
          const std::streamsize transfer = std::min( elements - readElements, host_buffer_size );
          file.read( reinterpret_cast< char* >( host_buffer.get() ), sizeof( Type ) * transfer );
@@ -171,7 +170,7 @@ template< typename Type, typename TargetType, typename Allocator, typename >
 void
 File::save_impl( const Type* buffer, std::streamsize elements )
 {
-   if( std::is_same< Type, TargetType >::value )
+   if constexpr( std::is_same< Type, TargetType >::value )
       file.write( reinterpret_cast< const char* >( buffer ), sizeof( Type ) * elements );
    else {
       const std::streamsize cast_buffer_size =
@@ -184,7 +183,6 @@ File::save_impl( const Type* buffer, std::streamsize elements )
          for( std::streamsize i = 0; i < transfer; i++ )
             cast_buffer[ i ] = static_cast< TargetType >( buffer[ writtenElements++ ] );
          file.write( reinterpret_cast< char* >( cast_buffer.get() ), sizeof( TargetType ) * transfer );
-         writtenElements += transfer;
       }
    }
 }
@@ -194,14 +192,14 @@ template< typename Type, typename TargetType, typename Allocator, typename, type
 void
 File::save_impl( const Type* buffer, std::streamsize elements )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    const std::streamsize host_buffer_size =
       std::min( Cuda::getTransferBufferSize() / (std::streamsize) sizeof( Type ), elements );
    using BaseType = typename std::remove_cv< Type >::type;
    std::unique_ptr< BaseType[] > host_buffer{ new BaseType[ host_buffer_size ] };
 
    std::streamsize writtenElements = 0;
-   if( std::is_same< Type, TargetType >::value ) {
+   if constexpr( std::is_same< Type, TargetType >::value ) {
       while( writtenElements < elements ) {
          const std::streamsize transfer = std::min( elements - writtenElements, host_buffer_size );
          cudaMemcpy(
@@ -234,12 +232,13 @@ File::save_impl( const Type* buffer, std::streamsize elements )
 #endif
 }
 
-inline bool
-fileExists( const String& fileName )
+template< typename SourceType >
+void
+File::ignore( std::streamsize elements )
 {
-   std::fstream file;
-   file.open( fileName.getString(), std::ios::in );
-   return ! file.fail();
+   // use seekg instead of ignore for efficiency
+   // https://stackoverflow.com/a/31246560
+   file.seekg( sizeof( SourceType ) * elements, std::ios_base::cur );
 }
 
 // serialization of strings

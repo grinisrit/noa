@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -51,17 +51,18 @@ template< typename Device, typename Index, typename IndexAllocator, ElementsOrga
 typename BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::ViewType
 BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::getView()
 {
-   return ViewType( size, storageSize, virtualRows, rowPermArray.getView(), groupPointers.getView() );
+   return { size, storageSize, virtualRows, rowPermArray.getView(), groupPointers.getView() };
 }
 
 template< typename Device, typename Index, typename IndexAllocator, ElementsOrganization Organization, int WarpSize >
 auto
-BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::getConstView() const -> const ConstViewType
+BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( size, storageSize, virtualRows, rowPermArray.getConstView(), groupPointers.getConstView() );
+   return { size, storageSize, virtualRows, rowPermArray.getConstView(), groupPointers.getConstView() };
 }
 
 template< typename Device, typename Index, typename IndexAllocator, ElementsOrganization Organization, int WarpSize >
+__cuda_callable__
 auto
 BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::getSegmentsCount() const -> IndexType
 {
@@ -91,7 +92,9 @@ BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::performRowBu
          if( this->getSize() - 1 < end )
             end = this->getSize() - 1;
          bool sorted = false;
-         IndexType permIndex1, permIndex2, offset = 0;
+         IndexType permIndex1 = 0;
+         IndexType permIndex2 = 0;
+         IndexType offset = 0;
          while( ! sorted ) {
             sorted = true;
             for( IndexType j = begin + offset; j < end - offset; j++ ) {
@@ -183,7 +186,8 @@ BiEllpack< Device, Index, IndexAllocator, Organization, WarpSize >::verifyRowPer
       if( this->getSize() < end )
          end = this->getSize();
       for( IndexType i = begin; i < end - 1; i++ ) {
-         IndexType permIndex1, permIndex2;
+         IndexType permIndex1 = 0;
+         IndexType permIndex2 = 0;
          bool first = false;
          bool second = false;
          for( IndexType j = begin; j < end; j++ ) {

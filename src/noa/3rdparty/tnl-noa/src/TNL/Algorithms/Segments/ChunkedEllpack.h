@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -37,15 +37,19 @@ public:
    using ConstViewType = typename ViewType::ConstViewType;
    using SegmentViewType = typename ViewType::SegmentViewType;
    using ChunkedEllpackSliceInfoType = typename ViewType::ChunkedEllpackSliceInfoType;
-   // TODO: using ChunkedEllpackSliceInfoAllocator = typename IndexAllocatorType::retype< ChunkedEllpackSliceInfoType >;
-   using ChunkedEllpackSliceInfoAllocator = typename ViewType::ChunkedEllpackSliceInfoAllocator;
-   using ChunkedEllpackSliceInfoContainer = typename ViewType::ChunkedEllpackSliceInfoContainer;
+   using ChunkedEllpackSliceInfoAllocator =
+      typename Allocators::Default< Device >::template Allocator< ChunkedEllpackSliceInfoType >;
+   using ChunkedEllpackSliceInfoContainer =
+      Containers::Array< typename TNL::copy_const< ChunkedEllpackSliceInfoType >::template from< Index >::type,
+                         DeviceType,
+                         IndexType,
+                         ChunkedEllpackSliceInfoAllocator >;
 
    static constexpr bool
    havePadding()
    {
       return true;
-   };
+   }
 
    ChunkedEllpack() = default;
 
@@ -68,7 +72,7 @@ public:
    ViewType
    getView();
 
-   const ConstViewType
+   ConstViewType
    getConstView() const;
 
    /**

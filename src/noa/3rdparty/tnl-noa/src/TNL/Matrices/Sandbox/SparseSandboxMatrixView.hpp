@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -37,11 +37,11 @@ __cuda_callable__
 auto
 SparseSandboxMatrixView< Real, Device, Index, MatrixType >::getView() -> ViewType
 {
-   return ViewType( this->getRows(),
-                    this->getColumns(),
-                    this->getValues().getView(),
-                    this->columnIndexes.getView(),
-                    this->segments.getView() );
+   return { this->getRows(),
+            this->getColumns(),
+            this->getValues().getView(),
+            this->getColumnIndexes().getView(),
+            this->getSegments().getView() };
 }
 
 template< typename Real, typename Device, typename Index, typename MatrixType >
@@ -49,11 +49,11 @@ __cuda_callable__
 auto
 SparseSandboxMatrixView< Real, Device, Index, MatrixType >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( this->getRows(),
-                         this->getColumns(),
-                         this->getValues().getConstView(),
-                         this->getColumnsIndexes().getConstView(),
-                         this->segments.getConstView() );
+   return { this->getRows(),
+            this->getColumns(),
+            this->getValues().getConstView(),
+            this->getColumnsIndexes().getConstView(),
+            this->getSegments().getConstView() };
 }
 
 template< typename Real, typename Device, typename Index, typename MatrixType >
@@ -223,7 +223,7 @@ SparseSandboxMatrixView< Real, Device, Index, MatrixType >::addElement( IndexTyp
    const IndexType rowSize = this->rowPointers.getElement( row + 1 ) - this->rowPointers.getElement( row );
    IndexType col( this->getPaddingIndex() );
    IndexType i;
-   IndexType globalIdx;
+   IndexType globalIdx = 0;
    for( i = 0; i < rowSize; i++ ) {
       // SANDBOX_TODO: Replace the following line with a code that computes a global index of `i`-th nonzero matrix element
       //               in the `row`-th matrix row. The global index is a pointer to arrays `values` and `columnIndexes` storing
@@ -742,17 +742,6 @@ getTransposition( const SparseSandboxMatrixView< Real2, Device, Index2 >& matrix
 }*/
 
 template< typename Real, typename Device, typename Index, typename MatrixType >
-template< typename Vector1, typename Vector2 >
-bool
-SparseSandboxMatrixView< Real, Device, Index, MatrixType >::performSORIteration( const Vector1& b,
-                                                                                 const IndexType row,
-                                                                                 Vector2& x,
-                                                                                 const RealType& omega ) const
-{
-   return false;
-}
-
-template< typename Real, typename Device, typename Index, typename MatrixType >
 SparseSandboxMatrixView< Real, Device, Index, MatrixType >&
 SparseSandboxMatrixView< Real, Device, Index, MatrixType >::operator=(
    const SparseSandboxMatrixView< Real, Device, Index, MatrixType >& matrix )
@@ -793,7 +782,7 @@ template< typename Real, typename Device, typename Index, typename MatrixType >
 void
 SparseSandboxMatrixView< Real, Device, Index, MatrixType >::save( File& file ) const
 {
-   MatrixView< RealType, DeviceType, IndexType >::save( file );
+   MatrixView< Real, Device, Index >::save( file );
    file << this->columnIndexes << this->rowPointers;  // SANDBOX_TODO: Replace this with medata required by your format
 }
 
@@ -832,7 +821,7 @@ SparseSandboxMatrixView< Real, Device, Index, MatrixType >::print( std::ostream&
             const IndexType column = this->columnIndexes.getElement( globalIdx );
             if( column == this->getPaddingIndex() )
                break;
-            RealType value;
+            std::decay_t< RealType > value;
             if( isBinary() )
                value = (RealType) 1.0;
             else

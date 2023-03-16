@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# exit whenever a command fails
+set -e
+
+# enable recursive globbing
+shopt -s globstar
+
+matrices_base_path="./mtx_matrices"
+if [[ ! -d "$matrices_base_path" ]]; then
+   mkdir "$matrices_base_path"
+fi
+cd "$matrices_base_path"
+
+# Matrix Market: https://math.nist.gov/MatrixMarket/
+wget --mirror --continue --force-directories --include-directories=/MatrixMarket/,/pub/MatrixMarket2/ --exclude-directories="*" --accept "*.mtx.gz" "https://math.nist.gov/MatrixMarket/" || true
+
+# SuiteSparse Matrix Collection: https://sparse.tamu.edu/
+# note that we need to crawl the site where the matrices are actually stored
+# (https://sparse.tamu.edu/ links to https://suitesparse-collection-website.herokuapp.com/
+# for all download links)
+wget --mirror --continue --no-parent --force-directories -X RB,mat --accept "*.tar.gz" "https://suitesparse-collection-website.herokuapp.com/"
+
+# delete empty directories
+find math.nist.gov suitesparse-collection-website.herokuapp.com -type d -empty -delete
+
+# unzip (keep the original archive)
+for f in math.nist.gov/**/*.mtx.gz; do
+   gunzip --keep --force "$f"
+done
+for f in suitesparse-collection-website.herokuapp.com/**/*.tar.gz; do
+   pushd $(dirname "$f") >/dev/null
+   tar -xaf $(basename "$f")
+   rm -f **/*_b.mtx  # these are usualy in array format
+   popd >/dev/null
+done

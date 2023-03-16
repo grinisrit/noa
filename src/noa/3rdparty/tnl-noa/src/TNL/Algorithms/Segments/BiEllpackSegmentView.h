@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -21,7 +21,7 @@ public:
    getWarpSize()
    {
       return WarpSize;
-   };
+   }
 
    static constexpr int
    getLogWarpSize()
@@ -34,7 +34,7 @@ public:
    getGroupsCount()
    {
       return getLogWarpSize() + 1;
-   };
+   }
 
    using IndexType = Index;
    using GroupsWidthType = Containers::StaticVector< getGroupsCount(), IndexType >;
@@ -42,10 +42,10 @@ public:
    /**
     * \brief Constructor.
     *
+    * \param segmentIdx is the segment index.
     * \param offset is offset of the first group of the strip the segment belongs to.
-    * \param size is the segment size
     * \param inStripIdx is index of the segment within its strip.
-    * \param groupsWidth is a static vector containing widths of the strip groups
+    * \param groupsWidth is a static vector containing widths of the strip groups.
     */
    __cuda_callable__
    BiEllpackSegmentView( const IndexType segmentIdx,
@@ -53,14 +53,15 @@ public:
                          const IndexType inStripIdx,
                          const GroupsWidthType& groupsWidth )
    : segmentIdx( segmentIdx ), groupOffset( offset ), inStripIdx( inStripIdx ), segmentSize( TNL::sum( groupsWidth ) ),
-     groupsWidth( groupsWidth ){};
+     groupsWidth( groupsWidth )
+   {}
 
    __cuda_callable__
    IndexType
    getSize() const
    {
       return this->segmentSize;
-   };
+   }
 
    __cuda_callable__
    IndexType
@@ -83,14 +84,14 @@ public:
       }
       else
          return offset + inStripIdx + localIdx * groupHeight;
-   };
+   }
 
    __cuda_callable__
    const IndexType&
    getSegmentIndex() const
    {
       return this->segmentIdx;
-   };
+   }
 
 protected:
    IndexType segmentIdx, groupOffset, inStripIdx, segmentSize;

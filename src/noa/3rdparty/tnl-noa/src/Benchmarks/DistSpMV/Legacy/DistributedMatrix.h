@@ -110,13 +110,6 @@ public:
    vectorProduct( const InVector& inVector,
                   OutVector& outVector ) const;
 
-   // FIXME: does not work for distributed matrices, here only due to common interface
-   template< typename Vector1, typename Vector2 >
-   bool performSORIteration( const Vector1& b,
-                             const IndexType row,
-                             Vector2& x,
-                             const RealType& omega = 1.0 ) const;
-
 protected:
    LocalRangeType localRowRange;
    IndexType rows = 0;  // global rows count

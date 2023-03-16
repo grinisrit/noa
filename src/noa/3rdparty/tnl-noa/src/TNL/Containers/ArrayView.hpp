@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -68,7 +68,6 @@ ArrayView< Value, Device, Index >::getView( IndexType begin, IndexType end )
    if( end == 0 )
       end = this->getSize();
    return ViewType( getData() + begin, end - begin );
-   ;
 }
 
 template< typename Value, typename Device, typename Index >
@@ -111,10 +110,10 @@ ArrayView< Value, Device, Index >::operator=( const T& data )
 template< typename Value, typename Device, typename Index >
 __cuda_callable__
 void
-ArrayView< Value, Device, Index >::swap( ArrayView& array )
+ArrayView< Value, Device, Index >::swap( ArrayView& view )
 {
-   TNL::swap( data, array.data );
-   TNL::swap( size, array.size );
+   TNL::swap( data, view.data );
+   TNL::swap( size, view.size );
 }
 
 template< typename Value, typename Device, typename Index >
@@ -353,9 +352,10 @@ template< typename Value, typename Device, typename Index >
 File&
 operator<<( File& file, const ArrayView< Value, Device, Index > view )
 {
-   using IO = detail::ArrayIO< Value, Index, typename Allocators::Default< Device >::template Allocator< Value > >;
+   using IO = detail::
+      ArrayIO< Value, Index, typename Allocators::Default< Device >::template Allocator< std::remove_const_t< Value > > >;
    saveObjectType( file, IO::getSerializationType() );
-   const Index size = view.getSize();
+   const std::size_t size = view.getSize();
    file.save( &size );
    IO::save( file, view.getData(), view.getSize() );
    return file;
@@ -379,11 +379,11 @@ operator>>( File& file, ArrayView< Value, Device, Index > view )
    if( type != IO::getSerializationType() )
       throw Exceptions::FileDeserializationError(
          file.getFileName(), "object type does not match (expected " + IO::getSerializationType() + ", found " + type + ")." );
-   Index _size;
-   file.load( &_size );
-   if( _size != view.getSize() )
+   std::size_t size;
+   file.load( &size );
+   if( size != static_cast< std::size_t >( view.getSize() ) )
       throw Exceptions::FileDeserializationError( file.getFileName(),
-                                                  "invalid array size: " + std::to_string( _size ) + " (expected "
+                                                  "invalid array size: " + std::to_string( size ) + " (expected "
                                                      + std::to_string( view.getSize() ) + ")." );
    IO::load( file, view.getData(), view.getSize() );
    return file;

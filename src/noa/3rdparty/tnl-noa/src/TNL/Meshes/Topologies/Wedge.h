@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -21,7 +21,7 @@ struct Wedge
 template<>
 struct Subtopology< Wedge, 0 >
 {
-   typedef Vertex Topology;
+   using Topology = Vertex;
 
    static constexpr int count = 6;
 };
@@ -29,7 +29,7 @@ struct Subtopology< Wedge, 0 >
 template<>
 struct Subtopology< Wedge, 1 >
 {
-   typedef Edge Topology;
+   using Topology = Edge;
 
    static constexpr int count = 9;
 };
@@ -37,7 +37,7 @@ struct Subtopology< Wedge, 1 >
 template<>
 struct Subtopology< Wedge, 2 >
 {
-   typedef Polygon Topology;
+   using Topology = Polygon;
 
    static constexpr int count = 5;
 };

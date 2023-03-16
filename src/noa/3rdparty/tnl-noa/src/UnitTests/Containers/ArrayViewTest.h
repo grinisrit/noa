@@ -49,7 +49,7 @@ protected:
 
 // types for which ArrayViewTest is instantiated
 using ViewTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    // we can't test all types because the argument list would be too long...
 //    ArrayView< int,    Devices::Sequential, short >
 //   ,ArrayView< long,   Devices::Sequential, short >
@@ -83,7 +83,7 @@ using ViewTypes = ::testing::Types<
    ,ArrayView< double, Devices::Host, long >
    ,ArrayView< MyData, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     ArrayView< int,    Devices::Cuda, short >
    ,ArrayView< long,   Devices::Cuda, short >
    ,ArrayView< float,  Devices::Cuda, short >
@@ -103,14 +103,14 @@ using ViewTypes = ::testing::Types<
 
    // all ArrayView tests should also work with VectorView
    // (but we can't test all types because the argument list would be too long...)
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    ,
    VectorView< float,  Devices::Sequential, long >,
    VectorView< double, Devices::Sequential, long >,
    VectorView< float,  Devices::Host, long >,
    VectorView< double, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,
    VectorView< float,  Devices::Cuda, long >,
    VectorView< double, Devices::Cuda, long >
@@ -257,7 +257,7 @@ void testArrayViewElementwiseAccess( Array< Value, Devices::Host, Index >&& a )
    }
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename ValueType, typename IndexType >
 __global__ void testSetGetElementKernel( ArrayView< ValueType, Devices::Cuda, IndexType > u,
                                          ArrayView< ValueType, Devices::Cuda, IndexType > v )
@@ -265,12 +265,12 @@ __global__ void testSetGetElementKernel( ArrayView< ValueType, Devices::Cuda, In
    if( threadIdx.x < v.getSize() )
       u[ threadIdx.x ] = v( threadIdx.x ) = threadIdx.x;
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 
 template< typename Value, typename Index >
 void testArrayViewElementwiseAccess( Array< Value, Devices::Cuda, Index >&& a )
 {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    using ArrayType = Array< Value, Devices::Cuda, Index >;
    using ViewType = ArrayView< Value, Devices::Cuda, Index >;
    a.setSize( 10 );

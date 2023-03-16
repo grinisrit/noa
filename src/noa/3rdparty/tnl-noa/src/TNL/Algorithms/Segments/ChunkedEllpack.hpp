@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -50,32 +50,32 @@ template< typename Device, typename Index, typename IndexAllocator, ElementsOrga
 typename ChunkedEllpack< Device, Index, IndexAllocator, Organization >::ViewType
 ChunkedEllpack< Device, Index, IndexAllocator, Organization >::getView()
 {
-   return ViewType( size,
-                    storageSize,
-                    chunksInSlice,
-                    desiredChunkSize,
-                    rowToChunkMapping.getView(),
-                    rowToSliceMapping.getView(),
-                    chunksToSegmentsMapping.getView(),
-                    rowPointers.getView(),
-                    slices.getView(),
-                    numberOfSlices );
+   return { size,
+            storageSize,
+            chunksInSlice,
+            desiredChunkSize,
+            rowToChunkMapping.getView(),
+            rowToSliceMapping.getView(),
+            chunksToSegmentsMapping.getView(),
+            rowPointers.getView(),
+            slices.getView(),
+            numberOfSlices };
 }
 
 template< typename Device, typename Index, typename IndexAllocator, ElementsOrganization Organization >
 auto
-ChunkedEllpack< Device, Index, IndexAllocator, Organization >::getConstView() const -> const ConstViewType
+ChunkedEllpack< Device, Index, IndexAllocator, Organization >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( size,
-                         storageSize,
-                         chunksInSlice,
-                         desiredChunkSize,
-                         rowToChunkMapping.getConstView(),
-                         rowToSliceMapping.getConstView(),
-                         chunksToSegmentsMapping.getConstView(),
-                         rowPointers.getConstView(),
-                         slices.getConstView(),
-                         numberOfSlices );
+   return { size,
+            storageSize,
+            chunksInSlice,
+            desiredChunkSize,
+            rowToChunkMapping.getConstView(),
+            rowToSliceMapping.getConstView(),
+            chunksToSegmentsMapping.getConstView(),
+            rowPointers.getConstView(),
+            slices.getConstView(),
+            numberOfSlices };
 }
 
 template< typename Device, typename Index, typename IndexAllocator, ElementsOrganization Organization >
@@ -193,7 +193,7 @@ template< typename SizesHolder >
 void
 ChunkedEllpack< Device, Index, IndexAllocator, Organization >::setSegmentsSizes( const SizesHolder& segmentsSizes )
 {
-   if( std::is_same< DeviceType, Devices::Host >::value ) {
+   if constexpr( std::is_same< DeviceType, Devices::Host >::value ) {
       this->size = segmentsSizes.getSize();
       this->slices.setSize( this->size );
       this->rowToChunkMapping.setSize( this->size );

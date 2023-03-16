@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -60,16 +60,15 @@ __cuda_callable__
 typename BiEllpackView< Device, Index, Organization, WarpSize >::ViewType
 BiEllpackView< Device, Index, Organization, WarpSize >::getView()
 {
-   return ViewType( size, storageSize, virtualRows, rowPermArray.getView(), groupPointers.getView() );
+   return { size, storageSize, virtualRows, rowPermArray.getView(), groupPointers.getView() };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization, int WarpSize >
 __cuda_callable__
 auto
-BiEllpackView< Device, Index, Organization, WarpSize >::getConstView() const -> const ConstViewType
+BiEllpackView< Device, Index, Organization, WarpSize >::getConstView() const -> ConstViewType
 {
-   BiEllpackView* this_ptr = const_cast< BiEllpackView* >( this );
-   return ConstViewType( size, storageSize, virtualRows, this_ptr->rowPermArray.getView(), this_ptr->groupPointers.getView() );
+   return { size, storageSize, virtualRows, rowPermArray.getConstView(), groupPointers.getConstView() };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization, int WarpSize >
@@ -241,7 +240,7 @@ BiEllpackView< Device, Index, Organization, WarpSize >::reduceSegments( IndexTyp
    using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
    if( this->getStorageSize() == 0 )
       return;
-   if( std::is_same< DeviceType, Devices::Host >::value )
+   if constexpr( std::is_same< DeviceType, Devices::Host >::value )
       for( IndexType segmentIdx = 0; segmentIdx < this->getSize(); segmentIdx++ ) {
          const IndexType stripIdx = segmentIdx / getWarpSize();
          const IndexType groupIdx = stripIdx * ( getLogWarpSize() + 1 );
@@ -291,29 +290,26 @@ BiEllpackView< Device, Index, Organization, WarpSize >::reduceSegments( IndexTyp
          }
          keeper( segmentIdx, aux );
       }
-   if( std::is_same< DeviceType, Devices::Cuda >::value ) {
-#ifdef HAVE_CUDA
+   if constexpr( std::is_same< DeviceType, Devices::Cuda >::value ) {
+      Devices::Cuda::LaunchConfiguration launch_config;
       constexpr int BlockDim = 256;
-      dim3 cudaBlockSize = BlockDim;
+      launch_config.blockSize.x = BlockDim;
       const IndexType stripsCount = roundUpDivision( last - first, getWarpSize() );
-      const IndexType cudaBlocks = roundUpDivision( stripsCount * getWarpSize(), cudaBlockSize.x );
-      const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridSize() );
-      IndexType sharedMemory = 0;
+      const IndexType cudaBlocks = roundUpDivision( stripsCount * getWarpSize(), launch_config.blockSize.x );
+      const IndexType cudaGrids = roundUpDivision( cudaBlocks, Cuda::getMaxGridXSize() );
       if( Organization == ColumnMajorOrder )
-         sharedMemory = cudaBlockSize.x * sizeof( RealType );
+         launch_config.dynamicSharedMemorySize = launch_config.blockSize.x * sizeof( RealType );
 
-      // printStructure( std::cerr );
       for( IndexType gridIdx = 0; gridIdx < cudaGrids; gridIdx++ ) {
-         dim3 cudaGridSize = Cuda::getMaxGridSize();
+         launch_config.gridSize.x = Cuda::getMaxGridXSize();
          if( gridIdx == cudaGrids - 1 )
-            cudaGridSize.x = cudaBlocks % Cuda::getMaxGridSize();
-         detail::BiEllpackreduceSegmentsKernel< ViewType, IndexType, Fetch, Reduction, ResultKeeper, Real, BlockDim >
-            <<< cudaGridSize, cudaBlockSize,
-            sharedMemory >>>( *this, gridIdx, first, last, fetch, reduction, keeper, zero );
+            launch_config.gridSize.x = cudaBlocks % Cuda::getMaxGridXSize();
+         constexpr auto kernel =
+            detail::BiEllpackreduceSegmentsKernel< ViewType, IndexType, Fetch, Reduction, ResultKeeper, Real, BlockDim >;
+         Cuda::launchKernelAsync( kernel, launch_config, *this, gridIdx, first, last, fetch, reduction, keeper, zero );
       }
-      cudaStreamSynchronize( 0 );
+      cudaStreamSynchronize( launch_config.stream );
       TNL_CHECK_CUDA_DEVICE;
-#endif
    }
 }
 
@@ -378,7 +374,7 @@ BiEllpackView< Device, Index, Organization, WarpSize >::printStructure( std::ost
    }
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Device, typename Index, ElementsOrganization Organization, int WarpSize >
 template< typename Fetch, typename Reduction, typename ResultKeeper, typename Real, int BlockDim >
 __device__
@@ -391,8 +387,9 @@ BiEllpackView< Device, Index, Organization, WarpSize >::reduceSegmentsKernelWith
                                                                                                ResultKeeper keeper,
                                                                                                Real zero ) const
 {
-   using RealType = decltype( fetch( IndexType(), IndexType(), IndexType(), std::declval< bool& >() ) );
-   const IndexType segmentIdx = ( gridIdx * Cuda::getMaxGridSize() + blockIdx.x ) * blockDim.x + threadIdx.x + first;
+   using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
+   // using RealType = decltype( fetch( IndexType(), IndexType(), IndexType(), std::declval< bool& >() ) );
+   const IndexType segmentIdx = ( gridIdx * Cuda::getMaxGridXSize() + blockIdx.x ) * blockDim.x + threadIdx.x + first;
    if( segmentIdx >= last )
       return;
 
@@ -438,8 +435,9 @@ BiEllpackView< Device, Index, Organization, WarpSize >::reduceSegmentsKernel( In
                                                                               ResultKeeper keeper,
                                                                               Real zero ) const
 {
-   using RealType = decltype( fetch( IndexType(), std::declval< bool& >() ) );
-   Index segmentIdx = ( gridIdx * Cuda::getMaxGridSize() + blockIdx.x ) * blockDim.x + threadIdx.x + first;
+   using RealType = typename detail::FetchLambdaAdapter< Index, Fetch >::ReturnType;
+   // using RealType = decltype( fetch( IndexType(), std::declval< bool& >() ) );
+   Index segmentIdx = ( gridIdx * Cuda::getMaxGridXSize() + blockIdx.x ) * blockDim.x + threadIdx.x + first;
 
    const IndexType strip = segmentIdx >> getLogWarpSize();
    const IndexType warpStart = strip << getLogWarpSize();

@@ -1,7 +1,6 @@
 #ifdef HAVE_GTEST
 #include <gtest/gtest.h>
 #include <TNL/Matrices/LambdaMatrix.h>
-#include <TNL/Devices/AnyDevice.h>
 #include <TNL/Devices/Host.h>
 #include "LambdaMatrixTest.hpp"
 #include <iostream>
@@ -37,7 +36,7 @@ using LambdaMatrixTypes = ::testing::Types
    LambdaMatrixParameters< long,   TNL::Devices::Host, long >,
    LambdaMatrixParameters< float,  TNL::Devices::Host, long >,
    LambdaMatrixParameters< double, TNL::Devices::Host, long >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,LambdaMatrixParameters< int,    TNL::Devices::Cuda, int >,
    LambdaMatrixParameters< long,   TNL::Devices::Cuda, int >,
    LambdaMatrixParameters< float,  TNL::Devices::Cuda, int >,

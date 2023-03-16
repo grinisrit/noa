@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
     Timer time;
     time.start();
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     using Device=Devices::Cuda;
 #else
     using Device=Devices::Host;

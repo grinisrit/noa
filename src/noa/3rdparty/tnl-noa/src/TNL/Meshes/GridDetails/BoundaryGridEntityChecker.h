@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -6,41 +6,46 @@
 
 #pragma once
 
+#include <noa/3rdparty/tnl-noa/src/TNL/Cuda/CudaCallable.h>
+
 namespace noa::TNL {
 namespace Meshes {
 
-template< typename GridEntity >
-class BoundaryGridEntityChecker
-{};
+template< int Dimension, typename Real, typename Device, typename Index >
+class Grid;
+
+template< class, int >
+class GridEntity;
+
+template< class >
+class BoundaryGridEntityChecker;
 
 /***
  * 1D grids
  */
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 1, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 1 > >
 {
 public:
-   using GridType = Meshes::Grid< 1, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 1, Config >;
+   using Entity = GridEntity< Meshes::Grid< 1, Real, Device, Index >, 1 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() - 1 );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 0, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 1, Real, Device, Index >, 0 > >
 {
 public:
-   using GridType = Meshes::Grid< 1, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 0, Config >;
+   using Entity = GridEntity< Meshes::Grid< 1, Real, Device, Index >, 0 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() );
    }
@@ -49,16 +54,15 @@ public:
 /****
  * 2D grids
  */
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 2, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 2 > >
 {
 public:
-   using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 2, Config >;
+   using Entity = GridEntity< Meshes::Grid< 2, Real, Device, Index >, 2 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().y() == 0
                || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() - 1
@@ -66,56 +70,52 @@ public:
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 1, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 1 > >
 {
 public:
-   using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 1, Config >;
+   using Entity = GridEntity< Meshes::Grid< 2, Real, Device, Index >, 1 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return (
-         ( entity.getOrientation().x()
+         ( entity.getNormals().x()
            && ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() ) )
-         || ( entity.getOrientation().y()
+         || ( entity.getNormals().y()
               && ( entity.getCoordinates().y() == 0
                    || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() ) ) );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 0, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 2, Real, Device, Index >, 0 > >
 {
 public:
-   using GridType = Meshes::Grid< 2, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 0, Config >;
+   using Entity = GridEntity< Meshes::Grid< 2, Real, Device, Index >, 0 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
-      return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().y() == 0
-               || entity.getCoordinates().x() == entity.getMesh().getDimensions().x()
-               || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() );
+      return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() )
+          || ( entity.getCoordinates().y() == 0 || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() );
    }
 };
 
 /***
  * 3D grid
  */
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 3, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 3 > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 3, Config >;
+   using Entity = GridEntity< Meshes::Grid< 3, Real, Device, Index >, 3 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().y() == 0 || entity.getCoordinates().z() == 0
                || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() - 1
@@ -124,69 +124,61 @@ public:
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 2, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 2 > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 2, Config >;
+   using Entity = GridEntity< Meshes::Grid< 3, Real, Device, Index >, 2 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return (
-         ( entity.getOrientation().x()
+         ( entity.getNormals().x()
            && ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() ) )
-         || ( entity.getOrientation().y()
+         || ( entity.getNormals().y()
               && ( entity.getCoordinates().y() == 0 || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() ) )
-         || ( entity.getOrientation().z()
+         || ( entity.getNormals().z()
               && ( entity.getCoordinates().z() == 0
                    || entity.getCoordinates().z() == entity.getMesh().getDimensions().z() ) ) );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 1, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 1 > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 1, Config >;
+   using Entity = GridEntity< Meshes::Grid< 3, Real, Device, Index >, 1 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
       return (
-         ( entity.getOrientation().x()
-           && ( entity.getCoordinates().y() == 0 || entity.getCoordinates().y() == entity.getMesh().getDimensions().y()
-                || entity.getCoordinates().z() == 0 || entity.getCoordinates().z() == entity.getMesh().getDimensions().z() ) )
-         || ( entity.getOrientation().y()
-              && ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x()
-                   || entity.getCoordinates().z() == 0
-                   || entity.getCoordinates().z() == entity.getMesh().getDimensions().z() ) )
-         || ( entity.getOrientation().z()
-              && ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x()
-                   || entity.getCoordinates().y() == 0
-                   || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() ) ) );
+         ( entity.getNormals().x()
+           && ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() ) )
+         || ( entity.getNormals().y()
+              && ( entity.getCoordinates().y() == 0 || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() ) )
+         || ( entity.getNormals().z()
+              && ( entity.getCoordinates().z() == 0
+                   || entity.getCoordinates().z() == entity.getMesh().getDimensions().z() ) ) );
    }
 };
 
-template< typename Real, typename Device, typename Index, typename Config >
-class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 0, Config > >
+template< typename Real, typename Device, typename Index >
+class BoundaryGridEntityChecker< GridEntity< Meshes::Grid< 3, Real, Device, Index >, 0 > >
 {
 public:
-   using GridType = Meshes::Grid< 3, Real, Device, Index >;
-   using GridEntityType = GridEntity< GridType, 0, Config >;
+   using Entity = GridEntity< Meshes::Grid< 3, Real, Device, Index >, 0 >;
 
    __cuda_callable__
    inline static bool
-   isBoundaryEntity( const GridEntityType& entity )
+   isBoundaryEntity( const Entity& entity )
    {
-      return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().y() == 0 || entity.getCoordinates().z() == 0
-               || entity.getCoordinates().x() == entity.getMesh().getDimensions().x()
-               || entity.getCoordinates().y() == entity.getMesh().getDimensions().y()
-               || entity.getCoordinates().z() == entity.getMesh().getDimensions().z() );
+      return ( entity.getCoordinates().x() == 0 || entity.getCoordinates().x() == entity.getMesh().getDimensions().x() )
+          || ( entity.getCoordinates().y() == 0 || entity.getCoordinates().y() == entity.getMesh().getDimensions().y() )
+          || ( entity.getCoordinates().z() == 0 || entity.getCoordinates().z() == entity.getMesh().getDimensions().z() );
    }
 };
 

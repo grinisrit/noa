@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -18,6 +18,9 @@
 namespace noa::TNL {
 namespace Containers {
 
+/**
+ * \brief Distributed array view.
+ */
 template< typename Value, typename Device = Devices::Host, typename Index = int >
 class DistributedArrayView
 {
@@ -33,7 +36,9 @@ public:
    using SynchronizerType = ByteArraySynchronizer< DeviceType, IndexType >;
 
    /**
-    * \brief A template which allows to quickly obtain a \ref DistributedArrayView type with changed template parameters.
+    * \brief A template which allows to quickly obtain a
+    * \ref TNL::Containers::DistributedArrayView "DistributedArrayView" type
+    * with changed template parameters.
     */
    template< typename _Value, typename _Device = Device, typename _Index = Index >
    using Self = DistributedArrayView< _Value, _Device, _Index >;
@@ -252,6 +257,12 @@ public:
    template< typename Function >
    void
    forElements( IndexType begin, IndexType end, Function&& f ) const;
+
+   void
+   loadFromGlobalFile( const String& fileName, bool allowCasting = false );
+
+   void
+   loadFromGlobalFile( File& file, bool allowCasting = false );
 
 protected:
    LocalRangeType localRange;

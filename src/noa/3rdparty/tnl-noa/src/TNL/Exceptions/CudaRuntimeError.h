@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -8,12 +8,14 @@
 
 #pragma once
 
+#include <string>
+
 #include "CudaSupportMissing.h"
 
 namespace noa::TNL {
 namespace Exceptions {
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 using CudaStatusType = cudaError;
 #else
 using CudaStatusType = int;
@@ -50,7 +52,7 @@ private:
    static std::string
    name( CudaStatusType error_code )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       return cudaGetErrorName( error_code );
 #else
       throw CudaSupportMissing();
@@ -60,7 +62,7 @@ private:
    static std::string
    description( CudaStatusType error_code )
    {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       return cudaGetErrorString( error_code );
 #else
       throw CudaSupportMissing();

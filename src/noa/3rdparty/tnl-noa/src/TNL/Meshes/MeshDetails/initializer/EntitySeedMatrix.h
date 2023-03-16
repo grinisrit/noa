@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -8,6 +8,7 @@
 
 //#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/MeshDetails/traits/MeshTraits.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Topologies/IsDynamicTopology.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Devices/Host.h>
 
 namespace noa::TNL {
 namespace Meshes {
@@ -36,13 +37,13 @@ public:
 
    EntitySeedMatrix( const EntitySeedMatrix& other ) = default;
 
-   EntitySeedMatrix( EntitySeedMatrix&& other ) = default;
+   EntitySeedMatrix( EntitySeedMatrix&& other ) noexcept = default;
 
    EntitySeedMatrix&
    operator=( const EntitySeedMatrix& other ) = default;
 
    EntitySeedMatrix&
-   operator=( EntitySeedMatrix&& other ) = default;
+   operator=( EntitySeedMatrix&& other ) noexcept( false ) = default;
 
    class EntitySeedMatrixSeed
    {
@@ -211,13 +212,13 @@ public:
 
    EntitySeedMatrix( const EntitySeedMatrix& other ) = default;
 
-   EntitySeedMatrix( EntitySeedMatrix&& other ) = default;
+   EntitySeedMatrix( EntitySeedMatrix&& other ) noexcept = default;
 
    EntitySeedMatrix&
    operator=( const EntitySeedMatrix& other ) = default;
 
    EntitySeedMatrix&
-   operator=( EntitySeedMatrix&& other ) = default;
+   operator=( EntitySeedMatrix&& other ) noexcept( false ) = default;
 
    class EntitySeedMatrixSeed
    {
@@ -363,13 +364,13 @@ public:
 
    EntitySeedMatrix( const EntitySeedMatrix& other ) = default;
 
-   EntitySeedMatrix( EntitySeedMatrix&& other ) = default;
+   EntitySeedMatrix( EntitySeedMatrix&& other ) noexcept = default;
 
    EntitySeedMatrix&
    operator=( const EntitySeedMatrix& other ) = default;
 
    EntitySeedMatrix&
-   operator=( EntitySeedMatrix&& other ) = default;
+   operator=( EntitySeedMatrix&& other ) noexcept( false ) = default;
 
    class EntitySeedMatrixSeed
    {

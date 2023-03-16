@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -108,7 +108,11 @@ Timer::readCPUTime()
 inline unsigned long long int
 Timer::readCPUCycles()
 {
+#if defined( __APPLE__ ) || defined( _MSC_VER )
+   return 0;  // TODO: fix https://lemire.me/blog/2021/03/24/counting-cycles-and-instructions-on-the-apple-m1-processor/
+#else
    return rdtsc();
+#endif
 }
 
 inline double
@@ -118,6 +122,7 @@ Timer::durationToDouble( const Duration& duration )
    return dur.count();
 }
 
+#if ! defined( __APPLE__ ) && ! defined( _MSC_VER )
 inline unsigned long long
 Timer::rdtsc()
 {
@@ -126,5 +131,6 @@ Timer::rdtsc()
    __asm__ __volatile__( "rdtsc" : "=a"( lo ), "=d"( hi ) );
    return ( (unsigned long long) lo ) | ( ( (unsigned long long) hi ) << 32 );
 }
+#endif
 
 }  // namespace noa::TNL

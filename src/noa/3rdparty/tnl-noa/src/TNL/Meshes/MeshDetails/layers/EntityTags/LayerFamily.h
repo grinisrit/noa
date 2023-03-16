@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -53,7 +53,7 @@ protected:
 
    explicit LayerInheritor( const LayerInheritor& other ) = default;
 
-   LayerInheritor( LayerInheritor&& other ) = default;
+   LayerInheritor( LayerInheritor&& other ) noexcept = default;
 
    template< typename Device_ >
    LayerInheritor( const LayerInheritor< MeshConfig, Device_, Dimension >& other )
@@ -65,7 +65,7 @@ protected:
    operator=( const LayerInheritor& other ) = default;
 
    LayerInheritor&
-   operator=( LayerInheritor&& other ) = default;
+   operator=( LayerInheritor&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    LayerInheritor&
@@ -121,14 +121,14 @@ protected:
 
    LayerInheritor() = default;
    explicit LayerInheritor( const LayerInheritor& other ) = default;
-   LayerInheritor( LayerInheritor&& other ) = default;
+   LayerInheritor( LayerInheritor&& other ) noexcept = default;
    template< typename Device_ >
    LayerInheritor( const LayerInheritor< MeshConfig, Device_, DimensionTag< MeshConfig::meshDimension + 1 > >& other )
    {}
    LayerInheritor&
    operator=( const LayerInheritor& other ) = default;
    LayerInheritor&
-   operator=( LayerInheritor&& other ) = default;
+   operator=( LayerInheritor&& other ) noexcept = default;
    template< typename Device_ >
    LayerInheritor&
    operator=( const LayerInheritor< MeshConfig, Device_, DimensionTag< MeshConfig::meshDimension + 1 > >& other )
@@ -150,9 +150,7 @@ protected:
 // Note that MeshType is an incomplete type and therefore cannot be used to access
 // MeshType::Config etc. at the time of declaration of this class template.
 template< typename MeshConfig, typename Device, typename MeshType >
-class LayerFamily : public ConfigValidator< MeshConfig >,
-                    public Initializer< MeshConfig, Device, MeshType >,
-                    public LayerInheritor< MeshConfig, Device >
+class LayerFamily : public ConfigValidator< MeshConfig >, public LayerInheritor< MeshConfig, Device >
 {
    using MeshTraitsType = MeshTraits< MeshConfig, Device >;
    using GlobalIndexType = typename MeshTraitsType::GlobalIndexType;
@@ -164,7 +162,8 @@ class LayerFamily : public ConfigValidator< MeshConfig >,
    template< int Dimension >
    using WeakTrait = WeakStorageTrait< MeshConfig, Device, DimensionTag< Dimension > >;
 
-   friend Initializer< MeshConfig, Device, MeshType >;
+   friend void
+   initializeEntityTags< MeshType >( MeshType& );
 
 public:
    // inherit constructors and assignment operators (including templated versions)

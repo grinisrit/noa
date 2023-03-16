@@ -25,7 +25,7 @@ protected:
 // types for which ReduceTest is instantiated
 // TODO: Quad must be fixed
 using ArrayTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    Array< CustomScalar< int >, Devices::Sequential, int >,
    Array< int,            Devices::Sequential, int >,
    Array< long,           Devices::Sequential, int >,
@@ -52,7 +52,7 @@ using ArrayTypes = ::testing::Types<
    //Array< Quad< float >,  Devices::Host, long >,
    //Array< Quad< double >, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    Array< CustomScalar< int >, Devices::Cuda, int >,  // the reduction kernel for CustomScalar is not specialized with __shfl instructions
    Array< int,            Devices::Cuda, int >,
    Array< long,           Devices::Cuda, int >,

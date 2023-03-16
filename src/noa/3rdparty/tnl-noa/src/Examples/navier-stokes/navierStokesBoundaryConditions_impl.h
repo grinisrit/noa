@@ -14,19 +14,11 @@ navierStokesBoundaryConditions< Mesh >::navierStokesBoundaryConditions()
 template< typename Mesh >
 bool navierStokesBoundaryConditions< Mesh >::setup( const Config::ParameterContainer& parameters )
 {
-<<<<<<< HEAD
-   this -> maxInflowVelocity = parameters. getParameter< double >( "max-inflow-velocity" );
-   //this -> maxOutflowVelocity = parameters. getParameter< double >( "max-outflow-velocity" );
-   this -> startUp = parameters. getParameter< double >( "start-up" );
-   this -> T = parameters. getParameter< double >( "T" );
-   this -> R = parameters. getParameter< double >( "R" );
-=======
    this->maxInflowVelocity = parameters. getParameter< double >( "max-inflow-velocity" );
    //this->maxOutflowVelocity = parameters. getParameter< double >( "max-outflow-velocity" );
    this->startUp = parameters. getParameter< double >( "start-up" );
    this->T = parameters. getParameter< double >( "T" );
    this->R = parameters. getParameter< double >( "R" );
->>>>>>> develop
    this->p0 = parameters. getParameter< double >( "p0" );
    this->gamma = parameters. getParameter< double >( "gamma" );
    return true;

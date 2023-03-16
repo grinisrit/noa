@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -12,10 +12,10 @@
 namespace noa::TNL {
 namespace Meshes {
 
-template< typename Grid, typename Config >
+template< typename Grid >
 __cuda_callable__
 typename Grid::PointType
-getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 0, Config >& face, const typename Grid::PointType cellCenter )
+getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 0 >& face, const typename Grid::PointType cellCenter )
 {
    static_assert( Grid::getMeshDimension() == 1, "getOutwardNormalVector can be used only with faces." );
    const typename Grid::PointType faceCenter = getEntityCenter( grid, face );
@@ -25,10 +25,10 @@ getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 0, Config >& f
       return { -1 };
 }
 
-template< typename Grid, typename Config >
+template< typename Grid >
 __cuda_callable__
 typename Grid::PointType
-getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 1, Config >& face, const typename Grid::PointType cellCenter )
+getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 1 >& face, const typename Grid::PointType cellCenter )
 {
    static_assert( Grid::getMeshDimension() == 2, "getOutwardNormalVector can be used only with faces." );
    const typename Grid::PointType faceCenter = getEntityCenter( grid, face );
@@ -48,10 +48,10 @@ getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 1, Config >& f
    }
 }
 
-template< typename Grid, typename Config >
+template< typename Grid >
 __cuda_callable__
 typename Grid::PointType
-getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 2, Config >& face, const typename Grid::PointType cellCenter )
+getOutwardNormalVector( const Grid& grid, const GridEntity< Grid, 2 >& face, const typename Grid::PointType cellCenter )
 {
    static_assert( Grid::getMeshDimension() == 3, "getOutwardNormalVector can be used only with faces." );
    const typename Grid::PointType faceCenter = getEntityCenter( grid, face );

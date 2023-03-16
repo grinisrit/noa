@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -68,7 +68,7 @@ public:
    /**
     * \brief Type of constant sparse matrix row view.
     */
-   using ConstView = DenseMatrixRowView< SegmentView, ConstValuesViewType >;
+   using ConstRowView = DenseMatrixRowView< SegmentView, ConstValuesViewType >;
 
    /**
     * \brief The type of related matrix element.
@@ -134,15 +134,15 @@ public:
     *
     * \param localIdx is the rank of the matrix element in given row.
     *
-    * \return the value of \ref localIdx as column index.
+    * \return the value of \e localIdx as column index.
     */
    __cuda_callable__
    IndexType
    getColumnIndex( IndexType localIdx ) const;
 
    /**
-    * \brief Sets value of matrix element with given column index
-    * .
+    * \brief Sets value of matrix element with given column index.
+    *
     * \param column is a column index of the matrix element.
     * \param value is a value the matrix element will be set to.
     */
@@ -151,11 +151,10 @@ public:
    setValue( IndexType column, const RealType& value );
 
    /**
-    * \brief Sets value of matrix element with given column index
+    * \brief Sets value of matrix element with given column index.
     *
-    * The \e localIdx parameter is here only for compatibility with
-    * the sparse matrices and it is omitted.
-    *
+    * \param localIdx is here only for compatibility with the sparse matrices
+    *        and it is unused.
     * \param column is a column index of the matrix element.
     * \param value is a value the matrix element will be set to.
     */

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -20,7 +20,7 @@ namespace Matrices {
  * \tparam Device is a device on which the array is allocated.
  * \tparam Real is a type of array elements.
  * \tparam Index is a type for indexing of matrix elements.
- * \tparam Organization is matrix elements organization - see \ref noa::TNL::Algorithms::Segments::ElementsOrganization.
+ * \tparam Organization is matrix elements organization - see \ref TNL::Algorithms::Segments::ElementsOrganization.
  * \param rows is a number of matrix rows.
  * \param columns is a number of matrix columns.
  * \param values is the array with matrix elements values.

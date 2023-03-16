@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -23,7 +23,7 @@ TNL::String
 CSRAdaptiveKernel< Index, Device >::getKernelType()
 {
    return ViewType::getKernelType();
-};
+}
 
 template< typename Index, typename Device >
 template< typename Offsets >
@@ -59,6 +59,7 @@ CSRAdaptiveKernel< Index, Device >::reset()
 }
 
 template< typename Index, typename Device >
+__cuda_callable__
 auto
 CSRAdaptiveKernel< Index, Device >::getView() -> ViewType
 {
@@ -66,11 +67,12 @@ CSRAdaptiveKernel< Index, Device >::getView() -> ViewType
 }
 
 template< typename Index, typename Device >
+__cuda_callable__
 auto
 CSRAdaptiveKernel< Index, Device >::getConstView() const -> ConstViewType
 {
    return this->view;
-};
+}
 
 template< typename Index, typename Device >
 template< typename OffsetsView, typename Fetch, typename Reduction, typename ResultKeeper, typename Real, typename... Args >

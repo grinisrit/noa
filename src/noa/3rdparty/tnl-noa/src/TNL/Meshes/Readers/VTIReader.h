@@ -1,15 +1,14 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
 
-// Implemented by: Jakub Klinkovský
-
 #pragma once
 
-#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Readers/XMLVTK.h>
 #include <cstdint>
+
+#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Readers/XMLVTK.h>
 
 namespace noa::TNL {
 namespace Meshes {
@@ -40,8 +39,9 @@ class VTIReader : public XMLVTK
       // parse the extent
       {
          std::stringstream ss( extent );
-         gridExtent.resize( 6, 0 );
-         for( int i = 0; i < 6; i++ ) {
+         constexpr int vtk_extent_size = 6;
+         gridExtent.resize( vtk_extent_size, 0 );
+         for( int i = 0; i < vtk_extent_size; i++ ) {
             ss >> gridExtent[ i ];
             // check conversion error
             if( ! ss.good() )

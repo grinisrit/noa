@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,14 +17,13 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace Sorting {
 
-#ifdef HAVE_CUDA
-
+template< typename Index >
 __device__
 void
-writeNewTask( int begin,
-              int end,
-              int iteration,
-              int maxElemFor2ndPhase,
+writeNewTask( Index begin,
+              Index end,
+              Index iteration,
+              Index maxElemFor2ndPhase,
               Containers::ArrayView< TASK, Devices::Cuda > newTasks,
               int* newTasksCnt,
               Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks,
@@ -32,19 +31,22 @@ writeNewTask( int begin,
 
 //-----------------------------------------------------------
 
+template< typename Index >
 __global__
 void
 cudaCalcBlocksNeeded( Containers::ArrayView< TASK, Devices::Cuda > cuda_tasks,
-                      int elemPerBlock,
-                      Containers::ArrayView< int, Devices::Cuda > blocksNeeded )
+                      Index elemPerBlock,
+                      Containers::ArrayView< Index, Devices::Cuda > blocksNeeded )
 {
-   int i = blockIdx.x * blockDim.x + threadIdx.x;
+#ifdef __CUDACC__
+   Index i = blockIdx.x * blockDim.x + threadIdx.x;
    if( i >= cuda_tasks.getSize() )
       return;
 
    TASK& task = cuda_tasks[ i ];
-   int size = task.partitionEnd - task.partitionBegin;
+   Index size = task.partitionEnd - task.partitionBegin;
    blocksNeeded[ i ] = size / elemPerBlock + ( size % elemPerBlock != 0 );
+#endif
 }
 
 //-----------------------------------------------------------
@@ -58,6 +60,7 @@ cudaInitTask( Containers::ArrayView< TASK, Devices::Cuda > cuda_tasks,
               Containers::ArrayView< Value, Devices::Cuda > src,
               CMP Cmp )
 {
+#ifdef __CUDACC__
    if( blockIdx.x >= cuda_tasks.getSize() )
       return;
 
@@ -71,6 +74,7 @@ cudaInitTask( Containers::ArrayView< TASK, Devices::Cuda > cuda_tasks,
       int pivotIdx = task.partitionBegin + pickPivotIdx( src.getView( task.partitionBegin, task.partitionEnd ), Cmp );
       task.initTask( start, end - start, pivotIdx );
    }
+#endif
 }
 
 //----------------------------------------------------
@@ -85,6 +89,7 @@ cudaQuickSort1stPhase( Containers::ArrayView< Value, Devices::Cuda > arr,
                        Containers::ArrayView< TASK, Devices::Cuda > tasks,
                        Containers::ArrayView< int, Devices::Cuda > taskMapping )
 {
+#ifdef __CUDACC__
    extern __shared__ int externMem[];
    Value* piv = (Value*) externMem;
    Value* sharedMem = piv + 1;
@@ -105,6 +110,7 @@ cudaQuickSort1stPhase( Containers::ArrayView< Value, Devices::Cuda > arr,
                                            pivot,
                                            elemPerBlock,
                                            myTask );
+#endif
 }
 
 //----------------------------------------------------
@@ -121,6 +127,7 @@ cudaWritePivot( Containers::ArrayView< Value, Devices::Cuda > arr,
                 Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks,
                 int* secondPhaseTasksCnt )
 {
+#ifdef __CUDACC__
    extern __shared__ int externMem[];
    Value* piv = (Value*) externMem;
 
@@ -167,21 +174,24 @@ cudaWritePivot( Containers::ArrayView< Value, Devices::Cuda > arr,
                     secondPhaseTasks,
                     secondPhaseTasksCnt );
    }
+#endif
 }
 
 //-----------------------------------------------------------
 
+template< typename Index >
 __device__
 void
-writeNewTask( int begin,
-              int end,
-              int iteration,
-              int maxElemFor2ndPhase,
+writeNewTask( Index begin,
+              Index end,
+              Index iteration,
+              Index maxElemFor2ndPhase,
               Containers::ArrayView< TASK, Devices::Cuda > newTasks,
               int* newTasksCnt,
               Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks,
               int* secondPhaseTasksCnt )
 {
+#ifdef __CUDACC__
    int size = end - begin;
    if( size < 0 ) {
       printf( "negative size, something went really wrong\n" );
@@ -219,6 +229,7 @@ writeNewTask( int begin,
                     "unsorted!!!\n" );
       }
    }
+#endif
 }
 
 //-----------------------------------------------------------
@@ -233,6 +244,7 @@ cudaQuickSort2ndPhase( Containers::ArrayView< Value, Devices::Cuda > arr,
                        int elemInShared,
                        int maxBitonicSize )
 {
+#ifdef __CUDACC__
    extern __shared__ int externMem[];
    Value* sharedMem = (Value*) externMem;
 
@@ -253,19 +265,21 @@ cudaQuickSort2ndPhase( Containers::ArrayView< Value, Devices::Cuda > arr,
       singleBlockQuickSort< Value, CMP, stackSize, true >(
          arrView, auxView, Cmp, myTask.iteration, sharedMem, elemInShared, maxBitonicSize );
    }
+#endif
 }
 
 template< typename Value, typename CMP, int stackSize >
 __global__
 void
-cudaQuickSort2ndPhase( Containers::ArrayView< Value, Devices::Cuda > arr,
-                       Containers::ArrayView< Value, Devices::Cuda > aux,
-                       CMP Cmp,
-                       Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks1,
-                       Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks2,
-                       int elemInShared,
-                       int maxBitonicSize )
+cudaQuickSort2ndPhase2( Containers::ArrayView< Value, Devices::Cuda > arr,
+                        Containers::ArrayView< Value, Devices::Cuda > aux,
+                        CMP Cmp,
+                        Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks1,
+                        Containers::ArrayView< TASK, Devices::Cuda > secondPhaseTasks2,
+                        int elemInShared,
+                        int maxBitonicSize )
 {
+#ifdef __CUDACC__
    extern __shared__ int externMem[];
    Value* sharedMem = (Value*) externMem;
 
@@ -291,9 +305,8 @@ cudaQuickSort2ndPhase( Containers::ArrayView< Value, Devices::Cuda > arr,
       singleBlockQuickSort< Value, CMP, stackSize, true >(
          arrView, auxView, Cmp, myTask.iteration, sharedMem, elemInShared, maxBitonicSize );
    }
-}
-
 #endif
+}
 
 }  // namespace Sorting
 }  // namespace Algorithms

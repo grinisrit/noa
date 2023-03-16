@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -52,8 +52,7 @@ String::getData() const
 inline char*
 String::getData()
 {
-   // NOTE: std::string::data is non-const only since C++17
-   return const_cast< char* >( data() );
+   return data();
 }
 
 inline const char&

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -217,51 +217,6 @@ public:
    }
 };
 
-#ifdef HAVE_CUDA
-template< typename Index, typename Fetch, bool HasAllParameters = detail::CheckFetchLambda< Index, Fetch >::hasAllParameters() >
-struct ChunkedEllpackreduceSegmentsDispatcher
-{};
-
-template< typename Index, typename Fetch >
-struct ChunkedEllpackreduceSegmentsDispatcher< Index, Fetch, true >
-{
-   template< typename View, typename Reduction, typename ResultKeeper, typename Real, typename... Args >
-   __device__
-   static void
-   exec( View chunkedEllpack,
-         Index gridIdx,
-         Index first,
-         Index last,
-         Fetch fetch,
-         Reduction reduction,
-         ResultKeeper keeper,
-         Real zero,
-         Args... args )
-   {
-      chunkedEllpack.reduceSegmentsKernelWithAllParameters( gridIdx, first, last, fetch, reduction, keeper, zero, args... );
-   }
-};
-
-template< typename Index, typename Fetch >
-struct ChunkedEllpackreduceSegmentsDispatcher< Index, Fetch, false >
-{
-   template< typename View, typename Reduction, typename ResultKeeper, typename Real, typename... Args >
-   __device__
-   static void
-   exec( View chunkedEllpack,
-         Index gridIdx,
-         Index first,
-         Index last,
-         Fetch fetch,
-         Reduction reduction,
-         ResultKeeper keeper,
-         Real zero,
-         Args... args )
-   {
-      chunkedEllpack.reduceSegmentsKernel( gridIdx, first, last, fetch, reduction, keeper, zero, args... );
-   }
-};
-
 template< typename View,
           typename Index,
           typename Fetch,
@@ -281,10 +236,12 @@ ChunkedEllpackreduceSegmentsKernel( View chunkedEllpack,
                                     Real zero,
                                     Args... args )
 {
-   ChunkedEllpackreduceSegmentsDispatcher< Index, Fetch >::exec(
-      chunkedEllpack, gridIdx, first, last, fetch, reduction, keeper, zero, args... );
+   constexpr bool HasAllParameters = detail::CheckFetchLambda< Index, Fetch >::hasAllParameters();
+   if constexpr( HasAllParameters )
+      chunkedEllpack.reduceSegmentsKernelWithAllParameters( gridIdx, first, last, fetch, reduction, keeper, zero, args... );
+   else
+      chunkedEllpack.reduceSegmentsKernel( gridIdx, first, last, fetch, reduction, keeper, zero, args... );
 }
-#endif
 
 }  // namespace detail
 }  // namespace Segments

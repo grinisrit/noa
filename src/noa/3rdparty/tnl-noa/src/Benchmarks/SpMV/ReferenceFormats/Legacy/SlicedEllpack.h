@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse.h>
+#include "Sparse.h"
 #include <TNL/Containers/Vector.h>
 
 namespace TNL {
@@ -29,7 +29,7 @@ template< typename Real = double,
           int SliceSize = 32 >
 class SlicedEllpack;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index,
           int SliceSize >
@@ -72,7 +72,7 @@ public:
              int _SliceSize = SliceSize >
    using Self = SlicedEllpack< _Real, _Device, _Index, _SliceSize >;
 
-   static constexpr bool isSymmetric() { return false; };
+   static constexpr bool isSymmetric() { return false; }
 
    SlicedEllpack();
 
@@ -189,12 +189,6 @@ public:
    void getTransposition( const SlicedEllpack< Real2, Device, Index2 >& matrix,
                           const RealType& matrixMultiplicator = 1.0 );
 
-   template< typename Vector1, typename Vector2 >
-   bool performSORIteration( const Vector1& b,
-                             const IndexType row,
-                             Vector2& x,
-                             const RealType& omega = 1.0 ) const;
-
    // copy assignment
    SlicedEllpack& operator=( const SlicedEllpack& matrix );
 
@@ -219,7 +213,7 @@ protected:
 
    typedef SlicedEllpackDeviceDependentCode< DeviceType > DeviceDependentCode;
    friend class SlicedEllpackDeviceDependentCode< DeviceType >;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    /*friend __global__ void SlicedEllpack_computeMaximalRowLengthInSlices_CudaKernel< Real, Index, SliceSize >( SlicedEllpack< Real, Devices::Cuda, Index, SliceSize >* matrix,
                                                                                       const typename SlicedEllpack< Real, Devices::Cuda, Index, SliceSize >::RowsCapacitiesType* rowLengths,
                                                                                       int gridIdx );
@@ -238,4 +232,4 @@ public:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/SlicedEllpack_impl.h>
+#include "SlicedEllpack_impl.h"

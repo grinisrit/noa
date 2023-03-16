@@ -20,7 +20,7 @@ protected:
 
 // types for which ContainsTest is instantiated
 using ArrayTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    Array< int,    Devices::Sequential, short >,
    Array< long,   Devices::Sequential, short >,
    Array< double, Devices::Sequential, short >,
@@ -41,7 +41,7 @@ using ArrayTypes = ::testing::Types<
    Array< long,   Devices::Host, long >,
    Array< double, Devices::Host, long >
 #endif
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    Array< int,    Devices::Cuda, short >,
    Array< long,   Devices::Cuda, short >,
    Array< double, Devices::Cuda, short >,

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -54,7 +54,8 @@ public:
     */
    __cuda_callable__
    SegmentView( const IndexType segmentIdx, const IndexType offset, const IndexType size, const IndexType step )
-   : segmentIdx( segmentIdx ), segmentOffset( offset ), segmentSize( size ), step( step ){};
+   : segmentIdx( segmentIdx ), segmentOffset( offset ), segmentSize( size ), step( step )
+   {}
 
    /**
     * \brief Copy constructor.
@@ -63,7 +64,8 @@ public:
     */
    __cuda_callable__
    SegmentView( const SegmentView& view )
-   : segmentIdx( view.segmentIdx ), segmentOffset( view.segmentOffset ), segmentSize( view.segmentSize ), step( view.step ){};
+   : segmentIdx( view.segmentIdx ), segmentOffset( view.segmentOffset ), segmentSize( view.segmentSize ), step( view.step )
+   {}
 
    /**
     * \brief Get the size of the segment, i.e. number of elements in the segment.
@@ -75,7 +77,7 @@ public:
    getSize() const
    {
       return this->segmentSize;
-   };
+   }
 
    /**
     * \brief Get global index of an element with rank \e localIndex in the segment.
@@ -89,7 +91,7 @@ public:
    {
       TNL_ASSERT_LT( localIndex, segmentSize, "Local index exceeds segment bounds." );
       return segmentOffset + localIndex * step;
-   };
+   }
 
    /**
     * \brief Get index of the segment.
@@ -101,7 +103,7 @@ public:
    getSegmentIndex() const
    {
       return this->segmentIdx;
-   };
+   }
 
    /**
     * \brief Returns iterator pointing at the beginning of the segment.
@@ -113,7 +115,7 @@ public:
    begin() const
    {
       return IteratorType( *this, 0 );
-   };
+   }
 
    /**
     * \brief Returns iterator pointing at the end of the segment.
@@ -125,7 +127,7 @@ public:
    end() const
    {
       return IteratorType( *this, this->getSize() );
-   };
+   }
 
    /**
     * \brief Returns constant iterator pointing at the beginning of the segment.
@@ -137,7 +139,7 @@ public:
    cbegin() const
    {
       return IteratorType( *this, 0 );
-   };
+   }
 
    /**
     * \brief Returns constant iterator pointing at the end of the segment.
@@ -149,7 +151,7 @@ public:
    cend() const
    {
       return IteratorType( *this, this->getSize() );
-   };
+   }
 
 protected:
    IndexType segmentIdx, segmentOffset, segmentSize, step;
@@ -182,7 +184,8 @@ public:
                 const IndexType offset,
                 const IndexType size,
                 const IndexType step = 1 )  // For compatibility with previous specialization
-   : segmentIdx( segmentIdx ), segmentOffset( offset ), segmentSize( size ){};
+   : segmentIdx( segmentIdx ), segmentOffset( offset ), segmentSize( size )
+   {}
 
    /**
     * \brief Copy constructor.
@@ -191,7 +194,8 @@ public:
     */
    __cuda_callable__
    SegmentView( const SegmentView& view )
-   : segmentIdx( view.segmentIdx ), segmentOffset( view.segmentOffset ), segmentSize( view.segmentSize ){};
+   : segmentIdx( view.segmentIdx ), segmentOffset( view.segmentOffset ), segmentSize( view.segmentSize )
+   {}
 
    /**
     * \brief Get the size of the segment, i.e. number of elements in the segment.
@@ -203,7 +207,7 @@ public:
    getSize() const
    {
       return this->segmentSize;
-   };
+   }
 
    /**
     * \brief Get global index of an element with rank \e localIndex in the segment.
@@ -217,7 +221,7 @@ public:
    {
       TNL_ASSERT_LT( localIndex, segmentSize, "Local index exceeds segment bounds." );
       return segmentOffset + localIndex;
-   };
+   }
 
    /**
     * \brief Get index of the segment.
@@ -229,7 +233,7 @@ public:
    getSegmentIndex() const
    {
       return this->segmentIdx;
-   };
+   }
 
    /**
     * \brief Returns iterator pointing at the beginning of the segment.
@@ -241,7 +245,7 @@ public:
    begin() const
    {
       return IteratorType( *this, 0 );
-   };
+   }
 
    /**
     * \brief Returns iterator pointing at the end of the segment.
@@ -253,7 +257,7 @@ public:
    end() const
    {
       return IteratorType( *this, this->getSize() );
-   };
+   }
 
    /**
     * \brief Returns constant iterator pointing at the beginning of the segment.
@@ -265,7 +269,7 @@ public:
    cbegin() const
    {
       return IteratorType( *this, 0 );
-   };
+   }
 
    /**
     * \brief Returns constant iterator pointing at the end of the segment.
@@ -277,7 +281,7 @@ public:
    cend() const
    {
       return IteratorType( *this, this->getSize() );
-   };
+   }
 
 protected:
    IndexType segmentIdx, segmentOffset, segmentSize;

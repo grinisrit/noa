@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <type_traits>
 #include <utility>
 
-#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Grid.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/MeshTypeResolver.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/VTKTraits.h>
 
@@ -55,169 +55,144 @@ MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveCellTop
 
 template< typename ConfigTag, typename Device >
 template< typename Reader, typename Functor >
-template< typename CellTopology, typename, typename >
+template< typename CellTopology >
 bool
 MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveSpaceDimension( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The cell topology " << getType< CellTopology >() << " is disabled in the build configuration." << std::endl;
-   return false;
-}
-
-template< typename ConfigTag, typename Device >
-template< typename Reader, typename Functor >
-template< typename CellTopology, typename >
-bool
-MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveSpaceDimension( Reader& reader, Functor&& functor )
-{
-   switch( reader.getSpaceDimension() ) {
-      case 1:
-         return resolveReal< CellTopology, 1 >( reader, std::forward< Functor >( functor ) );
-      case 2:
-         return resolveReal< CellTopology, 2 >( reader, std::forward< Functor >( functor ) );
-      case 3:
-         return resolveReal< CellTopology, 3 >( reader, std::forward< Functor >( functor ) );
-      default:
-         std::cerr << "unsupported space dimension: " << reader.getSpaceDimension() << std::endl;
-         return false;
+   if constexpr( BuildConfigTags::MeshCellTopologyTag< ConfigTag, CellTopology >::enabled ) {
+      switch( reader.getSpaceDimension() ) {
+         case 1:
+            return resolveReal< CellTopology, 1 >( reader, std::forward< Functor >( functor ) );
+         case 2:
+            return resolveReal< CellTopology, 2 >( reader, std::forward< Functor >( functor ) );
+         case 3:
+            return resolveReal< CellTopology, 3 >( reader, std::forward< Functor >( functor ) );
+         default:
+            std::cerr << "unsupported space dimension: " << reader.getSpaceDimension() << std::endl;
+            return false;
+      }
+   }
+   else {
+      std::cerr << "The cell topology " << getType< CellTopology >() << " is disabled in the build configuration." << std::endl;
+      return false;
    }
 }
 
 template< typename ConfigTag, typename Device >
 template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename, typename >
+template< typename CellTopology, int SpaceDimension >
 bool
 MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveReal( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The combination of space dimension (" << SpaceDimension << ") and mesh dimension (" << CellTopology::dimension
-             << ") is either invalid or disabled in the build configuration." << std::endl;
-   return false;
+   if constexpr( BuildConfigTags::MeshSpaceDimensionTag< ConfigTag, CellTopology, SpaceDimension >::enabled ) {
+      if( reader.getRealType() == "float" )
+         return resolveGlobalIndex< CellTopology, SpaceDimension, float >( reader, std::forward< Functor >( functor ) );
+      if( reader.getRealType() == "double" )
+         return resolveGlobalIndex< CellTopology, SpaceDimension, double >( reader, std::forward< Functor >( functor ) );
+      if( reader.getRealType() == "long double" )
+         return resolveGlobalIndex< CellTopology, SpaceDimension, long double >( reader, std::forward< Functor >( functor ) );
+      std::cerr << "Unsupported real type: " << reader.getRealType() << std::endl;
+      return false;
+   }
+   else {
+      std::cerr << "The combination of space dimension (" << SpaceDimension << ") and mesh dimension ("
+                << CellTopology::dimension << ") is either invalid or disabled in the build configuration." << std::endl;
+      return false;
+   }
 }
 
 template< typename ConfigTag, typename Device >
 template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename >
-bool
-MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveReal( Reader& reader, Functor&& functor )
-{
-   if( reader.getRealType() == "float" )
-      return resolveGlobalIndex< CellTopology, SpaceDimension, float >( reader, std::forward< Functor >( functor ) );
-   if( reader.getRealType() == "double" )
-      return resolveGlobalIndex< CellTopology, SpaceDimension, double >( reader, std::forward< Functor >( functor ) );
-   if( reader.getRealType() == "long double" )
-      return resolveGlobalIndex< CellTopology, SpaceDimension, long double >( reader, std::forward< Functor >( functor ) );
-   std::cerr << "Unsupported real type: " << reader.getRealType() << std::endl;
-   return false;
-}
-
-template< typename ConfigTag, typename Device >
-template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename Real, typename, typename >
+template< typename CellTopology, int SpaceDimension, typename Real >
 bool
 MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveGlobalIndex( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The mesh real type " << getType< Real >() << " is disabled in the build configuration." << std::endl;
-   return false;
+   if constexpr( BuildConfigTags::MeshRealTag< ConfigTag, Real >::enabled ) {
+      if( reader.getGlobalIndexType() == "std::int16_t" || reader.getGlobalIndexType() == "std::uint16_t" )
+         return resolveLocalIndex< CellTopology, SpaceDimension, Real, std::int16_t >( reader,
+                                                                                       std::forward< Functor >( functor ) );
+      if( reader.getGlobalIndexType() == "std::int32_t" || reader.getGlobalIndexType() == "std::uint32_t" )
+         return resolveLocalIndex< CellTopology, SpaceDimension, Real, std::int32_t >( reader,
+                                                                                       std::forward< Functor >( functor ) );
+      if( reader.getGlobalIndexType() == "std::int64_t" || reader.getGlobalIndexType() == "std::uint64_t" )
+         return resolveLocalIndex< CellTopology, SpaceDimension, Real, std::int64_t >( reader,
+                                                                                       std::forward< Functor >( functor ) );
+      std::cerr << "Unsupported global index type: " << reader.getGlobalIndexType() << std::endl;
+      return false;
+   }
+   else {
+      std::cerr << "The mesh real type " << getType< Real >() << " is disabled in the build configuration." << std::endl;
+      return false;
+   }
 }
 
 template< typename ConfigTag, typename Device >
 template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename Real, typename >
-bool
-MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveGlobalIndex( Reader& reader, Functor&& functor )
-{
-   if( reader.getGlobalIndexType() == "short" || reader.getGlobalIndexType() == "short int"
-       || reader.getGlobalIndexType() == "std::int16_t" || reader.getGlobalIndexType() == "std::uint16_t" )
-      return resolveLocalIndex< CellTopology, SpaceDimension, Real, short int >( reader, std::forward< Functor >( functor ) );
-   if( reader.getGlobalIndexType() == "int" || reader.getGlobalIndexType() == "std::int32_t"
-       || reader.getGlobalIndexType() == "std::uint32_t" )
-      return resolveLocalIndex< CellTopology, SpaceDimension, Real, int >( reader, std::forward< Functor >( functor ) );
-   if( reader.getGlobalIndexType() == "long" || reader.getGlobalIndexType() == "long int"
-       || reader.getGlobalIndexType() == "std::int64_t" || reader.getGlobalIndexType() == "std::uint64_t" )
-      return resolveLocalIndex< CellTopology, SpaceDimension, Real, long int >( reader, std::forward< Functor >( functor ) );
-   std::cerr << "Unsupported global index type: " << reader.getGlobalIndexType() << std::endl;
-   return false;
-}
-
-template< typename ConfigTag, typename Device >
-template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename Real, typename GlobalIndex, typename, typename >
+template< typename CellTopology, int SpaceDimension, typename Real, typename GlobalIndex >
 bool
 MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveLocalIndex( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The mesh global index type " << getType< GlobalIndex >() << " is disabled in the build configuration."
-             << std::endl;
-   return false;
+   if constexpr( BuildConfigTags::MeshGlobalIndexTag< ConfigTag, GlobalIndex >::enabled ) {
+      if( reader.getLocalIndexType() == "std::int16_t" || reader.getLocalIndexType() == "std::uint16_t" )
+         return resolveMeshType< CellTopology, SpaceDimension, Real, GlobalIndex, std::int16_t >(
+            reader, std::forward< Functor >( functor ) );
+      if( reader.getLocalIndexType() == "std::int32_t" || reader.getLocalIndexType() == "std::uint32_t" )
+         return resolveMeshType< CellTopology, SpaceDimension, Real, GlobalIndex, std::int32_t >(
+            reader, std::forward< Functor >( functor ) );
+      if( reader.getLocalIndexType() == "std::int64_t" || reader.getLocalIndexType() == "std::uint64_t" )
+         return resolveMeshType< CellTopology, SpaceDimension, Real, GlobalIndex, std::int64_t >(
+            reader, std::forward< Functor >( functor ) );
+      std::cerr << "Unsupported local index type: " << reader.getLocalIndexType() << std::endl;
+      return false;
+   }
+   else {
+      std::cerr << "The mesh global index type " << getType< GlobalIndex >() << " is disabled in the build configuration."
+                << std::endl;
+      return false;
+   }
 }
 
 template< typename ConfigTag, typename Device >
 template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename Real, typename GlobalIndex, typename >
-bool
-MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveLocalIndex( Reader& reader, Functor&& functor )
-{
-   if( reader.getLocalIndexType() == "short" || reader.getLocalIndexType() == "short int"
-       || reader.getLocalIndexType() == "std::int16_t" || reader.getLocalIndexType() == "std::uint16_t" )
-      return resolveMeshType< CellTopology, SpaceDimension, Real, GlobalIndex, short int >(
-         reader, std::forward< Functor >( functor ) );
-   if( reader.getLocalIndexType() == "int" || reader.getLocalIndexType() == "std::int32_t"
-       || reader.getLocalIndexType() == "std::uint32_t" )
-      return resolveMeshType< CellTopology, SpaceDimension, Real, GlobalIndex, int >( reader,
-                                                                                      std::forward< Functor >( functor ) );
-   if( reader.getLocalIndexType() == "long" || reader.getLocalIndexType() == "long int"
-       || reader.getLocalIndexType() == "std::int64_t" || reader.getLocalIndexType() == "std::uint64_t" )
-      return resolveMeshType< CellTopology, SpaceDimension, Real, GlobalIndex, long int >( reader,
-                                                                                           std::forward< Functor >( functor ) );
-   std::cerr << "Unsupported local index type: " << reader.getLocalIndexType() << std::endl;
-   return false;
-}
-
-template< typename ConfigTag, typename Device >
-template< typename Reader, typename Functor >
-template< typename CellTopology,
-          int SpaceDimension,
-          typename Real,
-          typename GlobalIndex,
-          typename LocalIndex,
-          typename,
-          typename >
+template< typename CellTopology, int SpaceDimension, typename Real, typename GlobalIndex, typename LocalIndex >
 bool
 MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveMeshType( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The mesh local index type " << getType< LocalIndex >() << " is disabled in the build configuration."
-             << std::endl;
-   return false;
+   if constexpr( BuildConfigTags::MeshLocalIndexTag< ConfigTag, LocalIndex >::enabled ) {
+      using MeshConfig = typename BuildConfigTags::MeshConfigTemplateTag<
+         ConfigTag >::template MeshConfig< CellTopology, SpaceDimension, Real, GlobalIndex, LocalIndex >;
+      return resolveTerminate< MeshConfig >( reader, std::forward< Functor >( functor ) );
+   }
+   else {
+      std::cerr << "The mesh local index type " << getType< LocalIndex >() << " is disabled in the build configuration."
+                << std::endl;
+      return false;
+   }
 }
 
 template< typename ConfigTag, typename Device >
 template< typename Reader, typename Functor >
-template< typename CellTopology, int SpaceDimension, typename Real, typename GlobalIndex, typename LocalIndex, typename >
-bool
-MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveMeshType( Reader& reader, Functor&& functor )
-{
-   using MeshConfig = typename BuildConfigTags::MeshConfigTemplateTag<
-      ConfigTag >::template MeshConfig< CellTopology, SpaceDimension, Real, GlobalIndex, LocalIndex >;
-   return resolveTerminate< MeshConfig >( reader, std::forward< Functor >( functor ) );
-}
-
-template< typename ConfigTag, typename Device >
-template< typename Reader, typename Functor >
-template< typename MeshConfig, typename, typename >
+template< typename MeshConfig >
 bool
 MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveTerminate( Reader& reader, Functor&& functor )
 {
-   std::cerr << "The mesh config type " << getType< MeshConfig >() << " is disabled in the build configuration for device "
-             << getType< Device >() << "." << std::endl;
-   return false;
-}
-
-template< typename ConfigTag, typename Device >
-template< typename Reader, typename Functor >
-template< typename MeshConfig, typename >
-bool
-MeshTypeResolver< ConfigTag, Device >::detail< Reader, Functor >::resolveTerminate( Reader& reader, Functor&& functor )
-{
-   using MeshType = Meshes::Mesh< MeshConfig, Device >;
-   return std::forward< Functor >( functor )( reader, MeshType{} );
+   if constexpr( BuildConfigTags::MeshDeviceTag< ConfigTag, Device >::enabled
+                 && BuildConfigTags::MeshTag< ConfigTag,
+                                              Device,
+                                              typename MeshConfig::CellTopology,
+                                              MeshConfig::spaceDimension,
+                                              typename MeshConfig::RealType,
+                                              typename MeshConfig::GlobalIndexType,
+                                              typename MeshConfig::LocalIndexType >::enabled )
+   {
+      using MeshType = Meshes::Mesh< MeshConfig, Device >;
+      return std::forward< Functor >( functor )( reader, MeshType{} );
+   }
+   else {
+      std::cerr << "The mesh config type " << getType< MeshConfig >() << " is disabled in the build configuration for device "
+                << getType< Device >() << "." << std::endl;
+      return false;
+   }
 }
 
 }  // namespace Meshes

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -58,7 +58,7 @@ public:
    havePadding()
    {
       return true;
-   };
+   }
 
    __cuda_callable__
    EllpackView() = default;
@@ -86,7 +86,7 @@ public:
    getView();
 
    __cuda_callable__
-   const ConstViewType
+   ConstViewType
    getConstView() const;
 
    /**

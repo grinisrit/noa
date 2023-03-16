@@ -335,7 +335,6 @@ TEST( MeshGeometryTest, Polygon3DIsPlanarTest )
    using PolygonMeshEntityType = MeshEntity< TestPolygon3DMeshConfig, Devices::Host, Topologies::Polygon >;
    using VertexMeshEntityType = typename PolygonMeshEntityType::SubentityTraits< 0 >::SubentityType;
    using PointType = typename VertexMeshEntityType::PointType;
-   using RealType = typename PolygonTestMesh::RealType;
 
    const PointType offset( 0.100, 0.125, 0.150 );
 
@@ -802,7 +801,6 @@ TEST( MeshGeometryTest, Polygon3DGetPlanarMeshTest )
    using PolygonMeshEntityType = MeshEntity< TestPolygon3DMeshConfig, Devices::Host, Topologies::Polygon >;
    using VertexMeshEntityType = typename PolygonMeshEntityType::SubentityTraits< 0 >::SubentityType;
    using PointType = typename VertexMeshEntityType::PointType;
-   using RealType = typename PolygonTestMesh::RealType;
 
    const PointType offset( 0.100, 0.125, 0.150 );
 
@@ -850,7 +848,7 @@ TEST( MeshGeometryTest, Polygon3DGetPlanarMeshTest )
       using VTKWriter = Meshes::Writers::VTKWriter< decltype( mesh ) >;
       std::ofstream file( "polygon_planarTest_orig.vtk" );
       VTKWriter writer( file, VTK::FileFormat::ascii );
-      writer.template writeEntities( mesh );
+      writer.writeEntities( mesh );
    }
 
    // Test for the 1st version
@@ -1159,7 +1157,7 @@ TEST( MeshGeometryTest, TriangleGetRefinedMeshTest )
    EXPECT_EQ( refinedMesh.getEntitiesCount< 2 >(),  8 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 1 >(), 16 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 0 >(),  9 );
-};
+}
 
 TEST( MeshGeometryTest, QuadrangleGetRefinedMeshTest )
 {
@@ -1199,7 +1197,7 @@ TEST( MeshGeometryTest, QuadrangleGetRefinedMeshTest )
    EXPECT_EQ( refinedMesh.getEntitiesCount< 2 >(),  8 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 1 >(), 22 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 0 >(), 15 );
-};
+}
 
 TEST( MeshGeometryTest, TetrahedronGetRefinedMeshTest )
 {
@@ -1238,7 +1236,7 @@ TEST( MeshGeometryTest, TetrahedronGetRefinedMeshTest )
    EXPECT_EQ( refinedMesh.getEntitiesCount< 2 >(), 44 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 1 >(), 41 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 0 >(), 14 );
-};
+}
 
 TEST( MeshGeometryTest, HexahedronGetRefinedMeshTest )
 {
@@ -1299,7 +1297,7 @@ TEST( MeshGeometryTest, HexahedronGetRefinedMeshTest )
    EXPECT_EQ( refinedMesh.getEntitiesCount< 2 >(), 68 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 1 >(), 96 );
    EXPECT_EQ( refinedMesh.getEntitiesCount< 0 >(), 45 );
-};
+}
 
 } // namespace MeshTest
 

@@ -2,7 +2,7 @@
 
 #include <TNL/Matrices/Matrix.h>
 #include <TNL/Containers/Vector.h>
-#include <TNL/Benchmarks/SpMV/ReferenceFormats/Legacy/MultidiagonalRow.h>
+#include "MultidiagonalRow.h"
 
 namespace TNL {
     namespace Benchmarks {
@@ -173,12 +173,6 @@ public:
    void getTransposition( const Multidiagonal< Real2, Device, Index2 >& matrix,
                           const RealType& matrixMultiplicator = 1.0 );
 
-   template< typename Vector1, typename Vector2 >
-   bool performSORIteration( const Vector1& b,
-                             const IndexType row,
-                             Vector2& x,
-                             const RealType& omega = 1.0 ) const;
-
    // copy assignment
    Multidiagonal& operator=( const Multidiagonal& matrix );
 
@@ -223,4 +217,4 @@ protected:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <TNL/Benchmarks/SpMV/ReferenceFormats/Legacy/Multidiagonal_impl.h>
+#include "Multidiagonal_impl.h"

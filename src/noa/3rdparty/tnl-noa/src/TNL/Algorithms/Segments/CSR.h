@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -25,11 +25,8 @@ namespace Segments {
  * \tparam Device is type of device where the segments will be operating.
  * \tparam Index is type for indexing of the elements managed by the segments.
  * \tparam Kernel is type of kernel used for parallel operations with segments.
- *    It can be any of the following:
- *    \ref TNL::Containers::Segments::Kernels::CSRAdaptiveKernel,
- *    \ref TNL::Containers::Segments::Kernels::CSRHybridKernel,
- *    \ref TNL::Containers::Segments::Kernels::CSRScalarKernel,
- *    \ref TNL::Containers::Segments::Kernels::CSRVectorKernel
+ *    It can be any of the following: \ref CSRAdaptiveKernel,
+ *    \ref CSRHybridKernel, \ref CSRScalarKernel, \ref CSRVectorKernel.
  *
  * \tparam IndexAllocator is allocator for supporting index containers.
  */
@@ -85,7 +82,8 @@ public:
    using SegmentViewType = SegmentView< IndexType, RowMajorOrder >;
 
    /**
-    * \brief This functions says that CSR format is always organised in row-major order.
+    * \brief This functions says that CSR format is always organised in
+    * row-major order.
     */
    static constexpr ElementsOrganization
    getOrganization()
@@ -100,7 +98,7 @@ public:
    havePadding()
    {
       return false;
-   };
+   }
 
    /**
     * \brief Construct with no parameters to create empty segments.
@@ -110,12 +108,14 @@ public:
    /**
     * \brief Construct with segments sizes.
     *
-    * The number of segments is given by the size of \e segmentsSizes. Particular elements
-    * of this container define sizes of particular segments.
+    * The number of segments is given by the size of \e segmentsSizes.
+    * Particular elements of this container define sizes of particular
+    * segments.
     *
-    * \tparam SizesContainer is a type of container for segments sizes.  It can be \ref TNL::Containers::Array or
-    *  \ref TNL::Containers::Vector for example.
-    * \param sizes is an instance of the container with the segments sizes.
+    * \tparam SizesContainer is a type of container for segments sizes.  It can
+    *    be \ref TNL::Containers::Array or \ref TNL::Containers::Vector for
+    *    example.
+    * \param segmentsSizes is an instance of the container with the segments sizes.
     *
     * See the following example:
     *
@@ -131,11 +131,12 @@ public:
    /**
     * \brief Construct with segments sizes in initializer list..
     *
-    * The number of segments is given by the size of \e segmentsSizes. Particular elements
-    * of this initializer list define sizes of particular segments.
+    * The number of segments is given by the size of \e segmentsSizes.
+    * Particular elements of this initializer list define sizes of particular
+    * segments.
     *
     * \tparam ListIndex is a type of indexes of the initializer list.
-    * \param sizes is an instance of the container with the segments sizes.
+    * \param segmentsSizes is an instance of the container with the segments sizes.
     *
     * See the following example:
     *
@@ -165,7 +166,8 @@ public:
    /**
     * \brief Returns string with serialization type.
     *
-    * The string has a form `Algorithms::Segments::CSR< IndexType,  [any_device], [any_kernel], [any_allocator] >`.
+    * The string has a form `Algorithms::Segments::CSR< IndexType,
+    * [any_device], [any_kernel], [any_allocator] >`.
     *
     * \return String with the serialization type.
     *
@@ -195,8 +197,8 @@ public:
    /**
     * \brief Set sizes of particular segments.
     *
-    * \tparam SizesContainer is a container with segments sizes. It can be \ref TNL::Containers::Array or
-    *  \ref TNL::Containers::Vector for example.
+    * \tparam SizesContainer is a container with segments sizes. It can be
+    * \ref TNL::Containers::Array or \ref TNL::Containers::Vector for example.
     *
     * \param segmentsSizes is an instance of the container with segments sizes.
     */
@@ -215,8 +217,8 @@ public:
    /**
     * \brief Getter of a view object.
     *
-    * \return View for this instance of CSR segments which can by used for example in
-    *  lambda functions running in GPU kernels.
+    * \return View for this instance of CSR segments which can by used for
+    * example in lambda functions running in GPU kernels.
     */
    ViewType
    getView();
@@ -224,10 +226,10 @@ public:
    /**
     * \brief Getter of a view object for constants instances.
     *
-    * \return View for this instance of CSR segments which can by used for example in
-    *  lambda functions running in GPU kernels.
+    * \return View for this instance of CSR segments which can by used for
+    * example in lambda functions running in GPU kernels.
     */
-   const ConstViewType
+   ConstViewType
    getConstView() const;
 
    /**
@@ -258,7 +260,8 @@ public:
    getSize() const;
 
    /**
-    * \brief Returns number of elements that needs to be allocated by a container connected to this segments.
+    * \brief Returns number of elements that needs to be allocated by a
+    * container connected to this segments.
     *
     * \return size of container connected to this segments.
     */
@@ -280,7 +283,8 @@ public:
    getGlobalIndex( Index segmentIdx, Index localIdx ) const;
 
    /**
-    * \brief Returns segment view (i.e. segment accessor) of segment with given index.
+    * \brief Returns segment view (i.e. segment accessor) of segment with given
+    * index.
     *
     * \param segmentIdx is index of the request segment.
     * \return segment view of given segment.
@@ -311,7 +315,8 @@ public:
    getOffsets();
 
    /**
-    * \brief Iterate over all elements of given segments in parallel and call given lambda function.
+    * \brief Iterate over all elements of given segments in parallel and call
+    * given lambda function.
     *
     * \tparam Function is a type of the lambda function to be performed on each element.
     * \param begin defines begining of an interval [ \e begin, \e end ) of segments on
@@ -325,8 +330,9 @@ public:
     * ```
     * auto f = [=] __cuda_callable__ ( IndexType segmentIdx, IndexType localIdx, IndexType globalIdx ) {...}
     * ```
-    * where \e segmentIdx is index of segment where given element belong to, \e localIdx is rank of the element
-    * within the segment and \e globalIdx is index of the element within the related container.
+    * where \e segmentIdx is index of segment where given element belong to,
+    * \e localIdx is rank of the element within the segment and \e globalIdx is
+    * index of the element within the related container.
     *
     * \par Example
     * \include Algorithms/Segments/SegmentsExample_CSR_forElements.cpp
@@ -338,7 +344,8 @@ public:
    forElements( IndexType begin, IndexType end, Function&& function ) const;
 
    /**
-    * \brief Call \ref TNL::Algorithms::Segments::CSR::forElements for all elements of the segments.
+    * \brief Call \ref TNL::Algorithms::Segments::CSR::forElements for all
+    * elements of the segments.
     *
     * See \ref TNL::Algorithms::Segments::CSR::forElements for more details.
     */
@@ -383,10 +390,12 @@ public:
    forAllSegments( Function&& function ) const;
 
    /**
-    * \brief Call \ref TNL::Algorithms::Segments::CSR::forSegments sequentially for particular segments.
+    * \brief Call \ref TNL::Algorithms::Segments::CSR::forSegments sequentially
+    * for particular segments.
     *
-    * With this method, the given segments are processed sequentially one-by-one. This is usefull for example
-    * for printing of segments based data structures or for debugging reasons.
+    * With this method, the given segments are processed sequentially
+    * one-by-one. This is usefull for example for printing of segments based
+    * data structures or for debugging reasons.
     *
     * \param begin defines begining of an interval [ \e begin, \e end ) of segments on
     *    elements of which we want to apply the lambda function.
@@ -436,11 +445,16 @@ public:
     * ```
     * auto fetch = [=] __cuda_callable__ ( IndexType globalIdx, bool& compute ) { ... }
     * ```
-    * where for both variants \e segmentIdx is segment index, \e localIdx is a rank of element in the segment, \e globalIdx is
-    * index of the element in related container and \e compute is a boolean variable which serves for stopping the reduction if
-    * it is set to \e false. It is however, only a hint and the real behaviour depends on type of kernel used ofr the redcution.
-    * Some kernels are optimized so that they can be significantly faster with the brief variant of the \e fetch lambda
-    * function. \param reduce is a lambda function representing the reduction opeartion. It is supposed to be defined as:
+    * where for both variants \e segmentIdx is segment index, \e localIdx is a
+    * rank of element in the segment, \e globalIdx is index of the element in
+    * related container and \e compute is a boolean variable which serves for
+    * stopping the reduction if it is set to \e false. It is however, only a
+    * hint and the real behaviour depends on type of kernel used ofr the
+    * redcution.  Some kernels are optimized so that they can be significantly
+    * faster with the brief variant of the \e fetch lambda function.
+    *
+    * \param reduce is a lambda function representing the reduction opeartion. It is
+    * supposed to be defined as:
     *
     * ```
     * auto reduce = [=] __cuda_callable__ ( const Value& a, const Value& b ) -> Value { ... }
@@ -454,6 +468,8 @@ public:
     * ```
     *
     * where \e segmentIdx is an index of the segment and \e value is the result of the reduction in given segment to be stored.
+    *
+    * \param zero is the initial value for the reduction operation.
     *
     * \par Example
     * \include Algorithms/Segments/SegmentsExample_CSR_reduceSegments.cpp
@@ -519,10 +535,12 @@ public:
    /**
     * \brief Return simple proxy object for insertion to output stream.
     *
-    * The proxy object serves for wrapping segments with lambda function mediating access to data managed by the segments.
+    * The proxy object serves for wrapping segments with lambda function
+    * mediating access to data managed by the segments.
     *
     * \tparam Fetch is type of lambda function for data access.
-    * \param fetch is an instance of lambda function for data access. It is supposed to be defined as
+    * \param fetch is an instance of lambda function for data access. It is
+    * supposed to be defined as
     *
     * ```
     * auto fetch = [=] __cuda_callable__ ( IndexType globalIdx ) -> ValueType { return data_view[ globalIdx ]; };

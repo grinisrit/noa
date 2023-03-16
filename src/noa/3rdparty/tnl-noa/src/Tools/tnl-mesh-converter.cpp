@@ -95,16 +95,24 @@ struct MeshConfigTemplateTag< MeshConverterConfigTag >
 } // namespace Meshes
 } // namespace TNL
 
-// specialization for polyhedral meshes
-template< typename Mesh,
-          std::enable_if_t< std::is_same< typename Mesh::Cell::EntityTopology, TNL::Meshes::Topologies::Polyhedron >::value, bool > = true >
+// overload for meshes
+template< typename Mesh >
 bool writeMesh( const Mesh& mesh, std::ostream& out, const std::string& format )
 {
-   if( format == "fpma" ) {
-      using Writer = Meshes::Writers::FPMAWriter< Mesh >;
-      Writer writer( out );
-      writer.writeEntities( mesh );
-      return true;
+   if constexpr( std::is_same_v< typename Mesh::Cell::EntityTopology, TNL::Meshes::Topologies::Polyhedron > ) {
+      if( format == "fpma" ) {
+         using Writer = Meshes::Writers::FPMAWriter< Mesh >;
+         Writer writer( out );
+         writer.writeEntities( mesh );
+         return true;
+      }
+   }
+   else {
+      if( format == "ng" ) {
+         using NetgenWriter = Meshes::Writers::NetgenWriter< Mesh >;
+         NetgenWriter::writeMesh( mesh, out );
+         return true;
+      }
    }
    if( format == "vtk" ) {
       using Writer = Meshes::Writers::VTKWriter< Mesh >;
@@ -121,32 +129,7 @@ bool writeMesh( const Mesh& mesh, std::ostream& out, const std::string& format )
    return false;
 }
 
-// specialization for unstructured meshes except polyhedral
-template< typename Mesh,
-          std::enable_if_t< ! std::is_same< typename Mesh::Cell::EntityTopology, TNL::Meshes::Topologies::Polyhedron >::value, bool > = true >
-bool writeMesh( const Mesh& mesh, std::ostream& out, const std::string& format )
-{
-   if( format == "vtk" ) {
-      using Writer = Meshes::Writers::VTKWriter< Mesh >;
-      Writer writer( out );
-      writer.template writeEntities< Mesh::getMeshDimension() >( mesh );
-      return true;
-   }
-   if( format == "vtu" ) {
-      using Writer = Meshes::Writers::VTUWriter< Mesh >;
-      Writer writer( out );
-      writer.template writeEntities< Mesh::getMeshDimension() >( mesh );
-      return true;
-   }
-   if( format == "ng" ) {
-      using NetgenWriter = Meshes::Writers::NetgenWriter< Mesh >;
-      NetgenWriter::writeMesh( mesh, out );
-      return true;
-   }
-   return false;
-}
-
-// specialization for grids
+// overload for grids
 template< int Dimension, typename Real, typename Device, typename Index >
 bool writeMesh( const TNL::Meshes::Grid< Dimension, Real, Device, Index >& mesh,
                 std::ostream& out,
@@ -179,8 +162,8 @@ bool convertMesh( const Mesh& mesh, const std::string& inputFileName, const std:
 {
    std::string format = outputFormat;
    if( outputFormat == "auto" ) {
-      namespace fs = std::experimental::filesystem;
-      format = fs::path( outputFileName ).extension();
+      namespace fs = std::filesystem;
+      format = fs::path( outputFileName ).extension().string();
       if( format.length() > 0 )
          // remove dot from the extension
          format = format.substr(1);

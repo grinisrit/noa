@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -134,7 +134,7 @@ template< typename Value, typename Device, typename Index, typename Allocator >
 std::string
 Array< Value, Device, Index, Allocator >::getSerializationType()
 {
-   return detail::ArrayIO< Value, Device, Index >::getSerializationType();
+   return detail::ArrayIO< Value, Index, Allocator >::getSerializationType();
 }
 
 template< typename Value, typename Device, typename Index, typename Allocator >
@@ -353,11 +353,11 @@ Array< Value, Device, Index, Allocator >::getArrayData()
 template< typename Value, typename Device, typename Index, typename Allocator >
 __cuda_callable__
 void
-Array< Value, Device, Index, Allocator >::setElement( IndexType i, ValueType x )
+Array< Value, Device, Index, Allocator >::setElement( IndexType i, ValueType value )
 {
    TNL_ASSERT_GE( i, (Index) 0, "Element index must be non-negative." );
    TNL_ASSERT_LT( i, this->getSize(), "Element index is out of bounds." );
-   Algorithms::MemoryOperations< Device >::setElement( &( this->data[ i ] ), x );
+   Algorithms::MemoryOperations< Device >::setElement( &( this->data[ i ] ), value );
 }
 
 template< typename Value, typename Device, typename Index, typename Allocator >
@@ -433,7 +433,7 @@ Array< Value, Device, Index, Allocator >::operator=( const Array< Value, Device,
 
 template< typename Value, typename Device, typename Index, typename Allocator >
 Array< Value, Device, Index, Allocator >&
-Array< Value, Device, Index, Allocator >::operator=( Array< Value, Device, Index, Allocator >&& array ) noexcept
+Array< Value, Device, Index, Allocator >::operator=( Array< Value, Device, Index, Allocator >&& array ) noexcept( false )
 {
    reset();
 
@@ -579,7 +579,7 @@ operator<<( File& file, const Array< Value, Device, Index, Allocator >& array )
 {
    using IO = detail::ArrayIO< Value, Index, Allocator >;
    saveObjectType( file, IO::getSerializationType() );
-   const Index size = array.getSize();
+   const std::size_t size = array.getSize();
    file.save( &size );
    IO::save( file, array.getData(), array.getSize() );
    return file;
@@ -603,11 +603,9 @@ operator>>( File& file, Array< Value, Device, Index, Allocator >& array )
    if( type != IO::getSerializationType() )
       throw Exceptions::FileDeserializationError(
          file.getFileName(), "object type does not match (expected " + IO::getSerializationType() + ", found " + type + ")." );
-   Index _size;
-   file.load( &_size );
-   if( _size < 0 )
-      throw Exceptions::FileDeserializationError( file.getFileName(), "invalid array size: " + std::to_string( _size ) );
-   array.setSize( _size );
+   std::size_t size;
+   file.load( &size );
+   array.setSize( size );
    IO::load( file, array.getData(), array.getSize() );
    return file;
 }

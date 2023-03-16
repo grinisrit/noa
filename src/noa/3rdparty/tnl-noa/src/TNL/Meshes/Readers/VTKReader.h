@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -33,7 +31,9 @@ public:
    {
       reset();
 
-      std::ifstream inputFile( fileName );
+      // NOTE: we must open the file in binary mode in order for tellg/seekg to work on Windows
+      // see https://stackoverflow.com/q/49377648 and https://stackoverflow.com/q/27055771
+      std::ifstream inputFile( fileName, std::ios_base::binary );
       if( ! inputFile )
          throw MeshReaderError( "VTKReader", "failed to open the file '" + fileName + "'" );
 
@@ -54,6 +54,7 @@ public:
          throw MeshReaderError( "VTKReader", "unable to find the POINTS section, the file may be invalid or corrupted" );
       inputFile.seekg( sectionPositions[ "POINTS" ] );
       getline( inputFile, line );
+      line = rstrip_cr( line );
       iss.clear();
       iss.str( line );
       iss >> aux;
@@ -99,6 +100,7 @@ public:
          throw MeshReaderError( "VTKReader", "unable to find the CELL_TYPES section, the file may be invalid or corrupted" );
       inputFile.seekg( sectionPositions[ "CELL_TYPES" ] );
       getline( inputFile, line );
+      line = rstrip_cr( line );
       iss.clear();
       iss.str( line );
       iss >> aux;
@@ -117,7 +119,7 @@ public:
       // count entities for each dimension
       std::size_t entitiesCounts[ 4 ] = { 0, 0, 0, 0 };
       for( auto c : typesArray ) {
-         const int dimension = getEntityDimension( (VTK::EntityShape) c );
+         const int dimension = getEntityDimension( static_cast< VTK::EntityShape >( c ) );
          ++entitiesCounts[ dimension ];
       }
 
@@ -138,7 +140,7 @@ public:
       // filter out cell shapes
       std::vector< std::uint8_t > cellTypes;
       for( auto c : typesArray ) {
-         const int dimension = getEntityDimension( (VTK::EntityShape) c );
+         const int dimension = getEntityDimension( static_cast< VTK::EntityShape >( c ) );
          if( dimension == meshDimension )
             cellTypes.push_back( c );
       }
@@ -159,7 +161,7 @@ public:
       cellShape = (VTK::EntityShape) cellTypes[ 0 ];
 
       for( auto c : cellTypes ) {
-         auto entityShape = (VTK::EntityShape) c;
+         const auto entityShape = static_cast< VTK::EntityShape >( c );
          if( cellShape != entityShape ) {
             // if the input mesh includes mixed shapes, use more general cellShape (polygon for 2D, polyhedron for 3D)
             if( PolygonShapeGroupChecker::bothBelong( cellShape, entityShape ) )
@@ -180,6 +182,7 @@ public:
          throw MeshReaderError( "VTKReader", "unable to find the CELLS section, the file may be invalid or corrupted" );
       inputFile.seekg( sectionPositions[ "CELLS" ] );
       getline( inputFile, line );
+      line = rstrip_cr( line );
 
       if( formatVersion == "2.0" ) {
          // read entities
@@ -190,7 +193,7 @@ public:
                                       " (entityIndex = "
                                          + std::to_string( entityIndex ) + ")" );
 
-            const VTK::EntityShape entityShape = (VTK::EntityShape) typesArray[ entityIndex ];
+            const auto entityShape = static_cast< VTK::EntityShape >( typesArray[ entityIndex ] );
 
             if( entityShape == VTK::EntityShape::Polyhedron )
                throw MeshReaderError( "VTKReader",
@@ -199,10 +202,10 @@ public:
 
             if( entityShape == cellShape || PolygonShapeGroupChecker::bothBelong( cellShape, entityShape ) ) {
                // read number of subvertices
-               const std::int32_t subvertices = readValue< std::int32_t >( dataFormat, inputFile );
+               const auto subvertices = readValue< std::int32_t >( dataFormat, inputFile );
                for( int v = 0; v < subvertices; v++ ) {
                   // legacy VTK files do not support 64-bit integers, even in the BINARY format
-                  const std::int32_t vid = readValue< std::int32_t >( dataFormat, inputFile );
+                  const auto vid = readValue< std::int32_t >( dataFormat, inputFile );
                   if( ! inputFile )
                      throw MeshReaderError( "VTKReader",
                                             "unable to read enough cells, the file may be invalid or corrupted"
@@ -214,7 +217,7 @@ public:
             }
             else {
                // skip the entity
-               const std::int32_t subvertices = readValue< std::int32_t >( dataFormat, inputFile );
+               const auto subvertices = readValue< std::int32_t >( dataFormat, inputFile );
                for( int v = 0; v < subvertices; v++ )
                   skipValue( dataFormat, inputFile, "int" );
             }
@@ -231,16 +234,18 @@ public:
             throw MeshReaderError( "VTKReader", "invalid offsets count: " + std::to_string( offsets_count ) );
 
          // find to the OFFSETS section
-         if( ! sectionPositions.count( "OFFSETS" ) )
+         if( sectionPositions.count( "OFFSETS" ) == 0 )
             throw MeshReaderError( "VTKReader", "unable to find the OFFSETS section, the file may be invalid or corrupted" );
          inputFile.seekg( sectionPositions[ "OFFSETS" ] );
 
          // read all offsets into an auxiliary array
          std::vector< std::int64_t > allOffsetsArray;
          getline( inputFile, line );
+         line = rstrip_cr( line );
          iss.clear();
          iss.str( line );
-         std::string aux, datatype;
+         std::string aux;
+         std::string datatype;
          iss >> aux >> datatype;
          for( std::int64_t entityIndex = 0; entityIndex < offsets_count; entityIndex++ ) {
             std::int64_t value;
@@ -259,13 +264,14 @@ public:
          }
 
          // find to the CONNECTIVITY section
-         if( ! sectionPositions.count( "CONNECTIVITY" ) )
+         if( sectionPositions.count( "CONNECTIVITY" ) == 0 )
             throw MeshReaderError( "VTKReader",
                                    "unable to find the CONNECTIVITY section, the file may be invalid or corrupted" );
          inputFile.seekg( sectionPositions[ "CONNECTIVITY" ] );
 
          // get datatype
          getline( inputFile, line );
+         line = rstrip_cr( line );
          iss.clear();
          iss.str( line );
          iss >> aux >> datatype;
@@ -283,7 +289,7 @@ public:
                                       " (entityIndex = "
                                          + std::to_string( entityIndex ) + ")" );
 
-            const VTK::EntityShape entityShape = (VTK::EntityShape) typesArray[ entityIndex ];
+            const auto entityShape = static_cast< VTK::EntityShape >( typesArray[ entityIndex ] );
             const std::int64_t offsetBegin = allOffsetsArray[ entityIndex ];
             const std::int64_t offsetEnd = allOffsetsArray[ entityIndex + 1 ];
 
@@ -377,13 +383,13 @@ public:
    }
 
    VariantVector
-   readPointData( std::string arrayName ) override
+   readPointData( const std::string& arrayName ) override
    {
       return readPointOrCellData( "POINT_DATA", arrayName );
    }
 
    VariantVector
-   readCellData( std::string arrayName ) override
+   readCellData( const std::string& arrayName ) override
    {
       return readPointOrCellData( "CELL_DATA", arrayName );
    }
@@ -418,7 +424,10 @@ protected:
 
       // check header
       getline( str, line );
+      line = rstrip_cr( line );
       static const std::string prefix = "# vtk DataFile Version ";
+      if( line.size() < prefix.size() )
+         throw MeshReaderError( "VTKReader", "failed to parse the VTK file header: unsupported VTK header '" + line + "'" );
       formatVersion = line.substr( prefix.length() );
       if( line.substr( 0, prefix.length() ) != prefix )
          throw MeshReaderError( "VTKReader", "failed to parse the VTK file header: unsupported VTK header '" + line + "'" );
@@ -435,6 +444,7 @@ protected:
          throw MeshReaderError( "VTKReader", "failed to parse the VTK file header" );
       std::string format;
       getline( str, format );
+      format = rstrip_cr( format );
       if( format == "ASCII" )
          dataFormat = VTK::FileFormat::ascii;
       else if( format == "BINARY" )
@@ -446,6 +456,7 @@ protected:
       if( ! str )
          throw MeshReaderError( "VTKReader", "failed to parse the VTK file header" );
       getline( str, line );
+      line = rstrip_cr( line );
       iss.clear();
       iss.str( line );
       std::string tmp;
@@ -455,7 +466,7 @@ protected:
       iss >> dataset;
    }
 
-   void
+   static void
    skip_meta( std::istream& str )
    {
       // skip possible metadata
@@ -485,6 +496,7 @@ protected:
          const std::ios::pos_type currentPosition = str.tellg();
          std::string line;
          getline( str, line );
+         line = rstrip_cr( line );
          if( ! str )
             throw MeshReaderError( "VTKReader", "failed to parse sections of the VTK file" );
 
@@ -502,6 +514,7 @@ protected:
             // skip the FieldData arrays
             for( int i = 0; i < count; i++ ) {
                getline( str, line );
+               line = rstrip_cr( line );
                iss.clear();
                iss.str( line );
                // <name> <components> <tuples> <datatype>
@@ -568,9 +581,11 @@ protected:
                // skip offsets
                str >> std::ws;
                getline( str, line );
+               line = rstrip_cr( line );
                iss.clear();
                iss.str( line );
-               std::string aux, datatype;
+               std::string aux;
+               std::string datatype;
                iss >> aux >> datatype;
                if( aux != "OFFSETS" )
                   throw MeshReaderError( "VTKReader", "expected OFFSETS section, found '" + aux + "'" );
@@ -589,6 +604,7 @@ protected:
                // skip connectivity
                str >> std::ws;
                getline( str, line );
+               line = rstrip_cr( line );
                iss.clear();
                iss.str( line );
                iss >> aux >> datatype;
@@ -638,6 +654,7 @@ protected:
                const std::ios::pos_type currentPosition = str.tellg();
                std::string line;
                getline( str, line );
+               line = rstrip_cr( line );
                if( ! str )
                   throw MeshReaderError( "VTKReader", "failed to parse sections of the VTK file" );
 
@@ -693,6 +710,7 @@ protected:
                      str >> std::ws;
                      const std::ios::pos_type currentPosition = str.tellg();
                      getline( str, line );
+                     line = rstrip_cr( line );
                      iss.clear();
                      iss.str( line );
                      // <array_name> <components> <tuples> <datatype>
@@ -749,7 +767,8 @@ protected:
    VariantVector
    readPointOrCellData( std::string sectionName, const std::string& arrayName )
    {
-      std::ifstream inputFile( fileName );
+      // NOTE: we must open the file in binary mode to prevent CR/CRLF conversions on Windows
+      std::ifstream inputFile( fileName, std::ios_base::binary );
       if( ! inputFile )
          throw MeshReaderError( "VTKReader", "failed to open the file '" + fileName + "'" );
 
@@ -769,6 +788,7 @@ protected:
       // parse the metadata line
       std::string line;
       getline( inputFile, line );
+      line = rstrip_cr( line );
       std::istringstream iss( line );
       iss >> type;
 
@@ -846,6 +866,13 @@ protected:
          str >> value;
       }
       return value;
+   }
+
+   static inline std::string
+   rstrip_cr( const std::string& string )
+   {
+      const auto end = string.find_last_not_of( '\r' );
+      return string.substr( 0, end + 1 );
    }
 };
 

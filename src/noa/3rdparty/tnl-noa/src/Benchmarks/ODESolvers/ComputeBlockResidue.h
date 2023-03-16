@@ -6,7 +6,7 @@
 namespace TNL {
    namespace Benchmarks {
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real, typename Index >
 __device__ void computeBlockResidue( Real* du,
                                      Real* blockResidue,

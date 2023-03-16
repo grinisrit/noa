@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -16,6 +16,13 @@
 namespace noa::TNL {
 namespace Meshes {
 namespace Writers {
+
+template< typename Mesh >
+VTKWriter< Mesh >::VTKWriter( std::ostream& str, VTK::FileFormat format ) : str( str.rdbuf() ), format( format )
+{
+   if( format != VTK::FileFormat::ascii && format != VTK::FileFormat::binary )
+      throw std::domain_error( "The Legacy VTK file formats support only ASCII and BINARY formats." );
+}
 
 template< typename Mesh >
 void

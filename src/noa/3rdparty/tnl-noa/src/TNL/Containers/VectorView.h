@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -38,9 +38,9 @@ public:
    using RealType = Real;
 
    /**
-    * \brief Device where the vector is allocated.
+    * \brief Device used to run operations on the vector.
     *
-    * See \ref Devices::Host or \ref Devices::Cuda.
+    * See \ref TNL::Devices for the available options.
     */
    using DeviceType = Device;
 
@@ -60,7 +60,9 @@ public:
    using ConstViewType = VectorView< std::add_const_t< Real >, Device, Index >;
 
    /**
-    * \brief A template which allows to quickly obtain a \ref VectorView type with changed template parameters.
+    * \brief A template which allows to quickly obtain a
+    * \ref TNL::Containers::VectorView "VectorView" type with changed template
+    * parameters.
     */
    template< typename _Real, typename _Device = Device, typename _Index = Index >
    using Self = VectorView< _Real, _Device, _Index >;
@@ -68,6 +70,12 @@ public:
    // constructors and assignment operators inherited from the class ArrayView
    using ArrayView< Real, Device, Index >::ArrayView;
    using ArrayView< Real, Device, Index >::operator=;
+
+// HACK: clang does not properly inherit the constructor (it is inherited as __host__ only)
+#if defined( __clang__ ) && defined( __CUDA__ )
+   __cuda_callable__
+   VectorView( RealType* data, IndexType size ) : ArrayView< Real, Device, Index >::ArrayView( data, size ) {}
+#endif
 
    // In C++14, default constructors cannot be inherited, although Clang
    // and GCC since version 7.0 inherit them.
@@ -135,7 +143,8 @@ public:
    operator=( const VectorExpression& expression );
 
    /**
-    * \brief Assigns a value or an array - same as \ref ArrayView::operator=.
+    * \brief Assigns a value or an array - same as
+    * \ref TNL::Containers::ArrayView::operator= "ArrayView::operator=".
     *
     * \return Reference to this vector view.
     */

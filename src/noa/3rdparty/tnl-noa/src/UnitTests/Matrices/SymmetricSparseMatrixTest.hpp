@@ -30,8 +30,6 @@ void cuda_test_GetType()
 template< typename Matrix >
 void test_SetDimensions()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    const IndexType rows = 9;
@@ -48,7 +46,6 @@ template< typename Matrix >
 void test_SetRowCapacities()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -136,8 +133,6 @@ void test_SetRowCapacities()
 template< typename Matrix1, typename Matrix2 >
 void test_SetLike()
 {
-   using RealType = typename Matrix1::RealType;
-   using DeviceType = typename Matrix1::DeviceType;
    using IndexType = typename Matrix1::IndexType;
 
    const IndexType rows = 8;
@@ -155,8 +150,6 @@ void test_SetLike()
 template< typename Matrix >
 void test_GetNonzeroElementsCount()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -200,8 +193,6 @@ void test_GetNonzeroElementsCount()
 template< typename Matrix >
 void test_Reset()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -227,7 +218,6 @@ void test_Reset()
 template< typename Matrix >
 void test_GetRow()
 {
-   using RealType = typename Matrix::RealType;
    using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
    /*
@@ -406,7 +396,6 @@ template< typename Matrix >
 void test_SetElement()
 {
    using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -556,8 +545,6 @@ void test_SetElement()
 template< typename Matrix >
 void test_AddElement()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*
@@ -921,74 +908,8 @@ void test_reduceRows()
 }
 
 template< typename Matrix >
-void test_PerformSORIteration()
-{
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
-   using IndexType = typename Matrix::IndexType;
-
-   /*
-    * Sets up the following 4x4 sparse matrix:
-    *
-    *    /  4  1  0  0 \
-    *    |  1  4  1  0 |
-    *    |  0  1  4  1 |
-    *    \  0  0  1  4 /
-    */
-
-   const IndexType m_rows = 4;
-   const IndexType m_cols = 4;
-
-   Matrix m( m_rows, m_cols, {
-      { 0, 0, 4 }, { 0, 1, 1 },
-      { 1, 0, 1 }, { 1, 1, 4 }, { 1, 2, 1 },
-                   { 2, 1, 1 }, { 2, 2, 4 }, { 2, 3, 1 },
-                                { 3, 2, 1 }, { 3, 3, 4 }, { 3, 4, 1 },
-                                             { 4, 3, 1 }, { 4, 4, 4 }
-   } );
-
-   RealType bVector [ 4 ] = { 1, 1, 1, 1 };
-   RealType xVector [ 4 ] = { 1, 1, 1, 1 };
-
-   IndexType row = 0;
-   RealType omega = 1;
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 1.0 );
-   EXPECT_EQ( xVector[ 2 ], 1.0 );
-   EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 0.0 );
-   EXPECT_EQ( xVector[ 2 ], 1.0 );
-   EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 0.0 );
-   EXPECT_EQ( xVector[ 2 ], 0.0 );
-   EXPECT_EQ( xVector[ 3 ], 1.0 );
-
-   m.performSORIteration( bVector, row++, xVector, omega);
-
-   EXPECT_EQ( xVector[ 0 ], 0.0 );
-   EXPECT_EQ( xVector[ 1 ], 0.0 );
-   EXPECT_EQ( xVector[ 2 ], 0.0 );
-   EXPECT_EQ( xVector[ 3 ], 0.25 );
-}
-
-template< typename Matrix >
 void test_SaveAndLoad( const char* filename )
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
-   using IndexType = typename Matrix::IndexType;
-
    /*
     * Sets up the following 6x5 sparse matrix:
     *
@@ -1095,8 +1016,6 @@ void test_SaveAndLoad( const char* filename )
 template< typename Matrix >
 void test_Print()
 {
-   using RealType = typename Matrix::RealType;
-   using DeviceType = typename Matrix::DeviceType;
    using IndexType = typename Matrix::IndexType;
 
    /*

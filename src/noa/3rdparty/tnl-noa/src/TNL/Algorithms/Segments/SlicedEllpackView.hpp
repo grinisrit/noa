@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -50,15 +50,15 @@ __cuda_callable__
 typename SlicedEllpackView< Device, Index, Organization, SliceSize >::ViewType
 SlicedEllpackView< Device, Index, Organization, SliceSize >::getView()
 {
-   return ViewType( size, alignedSize, segmentsCount, sliceOffsets, sliceSegmentSizes );
+   return { size, alignedSize, segmentsCount, sliceOffsets, sliceSegmentSizes };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization, int SliceSize >
 __cuda_callable__
 auto
-SlicedEllpackView< Device, Index, Organization, SliceSize >::getConstView() const -> const ConstViewType
+SlicedEllpackView< Device, Index, Organization, SliceSize >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( size, alignedSize, segmentsCount, sliceOffsets.getConstView(), sliceSegmentSizes.getConstView() );
+   return { size, alignedSize, segmentsCount, sliceOffsets.getConstView(), sliceSegmentSizes.getConstView() };
 }
 
 template< typename Device, typename Index, ElementsOrganization Organization, int SliceSize >

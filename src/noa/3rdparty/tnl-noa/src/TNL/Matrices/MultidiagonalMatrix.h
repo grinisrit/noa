@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -74,7 +74,7 @@ public:
    using BaseType = Matrix< Real, Device, Index, RealAllocator >;
    using ValuesType = typename BaseType::ValuesType;
    using ValuesView = typename ValuesType::ViewType;
-   using IndexerType = details::MultidiagonalMatrixIndexer< Index, Organization >;
+   using IndexerType = details::MultidiagonalMatrixIndexer< Index, Organization == Algorithms::Segments::RowMajorOrder >;
    using DiagonalsOffsetsType = Containers::Vector< Index, Device, Index, IndexAllocator >;
    using DiagonalsOffsetsView = typename DiagonalsOffsetsType::ViewType;
    using HostDiagonalsOffsetsType = Containers::Vector< Index, Devices::Host, Index >;
@@ -104,7 +104,7 @@ public:
    isSymmetric()
    {
       return false;
-   };
+   }
 
    /**
     * \brief The allocator for matrix elements values.
@@ -128,7 +128,7 @@ public:
     *
     * See \ref MultidiagonalMatrixView.
     */
-   using ConstViewType = MultidiagonalMatrixView< typename std::add_const< Real >::type, Device, Index, Organization >;
+   using ConstViewType = MultidiagonalMatrixView< std::add_const_t< Real >, Device, Index, Organization >;
 
    /**
     * \brief Type for accessing matrix rows.
@@ -138,7 +138,7 @@ public:
    /**
     * \brief Type for accessing constant matrix rows.
     */
-   using ConstRowView = typename ViewType::ConstViewType;
+   using ConstRowView = typename ViewType::ConstRowView;
 
    /**
     * \brief Helper type for getting self type or its modifications.
@@ -158,7 +158,7 @@ public:
    getOrganization()
    {
       return Organization;
-   };
+   }
 
    /**
     * \brief Constructor with no parameters.
@@ -212,7 +212,7 @@ public:
     * \tparam ListReal is type used in the initializer list defining matrix elements values.
     *
     * \param columns is number of matrix columns.
-    * \param diagonalOffsets are offsets of sub-diagonals from the main diagonal.
+    * \param diagonalsOffsets are offsets of sub-diagonals from the main diagonal.
     * \param data is initializer list holding matrix elements. The size of the outer list
     *    defines the number of matrix rows. Each inner list defines values of each sub-diagonal
     *    and so its size should be lower or equal to the size of \e diagonalsOffsets. Values
@@ -250,7 +250,7 @@ public:
     * \return multidiagonal matrix view.
     */
    ViewType
-   getView() const;  // TODO: remove const
+   getView();
 
    /**
     * \brief Returns a non-modifiable view of the multidiagonal matrix.
@@ -351,7 +351,7 @@ public:
     *
     * \return Number of diagonals.
     */
-   const IndexType
+   IndexType
    getDiagonalsCount() const;
 
    /**
@@ -510,7 +510,7 @@ public:
     */
    __cuda_callable__
    RowView
-   getRow( const IndexType& rowIdx );
+   getRow( IndexType rowIdx );
 
    /**
     * \brief Constant getter of simple structure for accessing given matrix row.
@@ -527,8 +527,8 @@ public:
     * See \ref MultidiagonalMatrixRowView.
     */
    __cuda_callable__
-   const ConstRowView
-   getRow( const IndexType& rowIdx ) const;
+   ConstRowView
+   getRow( IndexType rowIdx ) const;
 
    /**
     * \brief Set all matrix elements to given value.
@@ -634,7 +634,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -655,7 +655,7 @@ public:
     */
    template< typename Fetch, typename Reduce, typename Keep, typename FetchReal >
    void
-   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& zero );
+   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& identity );
 
    /**
     * \brief Method for performing general reduction on matrix rows for constant instances.
@@ -677,7 +677,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep =[=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep =[=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -698,7 +698,7 @@ public:
     */
    template< typename Fetch, typename Reduce, typename Keep, typename FetchReal >
    void
-   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& zero ) const;
+   reduceRows( IndexType begin, IndexType end, Fetch& fetch, Reduce& reduce, Keep& keep, const FetchReal& identity ) const;
 
    /**
     * \brief Method for performing general reduction on all matrix rows.
@@ -720,7 +720,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     * ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -761,7 +761,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row. It is declared as
     *
     *  ```
-    * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
+    * auto keep = [=] __cuda_callable__ ( IndexType rowIdx, const RealType& value ) { ... };
     * ```
     *
     * \tparam FetchValue is type returned by the Fetch lambda function.
@@ -859,9 +859,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forAllRows.cpp
+    * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forAllElements.cpp
     * \par Output
-    * \include MultidiagonalMatrixExample_forAllRows.out
+    * \include MultidiagonalMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -876,9 +876,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forAllRows.cpp
+    * \include Matrices/MultidiagonalMatrix/MultidiagonalMatrixExample_forAllElements.cpp
     * \par Output
-    * \include MultidiagonalMatrixExample_forAllRows.out
+    * \include MultidiagonalMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -1060,10 +1060,14 @@ public:
     * outVector = matrixMultiplicator * ( * this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.

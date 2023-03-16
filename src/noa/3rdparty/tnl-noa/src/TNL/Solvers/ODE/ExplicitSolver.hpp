@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -34,42 +34,42 @@ void
 ExplicitSolver< Real, Index, SolverMonitor >::setTime( const RealType& time )
 {
    this->time = time;
-};
+}
 
 template< typename Real, typename Index, typename SolverMonitor >
 const Real&
 ExplicitSolver< Real, Index, SolverMonitor >::getTime() const
 {
    return this->time;
-};
+}
 
 template< typename Real, typename Index, typename SolverMonitor >
 void
 ExplicitSolver< Real, Index, SolverMonitor >::setTau( const RealType& tau )
 {
    this->tau = tau;
-};
+}
 
 template< typename Real, typename Index, typename SolverMonitor >
 const Real&
 ExplicitSolver< Real, Index, SolverMonitor >::getTau() const
 {
    return this->tau;
-};
+}
 
 template< typename Real, typename Index, typename SolverMonitor >
 void
 ExplicitSolver< Real, Index, SolverMonitor >::setMaxTau( const RealType& maxTau )
 {
    this->maxTau = maxTau;
-};
+}
 
 template< typename Real, typename Index, typename SolverMonitor >
 const Real&
 ExplicitSolver< Real, Index, SolverMonitor >::getMaxTau() const
 {
    return this->maxTau;
-};
+}
 
 template< typename Real, typename Index, typename SolverMonitor >
 const Real&

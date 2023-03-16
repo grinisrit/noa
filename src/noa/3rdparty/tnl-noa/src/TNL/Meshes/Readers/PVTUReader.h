@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -26,7 +24,8 @@ class PVTUReader : public XMLVTK
    getSourcePath( const std::string& source )
    {
       namespace fs = std::filesystem;
-      return fs::path( fileName ).parent_path() / source;
+      const fs::path path = fs::path( fileName ).parent_path() / source;
+      return path.string();
    }
 
 #ifdef HAVE_TINYXML2
@@ -247,13 +246,13 @@ public:
    }
 
    VariantVector
-   readPointData( std::string arrayName ) override
+   readPointData( const std::string& arrayName ) override
    {
       return localReader.readPointData( arrayName );
    }
 
    VariantVector
-   readCellData( std::string arrayName ) override
+   readCellData( const std::string& arrayName ) override
    {
       return localReader.readCellData( arrayName );
    }

@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -25,7 +23,8 @@ class PVTIReader : public XMLVTK
    getSourcePath( const std::string& source )
    {
       namespace fs = std::filesystem;
-      return fs::path( fileName ).parent_path() / source;
+      const fs::path path = fs::path( fileName ).parent_path() / source;
+      return path.string();
    }
 
 #ifdef HAVE_TINYXML2
@@ -42,8 +41,9 @@ class PVTIReader : public XMLVTK
       // parse the extent
       {
          std::stringstream ss( extent );
-         gridExtent.resize( 6, 0 );
-         for( int i = 0; i < 6; i++ ) {
+         constexpr int vtk_extent_size = 6;
+         gridExtent.resize( vtk_extent_size, 0 );
+         for( int i = 0; i < vtk_extent_size; i++ ) {
             ss >> gridExtent[ i ];
             // check conversion error
             if( ! ss.good() )
@@ -307,13 +307,13 @@ public:
    }
 
    VariantVector
-   readPointData( std::string arrayName ) override
+   readPointData( const std::string& arrayName ) override
    {
       return localReader.readPointData( arrayName );
    }
 
    VariantVector
-   readCellData( std::string arrayName ) override
+   readCellData( const std::string& arrayName ) override
    {
       return localReader.readCellData( arrayName );
    }

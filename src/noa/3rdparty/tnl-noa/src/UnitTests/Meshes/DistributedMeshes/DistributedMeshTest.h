@@ -4,12 +4,11 @@
 #include <gtest/gtest.h>
 
 #include <unordered_map>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <TNL/Meshes/Grid.h>
 #include <TNL/Meshes/Mesh.h>
 #include <TNL/Meshes/MeshBuilder.h>
-#include <TNL/Meshes/Traverser.h>
 #include <TNL/Meshes/Topologies/Quadrangle.h>
 #include <TNL/Meshes/Geometry/getEntityCenter.h>
 #include <TNL/Meshes/DefaultConfig.h>
@@ -23,7 +22,7 @@
 
 namespace DistributedMeshTest {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 using namespace TNL;
 using namespace TNL::Meshes;
@@ -120,11 +119,10 @@ struct GridDistributor< TNL::Meshes::Grid< 2, Real, Device, Index > >
          cell.setCoordinates( {x, y} );
          cell.refresh();
          if( cell_global_to_local.count( cell.getIndex() ) == 0 ) {
-            const auto neighbors = cell.template getNeighborEntities< 0 >();
-            meshBuilder.getCellSeed( idx ).setCornerId( 0, vert_global_to_local[ neighbors.template getEntityIndex< -1, -1 >() ] );
-            meshBuilder.getCellSeed( idx ).setCornerId( 1, vert_global_to_local[ neighbors.template getEntityIndex<  1, -1 >() ] );
-            meshBuilder.getCellSeed( idx ).setCornerId( 2, vert_global_to_local[ neighbors.template getEntityIndex<  1,  1 >() ] );
-            meshBuilder.getCellSeed( idx ).setCornerId( 3, vert_global_to_local[ neighbors.template getEntityIndex< -1,  1 >() ] );
+            meshBuilder.getCellSeed( idx ).setCornerId( 0, vert_global_to_local[ cell.template getNeighbourEntity< 0 >( { 0, 0 } ).getIndex() ] );
+            meshBuilder.getCellSeed( idx ).setCornerId( 1, vert_global_to_local[ cell.template getNeighbourEntity< 0 >( { 1, 0 } ).getIndex() ] );
+            meshBuilder.getCellSeed( idx ).setCornerId( 2, vert_global_to_local[ cell.template getNeighbourEntity< 0 >( { 1, 1 } ).getIndex() ] );
+            meshBuilder.getCellSeed( idx ).setCornerId( 3, vert_global_to_local[ cell.template getNeighbourEntity< 0 >( { 0, 1 } ).getIndex() ] );
             cell_global_to_local.insert( {cell.getIndex(), idx} );
             idx++;
          }
@@ -436,7 +434,7 @@ struct TestEntitiesProcessor
 };
 
 template< typename Device, typename EntityType, typename MeshType, typename HostArray >
-void testTraverserOnDevice( const MeshType& mesh,
+void testIterationOnDevice( const MeshType& mesh,
                             const HostArray& expected_array_boundary,
                             const HostArray& expected_array_interior,
                             const HostArray& expected_array_all,
@@ -444,7 +442,6 @@ void testTraverserOnDevice( const MeshType& mesh,
                             const HostArray& expected_array_local )
 {
    using DeviceMesh = Mesh< typename MeshType::Config, Device >;
-   Traverser< DeviceMesh, EntityType > traverser;
    Pointers::SharedPointer< DeviceMesh > meshPointer;
    *meshPointer = mesh;
 
@@ -453,24 +450,6 @@ void testTraverserOnDevice( const MeshType& mesh,
    Containers::Array< int, Device > array_all     ( mesh.template getEntitiesCount< EntityType >() );
    Containers::Array< int, Device > array_ghost   ( mesh.template getEntitiesCount< EntityType >() );
    Containers::Array< int, Device > array_local   ( mesh.template getEntitiesCount< EntityType >() );
-
-   array_boundary.setValue( 0 );
-   array_interior.setValue( 0 );
-   array_all     .setValue( 0 );
-   array_ghost   .setValue( 0 );
-   array_local   .setValue( 0 );
-
-   traverser.template processBoundaryEntities< TestEntitiesProcessor >( meshPointer, array_boundary.getView() );
-   traverser.template processInteriorEntities< TestEntitiesProcessor >( meshPointer, array_interior.getView() );
-   traverser.template processAllEntities     < TestEntitiesProcessor >( meshPointer, array_all.getView() );
-   traverser.template processGhostEntities   < TestEntitiesProcessor >( meshPointer, array_ghost.getView() );
-   traverser.template processLocalEntities   < TestEntitiesProcessor >( meshPointer, array_local.getView() );
-
-   EXPECT_EQ( array_boundary, expected_array_boundary );
-   EXPECT_EQ( array_interior, expected_array_interior );
-   EXPECT_EQ( array_all,      expected_array_all      );
-   EXPECT_EQ( array_ghost,    expected_array_ghost    );
-   EXPECT_EQ( array_local,    expected_array_local    );
 
    // test iteration methods: forAll, forBoundary, forInterior
    array_boundary.setValue( 0 );
@@ -505,7 +484,7 @@ void testTraverserOnDevice( const MeshType& mesh,
 }
 
 template< typename Mesh >
-void testTraverser( const Mesh& mesh )
+void testIteration( const Mesh& mesh )
 {
    const auto cellsCount = mesh.getLocalMesh().template getEntitiesCount< 2 >();
    const auto verticesCount = mesh.getLocalMesh().template getEntitiesCount< 0 >();
@@ -564,11 +543,11 @@ void testTraverser( const Mesh& mesh )
    }
 
    // test
-   testTraverserOnDevice< Devices::Host, typename Mesh::Cell >( mesh.getLocalMesh(), array_cells_boundary, array_cells_interior, array_cells_all, array_cells_ghost, array_cells_local );
-   testTraverserOnDevice< Devices::Host, typename Mesh::Vertex >( mesh.getLocalMesh(), array_vertices_boundary, array_vertices_interior, array_vertices_all, array_vertices_ghost, array_vertices_local );
-#ifdef HAVE_CUDA
-   testTraverserOnDevice< Devices::Cuda, typename Mesh::Cell >( mesh.getLocalMesh(), array_cells_boundary, array_cells_interior, array_cells_all, array_cells_ghost, array_cells_local );
-   testTraverserOnDevice< Devices::Cuda, typename Mesh::Vertex >( mesh.getLocalMesh(), array_vertices_boundary, array_vertices_interior, array_vertices_all, array_vertices_ghost, array_vertices_local );
+   testIterationOnDevice< Devices::Host, typename Mesh::Cell >( mesh.getLocalMesh(), array_cells_boundary, array_cells_interior, array_cells_all, array_cells_ghost, array_cells_local );
+   testIterationOnDevice< Devices::Host, typename Mesh::Vertex >( mesh.getLocalMesh(), array_vertices_boundary, array_vertices_interior, array_vertices_all, array_vertices_ghost, array_vertices_local );
+#ifdef __CUDACC__
+   testIterationOnDevice< Devices::Cuda, typename Mesh::Cell >( mesh.getLocalMesh(), array_cells_boundary, array_cells_interior, array_cells_all, array_cells_ghost, array_cells_local );
+   testIterationOnDevice< Devices::Cuda, typename Mesh::Vertex >( mesh.getLocalMesh(), array_vertices_boundary, array_vertices_interior, array_vertices_all, array_vertices_ghost, array_vertices_local );
 #endif
 }
 
@@ -683,7 +662,7 @@ void testSynchronizer( const Mesh& mesh )
    testSynchronizerOnDevice< Devices::Host, typename Mesh::Vertex >( mesh );
    if( mesh.template getGlobalIndices< 1 >().getSize() > 0 )
       testSynchronizerOnDevice< Devices::Host, typename Mesh::Face >( mesh );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    testSynchronizerOnDevice< Devices::Cuda, typename Mesh::Cell >( mesh );
    testSynchronizerOnDevice< Devices::Cuda, typename Mesh::Vertex >( mesh );
    if( mesh.template getGlobalIndices< 1 >().getSize() > 0 )
@@ -705,7 +684,7 @@ TEST( DistributedMeshTest, 2D_ghostLevel0 )
    const int ghostLevels = 0;
    distributor.decompose( grid, mesh, ghostLevels );
    validateMesh( mesh, distributor, ghostLevels );
-   testTraverser( mesh );
+   testIteration( mesh );
 }
 
 TEST( DistributedMeshTest, 2D_ghostLevel1 )
@@ -722,7 +701,7 @@ TEST( DistributedMeshTest, 2D_ghostLevel1 )
    const int ghostLevels = 1;
    distributor.decompose( grid, mesh, ghostLevels );
    validateMesh( mesh, distributor, ghostLevels );
-   testTraverser( mesh );
+   testIteration( mesh );
    testSynchronizer( mesh );
 }
 
@@ -740,7 +719,7 @@ TEST( DistributedMeshTest, 2D_ghostLevel2 )
    const int ghostLevels = 2;
    distributor.decompose( grid, mesh, ghostLevels );
    validateMesh( mesh, distributor, ghostLevels );
-   testTraverser( mesh );
+   testIteration( mesh );
    testSynchronizer( mesh );
 }
 

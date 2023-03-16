@@ -204,11 +204,16 @@ bool computeDifferenceOfMeshFunctions( const MeshPointer& meshPointer, const Con
 
    using Mesh = typename MeshPointer::ObjectType;
    using MeshFunctionType = Functions::MeshFunction< Mesh, Mesh::getMeshDimension(), Real >;
-   MeshFunctionType v1( meshPointer ), v2( meshPointer ), diff( meshPointer );
-   Real totalL1Diff( 0.0 ), totalL2Diff( 0.0 ), totalMaxDiff( 0.0 );
+   MeshFunctionType v1( meshPointer );
+   MeshFunctionType v2( meshPointer );
+   MeshFunctionType diff( meshPointer );
+   Real totalL1Diff = 0;
+   Real totalL2Diff = 0;
+   Real totalMaxDiff = 0;
    for( int i = 0; i < (int) inputFiles.size(); i ++ )
    {
-      String file1, file2;
+      String file1;
+      String file2;
       if( mode == "couples" )
       {
          if( i + 1 == (int) inputFiles.size() )
@@ -315,12 +320,12 @@ bool computeDifferenceOfMeshFunctions( const MeshPointer& meshPointer, const Con
 template< typename MeshPointer, typename Value, typename Real, typename Index >
 bool computeDifferenceOfVectors( const MeshPointer& meshPointer, const Config::ParameterContainer& parameters )
 {
-   bool verbose = parameters. getParameter< bool >( "verbose" );
-   std::vector< String > inputFiles = parameters. getParameter< std::vector< String > >( "input-files" );
-   String mode = parameters. getParameter< String >( "mode" );
-   String outputFileName = parameters. getParameter< String >( "output-file" );
-   double snapshotPeriod = parameters. getParameter< double >( "snapshot-period" );
-   bool writeDifference = parameters. getParameter< bool >( "write-difference" );
+   bool verbose = parameters.getParameter< bool >( "verbose" );
+   std::vector< String > inputFiles = parameters.getParameter< std::vector< String > >( "input-files" );
+   String mode = parameters.getParameter< String >( "mode" );
+   String outputFileName = parameters.getParameter< String >( "output-file" );
+   double snapshotPeriod = parameters.getParameter< double >( "snapshot-period" );
+   bool writeDifference = parameters.getParameter< bool >( "write-difference" );
 
    std::fstream outputFile;
    outputFile.open( outputFileName.getString(), std::fstream::out );
@@ -341,8 +346,12 @@ bool computeDifferenceOfVectors( const MeshPointer& meshPointer, const Config::P
    if( verbose )
      std::cout << std::endl;
 
-   Containers::Vector< Real, Devices::Host, Index > v1, v2;
-   Real totalL1Diff( 0.0 ), totalL2Diff( 0.0 ), totalMaxDiff( 0.0 );
+   using VectorType = Containers::Vector< Real, Devices::Host, Index >;
+   VectorType v1;
+   VectorType v2;
+   Real totalL1Diff = 0;
+   Real totalL2Diff = 0;
+   Real totalMaxDiff = 0;
    for( int i = 0; i < (int) inputFiles.size(); i++ )
    {
       if( mode == "couples" )
@@ -469,7 +478,7 @@ bool setTupleType( const MeshPointer& meshPointer,
                    const Config::ParameterContainer& parameters )
 {
    int dimensions = atoi( parsedValueType[ 1 ].getString() );
-   String dataType = parsedValueType[ 2 ];
+   const String& dataType = parsedValueType[ 2 ];
    if( dataType == "float" )
       switch( dimensions )
       {
@@ -534,7 +543,7 @@ bool setValueType( const MeshPointer& meshPointer,
 //   if( elementType == "long double" )
 //      return setIndexType< MeshPointer, long double, long double >( meshPointer, inputFileName, parsedObjectType, parameters );
    const std::vector< String > parsedValueType = parseObjectType( elementType );
-   if( ! parsedValueType.size() )
+   if( parsedValueType.empty() )
    {
       std::cerr << "Unable to parse object type " << elementType << "." << std::endl;
       return false;
@@ -574,7 +583,7 @@ bool processFiles( const Config::ParameterContainer& parameters )
      std::cout << objectType << " detected ... ";
 
    const std::vector< String > parsedObjectType = parseObjectType( objectType );
-   if( ! parsedObjectType.size() )
+   if( parsedObjectType.empty() )
    {
       std::cerr << "Unable to parse object type " << objectType << "." << std::endl;
       return false;

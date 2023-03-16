@@ -33,7 +33,6 @@ TYPED_TEST( VectorTest, evaluateAndReduce )
    using VectorType = typename TestFixture::VectorType;
    using ViewType = typename TestFixture::ViewType;
    using RealType = typename VectorType::RealType;
-   using IndexType = typename VectorType::IndexType;
    const int size = VECTOR_TEST_SIZE;
 
    VectorType _u( size ), _v( size ), _w( size );
@@ -78,7 +77,6 @@ TYPED_TEST( VectorTest, addAndReduce )
    using VectorType = typename TestFixture::VectorType;
    using ViewType = typename TestFixture::ViewType;
    using RealType = typename VectorType::RealType;
-   using IndexType = typename VectorType::IndexType;
    const int size = VECTOR_TEST_SIZE;
 
    VectorType _u( size ), _v( size ), _w( size );

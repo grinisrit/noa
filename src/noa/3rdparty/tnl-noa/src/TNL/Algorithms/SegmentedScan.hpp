@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -11,6 +11,7 @@
 #include "SegmentedScan.h"
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Exceptions/NotImplementedError.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Exceptions/CudaSupportMissing.h>
 
 namespace noa::TNL {
 namespace Algorithms {
@@ -20,10 +21,10 @@ template< typename Vector, typename Reduction, typename Flags >
 void
 SegmentedScan< Devices::Sequential, Type >::perform( Vector& v,
                                                      Flags& flags,
-                                                     const typename Vector::IndexType begin,
-                                                     const typename Vector::IndexType end,
+                                                     typename Vector::IndexType begin,
+                                                     typename Vector::IndexType end,
                                                      const Reduction& reduction,
-                                                     const typename Vector::ValueType identity )
+                                                     typename Vector::ValueType identity )
 {
    using ValueType = typename Vector::ValueType;
    using IndexType = typename Vector::IndexType;
@@ -52,10 +53,10 @@ template< typename Vector, typename Reduction, typename Flags >
 void
 SegmentedScan< Devices::Host, Type >::perform( Vector& v,
                                                Flags& flags,
-                                               const typename Vector::IndexType begin,
-                                               const typename Vector::IndexType end,
+                                               typename Vector::IndexType begin,
+                                               typename Vector::IndexType end,
                                                const Reduction& reduction,
-                                               const typename Vector::ValueType identity )
+                                               typename Vector::ValueType identity )
 {
 #ifdef HAVE_OPENMP
    // TODO: parallelize with OpenMP
@@ -70,15 +71,12 @@ template< typename Vector, typename Reduction, typename Flags >
 void
 SegmentedScan< Devices::Cuda, Type >::perform( Vector& v,
                                                Flags& flags,
-                                               const typename Vector::IndexType begin,
-                                               const typename Vector::IndexType end,
+                                               typename Vector::IndexType begin,
+                                               typename Vector::IndexType end,
                                                const Reduction& reduction,
-                                               const typename Vector::ValueType identity )
+                                               typename Vector::ValueType identity )
 {
-#ifdef HAVE_CUDA
-   using ValueType = typename Vector::ValueType;
-   using IndexType = typename Vector::IndexType;
-
+#ifdef __CUDACC__
    throw Exceptions::NotImplementedError( "Segmented scan (prefix sum) is not implemented for CUDA." );
 #else
    throw Exceptions::CudaSupportMissing();

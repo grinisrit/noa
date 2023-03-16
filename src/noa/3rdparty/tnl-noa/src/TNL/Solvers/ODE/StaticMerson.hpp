@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -24,7 +24,7 @@ StaticMerson< Real >::configSetup( Config::ConfigDescription& config, const Stri
                               "Time step adaptivity controlling coefficient (the smaller the more precise the computation is, "
                               "zero means no adaptivity).",
                               1.0e-4 );
-};
+}
 
 template< typename Real >
 bool
@@ -41,7 +41,7 @@ void __cuda_callable__
 StaticMerson< Real >::setAdaptivity( const RealType& a )
 {
    this->adaptivity = a;
-};
+}
 
 template< typename Real >
 __cuda_callable__
@@ -49,7 +49,7 @@ const Real&
 StaticMerson< Real >::getAdaptivity() const
 {
    return this->adaptivity;
-};
+}
 
 template< typename Real >
 template< typename RHSFunction, typename... Args >
@@ -152,7 +152,7 @@ StaticMerson< Real >::solve( VectorType& u, RHSFunction&& rhsFunction, Args... a
          return true;
    }
    return this->checkConvergence();
-};
+}
 
 template< int Size_, typename Real >
 void
@@ -163,7 +163,7 @@ StaticMerson< Containers::StaticVector< Size_, Real > >::configSetup( Config::Co
                               "Time step adaptivity controlling coefficient (the smaller the more precise the computation is, "
                               "zero means no adaptivity).",
                               1.0e-4 );
-};
+}
 
 template< int Size_, typename Real >
 bool
@@ -181,7 +181,7 @@ void __cuda_callable__
 StaticMerson< Containers::StaticVector< Size_, Real > >::setAdaptivity( const RealType& a )
 {
    this->adaptivity = a;
-};
+}
 
 template< int Size_, typename Real >
 __cuda_callable__
@@ -189,7 +189,7 @@ const Real&
 StaticMerson< Containers::StaticVector< Size_, Real > >::getAdaptivity() const
 {
    return this->adaptivity;
-};
+}
 
 template< int Size_, typename Real >
 template< typename RHSFunction, typename... Args >
@@ -291,7 +291,7 @@ StaticMerson< Containers::StaticVector< Size_, Real > >::solve( VectorType& u, R
          return true;
    }
    return this->checkConvergence();
-};
+}
 
 }  // namespace ODE
 }  // namespace Solvers

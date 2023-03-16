@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -13,7 +13,7 @@
 namespace noa::TNL {
 namespace Containers {
 
-namespace __ndarray_impl {
+namespace detail {
 
 #ifndef __NVCC__
 template< typename Output, typename Func, typename... Input >
@@ -34,7 +34,8 @@ nd_map_view( Output output, Func f, const Input... input )
 
    ExecutorDispatcher< typename Output::PermutationType, typename Output::DeviceType > dispatch;
    using Begins = ConstStaticSizesHolder< typename Output::IndexType, output.getDimension(), 0 >;
-   dispatch( Begins{}, output.getSizes(), wrapper );
+   typename Output::DeviceType::LaunchConfiguration launch_config;
+   dispatch( Begins{}, output.getSizes(), launch_config, wrapper );
 }
 
 #else
@@ -130,7 +131,8 @@ nd_map_view( Output output, Func f )
    nvcc_map_helper_0< Output, Func > wrapper( output, f );
    ExecutorDispatcher< typename Output::PermutationType, typename Output::DeviceType > dispatch;
    using Begins = ConstStaticSizesHolder< typename Output::IndexType, output.getDimension(), 0 >;
-   dispatch( Begins{}, output.getSizes(), wrapper );
+   typename Output::DeviceType::LaunchConfiguration launch_config;
+   dispatch( Begins{}, output.getSizes(), launch_config, wrapper );
 }
 
 template< typename Output, typename Func, typename Input1 >
@@ -143,7 +145,8 @@ nd_map_view( Output output, Func f, const Input1 input1 )
    nvcc_map_helper_1< Output, Func, Input1 > wrapper( output, f, input1 );
    ExecutorDispatcher< typename Output::PermutationType, typename Output::DeviceType > dispatch;
    using Begins = ConstStaticSizesHolder< typename Output::IndexType, output.getDimension(), 0 >;
-   dispatch( Begins{}, output.getSizes(), wrapper );
+   typename Output::DeviceType::LaunchConfiguration launch_config;
+   dispatch( Begins{}, output.getSizes(), launch_config, wrapper );
 }
 
 template< typename Output, typename Func, typename Input1, typename Input2 >
@@ -156,7 +159,8 @@ nd_map_view( Output output, Func f, const Input1 input1, const Input2 input2 )
    nvcc_map_helper_2< Output, Func, Input1, Input2 > wrapper( output, f, input1, input2 );
    ExecutorDispatcher< typename Output::PermutationType, typename Output::DeviceType > dispatch;
    using Begins = ConstStaticSizesHolder< typename Output::IndexType, output.getDimension(), 0 >;
-   dispatch( Begins{}, output.getSizes(), wrapper );
+   typename Output::DeviceType::LaunchConfiguration launch_config;
+   dispatch( Begins{}, output.getSizes(), launch_config, wrapper );
 }
 
 template< typename Output, typename Func, typename Input1, typename Input2, typename Input3 >
@@ -170,12 +174,13 @@ nd_map_view( Output output, Func f, const Input1 input1, const Input2 input2, co
    nvcc_map_helper_3< Output, Func, Input1, Input2, Input3 > wrapper( output, f, input1, input2, input3 );
    ExecutorDispatcher< typename Output::PermutationType, typename Output::DeviceType > dispatch;
    using Begins = ConstStaticSizesHolder< typename Output::IndexType, output.getDimension(), 0 >;
-   dispatch( Begins{}, output.getSizes(), wrapper );
+   typename Output::DeviceType::LaunchConfiguration launch_config;
+   dispatch( Begins{}, output.getSizes(), launch_config, wrapper );
 }
 
 #endif
 
-}  // namespace __ndarray_impl
+}  // namespace detail
 
 // f must be an N-ary function, where N is the dimension of the output and input arrays:
 //      output( i1, ..., iN ) = f( input1( i1, ..., iN ), ... inputM( i1, ..., iN ) )
@@ -183,7 +188,7 @@ template< typename Output, typename Func, typename... Input >
 void
 nd_map( Output& output, Func f, const Input&... input )
 {
-   __ndarray_impl::nd_map_view( output.getView(), f, input.getConstView()... );
+   detail::nd_map_view( output.getView(), f, input.getConstView()... );
 }
 
 template< typename Output, typename Input >

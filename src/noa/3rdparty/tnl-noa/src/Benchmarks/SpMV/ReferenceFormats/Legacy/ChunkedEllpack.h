@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse.h>
+#include "Sparse.h"
 #include <TNL/Containers/Vector.h>
 
 namespace TNL {
@@ -27,7 +27,7 @@ class ChunkedEllpackDeviceDependentCode;
 template< typename Real, typename Device = Devices::Host, typename Index = int >
 class ChunkedEllpack;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #endif
 
 template< typename IndexType >
@@ -39,7 +39,7 @@ struct tnlChunkedEllpackSliceInfo
    IndexType pointer;
 };
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 template< typename Real,
           typename Index,
           typename Vector >
@@ -83,7 +83,7 @@ public:
              typename _Index = Index >
    using Self = ChunkedEllpack< _Real, _Device, _Index >;
 
-   static constexpr bool isSymmetric() { return false; };
+   static constexpr bool isSymmetric() { return false; }
 
    ChunkedEllpack();
 
@@ -202,7 +202,7 @@ public:
    typename Vector::RealType rowVectorProduct( const IndexType row,
                                                const Vector& vector ) const;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    template< typename InVector,
              typename OutVector >
    __device__ void computeSliceVectorProduct( const InVector* inVector,
@@ -224,12 +224,6 @@ public:
    template< typename Real2, typename Index2 >
    void getTransposition( const ChunkedEllpack< Real2, Device, Index2 >& matrix,
                           const RealType& matrixMultiplicator = 1.0 );
-
-   template< typename Vector1, typename Vector2 >
-   bool performSORIteration( const Vector1& b,
-                             const IndexType row,
-                             Vector2& x,
-                             const RealType& omega = 1.0 ) const;
 
    // copy assignment
    ChunkedEllpack& operator=( const ChunkedEllpack& matrix );
@@ -338,7 +332,7 @@ protected:
    friend class ChunkedEllpack< RealType, Devices::Host, IndexType >;
    friend class ChunkedEllpack< RealType, Devices::Cuda, IndexType >;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    template< typename Vector >
    friend void ChunkedEllpackVectorProductCudaKernel( const ChunkedEllpack< Real, Devices::Cuda, Index >* matrix,
                                                                const Vector* inVector,
@@ -353,5 +347,5 @@ protected:
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/ChunkedEllpack_impl.h>
+#include "ChunkedEllpack_impl.h"
 

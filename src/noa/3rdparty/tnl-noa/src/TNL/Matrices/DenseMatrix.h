@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -66,7 +66,7 @@ public:
    getOrganization()
    {
       return Organization;
-   };
+   }
 
    /**
     * \brief This is only for compatibility with sparse matrices.
@@ -77,7 +77,7 @@ public:
    isSymmetric()
    {
       return false;
-   };
+   }
 
    /**
     * \brief The allocator for matrix elements.
@@ -101,7 +101,12 @@ public:
    /**
     * \brief Type for accessing matrix rows.
     */
-   using RowView = DenseMatrixRowView< SegmentViewType, ValuesViewType >;
+   using RowView = typename ViewType::RowView;
+
+   /**
+    * \brief Type for accessing immutable matrix rows.
+    */
+   using ConstRowView = typename ConstViewType::ConstRowView;
 
    /**
     * \brief Type of vector holding values of matrix elements.
@@ -334,7 +339,7 @@ public:
     * See \ref DenseMatrixRowView.
     */
    __cuda_callable__
-   const RowView
+   ConstRowView
    getRow( const IndexType& rowIdx ) const;
 
    /**
@@ -474,8 +479,9 @@ public:
     *    It is should have form like
     *
     * ```
-    * auto function = [=] __cuda_callable__ ( IndexType rowIdx, IndexType columnIdx, IndexType columnIdx_, const RealType& value
-    * ) { ... };
+    * auto function = [=] __cuda_callable__
+    *      ( IndexType rowIdx, IndexType columnIdx, IndexType columnIdx_, const RealType& value )
+    *      { ... };
     * ```
     *
     *  The column index repeats twice only for compatibility with sparse matrices.
@@ -500,8 +506,9 @@ public:
     *    It is should have form like
     *
     * ```
-    * auto function = [=] __cuda_callable__ ( IndexType rowIdx, IndexType columnIdx, IndexType columnIdx_, RealType& value ) {
-    * ... };
+    * auto function = [=] __cuda_callable__
+    *      ( IndexType rowIdx, IndexType columnIdx, IndexType columnIdx_, RealType& value )
+    *      { ... };
     * ```
     *
     *  The column index repeats twice only for compatibility with sparse matrices.
@@ -528,9 +535,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/DenseMatrix/DenseMatrixExample_forAllRows.cpp
+    * \include Matrices/DenseMatrix/DenseMatrixExample_forAllElements.cpp
     * \par Output
-    * \include DenseMatrixExample_forAllRows.out
+    * \include DenseMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -545,9 +552,9 @@ public:
     * \param function  is an instance of the lambda function to be called in each row.
     *
     * \par Example
-    * \include Matrices/DenseMatrix/DenseMatrixExample_forAllRows.cpp
+    * \include Matrices/DenseMatrix/DenseMatrixExample_forAllElements.cpp
     * \par Output
-    * \include DenseMatrixExample_forAllRows.out
+    * \include DenseMatrixExample_forAllElements.out
     */
    template< typename Function >
    void
@@ -783,7 +790,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row.
     *          It is declared as
     *
-    * ````
+    * ```
     * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
     * ```
     *
@@ -817,15 +824,16 @@ public:
     * auto fetch = [=] __cuda_callable__ ( IndexType rowIdx, IndexType columnIdx, RealType elementValue ) -> FetchValue { ... };
     * ```
     *
-    *      The return type of this lambda can be any non void.
+    * The return type of this lambda can be any non void.
+    *
     * \tparam Reduce is a type of lambda function for reduction declared as
     *
-    * ````
+    * ```
     * auto reduce = [=] __cuda_callable__ ( const FetchValue& v1, const FetchValue& v2 ) -> FetchValue { ... };
     * ```
     *
     * \tparam Keep is a type of lambda function for storing results of reduction in each row.
-    *          It is declared as
+    *         It is declared as
     * ```
     * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
     * ```
@@ -867,7 +875,7 @@ public:
     * \tparam Keep is a type of lambda function for storing results of reduction in each row.
     *          It is declared as
     *
-    *  ```
+    * ```
     * auto keep = [=] __cuda_callable__ ( const IndexType rowIdx, const double& value ) { ... };
     * ```
     *
@@ -898,10 +906,14 @@ public:
     * outVector = matrixMultiplicator * ( *this ) * inVector + outVectorMultiplicator * outVector
     * ```
     *
-    * \tparam InVector is type of input vector.  It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
-    * \tparam OutVector is type of output vector. It can be \ref Vector,
-    *     \ref VectorView, \ref Array, \ref ArraView or similar container.
+    * \tparam InVector is type of input vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
+    * \tparam OutVector is type of output vector. It can be
+    *         \ref TNL::Containers::Vector, \ref TNL::Containers::VectorView,
+    *         \ref TNL::Containers::Array, \ref TNL::Containers::ArrayView,
+    *         or similar container.
     *
     * \param inVector is input vector.
     * \param outVector is output vector.
@@ -932,10 +944,7 @@ public:
 
    template< typename Matrix1, typename Matrix2, int tileDim = 32 >
    void
-   getMatrixProduct( const Matrix1& matrix1,
-                     const Matrix2& matrix2,
-                     const RealType& matrix1Multiplicator = 1.0,
-                     const RealType& matrix2Multiplicator = 1.0 );
+   getMatrixProduct( const Matrix1& matrix1, const Matrix2& matrix2, const RealType& matrixMultiplicator = 1.0 );
 
    template< typename Matrix, int tileDim = 32 >
    void
@@ -1052,7 +1061,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator==( const Matrix& m ) const;
+   operator==( const Matrix& matrix ) const;
 
    /**
     * \brief Comparison operator with another arbitrary matrix type.
@@ -1062,7 +1071,7 @@ public:
     */
    template< typename Matrix >
    bool
-   operator!=( const Matrix& m ) const;
+   operator!=( const Matrix& matrix ) const;
 
    /**
     * \brief Method for saving the matrix to the file with given filename.
@@ -1083,7 +1092,7 @@ public:
    /**
     * \brief Method for saving the matrix to a file.
     *
-    * \param fileName is name of the file.
+    * \param file is the file where the matrix will be saved.
     */
    void
    save( File& file ) const override;
@@ -1091,7 +1100,7 @@ public:
    /**
     * \brief Method for loading the matrix from a file.
     *
-    * \param fileName is name of the file.
+    * \param file is the file from which the matrix will be loaded.
     */
    void
    load( File& file ) override;

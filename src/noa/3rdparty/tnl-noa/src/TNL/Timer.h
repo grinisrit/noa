@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -136,11 +136,11 @@ protected:
 
    /**
     * \brief Time Stamp Counter returning number of CPU cycles since reset.
-    *
-    * Only for x86 compatible CPUs.
     */
+#if ! defined( __APPLE__ ) && ! defined( _MSC_VER )
    static inline unsigned long long
    rdtsc();
+#endif
 
    TimePoint initialRealTime;
 
