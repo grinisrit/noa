@@ -71,28 +71,34 @@ class ModelParameters(object):
 
 
 _tmp_values_vol_sabr = {
-    "Fms": nb.types.Array(nb.float64, 1, "A"),
-    "Fm": nb.types.Array(nb.float64, 1, "A"),
-    "q1": nb.types.Array(nb.float64, 1, "A"),
-    "q2": nb.types.Array(nb.float64, 1, "A"),
-    "q3": nb.float64,
-    "S": nb.types.Array(nb.float64, 1, "A"),
-    "zeta": nb.types.Array(nb.float64, 1, "A"),
-    "sqrt": nb.types.Array(nb.float64, 1, "A"),
-    "X": nb.types.Array(nb.float64, 1, "A"),
-    "D": nb.types.Array(nb.float64, 1, "A"),
-    "sig": nb.types.Array(nb.float64, 1, "A"),
+    "f": nb.float64,
+    "Ks": nb.types.Array(nb.float64, 1, "A"),
+    "sigmas": nb.types.Array(nb.float64, 1, "A"),
+    "T": nb.float64,
+    "alpha":  nb.float64, 
+    "sigma": nb.float64,
+    "beta": nb.float64,
+    "v": nb.float64,
+    "rho": nb.float64,
+    "K": nb.float64,
+    "x": nb.float64,
+    "I_H_1": nb.float64,
+    "I_B_0": nb.float64,
+    "z": nb.float64,
+    "n": nb.int64,
 }
 
-# @nb.njit(locals=_tmp_values_vol_sabr)
+@nb.njit(locals = _tmp_values_vol_sabr)
 def vol_sabr(
     model: ModelParameters,
     market: MarketParameters,
 ) -> np.array:
     f, Ks, T = market.S, market.K, market.T
     alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
-    sigmas = []
-    for K in Ks:
+    n = len(Ks)
+    sigmas = np.zeros(n, dtype=np.float64)
+    for index in range(n):
+        K = Ks[index]
         x = np.log(f / K)
 
         I_H_1 = (
@@ -122,22 +128,57 @@ def vol_sabr(
             sigma = I_B_0 *(1 + I_H_1 * T) 
 
 
-        sigmas.append(sigma)
-    return np.array(sigmas)
+        sigmas[index] = sigma
+    return sigmas
 
 
-_tmp_values_jacobian_sabr = {}
-
-# @nb.njit(_signature_jacobian_sabr, locals=_tmp_values_jacobian_sabr)
+_tmp_values_jacobian_sabr = {
+    "f": nb.float64,
+    "Ks": nb.types.Array(nb.float64, 1, "A"),
+    "T": nb.float64,
+    "n": nb.int64,
+    "ddalpha": nb.types.Array(nb.float64, 1, "A"),
+    "ddbeta": nb.types.Array(nb.float64, 1, "A"),
+    "ddv": nb.types.Array(nb.float64, 1, "A"),
+    "ddrho": nb.types.Array(nb.float64, 1, "A"),
+    "alpha":  nb.float64, 
+    "sigma": nb.float64,
+    "beta": nb.float64,
+    "v": nb.float64,
+    "rho": nb.float64,
+    "K": nb.float64,
+    "x": nb.float64,
+    "I_H": nb.float64,
+    "dI_H_alpha": nb.float64,
+    "dI_H_beta": nb.float64,
+    "dI_h_v": nb.float64,
+    "dI_H_rho": nb.float64,
+    "I_B": nb.float64,
+    "B_alpha": nb.float64,
+    "B_beta": nb.float64,
+    "B_v": nb.float64,
+    "B_rho": nb.float64,
+    "sqrt": nb.float64,
+    "sig_alpha": nb.float64,
+    "sig_beta": nb.float64,
+    "sig_v": nb.float64,
+    "sig_rho": nb.float64,
+}
+@nb.njit(locals=_tmp_values_jacobian_sabr)
 def jacobian_sabr(
     model: ModelParameters,
     market: MarketParameters,
 ):
     f, Ks, T = market.S, market.K, market.T
+    n = len(Ks)
     alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
-    ddalphas, ddbeta, ddv, ddrho = [], [], [], []
+    ddalpha = np.zeros(n, dtype=np.float64)
+    ddbeta = np.zeros(n, dtype=np.float64)
+    ddv = np.zeros(n, dtype=np.float64)
+    ddrho = np.zeros(n, dtype=np.float64)
     # need a cycle cause may be different formula for different strikes
-    for K in Ks:
+    for index in range(n):
+        K = Ks[index]
         x = np.log(f / K)
         I_H = (
             alpha**2 * (K * f) ** (beta - 1) * (1 - beta) ** 2 / 24
@@ -256,13 +297,11 @@ def jacobian_sabr(
         sig_v = B_v*(1 + I_H*T) + dI_h_v*I_B*T
         sig_rho = B_rho*(1 + I_H*T) + dI_H_rho*I_B*T
 
-        ddalphas.append(sig_alpha)
-        ddbeta.append(sig_beta)
-        ddv.append(sig_v)
-        ddrho.append(sig_rho)
-        # C, vega = black_scholes_vega(K, F, T, r, sig)
-        # return C, vega, sig, sig_alpha, sig_v, sig_beta, sig_rho
-    return np.array(ddalphas),  np.array(ddv), np.array(ddbeta), np.array(ddrho)
+        ddalpha[index] = sig_alpha
+        ddbeta[index] = sig_beta
+        ddv[index] = sig_v
+        ddrho[index] = sig_rho
+    return ddalpha, ddv, ddbeta, ddrho
 
 
 def calibrate_sabr(
