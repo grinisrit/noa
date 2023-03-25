@@ -5,7 +5,7 @@ from src.utils import get_tick, get_implied_volatility
 from typing import Final, Tuple
 from src.levenberg_marquardt import LevenbergMarquardt
 from scipy import stats as sps
-
+from sklearn.linear_model import LinearRegression
 
 _spec_market_params = [
     ("S", nb.float64),
@@ -75,7 +75,7 @@ _tmp_values_vol_sabr = {
     "Ks": nb.types.Array(nb.float64, 1, "A"),
     "sigmas": nb.types.Array(nb.float64, 1, "A"),
     "T": nb.float64,
-    "alpha":  nb.float64, 
+    "alpha": nb.float64,
     "sigma": nb.float64,
     "beta": nb.float64,
     "v": nb.float64,
@@ -88,7 +88,8 @@ _tmp_values_vol_sabr = {
     "n": nb.int64,
 }
 
-@nb.njit(locals = _tmp_values_vol_sabr)
+
+@nb.njit(locals=_tmp_values_vol_sabr)
 def vol_sabr(
     model: ModelParameters,
     market: MarketParameters,
@@ -103,17 +104,17 @@ def vol_sabr(
 
         I_H_1 = (
             alpha**2 * (K * f) ** (beta - 1) * (1 - beta) ** 2 / 24
-            + alpha * beta * rho * v * (K * f) ** (beta / 2 + - 1/2) / 4
+            + alpha * beta * rho * v * (K * f) ** (beta / 2 + -1 / 2) / 4
             + v**2 * (2 - 3 * rho**2) / 24
         )
 
         if x == 0.0:
             I_B_0 = K ** (beta - 1) * alpha
-            sigma = I_B_0 *(1 + I_H_1 * T)
+            sigma = I_B_0 * (1 + I_H_1 * T)
 
         elif v == 0.0:
             I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + f ** (1 - beta))
-            sigma = I_B_0 *(1 + I_H_1 * T)
+            sigma = I_B_0 * (1 + I_H_1 * T)
 
         else:
             if beta == 1.0:
@@ -123,10 +124,11 @@ def vol_sabr(
                 z = v * (f ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
 
             I_B_0 = (
-                v * x / (np.log((np.sqrt(1 - 2 * rho * z + z**2) + z - rho) / (1 - rho)))
+                v
+                * x
+                / (np.log((np.sqrt(1 - 2 * rho * z + z**2) + z - rho) / (1 - rho)))
             )
-            sigma = I_B_0 *(1 + I_H_1 * T) 
-
+            sigma = I_B_0 * (1 + I_H_1 * T)
 
         sigmas[index] = sigma
     return sigmas
@@ -141,7 +143,7 @@ _tmp_values_jacobian_sabr = {
     "ddbeta": nb.types.Array(nb.float64, 1, "A"),
     "ddv": nb.types.Array(nb.float64, 1, "A"),
     "ddrho": nb.types.Array(nb.float64, 1, "A"),
-    "alpha":  nb.float64, 
+    "alpha": nb.float64,
     "sigma": nb.float64,
     "beta": nb.float64,
     "v": nb.float64,
@@ -164,6 +166,8 @@ _tmp_values_jacobian_sabr = {
     "sig_v": nb.float64,
     "sig_rho": nb.float64,
 }
+
+
 @nb.njit(locals=_tmp_values_jacobian_sabr)
 def jacobian_sabr(
     model: ModelParameters,
@@ -192,14 +196,22 @@ def jacobian_sabr(
         dI_H_beta = (
             alpha**2 * (K * f) ** (beta - 1) * (1 - beta) ** 2 * np.log(K * f) / 24
             + alpha**2 * (K * f) ** (beta - 1) * (2 * beta - 2) / 24
-            + alpha * beta * rho * v * (K * f) ** (beta / 2 + -1 / 2) * np.log(K * f) / 8
+            + alpha
+            * beta
+            * rho
+            * v
+            * (K * f) ** (beta / 2 + -1 / 2)
+            * np.log(K * f)
+            / 8
             + alpha * rho * v * (K * f) ** (beta / 2 - 1 / 2) / 4
         )
         dI_h_v = (
             alpha * beta * rho * (K * f) ** (beta / 2 + -1 / 2) / 4
             + v * (2 - 3 * rho**2) / 12
         )
-        dI_H_rho = alpha * beta * v * (K * f) ** (beta / 2 + -1 / 2) / 4 - rho * v**2 / 4
+        dI_H_rho = (
+            alpha * beta * v * (K * f) ** (beta / 2 + -1 / 2) / 4 - rho * v**2 / 4
+        )
 
         if x == 0.0:
             I_B = alpha * K ** (beta - 1)
@@ -229,7 +241,9 @@ def jacobian_sabr(
             z = v * x / alpha
             sqrt = np.sqrt(1 - 2 * rho * z + z**2)
             I_B = v * x / (np.log((sqrt + z - rho) / (1 - rho)))
-            B_alpha = v * x * z / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
+            B_alpha = (
+                v * x * z / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
+            )
             B_beta = 0.0
             B_v = (
                 x
@@ -252,7 +266,9 @@ def jacobian_sabr(
             z = v * (f ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
             sqrt = np.sqrt(1 - 2 * rho * z + z**2)
             I_B = v * (-(K ** (1 - beta)) + f ** (1 - beta)) / (alpha * (1 - beta))
-            B_alpha = v * x * z / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
+            B_alpha = (
+                v * x * z / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
+            )
             B_beta = (
                 -v
                 * x
@@ -292,10 +308,10 @@ def jacobian_sabr(
                 / ((-rho + z + sqrt) * np.log((-rho + z + sqrt) / (1 - rho)) ** 2)
             )
 
-        sig_alpha = B_alpha*(1 + I_H*T) + dI_H_alpha*I_B*T
-        sig_beta = B_beta*(1 + I_H*T) + dI_H_beta*I_B*T
-        sig_v = B_v*(1 + I_H*T) + dI_h_v*I_B*T
-        sig_rho = B_rho*(1 + I_H*T) + dI_H_rho*I_B*T
+        sig_alpha = B_alpha * (1 + I_H * T) + dI_H_alpha * I_B * T
+        sig_beta = B_beta * (1 + I_H * T) + dI_H_beta * I_B * T
+        sig_v = B_v * (1 + I_H * T) + dI_h_v * I_B * T
+        sig_rho = B_rho * (1 + I_H * T) + dI_H_rho * I_B * T
 
         ddalpha[index] = sig_alpha
         ddbeta[index] = sig_beta
@@ -304,11 +320,155 @@ def jacobian_sabr(
     return ddalpha, ddv, ddbeta, ddrho
 
 
+def get_beta(df: pd.DataFrame, timestamp: int = None):
+    if timestamp:
+        data = df[df["timestamp"] <= timestamp].copy()
+    else:
+        data = df.copy()
+
+    def get_closest(given_strikes, underlying_price):
+        """Finds between which values the given own lies"""
+        # given_strikes sorted
+        for index in range(0, len(given_strikes) - 1):
+            if (
+                given_strikes[index] <= underlying_price
+                and given_strikes[index + 1] >= underlying_price
+            ):
+                return given_strikes[index], given_strikes[index + 1]
+
+    def get_closest_strike(forward: float):
+        closest_strikes = get_closest(all_covered_strikes, forward)
+        return closest_strikes
+
+    available_strikes = sorted(data.strike_price.unique())
+    max_value_of_underlying = data.underlying_price.max()
+    min_value_of_underlying = data.underlying_price.min()
+
+    # find between which strikes do max and min forward values are
+    right_border = get_closest(available_strikes, max_value_of_underlying)[1]
+    left_border = get_closest(available_strikes, min_value_of_underlying)[0]
+    all_covered_strikes = [
+        strike
+        for strike in available_strikes
+        if strike >= left_border and strike <= right_border
+    ]
+
+    # find between whick strikes one current tick the forward is
+    data["closest_strikes"] = data["underlying_price"].apply(get_closest_strike)
+    # make borders as columns
+    data["left_border"] = data["closest_strikes"].apply(lambda x: x[0])
+    data["right_border"] = data["closest_strikes"].apply(lambda x: x[1])
+
+    # ticks of only crossed strikes
+    df_of_only_needed_strikes = data[data["strike_price"].isin(all_covered_strikes)]
+
+    df_of_only_needed_strikes["tau"] = (
+        (df_of_only_needed_strikes.expiration - df_of_only_needed_strikes.timestamp)
+        / 1e6
+        / 3600
+        / 24
+        / 365
+    )
+    df_of_only_needed_strikes["mark_price_usd"] = (
+        df_of_only_needed_strikes["strike_price"]
+        * df_of_only_needed_strikes["underlying_price"]
+    )
+    mark_ivs = []
+    for index, row in df_of_only_needed_strikes.iterrows():
+        iv = get_implied_volatility(
+            option_type=row["type"],
+            C=row["mark_price_usd"],
+            K=row["strike_price"],
+            T=row["tau"],
+            F=row["underlying_price"],
+            r=0.0,
+            error=0.001,
+        )
+        mark_ivs.append(iv)
+
+    df_of_only_needed_strikes["mark_iv"] = mark_ivs
+
+    df_of_only_needed_strikes = (
+        df_of_only_needed_strikes[["timestamp", "strike_price", "mark_iv"]]
+        .drop_duplicates()
+        .copy()
+    )
+
+    # get for all timstamps the values of mark_iv for needed strikes
+    df_of_only_needed_strikes_left = df_of_only_needed_strikes.copy()
+    df_of_only_needed_strikes_left = df_of_only_needed_strikes_left.rename(
+        columns={"mark_iv": "mark_iv_left"}
+    )
+    data = data.merge(
+        df_of_only_needed_strikes_left,
+        how="left",
+        left_on=["timestamp", "left_border"],
+        right_on=["timestamp", "strike_price"],
+    )
+    # same for right ordered
+    df_of_only_needed_strikes_right = df_of_only_needed_strikes.copy()
+    df_of_only_needed_strikes_right = df_of_only_needed_strikes_right.rename(
+        columns={"mark_iv": "mark_iv_right"}
+    )
+    data = data.merge(
+        df_of_only_needed_strikes_right,
+        how="left",
+        left_on=["timestamp", "right_border"],
+        right_on=["timestamp", "strike_price"],
+    )
+    # drop useless cols
+    data = data.drop(columns=["strike_price_y", "strike_price"])
+    data = data.rename(columns={"strike_price_x": "strike_price"})
+    # if there are no info on mark_iv of given strike for this tick, fill with previous value
+    data["mark_iv_left"] = data["mark_iv_left"].fillna(method="ffill")
+    data["mark_iv_right"] = data["mark_iv_right"].fillna(method="ffill")
+
+    # get no similar by this cols ticks
+    only_needed = data[
+        [
+            "timestamp",
+            "underlying_price",
+            "right_border",
+            "left_border",
+            "mark_iv_left",
+            "mark_iv_right",
+            "strike_price",
+        ]
+    ].copy()
+    only_needed = only_needed.dropna()
+    #     only_needed = only_needed[only_needed["strike_price"].isin(all_covered_strikes)]
+
+    # weight needed vols by distance between forward and closest strikes
+    only_needed["ATM_iv"] = only_needed["mark_iv_left"] * (
+        only_needed["right_border"] - only_needed["underlying_price"]
+    ) / (only_needed["right_border"] - only_needed["left_border"]) + only_needed[
+        "mark_iv_right"
+    ] * (
+        only_needed["underlying_price"] - only_needed["left_border"]
+    ) / (
+        only_needed["right_border"] - only_needed["left_border"]
+    )
+
+    # get logs for regression
+    only_needed["ln_underlying_price"] = np.log(only_needed["underlying_price"])
+    only_needed["ln_ATM_iv"] = np.log(only_needed["ATM_iv"])
+    to_fit = only_needed[["ln_underlying_price", "ln_ATM_iv"]].drop_duplicates().copy()
+
+    lr = LinearRegression()
+    lr.fit(to_fit["ln_underlying_price"].values.reshape(-1, 1), to_fit["ln_ATM_iv"])
+    k = lr.coef_[0]
+    # from formula
+    beta = k + 1
+    beta = max(min(beta, 1.0), 0.0)
+    return beta
+
+
 def calibrate_sabr(
     df: pd.DataFrame,
     start_params: np.array,
     timestamp: int = None,
     calibration_type: str = "all",
+    beta: float = None,
 ):
     """
     Function to calibrate SABR model.
@@ -326,6 +486,7 @@ def calibrate_sabr(
         @param timestamp (int): On which timestamp to calibrate the model.
             Should be in range of df timestamps.
         @param calibration_type(str): Type of calibration. Should be one of: ["all", "beta"]
+        @param beta(float): Fix it to needed value if you don't want to calibrate it
 
     Return:
         calibrated_params (np.array): Array of optimal params on timestamp tick.
@@ -440,8 +601,7 @@ def calibrate_sabr(
         calibrated_params = np.array(res["x"], dtype=np.float64)
 
     elif calibration_type == "beta":
-        # beta = 0.9999
-        beta = 1.0
+        beta = beta if beta else get_beta(df, timestamp)
         res = LevenbergMarquardt(
             500,
             get_residuals,

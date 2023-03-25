@@ -2,6 +2,7 @@ import pandas as pd
 from scipy import stats as sps
 import numpy as np
 import datetime
+import numba as nb
 
 
 def get_tick(df: pd.DataFrame, timestamp: int = None):
@@ -38,10 +39,10 @@ def get_tick(df: pd.DataFrame, timestamp: int = None):
         data_grouped["mark_price"] * data_grouped["underlying_price"]
     )
     data_grouped = data_grouped[data_grouped["strike_price"] <= 10_000]
-    # print(data_grouped)
     return data_grouped
 
 # Newton-Raphsen
+nb.njit
 def get_implied_volatility(
     option_type: str,
     C: float,
@@ -175,6 +176,7 @@ bid_ask_approx = {
     1150: 1.0000351723918721,
     1200: 1.0001647525653266,
     1250: 1.0003277282334841,
+    1275: 1.0004277282334841,
     1300: 1.0005178140988367,
     1350: 1.0007299111473158,
     1400: 1.0009598827508623,
