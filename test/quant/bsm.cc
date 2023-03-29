@@ -1,8 +1,6 @@
 #include <noa/quant/bsm.hh>
 
-#include <iostream>
 #include <cstdint>
-#include <torch/torch.h>
 
 using namespace torch::indexing;
 
