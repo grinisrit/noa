@@ -26,7 +26,8 @@ providing even newcomers with the necessary option pricing background.
 
 * Calibrating the volatility smile & surface with [stochatic volatility models](vol_calibration.ipynb)
 
-* Monte-Carlo pricing with the [Heston model](heston_sim.ipynb)
- 
+* Monte-Carlo pricing with the [Heston model](heston_sim.ipynb) 
+
+* The [LSM algorithm](lsm.ipynb) to price early execution.
 
 (c) 2023 GrinisRIT ltd.
