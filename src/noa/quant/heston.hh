@@ -134,9 +134,9 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
  * @param dt Time step.
  * @param init_state_price Initial states of the price paths, i.e. S(0). Shape: (n_paths).
  * @param init_state_var Initial states of the variance paths, i.e. v(0). Shape: (n_paths).
- * @param kappa Parameter κ.
- * @param theta Parameter θ.
- * @param eps Parameter ε.
+ * @param kappa Parameter κ - the rate at which v(t) reverts to θ.
+ * @param theta Parameter θ - long-run average variance.
+ * @param eps Parameter ε - volatility of variance.
  * @param rho Correlation between underlying Brownian motions for S(t) and v(t).
  * @param drift Drift parameter μ.
  * @return Two tensors: simulated paths for price, simulated paths for variance.

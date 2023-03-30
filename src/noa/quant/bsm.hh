@@ -183,7 +183,7 @@ price_american_put_bs(double K, double T, double r, double sigma,
     double delta_x = (x_max - x_min) / (static_cast<double>(npoints_S) - 1.0);
     double lambda = delta_tau / std::pow(delta_x, 2);
     double k = 2*r / std::pow(sigma, 2);
-    std::cout << "delta_tau / (delta_x)^2 = " << lambda << std::endl;
+    std::cout << "price_american_put_bs(): delta_tau / (delta_x)^2 = " << lambda << std::endl;
 
     torch::Tensor x = torch::linspace(x_min, x_max, npoints_S, torch::kFloat64);
     torch::Tensor tau_array = torch::linspace(0, tau_max, npoints_t, torch::kFloat64);

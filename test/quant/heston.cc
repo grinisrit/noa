@@ -1,5 +1,3 @@
-/** For results visualization see docs/quant/heston.ipynb */
-
 #include <noa/quant/heston.hh>
 
 #include <cstdint>
