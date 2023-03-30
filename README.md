@@ -23,7 +23,7 @@ drop the `src/noa` folder into your project.
 which may require separable compilation.
 
 #### Note 1
-`src/noa/kernels.hh` could be compiled separately via `test/kernels.cc`, but it is also possible to include it directly into your program if you want to keep everything inside of the single trasnlation unit.
+`src/noa/kernels.hh` could be compiled separately via `test/kernels.cc`, but it is also possible to include it directly into your program if you want to keep everything inside of the single translation unit.
 #### Note 2: PUMAS
 PUMAS code under `src/noa/3rdparty/_pumas` was syntactically adapted to compile under `g++` with `-fpermissive`.
 To avoid setting this parameter everywhere, `noa/kernels.hh` doesn't include PUMAS by defaut.

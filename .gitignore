@@ -24,9 +24,16 @@ dist/
 # User data
 data/
 *.pt
+*.h5
+*.hdf5
 tmp*
+<<<<<<< HEAD
 
 # Notebooks temp data
 docs/cfd/stash/*
 !docs/cfd/stash/*.gif
 !docs/cfd/stash/*.png
+=======
+/docs/quant/deribit/dataStorage/
+/docs/quant/deribit/logs.txt
+>>>>>>> feature/quant
