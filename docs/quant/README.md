@@ -23,5 +23,10 @@ Hands-on tutorials:
 providing even newcomers with the necessary option pricing background.
 
 * Basic numerical techniques for the [Black-Scholes-Merton model](bsm.ipynb) 
+
+* Calibrating the volatility smile & surface with [stochatic volatility models](vol_calibration.ipynb)
+
+* Monte-Carlo pricing with the [Heston model](heston_sim.ipynb)
  
-(c) 2023 GrinisRIT ltd. and contributors
+
+(c) 2023 GrinisRIT ltd.
