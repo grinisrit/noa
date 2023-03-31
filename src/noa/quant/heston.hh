@@ -48,14 +48,14 @@ using namespace torch::indexing;
  *
  * @param df Degrees of freedom, must be > 0.
  * @param nonc Non-centrality parameter, must be >= 0.
- * @param size Length of output tensor.
+ * @param size Length of the output tensor.
  * @return Tensor with generated samples. Shape: same as `df` and `nonc`, if
  *     they have the same shape.
  */
 torch::Tensor
 noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
     // algorithm is summarized in [Andersen2007, section 3.2.4]
-    double THRESHOLD = 1.5;  // threshold value for switching between sampling algorithms
+    double PSI_CRIT = 1.5;  // threshold value for switching between sampling algorithms
     torch::Tensor m = df + nonc;
     torch::Tensor s2 = 2*df + 4*nonc;
     torch::Tensor psi = s2 / m.pow(2);
@@ -72,7 +72,7 @@ noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
             (p < rand) & (rand <= 1),
             beta.pow(-1)*torch::log((1-p)/(1-rand)),
             torch::zeros_like(rand));
-    return torch::where(psi <= THRESHOLD, sample_quad, sample_exp);
+    return torch::where(psi <= PSI_CRIT, sample_quad, sample_exp);
 }
 
 /**
@@ -80,7 +80,7 @@ noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
  *
  * CIR process is described by the SDE:
  *
- * dv(t) = κ(θ - v(t)) dt + ξ sqrt(v(t)) dW(t)
+ * dv(t) = κ·(θ - v(t))·dt + ε·sqrt(v(t))·dW(t)
  *
  * (see [Grzelak2019, section 8.1.2]).
  *
@@ -93,13 +93,13 @@ noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
  * @param init_state Initial states of the paths, i.e. v(0). Shape: (n_paths,).
  * @param kappa Parameter κ.
  * @param theta Parameter θ.
- * @param xi Parameter ξ.
+ * @param eps Parameter ε.
  * @return Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
  */
 torch::Tensor
 generate_cir(int64_t n_paths, int64_t n_steps, double dt,
              const torch::Tensor& init_state,
-             double kappa, double theta, double xi)
+             double kappa, double theta, double eps)
 {
     if (init_state.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state` must be (n_paths,)");
@@ -107,12 +107,12 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
     torch::Tensor paths = torch::empty({n_paths, n_steps + 1},init_state.dtype());
     paths.index_put_({Slice(), 0}, init_state);
 
-    torch::Tensor delta = 4*kappa*theta/(xi*xi) * torch::ones_like(init_state);
+    torch::Tensor delta = 4 * kappa * theta / (eps * eps) * torch::ones_like(init_state);
     double exp = std::exp(-kappa*dt);
-    double c_bar = 1/(4*kappa)*xi*xi * (1 - exp);
+    double c_bar = 1 / (4*kappa) * eps * eps * (1 - exp);
     for (int64_t i = 0; i < n_steps; i++) {
         torch::Tensor v_cur = paths.index({Slice(), i});
-        torch::Tensor kappa_bar = v_cur * 4*kappa*exp / (xi*xi*(1 - exp));
+        torch::Tensor kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp));
         // [Grzelak2019, definition 8.1.1]
         torch::Tensor v_next = c_bar * noncentral_chisquare(delta, kappa_bar);
         paths.index_put_({Slice(), i+1}, v_next);
@@ -121,10 +121,10 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
 }
 
 /**
- * Generates time series following Heston model:
+ * Generates time series following the Heston model:
  *
- * dS(t) = sqrt(v(t))·S(t)·dW_1(t);
- * dv(t) = κ(θ - v(t)) dt + ξ sqrt(v(t)) dW_2(t),
+ * dS(t) = μ·S(t)·dt + sqrt(v(t))·S(t)·dW_1(t);
+ * dv(t) = κ(θ - v(t))·dt + ε·sqrt(v(t))·dW_2(t),
  *
  * using Andersen's Quadratic Exponential scheme [Andersen2007].
  * Also see [Grzelak, section 9.4.3].
@@ -134,10 +134,11 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
  * @param dt Time step.
  * @param init_state_price Initial states of the price paths, i.e. S(0). Shape: (n_paths).
  * @param init_state_var Initial states of the variance paths, i.e. v(0). Shape: (n_paths).
- * @param kappa Parameter κ.
- * @param theta Parameter θ.
- * @param xi Parameter ξ.
+ * @param kappa Parameter κ - the rate at which v(t) reverts to θ.
+ * @param theta Parameter θ - long-run average variance.
+ * @param eps Parameter ε - volatility of variance.
  * @param rho Correlation between underlying Brownian motions for S(t) and v(t).
+ * @param drift Drift parameter μ.
  * @return Two tensors: simulated paths for price, simulated paths for variance.
  *     Both tensors have shape (n_paths, n_steps + 1).
  */
@@ -145,27 +146,45 @@ std::tuple<torch::Tensor, torch::Tensor>
 generate_heston(int64_t n_paths, int64_t n_steps, double dt,
                 const torch::Tensor& init_state_price,
                 const torch::Tensor& init_state_var,
-                double kappa, double theta, double xi, double rho)
+                double kappa, double theta, double eps, double rho, double drift)
 {
     if (init_state_price.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state_price` must be (n_paths,)");
     if (init_state_var.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state_var` must be (n_paths,)");
 
-    double k0 = -rho / xi * kappa * theta * dt;
-    double k1 = (rho*kappa/xi - 0.5) * dt - rho/xi;
-    double k2 = rho / xi;
-    double k3 = (1 - rho*rho) * dt;
+    double gamma2 = 0.5;
+    // regularity condition [Andersen 2007, section 4.3.2]
+    if (rho > 0) { // always satisfied when rho <= 0
+        double L = rho*dt*(kappa/eps - 0.5*rho);
+        double R = 2*kappa/(eps*eps*(1 - std::exp(-kappa*dt))) - rho/eps;
+        if (R<=0 || L==0 || (L<0 && R>=0)) {
+            // When (L<0 && R<=0), L/R is always < 0.5.
+            // (L>0 && R<=0) never happens.
+            // In other cases, regularity condition is always satisfied.
+        }
+        else if (L > 0) {
+            gamma2 = std::min(0.5, R / L * 0.9); // multiply by 0.9 to have some margin
+        }
+    }
+    double gamma1 = 1.0 - gamma2;
 
-    torch::Tensor var = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, xi);
+    double k0 = -rho * kappa * theta * dt / eps;
+    double k1 = gamma1 * dt * (kappa * rho / eps - 0.5) - rho / eps;
+    double k2 = gamma2 * dt * (kappa * rho / eps - 0.5) + rho / eps;
+    double k3 = gamma1 * dt * (1 - rho * rho);
+    double k4 = gamma2 * dt * (1 - rho * rho);
+
+    torch::Tensor var = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps);
     torch::Tensor log_paths = torch::empty({n_paths, n_steps + 1}, init_state_price.dtype());
     log_paths.index_put_({Slice(), 0}, init_state_price.log());
 
     for (int64_t i = 0; i < n_steps; i++) {
         torch::Tensor v_i = var.index({Slice(), i});
-        torch::Tensor next_vals = log_paths.index({Slice(), i}) + k0 +
-                k1*v_i + k2*var.index({Slice(), i+1}) +
-                torch::sqrt(k3*v_i) * torch::randn_like(v_i);
+        torch::Tensor v_next = var.index({Slice(), i+1});
+        torch::Tensor next_vals = drift*dt +
+                log_paths.index({Slice(), i}) + k0 + k1*v_i + k2*v_next +
+                torch::sqrt(k3*v_i + k4*v_next) * torch::randn_like(v_i);
         log_paths.index_put_({Slice(), i+1}, next_vals);
     }
     return std::make_tuple(log_paths.exp(), var);

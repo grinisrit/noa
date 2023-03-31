@@ -1,5 +1,3 @@
-/** For results visualization see docs/quant/heston.ipynb */
-
 #include <noa/quant/heston.hh>
 
 #include <cstdint>
@@ -17,16 +15,12 @@ double dt = 1.0/250;
 double rho = -0.6;
 double S0 = 100.0;
 
-double xi = 0.009;
+double eps = 0.009;
 double theta = 0.01;
 double v0 = theta;
 double kappa = 0.06;
-/*
-double xi = 0.1;
-double theta = 1;
-double v0 = theta;
-double kappa = 1;
-*/
+double drift = 0;
+
 
 double nonc_chi2_moment_true(double df, double nonc, int moment_num) {
     if (moment_num == 1)
@@ -101,7 +95,7 @@ void test_noncentral_chi2() {
 void test_cir() {
     std::cout << "Running functional test of `generate_cir()`" << std::endl;
     torch::Tensor init_state_var = v0 * torch::ones(n_paths, torch::dtype<double>());
-    torch::Tensor cir_paths = noa::quant::generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, xi);
+    torch::Tensor cir_paths = noa::quant::generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps);
     torch::save(cir_paths, "cir_paths.pt");
 }
 
@@ -113,7 +107,7 @@ void test_heston() {
     torch::Tensor heston_paths, var_paths;
     std::tie(heston_paths, var_paths) = noa::quant::generate_heston(
             n_paths, n_steps, dt, init_state_price, init_state_var,
-            kappa, theta, xi, rho
+            kappa, theta, eps, rho, drift
     );
     torch::save(heston_paths, "heston_paths.pt");
     torch::save(var_paths, "var_paths.pt");
