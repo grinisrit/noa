@@ -1,7 +1,7 @@
 import numba as nb
 import numpy as np
 import pandas as pd
-from src.utils import get_tick, get_implied_volatility, get_price_bsm
+from src.utils import get_tick, get_implied_volatility, get_price_bsm, cdf, pdf
 from typing import Final, Tuple
 from src.levenberg_marquardt import LevenbergMarquardt
 import math
@@ -106,6 +106,7 @@ def vol_sabr(
     gammas = np.zeros(n, dtype=np.float64)
     dc_drho = np.zeros(n, dtype=np.float64)
     dc_dv = np.zeros(n, dtype=np.float64)
+    dc_dK = np.zeros(n, dtype=np.float64)
     prices = np.zeros(n, dtype=np.float64)
     for index in range(n):
         K = Ks[index]
@@ -116,6 +117,14 @@ def vol_sabr(
             beta / 2 - 1 / 2
         ) / (
             4 * f
+        )
+
+        dI_H_1_dK = alpha**2 * (K * f) ** (beta - 1) * (1 - beta) ** 2 * (
+            beta - 1
+        ) / (24 * K) + alpha * beta * rho * v * (K * f) ** (beta / 2 - 1 / 2) * (
+            beta / 2 + -1 / 2
+        ) / (
+            4 * K
         )
 
         I_H_1 = (
@@ -129,6 +138,7 @@ def vol_sabr(
             dI_B_0_dF = 0.0
             B_alpha = K ** (beta - 1)
             d2I_B_0_d2f = 0.0
+            dI_B_0_dK = K ** (beta - 2) * alpha * (beta - 1)
             d2I_B_0_dalpha_df = 0.0
 
         elif v == 0.0:
@@ -142,6 +152,17 @@ def vol_sabr(
                 )
                 / (f**2 * (K ** (1 - beta) - f ** (1 - beta)) ** 2)
             )
+
+            dI_B_0_dK = (
+                alpha
+                * (beta - 1)
+                * (
+                    -K * (K ** (1 - beta) - f ** (1 - beta))
+                    + K ** (2 - beta) * (beta - 1) * np.log(f / K)
+                )
+                / (K**2 * (K ** (1 - beta) - f ** (1 - beta)) ** 2)
+            )
+
             B_alpha = (beta - 1) * x / (K ** (1 - beta) - f ** (1 - beta))
             d2I_B_0_d2f = (
                 alpha
@@ -169,6 +190,13 @@ def vol_sabr(
                     * (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) - v * x)
                     / (alpha * f * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
                 )
+
+                dI_B_0_dK = (
+                    v
+                    * (-sqrt * alpha * np.log((-sqrt + rho - z) / (rho - 1)) + v * x)
+                    / (K * sqrt * alpha * np.log((-sqrt + rho - z) / (rho - 1)) ** 2)
+                )
+
                 B_alpha = (
                     v
                     * x
@@ -240,6 +268,25 @@ def vol_sabr(
                         * np.log((rho - z - sqrt) / (rho - 1)) ** 2
                     )
                 )
+
+                dI_B_0_dK = (
+                    v
+                    * (
+                        K * v * x
+                        - K**beta
+                        * sqrt
+                        * alpha
+                        * np.log((-sqrt + rho - z) / (rho - 1))
+                    )
+                    / (
+                        K
+                        * K**beta
+                        * sqrt
+                        * alpha
+                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 2
+                    )
+                )
+
                 B_alpha = (
                     v
                     * x
@@ -322,26 +369,20 @@ def vol_sabr(
         sigma = I_B_0 * (1 + I_H_1 * T)
         dsigma_df = dI_B_0_dF * (1 + I_H_1 * T) + dI_H_1_dF * I_B_0 * T
         d1 = (np.log(f / K) + 0.5 * sigma**2 * T) / (sigma * np.sqrt(T))
-
-        # numba does not like scipy
-        def pdf(x):
-            probability = 1.0 / np.sqrt(2 * np.pi)
-            probability *= np.exp(-0.5 * x**2)
-            return probability
-
-        def cdf(x):
-            return (1.0 + math.erf(x / np.sqrt(2.0))) / 2.0
-
-        vega_bsm = f * np.sqrt(T) * pdf(d1)
-        delta_bsm = cdf(d1)
-        gamma_bsm = pdf(d1) / (f * sigma * np.sqrt(T))
-        # for put
+        d2 = d1 - sigma*np.sqrt(T)
+        # for derivative by strike as for jacobian variables
+        dsigma_dK = dI_B_0_dK * (1 + I_H_1 * T) + dI_H_1_dK * I_B_0 * T
+        
         dsigma_dalpha, dsigma_dv, dsigma_drho = (
             dsigma_dalphas[index],
             dsigma_dvs[index],
             dsigma_drhos[index],
         )
 
+        vega_bsm = f * np.sqrt(T) * pdf(d1)
+        delta_bsm = cdf(d1)
+        gamma_bsm = pdf(d1) / (f * sigma * np.sqrt(T))
+        # for put
         delta_bsm = delta_bsm if types[index] else delta_bsm - 1.0
         deltas[index] = delta_bsm + vega_bsm * (
             dsigma_df + dsigma_dalpha * rho * v / f**beta
@@ -349,6 +390,11 @@ def vol_sabr(
         vegas[index] = vega_bsm * (dsigma_dalpha + dsigma_df * rho * f**beta / v)
         dc_drho[index] = vega_bsm * dsigma_drho
         dc_dv[index] = vega_bsm * dsigma_dv
+
+        # TODO. Wrong yet
+        kega_bsm = -np.exp(market.r*T)*cdf(d2)
+        kega_bsm = kega_bsm if types[index] else kega_bsm + 1.0
+        dc_dK[index] = kega_bsm + vega_bsm * dsigma_dK
         sigmas[index] = sigma
         prices[index] = get_price_bsm(types[index], sigma, K, T, f, market.r)
 
@@ -403,7 +449,7 @@ def vol_sabr(
             + last_gamma_component
         )
 
-    return sigmas, prices, deltas, vegas, gammas, dc_drho, dc_dv
+    return sigmas, prices, deltas, vegas, gammas, dc_drho, dc_dv, dc_dK
 
 
 _tmp_values_jacobian_sabr = {
@@ -864,7 +910,7 @@ def calibrate_sabr(
             J_tmp = jacobian_sabr(model=model_parameters, market=market)
             J = np.concatenate([J_tmp[0:2], J_tmp[3:]])
 
-        iv, _, _, _, _, _, _ = vol_sabr(model=model_parameters, market=market)
+        iv, _, _, _, _, _, _, _ = vol_sabr(model=model_parameters, market=market)
         weights = np.ones_like(market.K)
         weights = weights / np.sum(weights)
         res = iv - market.iv
@@ -893,16 +939,16 @@ def calibrate_sabr(
         calibrated_params[2],
         calibrated_params[3],
     )
-    final_vols, prices, deltas, vegas, gammas, dc_drho, dc_dv = vol_sabr(
+    final_vols, prices, deltas, vegas, gammas, dc_drho, dc_dv, dc_dK = vol_sabr(
         model=final_params, market=market
     )
-
 
     tick["delta"] = deltas
     tick["vega"] = vegas
     tick["gamma"] = gammas
     tick["dc_drho"] = dc_drho
     tick["dc_dv"] = dc_dv
+    tick["dc_dK"] = dc_dK
     tick["calibrated_iv"] = final_vols
     tick["rho"] = final_params.rho
     tick["volvol"] = final_params.v
@@ -922,6 +968,7 @@ def calibrate_sabr(
             "gamma",
             "dc_drho",
             "dc_dv",
+            "dc_dK",
             "mark_price_usd",
             "rho",
             "volvol",

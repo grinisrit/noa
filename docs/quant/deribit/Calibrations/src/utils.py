@@ -91,6 +91,11 @@ def get_implied_volatility(
 def cdf(x) -> float:
     return (1.0 + math.erf(x / np.sqrt(2.0))) / 2.0
 
+def pdf(x):
+    probability = 1.0 / np.sqrt(2 * np.pi)
+    probability *= np.exp(-0.5 * x**2)
+    return probability
+
 def get_price_bsm(
     option_type: str,
     sigma: float,
