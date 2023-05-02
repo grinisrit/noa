@@ -45,8 +45,9 @@ class UserPortfolioSubscription(AbstractSubscription):
             if 'params' in response:
                 if 'channel' in response['params']:
                     if 'portfolio' in response['params']['channel']:
-                        if self.scrapper.connected_strategy is not None:
-                            await self.scrapper.connected_strategy.on_trade_update(callback=response)
+                        # TODO: HERE IS PROBLEM
+                        # if self.scrapper.connected_strategy is not None:
+                        #     await self.scrapper.connected_strategy.on_trade_update(callback=response)
 
                         if self.database:
                             await self.database.add_data(

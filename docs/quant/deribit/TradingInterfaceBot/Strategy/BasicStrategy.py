@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 from docs.quant.deribit.TradingInterfaceBot.Strategy.AbstractStrategy import AbstractStrategy
-from docs.quant.deribit.TradingInterfaceBot.Strategy.Utils.Order import OrderStructure, OrderType, \
+from docs.quant.deribit.TradingInterfaceBot.Utils import OrderStructure, OrderType, \
     convert_deribit_order_type_to_structure, convert_deribit_order_status_to_structure, OrderState
 from docs.quant.deribit.TradingInterfaceBot.Utils import MSG_LIST
 

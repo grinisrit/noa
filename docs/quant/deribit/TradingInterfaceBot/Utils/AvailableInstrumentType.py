@@ -17,4 +17,7 @@ class InstrumentType(Enum):
     FUTURE_COMBO = "future_combo"
     OPTION_COMBO = "option_combo"
 
+    CALL_OPTION = "call_option"
+    PUT_OPTION = "put_option"
 
+    ASSET = "asset"

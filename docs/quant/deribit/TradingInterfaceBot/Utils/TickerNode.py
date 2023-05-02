@@ -2,10 +2,14 @@ import nest_asyncio
 
 nest_asyncio.apply()
 import asyncio
-
-from docs.quant.deribit.TradingInterfaceBot.Strategy.AbstractStrategy import AbstractStrategy
+from typing import TYPE_CHECKING
 import threading
 from time import time
+
+strategyType = object
+if TYPE_CHECKING:
+    from docs.quant.deribit.TradingInterfaceBot.Strategy.AbstractStrategy import AbstractStrategy
+    strategyType = AbstractStrategy
 
 
 class TickerNode:
@@ -17,7 +21,7 @@ class TickerNode:
 
     ticker_wait_time: float
     tickerThread: threading.Thread = None
-    connected_strategy: AbstractStrategy = None
+    connected_strategy: strategyType = None
 
     ticker_loop: asyncio.AbstractEventLoop
 
@@ -34,7 +38,7 @@ class TickerNode:
 
         self.ticker_wait_time = wait_parameter
 
-    def connect_strategy(self, plug_strategy: AbstractStrategy):
+    def connect_strategy(self, plug_strategy: strategyType):
         self.connected_strategy = plug_strategy
 
     def run_ticker_node(self):
