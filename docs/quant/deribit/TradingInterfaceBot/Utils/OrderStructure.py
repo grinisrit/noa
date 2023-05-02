@@ -2,6 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 
 
+class OrderSide(Enum):
+    BUY = 1,
+    SELL = -1
+
+
 class OrderType(Enum):
     deribit_name: str
 
@@ -16,6 +21,7 @@ class OrderType(Enum):
     TAKE_MARKET = "take_market"
     MARKET_LIMIT = "market_limit"
     TRAILING_STOP = "trailing_stop"
+
 
 class OrderState(Enum):
     deribit_name: str
@@ -56,6 +62,7 @@ def convert_deribit_order_status_to_structure(der_ans: str) -> OrderState:
 
 @dataclass()
 class OrderStructure:
+    order_tag: str
     order_id: int | None
     open_time: int
     price: float | None
@@ -66,7 +73,6 @@ class OrderStructure:
     filled_amount: float
     last_update_time: int
     order_exist_time: int
-    order_border_time: int
     instrument: str
     order_type: OrderType
     order_state: OrderState

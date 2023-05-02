@@ -2,21 +2,24 @@ from __future__ import annotations
 
 import sys
 import threading
+import requests
 
-import nest_asyncio
-nest_asyncio.apply()
+# import nest_asyncio
+# nest_asyncio.apply()
 
 import asyncio
 import time
 from typing import Optional, Union
 
 from docs.quant.deribit.TradingInterfaceBot.DataBase import *
+from docs.quant.deribit.TradingInterfaceBot.OrderManager import OrderManager
 from docs.quant.deribit.TradingInterfaceBot.Utils import *
 from docs.quant.deribit.TradingInterfaceBot.Subsciption import *
 from docs.quant.deribit.TradingInterfaceBot.Strategy import *
+from docs.quant.deribit.TradingInterfaceBot.InstrumentManager import InstrumentManager
 
 from docs.quant.deribit.TradingInterfaceBot.SyncLib.AvailableRequests import get_ticker_by_instrument_request
-from ScrapperWithPreSelectedMaturities import scrap_available_instruments_by_extended_config
+from docs.quant.deribit.TradingInterfaceBot.Scrapper.ScrapperWithPreSelectedMaturities import scrap_available_instruments_by_extended_config
 
 from websocket import WebSocketApp, enableTrace, ABNF
 from threading import Thread
@@ -31,7 +34,7 @@ async def scrap_available_instruments(currency: Currency, cfg):
     """
     Функция для получения всех доступных опционов для какой-либо валюты.
     Предлагается ввод пользователем конкретного maturity
-    :param currency: Валюта. BTC\ETH\SOL
+    :param currency: Валюта. BTC | ETH | SOL
     :param cfg: файл конфигурации бота
     :return: LIST[Instrument-name]
     """
@@ -53,8 +56,8 @@ async def scrap_available_instruments(currency: Currency, cfg):
     print("Available maturities: \n", available_maturities)
 
     # TODO: uncomment
-    # selected_maturity = int(input("Select number of interested maturity "))
-    selected_maturity = -1
+    selected_maturity = int(input("Select number of interested maturity "))
+    # selected_maturity = -1
     if selected_maturity == -1:
         warnings.warn("Selected list of instruments is empty")
         return []
@@ -252,37 +255,58 @@ class DeribitClient(Thread, WebSocketApp):
     database: Optional[Union[MySqlDaemon, HDF5Daemon]] = None
     loop: asyncio.unix_events.SelectorEventLoop
     instrument_name_instrument_id_map: AutoIncrementDict[str, int] = None
-
+    only_API_orders: bool = None
+    instrument_manager: InstrumentManager = None
+    order_manager: OrderManager = None
     connected_strategy: Optional[AbstractStrategy] = None
     client_currency: Optional[Currency] = None
 
     def __init__(self, cfg, cfg_path: str, loopB, client_currency: Currency,
-                 instruments_listed: list = []):
+                 instruments_listed: list = None):
 
+        if instruments_listed is None:
+            instruments_listed = []
         with open(sys.path[1] + "/docs/quant/deribit/TradingInterfaceBot/developerConfiguration.yaml", "r") as _file:
             self.developConfiguration = yaml.load(_file, Loader=yaml.FullLoader)
         del _file
 
+        # Load configuration
         self.configuration_path = cfg_path
         self.configuration = cfg
         test_mode = self.configuration['orderBookScrapper']["test_net"]
         enable_traceback = self.configuration['orderBookScrapper']["enable_traceback"]
         enable_database_record = bool(self.configuration['orderBookScrapper']["enable_database_record"])
 
-        instruments_listed = instruments_listed
+        self.only_API_orders = self.configuration["orderBookScrapper"]["only_api_orders_processing"]
+        # Extra like BTC-PERPETUAL
+        for _instrument_name in self.configuration["orderBookScrapper"]["add_extra_instruments"]:
+            if _instrument_name not in instruments_listed:
+                instruments_listed.append(_instrument_name)
+
+        # Download instrument mapping
         self.instrument_name_instrument_id_map = AutoIncrementDict(path_to_file=
                                                                    self.configuration["record_system"][
                                                                        "instrumentNameToIdMapFile"])
 
+        # Initialize all loops and Threads
         Thread.__init__(self)
         self.loop = loopB
         asyncio.set_event_loop(self.loop)
 
+        # Set client currency
         self.client_currency = client_currency
+
+        # Make subscriptions map (OrderBook, Trades, Portfolio changes e.t.c)
         self.subscriptions_objects = subscription_map(scrapper=self, conf=self.configuration)
+
+        # Make list of instruments
         self.instruments_list = instruments_listed
+
+        # Set exchange mode
         self.testMode = test_mode
         self.exchange_version = self._set_exchange()
+
+        # Place initial local time
         self.time = datetime.now()
 
         self.websocket = None
@@ -292,7 +316,24 @@ class DeribitClient(Thread, WebSocketApp):
         if enable_database_record:
             self.subscription_type = net_databases_to_subscriptions(scrapper=self)
 
+        # Set flag for authentication validation
         self.auth_complete: bool = False
+
+
+    def add_instrument_manager(self):
+        if self.configuration["externalModules"]["add_instrument_manager"]:
+            self.instrument_manager = InstrumentManager(self, self.configuration,
+                                                        self.loop,
+                                                        ConfigRoot.DIRECTORY)
+        else:
+            logging.warning("No instrument manager selected by configuration")
+
+    def add_order_manager(self):
+        if self.configuration["externalModules"]["add_order_manager"]:
+            self.order_manager = OrderManager()
+            self.order_manager.connect_client(client=self)
+        else:
+            logging.warning("No order manager selected by configuration")
 
     def _set_exchange(self):
         """
@@ -314,13 +355,16 @@ class DeribitClient(Thread, WebSocketApp):
         :return:
         """
         self.websocket = WebSocketApp(self.exchange_version,
-                                      on_message=self._on_message, on_open=self._on_open, on_error=self._on_error)
+                                      on_message=self._on_message, on_open=self._on_open, on_error=self._on_error,)
         if self.enable_traceback:
             enableTrace(True)
         # Run forever loop
+        # self.websocket.last_ping_tm = 32
+        # self.websocket.last_pong_tm = 1
         while True:
             try:
-                self.websocket.run_forever()
+                # TODO: i can't fix problem with broken connection. Parameter reconnect leads to exist ability of miss-data
+                self.websocket.run_forever(ping_interval=None, reconnect=2, skip_utf8_validation=True)
             except Exception as e:
                 print(e)
                 logging.error("Error at run_forever loop")
@@ -332,6 +376,8 @@ class DeribitClient(Thread, WebSocketApp):
         logging.error(error)
         print("ERROR:", error)
         self.instrument_requested.clear()
+        # import os, signal
+        # os.kill(os.getpid(), signal.SIGUSR1)
 
     def _on_message(self, websocket, message):
         """
@@ -342,6 +388,15 @@ class DeribitClient(Thread, WebSocketApp):
         """
         response = json.loads(message)
         self._process_callback(response)
+        # print(response)
+        # Process initial order placement
+        if 'result' in response:
+            if 'order' in response['result']:
+                if 'OwnOrderChange' in self.subscriptions_objects:
+                    asyncio.run_coroutine_threadsafe(
+                self.subscriptions_objects["OwnOrderChange"].process_response_from_server(response=response),
+                        loop=self.loop)
+        # subscriptions
         if 'method' in response:
             # Answer to heartbeat request
             if response['method'] == 'heartbeat':
@@ -352,6 +407,34 @@ class DeribitClient(Thread, WebSocketApp):
             for action, sub in self.subscriptions_objects.items():
                 asyncio.run_coroutine_threadsafe(sub.process_response_from_server(response=response),
                                                  loop=self.loop)
+
+        if self.instrument_manager is not None:
+            # validation requests for instrument manager
+            if 'result' in response:
+                # Cut subs
+                if 'method' not in response:
+                    # Cut auth messages
+                    if 'token_type' not in response['result']:
+                        if response['result'] != 'ok':
+                            for dict_obj in response['result']:
+                                asyncio.run_coroutine_threadsafe(self.instrument_manager.process_validation(dict_obj), self.loop)
+
+        # Process errors
+        if 'error' in response:
+            self._process_error_callbacks(response=response)
+
+    def _process_error_callbacks(self, response: dict):
+        if 'message' in response['error']:
+            if 'not_enough_funds' in response['error']['message']:
+                logging.warning(f"{response}")
+                asyncio.run_coroutine_threadsafe(self.order_manager.not_enough_funds(callback=response),
+                                                 loop=self.loop)
+            elif 'price_too_high' in response['error']['message']:
+                logging.warning(f"{response}")
+                asyncio.run_coroutine_threadsafe(self.order_manager.price_too_high(callback=response),
+                                                 loop=self.loop)
+            else:
+                logging.error(f"Unknown error callback: | {response}")
 
     def _process_callback(self, response):
         logging.info(response)
@@ -364,11 +447,14 @@ class DeribitClient(Thread, WebSocketApp):
         :param websocket:
         :return:
         """
+        # Add Instrument Manager
+        self.add_instrument_manager()
         # Set heartbeat
         self.send_new_request(MSG_LIST.set_heartbeat(
             self.configuration["orderBookScrapper"]["hearth_beat_time"]))
 
         logging.info("Client start his work")
+        # Execute initial subscription's request pipelines
         for action, sub in self.subscriptions_objects.items():
             sub.create_subscription_request()
 
@@ -381,7 +467,51 @@ class DeribitClient(Thread, WebSocketApp):
         """
         self.websocket.send(json.dumps(request), ABNF.OPCODE_TEXT)
         # TODO: do it better. Unsync.
-        time.sleep(.1)
+        time.sleep(0.05)
+
+    def send_block_sync_request(self, params: dict, method="get_position", _private='private') -> dict:
+        """
+        Послать блокирующий запрос. Реализована аутентификация.
+        Пример: Используется для инициализации начальных позиций в инструментах. Блокируется до получения ответа
+        :param params:
+        :param method
+        :param _private
+        :return: dict
+        """
+        if self.testMode:
+            _hist = 'test.'
+        else:
+            _hist = ''
+        session = requests.Session()
+        # В случае приватного запроса сначала необходимо добавить в header токен.
+        if (_private == 'private') and (not self.testMode):
+            import os, signal
+            logging.error('Cannot pass auth with prod mode right now')
+            os.kill(os.getpid(), signal.SIGUSR1)
+            raise NotImplementedError
+        if _private == 'private':
+            client_id = \
+                self.configuration["user_data"]["test_net"]["client_id"] \
+                    if self.configuration["orderBookScrapper"]["test_net"] else \
+                    self.configuration["user_data"]["production"]["client_id"]
+
+            client_secret = \
+                self.configuration["user_data"]["test_net"]["client_secret"] \
+                    if self.configuration["orderBookScrapper"]["test_net"] else \
+                    self.configuration["user_data"]["production"]["client_secret"]
+
+            auth_params = {
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret,
+            }
+            auth = session.get(f"https://{_hist}deribit.com/api/v2/public/auth", params=auth_params)
+            session.headers.update(
+                {"Authorization": f"Bearer {auth.json()['result']['access_token']}"}
+            )
+
+        response = session.get(f"https://{_hist}deribit.com/api/v2/{_private}/{method}", params=params)
+        return response.json()
 
     def add_strategy(self, strategy: AbstractStrategy):
         """
@@ -389,6 +519,7 @@ class DeribitClient(Thread, WebSocketApp):
         :param strategy:
         :return:
         """
+        strategy.connect_client(data_provider=self)
         self.connected_strategy = strategy
 
 
@@ -414,26 +545,43 @@ async def start_scrapper(configuration_path=None):
     if not configuration["orderBookScrapper"]["use_configuration_to_select_maturities"]:
         instruments_list = await scrap_available_instruments(currency=_currency, cfg=configuration['orderBookScrapper'])
     else:
-        instruments_list = scrap_available_instruments_by_extended_config(currency=_currency, cfg=configuration['orderBookScrapper'])
+        instruments_list = await scrap_available_instruments_by_extended_config(currency=_currency, cfg=configuration['orderBookScrapper'])
+
 
     deribitWorker = DeribitClient(cfg=configuration, cfg_path="../configuration.yaml",
                                   instruments_listed=instruments_list, loopB=derLoop,
                                   client_currency=_currency)
 
+    deribitWorker.add_order_manager()
     baseStrategy = EmptyStrategy()
-    baseStrategy.connect_data_provider(data_provider=deribitWorker)
-
     deribitWorker.add_strategy(baseStrategy)
-    # Add tickerNode
-    ticker_node = TickerNode(ping_time=5)
-    ticker_node.connect_strategy(plug_strategy=baseStrategy)
-    ticker_node.run_ticker_node()
 
     deribitWorker.start()
-
     th = threading.Thread(target=derLoop.run_forever)
     th.start()
 
+    # TODO: implement auth for production
+    if deribitWorker.testMode:
+        while not deribitWorker.auth_complete:
+            continue
+
+    # print("Sending request to place order")
+    # await deribitWorker.order_manager.place_new_order(
+    #     instrument_name="BTC-PERPETUAL",
+    #     order_side=OrderSide.BUY,
+    #     amount=100,
+    #     order_type=OrderType.MARKET,
+    #     order_price=28_000.0
+    # )
+    #
+    # await asyncio.sleep(10)
+    # await deribitWorker.order_manager.place_new_order(
+    #     instrument_name="BTC-PERPETUAL",
+    #     order_side=OrderSide.BUY,
+    #     amount=100,
+    #     order_type=OrderType.LIMIT,
+    #     order_price=28_000.0
+    # )
 
 if __name__ == '__main__':
     loop = asyncio.new_event_loop()
@@ -441,3 +589,4 @@ if __name__ == '__main__':
     loop.create_task(start_scrapper())
     loop.run_forever()
     time.sleep(1)
+

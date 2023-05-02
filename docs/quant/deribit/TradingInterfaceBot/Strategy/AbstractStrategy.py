@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
-from docs.quant.deribit.TradingInterfaceBot.Strategy.Utils.Order import OrderStructure
+from typing import TYPE_CHECKING, Dict, Optional
+from docs.quant.deribit.TradingInterfaceBot.Utils import OrderStructure
+from docs.quant.deribit.TradingInterfaceBot.InstrumentManager import AbstractInstrument
+from docs.quant.deribit.TradingInterfaceBot.ExternalModules import AbstractExternal
 
 if TYPE_CHECKING:
     from docs.quant.deribit.TradingInterfaceBot.Scrapper.TradingInterface import DeribitClient
@@ -14,21 +16,81 @@ class AbstractStrategy(ABC):
     open_orders: dict[int, OrderStructure] = dict()
     all_orders: dict[int, OrderStructure] = dict()
 
-    def connect_data_provider(self, data_provider: scrapper_type):
+    connected_externals: Optional[Dict[str, AbstractExternal]]
+
+    def __init__(self):
+        for external in self.connected_externals:
+            external.connect_strategy(self)
+
+    def connect_client(self, data_provider: scrapper_type):
         self.data_provider = data_provider
 
-    @abstractmethod
-    async def on_order_book_update(self, callback: dict):
-        pass
+    async def on_order_book_update(self, abstractInstrument: AbstractInstrument):
+        await self._on_order_book_update(abstractInstrument)
+        for external in self.connected_externals.values():
+            await external.on_order_book_update(abstractInstrument)
 
-    @abstractmethod
-    async def on_trade_update(self, callback: dict):
-        pass
+    async def on_trade_update(self, abstractInstrument: AbstractInstrument):
+        await self._on_trade_update(abstractInstrument)
+        for external in self.connected_externals.values():
+            await external.on_trade_update(abstractInstrument)
 
-    @abstractmethod
-    async def on_order_update(self, callback: dict):
-        pass
+    async def on_order_update(self, updatedOrder: OrderStructure):
+        await self._on_order_update(updatedOrder)
 
-    @abstractmethod
     async def on_tick_update(self, callback: dict):
+        await self._on_tick_update(callback)
+        for external in self.connected_externals.values():
+            await external.on_tick_update(callback)
+
+    async def on_position_miss_match(self):
+        await self._on_position_miss_match()
+
+    async def on_not_enough_fund(self, callback: dict):
+        await self._on_not_enough_fund(callback)
+
+    async def on_order_creation(self, createdOrder: OrderStructure):
+        await self._on_order_creation(createdOrder)
+
+    async def price_too_high(self, callback: dict):
+        await self._price_too_high(callback)
+
+    async def on_api_external_order(self, callback: dict):
+        await self._on_api_external_order(callback)
+
+    # IMPLEMENT PART
+    @abstractmethod
+    async def _on_order_book_update(self, abstractInstrument: AbstractInstrument):
+        pass
+
+    @abstractmethod
+    async def _on_trade_update(self, abstractInstrument: AbstractInstrument):
+        pass
+
+    @abstractmethod
+    async def _on_order_update(self, updatedOrder: OrderStructure):
+        pass
+
+    @abstractmethod
+    async def _on_tick_update(self, callback: dict):
+        pass
+
+    @abstractmethod
+    async def _on_position_miss_match(self):
+        pass
+
+    @abstractmethod
+    async def _on_not_enough_fund(self, callback: dict):
+        pass
+
+    @abstractmethod
+    async def _on_order_creation(self, createdOrder: OrderStructure):
+        pass
+
+    @abstractmethod
+    async def _price_too_high(self, callback: dict):
+        pass
+
+    @abstractmethod
+    async def _on_api_external_order(self, callback: dict):
         pass

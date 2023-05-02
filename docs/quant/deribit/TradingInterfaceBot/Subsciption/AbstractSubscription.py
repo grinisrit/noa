@@ -145,3 +145,5 @@ class AbstractSubscription(ABC):
     def send_auth_message(self):
         self.scrapper.send_new_request(auth_message(client_id=self.client_id,
                                                     client_secret=self.client_secret))
+        # TODO: make validation. Work solution
+        self.scrapper.auth_complete = True

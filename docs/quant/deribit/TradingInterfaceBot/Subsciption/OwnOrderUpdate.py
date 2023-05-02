@@ -38,14 +38,19 @@ class OwnOrdersSubscription(AbstractSubscription):
         return columns
 
     async def _process_response(self, response: dict):
+        if 'result' in response:
+            if 'order' in response['result']:
+                if self.scrapper.order_manager is not None:
+                    await self.scrapper.order_manager.process_order_callback(callback=response)
+
         # SUBSCRIPTION processing
         if response['method'] == "subscription":
             # ORDER BOOK processing. For constant book depth
             if 'params' in response:
                 if 'channel' in response['params']:
                     if 'orders' in response['params']['channel']:
-                        if self.scrapper.connected_strategy is not None:
-                            await self.scrapper.connected_strategy.on_order_update(callback=response)
+                        if self.scrapper.order_manager is not None:
+                            await self.scrapper.order_manager.process_order_callback(callback=response)
 
                         if self.database:
                             await self.database.add_data(
