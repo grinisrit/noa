@@ -19,7 +19,7 @@ class AbstractStrategy(ABC):
     connected_externals: Optional[Dict[str, AbstractExternal]]
 
     def __init__(self):
-        for external in self.connected_externals:
+        for external in self.connected_externals.values():
             external.connect_strategy(self)
 
     def connect_client(self, data_provider: scrapper_type):

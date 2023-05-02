@@ -497,7 +497,7 @@ class SabrCalibration(AbstractExternal, Thread):
             _clean_call_strikes = []
             _clean_call_prices = []
             for batch in zip(_call_prices, _call_strikes):
-                print("Call batch", batch)
+                # print("Call batch", batch)
                 if (batch[0] is not None) and (batch[1] is not None):
                     _clean_call_prices.append(batch[0].trade_price)
                     _clean_call_strikes.append(batch[1])
@@ -505,7 +505,7 @@ class SabrCalibration(AbstractExternal, Thread):
             _clean_put_strikes = []
             _clean_put_prices = []
             for batch in zip(_put_prices, _put_strikes):
-                print("Put batch", batch)
+                # print("Put batch", batch)
                 if (batch[0] is not None) and (batch[1] is not None):
                     _clean_put_prices.append(batch[0].trade_price)
                     _clean_put_strikes.append(batch[1])
