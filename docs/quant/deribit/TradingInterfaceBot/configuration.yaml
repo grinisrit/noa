@@ -28,8 +28,8 @@ user_data:
         client_secret: None
 
 externalModules:
-    add_order_manager: False
-    add_instrument_manager: False
+    add_order_manager: True
+    add_instrument_manager: True
 
 
 orderBookScrapper:
