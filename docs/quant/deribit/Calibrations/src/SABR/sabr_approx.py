@@ -1,7 +1,7 @@
 import numba as nb
 import numpy as np
 import pandas as pd
-from src.utils import get_tick, get_implied_volatility, get_price_bsm, cdf, pdf
+from src.utils import get_tick, get_implied_volatility, get_price_bsm #cdf, pdf
 from typing import Final, Tuple
 from src.levenberg_marquardt import LevenbergMarquardt
 import math
@@ -90,6 +90,7 @@ _tmp_values_vol_sabr = {
 
 
 # @nb.njit(locals=_tmp_values_vol_sabr)
+@nb.njit
 def vol_sabr(
     model: ModelParameters,
     market: MarketParameters,
@@ -184,136 +185,82 @@ def vol_sabr(
             if beta == 1.0:
                 z = v * x / alpha
                 sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
 
                 dI_B_0_dF = (
                     v
-                    * (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) - v * x)
-                    / (alpha * f * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
+                    * (alpha * sqrt * epsilon - v * x)
+                    / (alpha * f * sqrt * epsilon**2)
                 )
 
                 dI_B_0_dK = (
                     v
-                    * (-sqrt * alpha * np.log((-sqrt + rho - z) / (rho - 1)) + v * x)
-                    / (K * sqrt * alpha * np.log((-sqrt + rho - z) / (rho - 1)) ** 2)
+                    * (-sqrt * alpha * epsilon + v * x)
+                    / (K * sqrt * alpha * epsilon**2)
                 )
 
-                B_alpha = (
-                    v
-                    * x
-                    * z
-                    / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
-                )
+                B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
                 d2I_B_0_d2f = (
                     v
                     * (
-                        -(sqrt**3)
-                        * alpha**2
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 2
-                        + sqrt**2
-                        * alpha
-                        * v
-                        * x
-                        * np.log((-sqrt + rho - z) / (rho - 1))
-                        - 2
-                        * sqrt**2
-                        * alpha
-                        * v
-                        * np.log((-sqrt + rho - z) / (rho - 1))
+                        -(sqrt**3) * alpha**2 * epsilon**2
+                        + sqrt**2 * alpha * v * x * epsilon
+                        - 2 * sqrt**2 * alpha * v * epsilon
                         + 2 * sqrt * v**2 * x
-                        - rho * v**2 * x * np.log((-sqrt + rho - z) / (rho - 1))
-                        + v**2 * x * z * np.log((-sqrt + rho - z) / (rho - 1))
+                        - rho * v**2 * x * epsilon
+                        + v**2 * x * z * epsilon
                     )
-                    / (
-                        sqrt**3
-                        * alpha**2
-                        * f**2
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 3
-                    )
+                    / (sqrt**3 * alpha**2 * f**2 * epsilon**3)
                 )
                 d2I_B_0_dalpha_df = (
                     v
                     * (
-                        sqrt**2 * alpha * z * np.log((-sqrt + rho - z) / (rho - 1))
-                        + sqrt**2 * v * x * np.log((-sqrt + rho - z) / (rho - 1))
+                        sqrt**2 * alpha * z * epsilon
+                        + sqrt**2 * v * x * epsilon
                         - 2 * sqrt * v * x * z
-                        + rho * v * x * z * np.log((-sqrt + rho - z) / (rho - 1))
-                        - v * x * z**2 * np.log((-sqrt + rho - z) / (rho - 1))
+                        + rho * v * x * z * epsilon
+                        - v * x * z**2 * epsilon
                     )
-                    / (
-                        sqrt**3
-                        * alpha**2
-                        * f
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 3
-                    )
+                    / (sqrt**3 * alpha**2 * f * epsilon**3)
                 )
 
             elif beta < 1.0:
                 z = v * (f ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
                 sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
                 dI_B_0_dF = (
                     v
                     * (
-                        alpha
-                        * f
-                        * (-rho + z + sqrt)
-                        * sqrt
-                        * np.log((rho - z - sqrt) / (rho - 1))
+                        alpha * f * (-rho + z + sqrt) * sqrt * epsilon
                         + f ** (2 - beta) * v * x * (rho - z - sqrt)
                     )
-                    / (
-                        alpha
-                        * f**2
-                        * (-rho + z + sqrt)
-                        * sqrt
-                        * np.log((rho - z - sqrt) / (rho - 1)) ** 2
-                    )
+                    / (alpha * f**2 * (-rho + z + sqrt) * sqrt * epsilon**2)
                 )
 
                 dI_B_0_dK = (
                     v
-                    * (
-                        K * v * x
-                        - K**beta
-                        * sqrt
-                        * alpha
-                        * np.log((-sqrt + rho - z) / (rho - 1))
-                    )
-                    / (
-                        K
-                        * K**beta
-                        * sqrt
-                        * alpha
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 2
-                    )
+                    * (K * v * x - K**beta * sqrt * alpha * epsilon)
+                    / (K * K**beta * sqrt * alpha * epsilon**2)
                 )
 
-                B_alpha = (
-                    v
-                    * x
-                    * z
-                    / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
-                )
+                B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
                 d2I_B_0_d2f = (
                     v
                     * (
-                        -(sqrt**3)
-                        * alpha**2
-                        * f
-                        * (sqrt - rho + z)
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 2
+                        -(sqrt**3) * alpha**2 * f * (sqrt - rho + z) * epsilon**2
                         - 2
                         * sqrt**2
                         * alpha
                         * f ** (2 - beta)
                         * v
                         * (sqrt - rho + z)
-                        * np.log((-sqrt + rho - z) / (rho - 1))
+                        * epsilon
                         + sqrt
                         * f ** (3 - 2 * beta)
                         * v**2
                         * x
                         * (sqrt - rho + z)
-                        * np.log((-sqrt + rho - z) / (rho - 1))
+                        * epsilon
                         + 2 * sqrt * f ** (3 - 2 * beta) * v**2 * x * (sqrt - rho + z)
                         + f
                         * v
@@ -332,52 +279,50 @@ def vol_sabr(
                             )
                             + f ** (2 - 2 * beta) * v * (rho - z) ** 2
                         )
-                        * np.log((-sqrt + rho - z) / (rho - 1))
+                        * epsilon
                     )
                     / (
                         sqrt**3
                         * alpha**2
                         * f**3
                         * (sqrt - rho + z)
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 3
+                        * epsilon**3
                     )
                 )
                 d2I_B_0_dalpha_df = (
                     v
                     * (
-                        sqrt**2
-                        * alpha
-                        * f**beta
-                        * z
-                        * np.log((-sqrt + rho - z) / (rho - 1))
-                        + sqrt**2 * f * v * x * np.log((-sqrt + rho - z) / (rho - 1))
+                        sqrt**2 * alpha * f**beta * z * epsilon
+                        + sqrt**2 * f * v * x * epsilon
                         - 2 * sqrt * f * v * x * z
-                        + f * rho * v * x * z * np.log((-sqrt + rho - z) / (rho - 1))
-                        - f * v * x * z**2 * np.log((-sqrt + rho - z) / (rho - 1))
+                        + f * rho * v * x * z * epsilon
+                        - f * v * x * z**2 * epsilon
                     )
-                    / (
-                        sqrt**3
-                        * alpha**2
-                        * f
-                        * f**beta
-                        * np.log((-sqrt + rho - z) / (rho - 1)) ** 3
-                    )
+                    / (sqrt**3 * alpha**2 * f * f**beta * epsilon**3)
                 )
 
-            I_B_0 = v * x / (np.log((sqrt + z - rho) / (1 - rho)))
+            I_B_0 = v * x / (epsilon)
 
         sigma = I_B_0 * (1 + I_H_1 * T)
         dsigma_df = dI_B_0_dF * (1 + I_H_1 * T) + dI_H_1_dF * I_B_0 * T
         d1 = (np.log(f / K) + 0.5 * sigma**2 * T) / (sigma * np.sqrt(T))
-        d2 = d1 - sigma*np.sqrt(T)
+        d2 = d1 - sigma * np.sqrt(T)
         # for derivative by strike as for jacobian variables
         dsigma_dK = dI_B_0_dK * (1 + I_H_1 * T) + dI_H_1_dK * I_B_0 * T
-        
+
         dsigma_dalpha, dsigma_dv, dsigma_drho = (
             dsigma_dalphas[index],
             dsigma_dvs[index],
             dsigma_drhos[index],
         )
+
+        def cdf(x) -> float:
+            return (1.0 + math.erf(x / np.sqrt(2.0))) / 2.0
+
+        def pdf(x):
+            probability = 1.0 / np.sqrt(2 * np.pi)
+            probability *= np.exp(-0.5 * x**2)
+            return probability
 
         vega_bsm = f * np.sqrt(T) * pdf(d1)
         delta_bsm = cdf(d1)
@@ -392,10 +337,24 @@ def vol_sabr(
         dc_dv[index] = vega_bsm * dsigma_dv
 
         # TODO. Wrong yet
-        kega_bsm = -np.exp(market.r*T)*cdf(d2)
+        kega_bsm = -np.exp(market.r * T) * cdf(d2)
         kega_bsm = kega_bsm if types[index] else kega_bsm + 1.0
         dc_dK[index] = kega_bsm + vega_bsm * dsigma_dK
         sigmas[index] = sigma
+
+        def get_price_bsm(
+            option_type: str,
+            sigma: float,
+            K: float,
+            T: float,
+            F: float,
+            r: float = 0.0,
+            )->float:
+            d1 = (np.log(F/K) + (r + sigma**2/2)*T) / (sigma*np.sqrt(T))
+            d2 = d1 - sigma * np.sqrt(T)
+            p = 1 if option_type else -1
+            return p*F*cdf(p*d1) - p*K*np.exp(-r*T)*cdf(p*d2)
+        
         prices[index] = get_price_bsm(types[index], sigma, K, T, f, market.r)
 
         # computing gamma
@@ -558,35 +517,24 @@ def jacobian_sabr(
         elif beta == 1.0:
             z = v * x / alpha
             sqrt = np.sqrt(1 - 2 * rho * z + z**2)
-            I_B = v * x / (np.log((sqrt + z - rho) / (1 - rho)))
-            B_alpha = (
-                v * x * z / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
-            )
+            epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+            I_B = v * x / (epsilon)
+            B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
             B_beta = 0.0
-            B_v = (
-                x
-                * (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) - v * x)
-                / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
-            )
+            B_v = x * (alpha * sqrt * epsilon - v * x) / (alpha * sqrt * epsilon**2)
             B_rho = (
                 v
                 * x
                 * ((rho - 1) * (z + sqrt) + (-rho + z + sqrt) * sqrt)
-                / (
-                    (rho - 1)
-                    * (-rho + z + sqrt)
-                    * sqrt
-                    * np.log((rho - z - sqrt) / (rho - 1)) ** 2
-                )
+                / ((rho - 1) * (-rho + z + sqrt) * sqrt * epsilon**2)
             )
 
         elif beta < 1.0:
             z = v * (f ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
             sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+            epsilon = np.log((-sqrt + rho - z) / (rho - 1))
             I_B = v * (-(K ** (1 - beta)) + f ** (1 - beta)) / (alpha * (1 - beta))
-            B_alpha = (
-                v * x * z / (alpha * sqrt * np.log((rho - z - sqrt) / (rho - 1)) ** 2)
-            )
+            B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
             B_beta = (
                 -v
                 * x
@@ -612,18 +560,22 @@ def jacobian_sabr(
                     * (K ** (1 - beta) * np.log(K) - f ** (1 - beta) * np.log(f))
                     / (alpha * (1 - beta))
                 )
-                / ((-rho + z + sqrt) * np.log((-rho + z + sqrt) / (1 - rho)) ** 2)
+                / ((-rho + z + sqrt) * epsilon**2)
             )
-            B_v = -v * x * ((-rho * z / v + z**2 / v) / sqrt + z / v) / (
-                (-rho + z + sqrt) * np.log((-rho + z + sqrt) / (1 - rho)) ** 2
-            ) + x / np.log((-rho + z + sqrt) / (1 - rho))
+            B_v = (
+                -v
+                * x
+                * ((-rho * z / v + z**2 / v) / sqrt + z / v)
+                / ((-rho + z + sqrt) * epsilon**2)
+                + x / epsilon
+            )
 
             B_rho = (
                 -v
                 * x
                 * (1 - rho)
                 * ((-z / sqrt - 1) / (1 - rho) + (-rho + z + sqrt) / (1 - rho) ** 2)
-                / ((-rho + z + sqrt) * np.log((-rho + z + sqrt) / (1 - rho)) ** 2)
+                / ((-rho + z + sqrt) * epsilon**2)
             )
 
         sig_alpha = B_alpha * (1 + I_H * T) + dI_H_1_dalpha * I_B * T
