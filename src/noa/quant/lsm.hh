@@ -48,8 +48,8 @@ using Slice = torch::indexing::Slice;
  *     Dtype: torch::kFloat64.
  * @param dt Time step.
  * @param strike Option strike price.
- * @param rate Risk-free rate. Note that the paths must be generated with the
- *     same risk-free rate.
+ * @param rate Risk-free rate. Note that the input paths must be generated with
+ *     the same risk-free rate as the value of this argument.
  * @return Price of the option at initial moment of time.
  */
 double
