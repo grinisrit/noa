@@ -289,8 +289,10 @@ def get_delta(
     dsigma_dalpha = dsigma_dalphas[0]
     dsigma_df = get_dsigma_df(model=model, K=K, T=T, F=F)
     return delta_bsm + vega_bsm * (dsigma_df + dsigma_dalpha * rho * v / F**beta)
-    # no sticky delta variant, whick passes finite diffs sanity check
-    return delta_bsm + vega_bsm * dsigma_df
+    # no sticky delta variant, which passes finite diffs sanity check
+    # return delta_bsm + vega_bsm * dsigma_df
+    # BSM delta only
+    # return delta_bsm
 
 
 # @nb.njit()
@@ -330,19 +332,19 @@ def get_gamma(
         last_gamma_component_0_not_sticky * F * pdf(d1) * np.sqrt(T)
     )
     # sticky
-    # return (
-    #     gamma_bsm
-    #     + (pdf(d1) - F * d1 * gamma_bsm)
-    #     * np.sqrt(T)
-    #     * (dsigma_df + dsigma_dalpha * rho * v / F**beta)
-    #     + last_gamma_component
-    # )
-    # not sticky
     return (
         gamma_bsm
-        + (pdf(d1) - F * d1 * gamma_bsm) * np.sqrt(T) * dsigma_df
-        + last_gamma_component_not_sticky
+        + (pdf(d1) - F * d1 * gamma_bsm)
+        * np.sqrt(T)
+        * (dsigma_df + dsigma_dalpha * rho * v / F**beta)
+        + last_gamma_component
     )
+    # not sticky
+    # return (
+    #     gamma_bsm
+    #     + (pdf(d1) - F * d1 * gamma_bsm) * np.sqrt(T) * dsigma_df
+    #     + last_gamma_component_not_sticky
+    # )
 
 
 # @nb.njit()
@@ -392,9 +394,9 @@ def get_rega(
         iv=np.array([np.float64(sigma)]),
         types=np.array([np.bool(option_type)]),
     )
-    _, dsigma_vs, _, _ = jacobian_sabr(model=model, market=market)
-    dsigma_v = dsigma_vs[0]
-    return vega_bsm * dsigma_v
+    _, dsigma_dvs, _, _ = jacobian_sabr(model=model, market=market)
+    dsigma_dv = dsigma_dvs[0]
+    return vega_bsm * dsigma_dv
 
 
 # @nb.njit()
@@ -416,9 +418,9 @@ def get_sega(
         iv=np.array([np.float64(sigma)]),
         types=np.array([np.bool(option_type)]),
     )
-    _, _, _, dsigma_dhos = jacobian_sabr(model=model, market=market)
-    dsigma_dho = dsigma_dhos[0]
-    return vega_bsm * dsigma_dho
+    _, _, _, dsigma_drhos = jacobian_sabr(model=model, market=market)
+    dsigma_drho = dsigma_drhos[0]
+    return vega_bsm * dsigma_drho
 
 
 @nb.njit()
@@ -1259,6 +1261,8 @@ def calibrate_sabr(
     tick["rega"] = regas
     tick["rho"] = final_params.rho
     tick["volvol"] = final_params.v
+    tick["alpha"] = final_params.alpha
+    tick["beta"] = final_params.beta
     tick["calibrated_mark_price"] = prices
 
     result = tick[
@@ -1278,6 +1282,9 @@ def calibrate_sabr(
             "mark_price_usd",
             "rho",
             "volvol",
+            "alpha",
+            "beta",
+            "tau"
         ]
     ]
     result["iv"] = 100 * result["iv"]
