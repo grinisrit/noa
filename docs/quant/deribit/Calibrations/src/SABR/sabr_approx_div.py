@@ -422,6 +422,30 @@ def get_sega(
     dsigma_drho = dsigma_drhos[0]
     return vega_bsm * dsigma_drho
 
+def get_volga(
+    model: ModelParameters,
+    option_type: bool,
+    sigma: float,
+    K: float,
+    T: float,
+    F: float,
+    r: float = 0.0,
+):
+    # dalpha^2
+    pass
+
+def get_vanna(
+    model: ModelParameters,
+    option_type: bool,
+    sigma: float,
+    K: float,
+    T: float,
+    F: float,
+    r: float = 0.0,
+):
+    # df_dalpha
+    pass
+
 
 @nb.njit()
 def get_dsigma_dK(
@@ -505,14 +529,14 @@ def get_d2_sigma_dalpha_df(
     alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
     if x == 0.0:
         d2I_B_0_dalpha_df = 0.0
-        B_alpha = K ** (beta - 1)
+        dI_B_0_dalpha = K ** (beta - 1)
         I_B_0 = K ** (beta - 1) * alpha
         dI_B_0_dF = 0.0
     elif v == 0.0:
         d2I_B_0_dalpha_df = -(F ** (1 - beta)) * x * (1 - beta) ** 2 / (
             F * (-(K ** (1 - beta)) + F ** (1 - beta)) ** 2
         ) + (1 - beta) / (F * (-(K ** (1 - beta)) + F ** (1 - beta)))
-        B_alpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+        dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
         I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
         dI_B_0_dF = (
             alpha
@@ -539,7 +563,7 @@ def get_d2_sigma_dalpha_df(
                 )
                 / (sqrt**3 * alpha**2 * F * epsilon**3)
             )
-            B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
+            dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
             dI_B_0_dF = (
                 v * (alpha * sqrt * epsilon - v * x) / (alpha * F * sqrt * epsilon**2)
             )
@@ -558,7 +582,7 @@ def get_d2_sigma_dalpha_df(
                 )
                 / (sqrt**3 * alpha**2 * F * F**beta * epsilon**3)
             )
-            B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
+            dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
             dI_B_0_dF = (
                 v
                 * (
@@ -589,7 +613,7 @@ def get_d2_sigma_dalpha_df(
 
     d2_sigma_dalpha_df2 = (
         d2I_B_0_dalpha_df * (1 + I_H_1 * T)
-        + B_alpha * dI_H_1_dF * T
+        + dI_B_0_dalpha * dI_H_1_dF * T
         + d2I_H_1_dalpha_df * I_B_0 * T
         + dI_H_1_dalpha * dI_B_0_dF * T
     )
@@ -746,6 +770,79 @@ def get_d2_sigma_df2(
 
 
 @nb.njit()
+def get_d2_sigma_dalpha2(
+    model: ModelParameters,
+    K: float,
+    T: float,
+    F: float,
+):
+    alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
+    x = np.log(F / K)
+    if x == 0.0:
+        I_B_0 = K ** (beta - 1) * alpha
+        dI_B_0_dalpha = K ** (beta - 1)
+        d2I_B_0_dalpha2 = 0.0
+    elif v == 0.0:
+        I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+        dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+        d2I_B_0_dalpha2 = 0.0
+    else:
+        if beta == 1.0:
+            z = v * x / alpha
+            sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+            epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+            dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+            d2I_B_0_dalpha2 = (
+                v
+                * x
+                * z
+                * (
+                    -2 * sqrt**2 * epsilon
+                    + 2 * sqrt * z
+                    - rho * z * epsilon
+                    + z**2 * epsilon
+                )
+                / (sqrt**3 * alpha**2 * epsilon**3)
+            )
+        elif beta < 1.0:
+            z = v * (F ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
+            sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+            epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+            dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+            d2I_B_0_dalpha2 = (
+                v
+                * x
+                * z
+                * (
+                    -2 * sqrt**2 * epsilon
+                    + 2 * sqrt * z
+                    - rho * z * epsilon
+                    + z**2 * epsilon
+                )
+                / (sqrt**3 * alpha**2 * epsilon**3)
+            )
+        I_B_0 = v * x / (epsilon)
+
+    I_H_1 = (
+        alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 24
+        + alpha * beta * rho * v * (K * F) ** (beta / 2 + -1 / 2) / 4
+        + v**2 * (2 - 3 * rho**2) / 24
+    )
+    dI_H_1_dalpha = (
+        alpha * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 12
+        + beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) / 4
+    )
+    d2I_H_1_d2alpha = (K * F) ** (beta - 1) * (1 - beta) ** 2 / 12
+
+    d2_sigma_dalpha2 = d2I_B_0_dalpha2 + T * (
+        d2I_B_0_dalpha2 * I_H_1
+        + d2I_H_1_d2alpha * I_B_0
+        + 2 * dI_B_0_dalpha * dI_H_1_dalpha
+    )
+    return d2_sigma_dalpha2
+
+
+@nb.njit()
 def get_dsigma_df(
     model: ModelParameters,
     K: float,
@@ -857,15 +954,15 @@ def jacobian_sabr(
 
         if x == 0.0:
             I_B = alpha * K ** (beta - 1)
-            B_alpha = K ** (beta - 1)
-            B_beta = K ** (beta - 1) * alpha * np.log(K)
-            B_v = 0.0
-            B_rho = 0.0
+            dI_B_0_dalpha = K ** (beta - 1)
+            dI_B_0_dbeta = K ** (beta - 1) * alpha * np.log(K)
+            dI_B_0_dv = 0.0
+            dI_B_0_drho = 0.0
 
         elif v == 0.0:
             I_B = alpha * (1 - beta) * x / (F ** (1 - beta) - (K ** (1 - beta)))
-            B_alpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
-            B_beta = (
+            dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+            dI_B_0_dbeta = (
                 alpha
                 * (
                     K ** (1 - beta)
@@ -876,18 +973,20 @@ def jacobian_sabr(
                 * x
                 / (K ** (1 - beta) - F ** (1 - beta)) ** 2
             )
-            B_v = 0.0
-            B_rho = 0.0
+            dI_B_0_dv = 0.0
+            dI_B_0_drho = 0.0
 
         elif beta == 1.0:
             z = v * x / alpha
             sqrt = np.sqrt(1 - 2 * rho * z + z**2)
             epsilon = np.log((-sqrt + rho - z) / (rho - 1))
             I_B = v * x / epsilon
-            B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
-            B_beta = 0.0
-            B_v = x * (alpha * sqrt * epsilon - v * x) / (alpha * sqrt * epsilon**2)
-            B_rho = (
+            dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+            dI_B_0_dbeta = 0.0
+            dI_B_0_dv = (
+                x * (alpha * sqrt * epsilon - v * x) / (alpha * sqrt * epsilon**2)
+            )
+            dI_B_0_drho = (
                 v
                 * x
                 * ((rho - 1) * (z + sqrt) + (-rho + z + sqrt) * sqrt)
@@ -900,8 +999,8 @@ def jacobian_sabr(
             epsilon = np.log((-sqrt + rho - z) / (rho - 1))
             # I_B = v * (-(K ** (1 - beta)) + f ** (1 - beta)) / (alpha * (1 - beta))
             I_B = v * x / epsilon
-            B_alpha = v * x * z / (alpha * sqrt * epsilon**2)
-            B_beta = (
+            dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+            dI_B_0_dbeta = (
                 v
                 * x
                 * (
@@ -911,7 +1010,7 @@ def jacobian_sabr(
                 )
                 / (K**beta * sqrt * alpha * F**beta * (beta - 1) * epsilon**2)
             )
-            B_v = (
+            dI_B_0_dv = (
                 x
                 * (
                     sqrt * alpha * (beta - 1) * epsilon
@@ -920,17 +1019,17 @@ def jacobian_sabr(
                 / (sqrt * alpha * (beta - 1) * epsilon**2)
             )
 
-            B_rho = (
+            dI_B_0_drho = (
                 v
                 * x
                 * (sqrt * (sqrt - rho + z) + (sqrt + z) * (rho - 1))
                 / (sqrt * (rho - 1) * (sqrt - rho + z) * epsilon**2)
             )
 
-        sig_alpha = B_alpha * (1 + I_H * T) + dI_H_1_dalpha * I_B * T
-        sig_beta = B_beta * (1 + I_H * T) + dI_H_beta * I_B * T
-        sig_v = B_v * (1 + I_H * T) + dI_h_v * I_B * T
-        sig_rho = B_rho * (1 + I_H * T) + dI_H_rho * I_B * T
+        sig_alpha = dI_B_0_dalpha * (1 + I_H * T) + dI_H_1_dalpha * I_B * T
+        sig_beta = dI_B_0_dbeta * (1 + I_H * T) + dI_H_beta * I_B * T
+        sig_v = dI_B_0_dv * (1 + I_H * T) + dI_h_v * I_B * T
+        sig_rho = dI_B_0_drho * (1 + I_H * T) + dI_H_rho * I_B * T
 
         ddalpha[index] = sig_alpha
         ddbeta[index] = sig_beta
@@ -1284,7 +1383,7 @@ def calibrate_sabr(
             "volvol",
             "alpha",
             "beta",
-            "tau"
+            "tau",
         ]
     ]
     result["iv"] = 100 * result["iv"]
