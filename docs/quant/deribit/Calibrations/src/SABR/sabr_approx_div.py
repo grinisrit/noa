@@ -238,9 +238,32 @@ def get_price_bsm(
     return p * F * cdf(p * d1) - p * K * np.exp(-r * T) * cdf(p * d2)
 
 
-# @nb.njit()
-def get_vanna_bsm():
-    pass
+@nb.njit()
+def get_vanna_bsm(
+    sigma: float,
+    K: float,
+    T: float,
+    F: float,
+    r: float = 0.0,
+):
+    vega_bsm = get_vega_bsm(sigma, K, T, F, r)
+    d1 = get_d1(sigma, K, T, F, r)
+    d2 = d1 - sigma * np.sqrt(T)
+    return vega_bsm * d2 / (sigma * F)
+
+
+@nb.njit()
+def get_volga_bsm(
+    sigma: float,
+    K: float,
+    T: float,
+    F: float,
+    r: float = 0.0,
+):
+    d1 = get_d1(sigma, K, T, F, r)
+    d2 = d1 - sigma * np.sqrt(T)
+    vega_bsm = get_vega_bsm(sigma, K, T, F, r)
+    return vega_bsm * d1 * d2 / sigma
 
 
 @nb.njit()
@@ -288,11 +311,10 @@ def get_delta(
 
     dsigma_dalpha = dsigma_dalphas[0]
     dsigma_df = get_dsigma_df(model=model, K=K, T=T, F=F)
+    # sticky
     return delta_bsm + vega_bsm * (dsigma_df + dsigma_dalpha * rho * v / F**beta)
-    # no sticky delta variant, which passes finite diffs sanity check
-    # return delta_bsm + vega_bsm * dsigma_df
-    # BSM delta only
-    # return delta_bsm
+    # not sticky
+    return delta_bsm + vega_bsm * dsigma_df
 
 
 # @nb.njit()
@@ -306,9 +328,10 @@ def get_gamma(
     r: float = 0.0,
 ):
     alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
-    d1 = get_d1(sigma, K, T, F, r)
     dsigma_df = get_dsigma_df(model, K, T, F)
     gamma_bsm = get_gamma_bsm(sigma, K, T, F, r)
+    vega_bsm = get_vega_bsm(sigma, K, T, F, r)
+    vanna_bsm = get_vanna_bsm(sigma, K, T, F, r)
     market = MarketParameters(
         F=F,
         r=r,
@@ -321,30 +344,20 @@ def get_gamma(
     dsigma_dalpha = dsigma_dalphas[0]
     d2_sigma_df2 = get_d2_sigma_df2(model, K, T, F)
     d2_sigma_dalpha_df = get_d2_sigma_dalpha_df(model, K, T, F)
-    last_gamma_component_0 = (
-        d2_sigma_df2
-        + d2_sigma_dalpha_df * rho * v / F**beta
-        - dsigma_dalpha * beta * rho * v / F ** (beta + 1)
-    )
-    last_gamma_component_0_not_sticky = d2_sigma_df2
-    last_gamma_component = last_gamma_component_0 * F * pdf(d1) * np.sqrt(T)
-    last_gamma_component_not_sticky = (
-        last_gamma_component_0_not_sticky * F * pdf(d1) * np.sqrt(T)
-    )
+
     # sticky
     return (
         gamma_bsm
-        + (pdf(d1) - F * d1 * gamma_bsm)
-        * np.sqrt(T)
-        * (dsigma_df + dsigma_dalpha * rho * v / F**beta)
-        + last_gamma_component
+        + vanna_bsm * (dsigma_df + dsigma_dalpha * rho * v / F**beta) ** 2
+        + vega_bsm
+        * (
+            d2_sigma_df2
+            + d2_sigma_dalpha_df * rho * v / F**beta
+            - dsigma_dalpha * beta * rho * v / F ** (beta + 1)
+        )
     )
     # not sticky
-    # return (
-    #     gamma_bsm
-    #     + (pdf(d1) - F * d1 * gamma_bsm) * np.sqrt(T) * dsigma_df
-    #     + last_gamma_component_not_sticky
-    # )
+    return gamma_bsm + vanna_bsm * dsigma_df**2 + vega_bsm * d2_sigma_df2
 
 
 # @nb.njit()
@@ -370,9 +383,10 @@ def get_vega(
     dsigma_dalphas, _, _, _ = jacobian_sabr(model=model, market=market)
     dsigma_dalpha = dsigma_dalphas[0]
     dsigma_df = get_dsigma_df(model, K, T, F)
+    # sticky
     return vega_bsm * (dsigma_dalpha + dsigma_df * rho * F**beta / v)
-    # no sticky vega variant
-    # return vega_bsm * dsigma_dalpha
+    # not sticky
+    return vega_bsm * dsigma_dalpha
 
 
 # @nb.njit()
@@ -422,6 +436,7 @@ def get_sega(
     dsigma_drho = dsigma_drhos[0]
     return vega_bsm * dsigma_drho
 
+
 def get_volga(
     model: ModelParameters,
     option_type: bool,
@@ -431,8 +446,32 @@ def get_volga(
     F: float,
     r: float = 0.0,
 ):
-    # dalpha^2
-    pass
+    alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
+    market = MarketParameters(
+        F=F,
+        r=r,
+        T=T,
+        K=np.array([np.float64(K)]),
+        iv=np.array([np.float64(sigma)]),
+        types=np.array([np.bool(option_type)]),
+    )
+    dsigma_dalphas, _, _, _ = jacobian_sabr(model=model, market=market)
+    dsigma_dalpha = dsigma_dalphas[0]
+    volga_bsm = get_volga_bsm(sigma, K, T, F, r)
+    vega_bsm = get_vega_bsm(sigma, K, T, F, r)
+    dsigma_df = get_dsigma_df(model, K, T, F)
+    d2_sigma_dalpha2 = get_d2_sigma_dalpha2(model, K, T, F)
+    d2_sigma_dalpha_df = get_d2_sigma_dalpha_df(model, K, T, F)
+
+    # sticky
+    return volga_bsm * (
+        dsigma_dalpha + dsigma_df * rho * F**beta / v
+    ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * rho * F**beta / v)
+
+    # not sticky
+    return volga_bsm * dsigma_dalpha**2 + vega_bsm * d2_sigma_dalpha2
+    # return volga_bsm
+
 
 def get_vanna(
     model: ModelParameters,
@@ -443,8 +482,34 @@ def get_vanna(
     F: float,
     r: float = 0.0,
 ):
-    # df_dalpha
-    pass
+    alpha, beta, v, rho = model.alpha, model.beta, model.v, model.rho
+    market = MarketParameters(
+        F=F,
+        r=r,
+        T=T,
+        K=np.array([np.float64(K)]),
+        iv=np.array([np.float64(sigma)]),
+        types=np.array([np.bool(option_type)]),
+    )
+    dsigma_dalphas, _, _, _ = jacobian_sabr(model=model, market=market)
+    dsigma_dalpha = dsigma_dalphas[0]
+    dsigma_df = get_dsigma_df(model, K, T, F)
+    d2_sigma_dalpha_df = get_d2_sigma_dalpha_df(model, K, T, F)
+    d2_sigma_df2 = get_d2_sigma_df2(model, K, T, F)
+    vanna_bsm = get_vanna_bsm(sigma, K, T, F, r)
+    vega_bsm = get_vega_bsm(sigma, K, T, F, r)
+
+    # sticky
+    return vanna_bsm * (
+        dsigma_dalpha + dsigma_df * rho * F**beta / v
+    ) ** 2 + vega_bsm * (
+        d2_sigma_dalpha_df
+        + d2_sigma_df2 * rho * F**beta / v
+        + dsigma_df * beta * rho * F ** (beta - 1) / v
+    )
+
+    # not sticky
+    return vanna_bsm * dsigma_dalpha**2 + vega_bsm * d2_sigma_dalpha_df
 
 
 @nb.njit()
@@ -1341,7 +1406,16 @@ def calibrate_sabr(
     )
     final_vols = get_vol(model=final_params, market=market)
     tick["calibrated_iv"] = final_vols
-    deltas, vegas, gammas, segas, regas, prices = [], [], [], [], [], []
+    deltas, vegas, gammas, segas, regas, vannas, volgas, prices = (
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
     for index, row in tick.iterrows():
         K = row["strike_price"]
         op_type = True if row["type"] == "call" else False
@@ -1351,6 +1425,8 @@ def calibrate_sabr(
         regas.append(get_rega(final_params, op_type, vol, K, T, S_val))
         segas.append(get_sega(final_params, op_type, vol, K, T, S_val))
         gammas.append(get_gamma(final_params, op_type, vol, K, T, S_val))
+        vannas.append(get_vanna(final_params, op_type, vol, K, T, S_val))
+        volgas.append(get_volga(final_params, op_type, vol, K, T, S_val))
         prices.append(get_price_bsm(final_params, op_type, vol, K, T, S_val))
 
     tick["delta"] = deltas
@@ -1358,6 +1434,8 @@ def calibrate_sabr(
     tick["gamma"] = gammas
     tick["sega"] = segas
     tick["rega"] = regas
+    tick["volga"] = volgas
+    tick["vanna"] = vannas
     tick["rho"] = final_params.rho
     tick["volvol"] = final_params.v
     tick["alpha"] = final_params.alpha
@@ -1378,6 +1456,8 @@ def calibrate_sabr(
             "gamma",
             "sega",
             "rega",
+            "volga",
+            "vanna",
             "mark_price_usd",
             "rho",
             "volvol",
