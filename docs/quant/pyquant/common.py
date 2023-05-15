@@ -77,12 +77,13 @@ class ForwardYield:
     def __init__(self, rate: nb.float64):
         self.r = rate
 
+
 @nb.experimental.jitclass([
-    ("r", nb.float64[:])
+    ("data", nb.float64[:])
 ])
 class ForwardYields:
     def __init__(self, rates: nb.float64[:]):
-        self.r = rates
+        self.data = rates
 
 
 @nb.experimental.jitclass([
@@ -95,12 +96,12 @@ class Tenor:
 
 
 @nb.experimental.jitclass([
-    ("T", nb.float64[:])
+    ("data", nb.float64[:])
 ])
 class Tenors:
     def __init__(self, T: nb.float64[:]):
         assert np.all(T >= 0)
-        self.T = T      
+        self.data = T      
 
 
 @nb.experimental.jitclass([
@@ -109,25 +110,25 @@ class Tenors:
 ])
 class ForwardYieldCurve:
     def __init__(self, forward_yields: ForwardYields, tenors: Tenors):
-        assert forward_yields.r.shape == tenors.T.shape
-        self.r = forward_yields.r
-        self.T = tenors.T
+        assert forward_yields.data.shape == tenors.data.shape
+        self.r = forward_yields.data
+        self.T = tenors.data
 
 
 @nb.experimental.jitclass([
     ("fv", nb.float64)
 ])
 class ForwardRate:
-    def __init__(self, fv: nb.float64):
-        self.fv = fv
+    def __init__(self, forward: nb.float64):
+        self.fv = forward
 
 
 @nb.experimental.jitclass([
-    ("fv", nb.float64[:])
+    ("data", nb.float64[:])
 ])
 class ForwardRates:
-    def __init__(self, fv: nb.float64[:]):
-        self.fv = fv
+    def __init__(self, forwards: nb.float64[:]):
+        self.data = forwards
 
 
 @nb.experimental.jitclass([
@@ -141,7 +142,7 @@ class Forward:
         self.r = forward_yield.r
         self.T = tenor.T
         
-    def rate(self) -> ForwardRate:
+    def forward_rate(self) -> ForwardRate:
         return ForwardRate(self.S * np.exp(self.r * self.T))
     
     @staticmethod
@@ -153,18 +154,26 @@ class Forward:
     
 @nb.experimental.jitclass([
     ("S", nb.float64),
-    ("rs", nb.float64),
-    ("T", nb.float64)
+    ("r", nb.float64[:]),
+    ("T", nb.float64[:])
 ])
 class ForwardCurve:
-    def __init__(self, spot: nb.float64, forward_yields: nb.float64[:], tenors: nb.float64[:]):
-        assert np.all(tenors >= 0)
-        self.S = spot
-        self.r = forward_yields
-        self.T = tenors
+    def __init__(self, spot: Spot, forward_yields: ForwardYieldCurve):
+        self.S = spot.S
+        self.r = forward_yields.r
+        self.T = forward_yields.T
         
-    def fv(self) -> nb.float64:
-        return self.S * np.exp(self.r * self.T)
+    def forward_rates(self) -> ForwardRates:
+        return ForwardRates(self.S * np.exp(self.r * self.T))
+    
+    @staticmethod
+    def from_forward_rates(spot: Spot, forward_rates: ForwardRates, tenors: Tenors):
+        return ForwardCurve(
+            spot, ForwardYieldCurve( 
+                    ForwardYields(- np.log(spot.S / forward_rates.data) / tenors.data),
+                    tenors
+                )   
+            )
 
 
 @nb.experimental.jitclass([
