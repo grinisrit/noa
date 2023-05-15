@@ -63,7 +63,7 @@ class Premium:
 ])
 class Forward:
     def __init__(self, spot: nb.float64, forward_yield: nb.float64, tenor: nb.float64):
-        assert tenor > 0
+        assert tenor >= 0
         self.S = spot
         self.r = forward_yield
         self.T = tenor

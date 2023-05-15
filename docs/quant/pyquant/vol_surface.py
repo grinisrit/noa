@@ -7,6 +7,24 @@ from .black_scholes import *
 
 
 @nb.experimental.jitclass([
+    ("delta", Delta),
+    ("iv", ImpliedVol)
+])
+class RiskReversal:
+    def __init__(self, delta: Delta, implied_vol: ImpliedVol):
+        self.delta = delta
+        self.iv = implied_vol 
+        
+@nb.experimental.jitclass([
+    ("delta", Delta),
+    ("iv", ImpliedVol)
+])
+class Butterfly:
+    def __init__(self, delta: Delta, implied_vol: ImpliedVol):
+        self.delta = delta
+        self.iv = implied_vol
+
+@nb.experimental.jitclass([
     ("iv", nb.float64)
 ])
 class ATM:
@@ -21,24 +39,7 @@ class ATM:
         res[2] = RR.iv.sigma/2 + (BB.sigma + self.iv.sigma)
         return ImpliedVols(res)
                       
-        
-@nb.experimental.jitclass([
-    ("delta", Delta),
-    ("iv", ImpliedVol)
-])
-class RiskReversal:
-    def __init__(self, delta: Delta, implied_vol: ImpliedVol):
-        self.delta = delta
-        self.iv = iv 
-        
-@nb.experimental.jitclass([
-    ("delta", Delta),
-    ("iv", ImpliedVol)
-])
-class Butterfly:
-    def __init__(self, delta: Delta, implied_vol: ImpliedVol):
-        self.delta = delta
-        self.iv = iv
+    
 
 @nb.experimental.jitclass([
     ("forward", Forward),
@@ -68,6 +69,23 @@ class VolSmileDeltaSpace:
         self.RR10 = RR10
         assert BB10.delta.pv == 0.1
         self.BB10 = BB10
+
+    def to_chain(self):
+        ivs = np.zeros(5, dtype=np.float64)
+        strikes = np.zeros(5, dtype=np.float64)
+        
+        ivs[2] = self.ATM.sigma
+        strikes[2] = self.forward.fv()
+        
+        iv25 = self.ATM.implied_vols(self.RR25, self.BB25)
+        iv10 = self.ATM.implied_vols(self.RR10, self.BB10)
+        
+        return VolSmileChain(
+            self.forward,
+            Strikes(strikes),
+            ImpliedVols(ivs)
+        )
+
         
 @nb.experimental.jitclass([
     ("forward", Forward),
@@ -95,6 +113,6 @@ class VolSmileChain:
         return VolSmileChain(
             vol.forward,
             Strikes(strikes),
-            ImpliedVols(implied_vols)
+            ImpliedVols(ivs)
         )
         
