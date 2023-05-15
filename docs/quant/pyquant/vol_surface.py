@@ -7,38 +7,46 @@ from .black_scholes import *
 
 
 @nb.experimental.jitclass([
-    ("delta", Delta),
-    ("iv", ImpliedVol)
+    ("delta", nb.float64),
+    ("sigma", nb.float64)
 ])
 class RiskReversal:
     def __init__(self, delta: Delta, implied_vol: ImpliedVol):
-        self.delta = delta
-        self.iv = implied_vol 
+        assert delta.pv <=1
+        assert delta.pv >= 0
+        self.delta = delta.pv
+        self.sigma = implied_vol.sigma 
         
 @nb.experimental.jitclass([
-    ("delta", Delta),
-    ("iv", ImpliedVol)
+    ("delta", nb.float64),
+    ("sigma", nb.float64)
 ])
 class Butterfly:
     def __init__(self, delta: Delta, implied_vol: ImpliedVol):
-        self.delta = delta
-        self.iv = implied_vol
+        assert delta.pv <=1
+        assert delta.pv >= 0
+        self.delta = delta.pv
+        self.sigma = implied_vol.sigma
 
 @nb.experimental.jitclass([
     ("iv", nb.float64)
 ])
 class ATM:
     def __init__(self, iv: ImpliedVol):
-        self.iv = iv 
-        
-    def implied_vols(self, RR: RiskReversal, BB: Butterfly) -> ImpliedVols:
-        assert RR.delta.pv == BB.delta.pv
-        res = np.zeros(3, dtype=np.float64)
-        res[0] = -RR.iv.sigma/2 + (BB.sigma + self.iv.sigma)
-        res[1] = self.iv.sigma
-        res[2] = RR.iv.sigma/2 + (BB.sigma + self.iv.sigma)
-        return ImpliedVols(res)
-                      
+        self.sigma = iv.sigma 
+
+
+@nb.experimental.jitclass([
+    ("forward", Forward),
+    ("strikes", Strikes),
+    ("implied_vols", ImpliedVols),
+])
+class VolSmileChain:
+    def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
+        assert strikes.data.shape == implied_vols.data.shape
+        self.forward = forward  
+        self.strikes = strikes
+        self.implied_vols = implied_vols                     
     
 
 @nb.experimental.jitclass([
@@ -48,6 +56,10 @@ class ATM:
     ("BB25", Butterfly),
     ("RR10", RiskReversal),
     ("BB10", Butterfly),
+    ("tol", nb.float64),
+    ("upper_strike", nb.float64),
+    ("sigma_upper", nb.float64),
+    
 ]) 
 class VolSmileDeltaSpace:
     def __init__(
@@ -70,22 +82,41 @@ class VolSmileDeltaSpace:
         assert BB10.delta.pv == 0.1
         self.BB10 = BB10
 
-    def to_chain(self):
+        self.upper_strike = 100*self.forward.fv()
+        self.upper_strike = 0.01*self.forward.fv()
+
+    def _implied_vols(self, RR: RiskReversal, BB: Butterfly) -> tuple[nb.float64]:
+        assert RR.delta.pv == BB.delta.pv
+        return -RR.iv.sigma/2 + (BB.sigma + self.ATM.sigma), RR.sigma/2 + (BB.sigma + self.ATM.sigma)
+    
+    def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
+        f = self.forward.fv()
+        K_r = f if delta < 0 else 100*f
+        K_l = f if delta > 0 else 0.01*f
+        return BlackScholes.from_delta_space(
+            self.forward, ImpliedVol(sigma), Delta(delta), Strike(K_l), Strike(K_r)
+        ) 
+
+    def to_chain_space(self):
         ivs = np.zeros(5, dtype=np.float64)
         strikes = np.zeros(5, dtype=np.float64)
         
-        ivs[2] = self.ATM.sigma
+        ivs[2] = self.ATM.sigma     
+        ivs[1], ivs[3] = self._implied_vols(self.RR25, self.BB25)
+        ivs[0], ivs[4] = self._implied_vols(self.RR10, self.BB10)
+
+        strikes[0] = self._get_strike(ivs[0], -self.BB10.delta)
+        strikes[1] = self._get_strike(ivs[1], -self.BB25.delta)
         strikes[2] = self.forward.fv()
-        
-        iv25 = self.ATM.implied_vols(self.RR25, self.BB25)
-        iv10 = self.ATM.implied_vols(self.RR10, self.BB10)
+        strikes[0] = self._get_strike(ivs[0], self.RR25.delta)
+        strikes[0] = self._get_strike(ivs[0], self.BB25.delta)
         
         return VolSmileChain(
             self.forward,
             Strikes(strikes),
             ImpliedVols(ivs)
         )
-
+    
         
 @nb.experimental.jitclass([
     ("forward", Forward),
@@ -98,21 +129,9 @@ class VolSmileChain:
         self.forward = forward  
         self.strikes = strikes
         self.implied_vols = implied_vols   
-    
-    @staticmethod
-    def from_delta_space(vol: VolSmileDeltaSpace):
-        ivs = np.zeros(5, dtype=np.float64)
-        strikes = np.zeros(5, dtype=np.float64)
         
-        ivs[2] = vol.ATM.sigma
-        strikes[2] = vol.forward.fv()
-        
-        iv25 = vol.ATM.implied_vols(vol.RR25, vol.BB25)
-        iv10 = vol.ATM.implied_vols(vol.RR10, vol.BB10)
-        
-        return VolSmileChain(
-            vol.forward,
-            Strikes(strikes),
-            ImpliedVols(ivs)
-        )
+
+class VolSurface:
+
+    def __init__(self, forwards: np.array, ATMs):
         

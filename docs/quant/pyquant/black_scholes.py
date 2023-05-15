@@ -131,9 +131,10 @@ class BlackScholes:
         )
     
     def gamma(self, implied_vol: ImpliedVol) -> Gamma:
-        d1 = self._d1(implied_vol.sigma) 
+        sigma = implied_vol.sigma
+        d1 = self._d1(sigma) 
         return Gamma(
-            normal_pdf(d1) / (F * sigma * np.sqrt(T))
+            normal_pdf(d1) / (self.S * sigma * np.sqrt(self.T))
         )
     
     def vega(self, implied_vol: ImpliedVol) -> Vega:
