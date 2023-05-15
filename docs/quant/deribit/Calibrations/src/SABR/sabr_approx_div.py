@@ -332,6 +332,7 @@ def get_gamma(
     gamma_bsm = get_gamma_bsm(sigma, K, T, F, r)
     vega_bsm = get_vega_bsm(sigma, K, T, F, r)
     vanna_bsm = get_vanna_bsm(sigma, K, T, F, r)
+    volga_bsm = get_volga_bsm(sigma, K, T, F, r)
     market = MarketParameters(
         F=F,
         r=r,
@@ -346,9 +347,11 @@ def get_gamma(
     d2_sigma_dalpha_df = get_d2_sigma_dalpha_df(model, K, T, F)
 
     # sticky
+    sticky_component = dsigma_df + dsigma_dalpha * rho * v / F**beta
     return (
         gamma_bsm
-        + vanna_bsm * (dsigma_df + dsigma_dalpha * rho * v / F**beta) ** 2
+        + 2 * vanna_bsm * sticky_component
+        + volga_bsm * sticky_component**2
         + vega_bsm
         * (
             d2_sigma_df2
@@ -357,7 +360,12 @@ def get_gamma(
         )
     )
     # not sticky
-    return gamma_bsm + vanna_bsm * dsigma_df**2 + vega_bsm * d2_sigma_df2
+    # return (
+    #     gamma_bsm
+    #     + 2 * vanna_bsm * dsigma_df
+    #     + volga_bsm * dsigma_df**2
+    #     + vega_bsm * d2_sigma_df2
+    # )
 
 
 # @nb.njit()
@@ -470,7 +478,6 @@ def get_volga(
 
     # not sticky
     return volga_bsm * dsigma_dalpha**2 + vega_bsm * d2_sigma_dalpha2
-    # return volga_bsm
 
 
 def get_vanna(
@@ -498,18 +505,21 @@ def get_vanna(
     d2_sigma_df2 = get_d2_sigma_df2(model, K, T, F)
     vanna_bsm = get_vanna_bsm(sigma, K, T, F, r)
     vega_bsm = get_vega_bsm(sigma, K, T, F, r)
+    volga_bsm = get_volga_bsm(sigma, K, T, F, r)
 
     # sticky
-    return vanna_bsm * (
-        dsigma_dalpha + dsigma_df * rho * F**beta / v
-    ) ** 2 + vega_bsm * (
+    return (
+        vanna_bsm + volga_bsm * (dsigma_df + dsigma_dalpha * rho * v / F**beta)
+    ) * (dsigma_dalpha + dsigma_df * rho * F**beta / v) + vega_bsm * (
         d2_sigma_dalpha_df
         + d2_sigma_df2 * rho * F**beta / v
         + dsigma_df * beta * rho * F ** (beta - 1) / v
     )
 
     # not sticky
-    return vanna_bsm * dsigma_dalpha**2 + vega_bsm * d2_sigma_dalpha_df
+    return (vanna_bsm + volga_bsm * dsigma_df) * dsigma_dalpha + vega_bsm * (
+        d2_sigma_dalpha_df
+    )
 
 
 @nb.njit()
