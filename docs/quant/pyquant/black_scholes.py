@@ -1,85 +1,8 @@
 import numpy as np
 import numba as nb
 
-from .utils import normal_pdf, normal_cdf
+from .common import *
 
-@nb.experimental.jitclass([
-    ("sigma", nb.float64)
-])
-class ImpliedVol:
-    def __init__(self, sigma: nb.float64):
-        assert sigma > 0
-        self.sigma = sigma
-        
-@nb.experimental.jitclass([
-    ("pv", nb.float64)
-])
-class Premium:
-    def __init__(self, pv: nb.float64):
-        self.pv = pv
-        
-@nb.experimental.jitclass([
-    ("S", nb.float64),
-    ("r", nb.float64),
-    ("T", nb.float64)
-])
-class Forward:
-    def __init__(self, spot: nb.float64, forward_yield: nb.float64, tenor: nb.float64):
-        assert tenor > 0
-        self.S = spot
-        self.r = forward_yield
-        self.T = tenor
-        
-
-@nb.experimental.jitclass([
-    ("K", nb.float64)  
-])
-class Strike:
-    def __init__(self, strike: nb.float64):
-        self.K = strike
-              
-@nb.experimental.jitclass([
-    ("is_call", nb.boolean)
-])
-class OptionType:
-    def __init__(self, is_call: nb.boolean):
-        self.is_call = is_call
-        
-@nb.experimental.jitclass([
-    ("pv", nb.float64)
-])
-class Delta:
-    def __init__(self, delta: nb.float64):
-        self.pv = delta
-        
-@nb.experimental.jitclass([
-    ("pv", nb.float64)
-])
-class Gamma:
-    def __init__(self, gamma: nb.float64):
-        self.pv = gamma
-        
-@nb.experimental.jitclass([
-    ("pv", nb.float64)
-])
-class Vega:
-    def __init__(self, vega: nb.float64):
-        self.pv = vega
-        
-@nb.experimental.jitclass([
-    ("pv", nb.float64)
-])
-class Vanna:
-    def __init__(self, vanna: nb.float64):
-        self.pv = vanna
-        
-@nb.experimental.jitclass([
-    ("pv", nb.float64)
-])
-class Volga:
-    def __init__(self, volga: nb.float64):
-        self.pv = volga
-        
 
 @nb.experimental.jitclass([
     ("S", nb.float64),
