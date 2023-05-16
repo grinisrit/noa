@@ -1,7 +1,44 @@
 import numpy as np
 import numba as nb
 
+from .common import *
 from .black_scholes import *
+from .vol_surface import *
+
+
+@nb.experimental.jitclass([
+    ("beta", nb.float64)
+])
+class Backbone:
+    def __init__(self, beta: nb.float64):
+        assert beta <= 1
+        assert beta >= 0
+        self.beta = beta
+
+
+@nb.experimental.jitclass([
+    ("alpha", nb.float64)
+])
+class Volatility:
+    def __init__(self, alpha: nb.float64):
+        self.alpha = alpha 
+
+
+@nb.experimental.jitclass([
+    ("rho", nb.float64)
+])
+class Correlation:
+    def __init__(self, rho: nb.float64):
+        self.rho = rho 
+
+
+@nb.experimental.jitclass([
+    ("v", nb.float64)
+])
+class VolOfVol:
+    def __init__(self, v: nb.float64):
+        self.v = v 
+
 
 @nb.experimental.jitclass([
     ("alpha", nb.float64),
@@ -10,19 +47,11 @@ from .black_scholes import *
 ])
 class SABRParams:
     def __init__(
-        self, alpha: nb.float64, rho: nb.float64, volvol: nb.float64, beta: nb.float64
-    ):
-        assert alpha > 0
-        assert rho <= 1
-        assert rho >= -1
-        assert volvol >= 0
-        assert beta <= 1
-        assert beta >= 0
-        
-        self.alpha = alpha
-        self.v = v
-        self.beta = beta
-        self.rho = rho
+        self, volatility: Volatility, correlation: Correlation, volvol: VolOfVol
+    ): 
+        self.alpha = volatility.alpha
+        self.rho = correlation.rho
+        self.v = volvol.v
 
         
 @nb.experimental.jitclass([
@@ -33,25 +62,29 @@ class Backbone:
         assert beta <= 1
         assert beta >= 0
         self.beta = beta
-
+     
         
 @nb.experimental.jitclass([
-    ("forward", nb.float64),
-    ("strikes", nb.float64[:]),
-    ("implied_vols", nb.float64[:]),
-])
-class VolSmileChain:
-    def __init__(self, forward: Forward, strikes: nb.float64[:], implied_vols: nb.float64[:]):
-        assert strikes.shape == implied_vols.shape
-        self.forward = forward  
-        self.strikes = strikes
-        self.implied_vols = implied_vols    
-        
-        
-@nb.experimental.jitclass([
+    ("f", nb.float64),
+    ("T", nb.float64),
     ("beta", nb.float64)
 ])        
 class SABR:
-    def __init__(self, backbone: Backbone):
+    def __init__(self, forward: Forward, backbone: Backbone):
+        self.f = forward.forward_rate().fv
+        self.T = forward.T
         self.beta = backbone.beta
-       
+
+    def calibrate(self, chain: VolSmileChain) -> SABRParams:
+        pass
+
+    def delta_space(self, params: SABRParams) -> VolSmileDeltaSpace:
+        pass
+
+    def implied_vol_for_strike(self, params: SABRParams, strike: Strike) -> ImpliedVol:
+        pass
+
+    def implied_vol_for_delta(self, params: SABRParams, delta: Delta) -> ImpliedVol:
+        pass
+
+   
