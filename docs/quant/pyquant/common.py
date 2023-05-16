@@ -26,7 +26,7 @@ def normal_pdf(x: nb.float64) -> nb.float64:
 
 
 @nb.njit()
-def np_clip(a, a_min, a_max):
+def np_clip(a: nb.float64, a_min: nb.float64, a_max: nb.float64) -> nb.float64:
     if a < a_min:
         out = a_min
     elif a > a_max:
@@ -34,6 +34,13 @@ def np_clip(a, a_min, a_max):
     else:
         out = a
     return out 
+
+@nb.njit
+def is_sorted(a: nb.float64[:]) -> nb.boolean:
+    for i in range(a.size-1):
+         if a[i+1] < a[i] :
+               return False
+    return True
 
 
 @nb.experimental.jitclass([
@@ -159,6 +166,7 @@ class Forward:
 ])
 class ForwardCurve:
     def __init__(self, spot: Spot, forward_yields: ForwardYieldCurve):
+        assert is_sorted(forward_yields.T)
         self.S = spot.S
         self.r = forward_yields.r
         self.T = forward_yields.T
