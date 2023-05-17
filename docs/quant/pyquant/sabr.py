@@ -81,10 +81,10 @@ class SABR:
     def delta_space(self, params: SABRParams) -> VolSmileDeltaSpace:
         pass
 
-    def implied_vol_for_strike(self, params: SABRParams, strike: Strike) -> ImpliedVol:
+    def implied_vol(self, params: SABRParams, strike: Strike) -> ImpliedVol:
         pass
 
-    def implied_vol_for_delta(self, params: SABRParams, delta: Delta) -> ImpliedVol:
+    def strike_from_delta(self, params: SABRParams, delta: Delta) -> Strike:
         pass
     
     

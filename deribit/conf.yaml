@@ -1,0 +1,13 @@
+version: "0.0.1"
+database:
+    root: "deribit_database"
+deribit:
+    endpoint: "wss://test.deribit.com/ws/api/v2"
+    client_id: "your_id"
+    client_secret: "your_secret"
+    heartbeat_interval: 60
+    timeout: 0.1
+trading:
+    currencies: ["ETH"]
+    start_maturity: 1
+    end_maturity: 10
