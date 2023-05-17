@@ -20,8 +20,7 @@ from .common import *
 ])
 class BlackScholesCalc:
 
-    def __init__(self, option_type: OptionType):
-        self.is_call = option_type.is_call
+    def __init__(self):
         self.tol = 10**-6
         self.sigma_lower = 10**-3
         self.sigma_upper = 3
@@ -32,18 +31,20 @@ class BlackScholesCalc:
     def strike_from_delta(self, forward: Forward, delta: Delta, implied_vol: ImpliedVol) -> Strike:
         K_l = self.strike_lower*forward.S
         K_r = self.strike_lower*forward.S
+
+        option_type = OptionType(delta.pv >= 0.)
         
-        def g(K, delta):
-            return self.delta(forward, Strike(K), implied_vol).pv - delta.pv
+        def g(K):
+            return self.delta(forward, Strike(K), implied_vol, option_type).pv - delta.pv
 
         def g_prime(K):
             return self._dDelta_dK(forward, Strike(K), implied_vol)
         
-        assert g(K_l, delta) * g(K_r, delta) <= 0
+        assert g(K_l) * g(K_r) <= 0
         
         K = (K_l+K_r) / 2
         
-        epsilon = g(K, delta)
+        epsilon = g(K)
         grad = g_prime(K)
         i = 0
         while abs(epsilon) > self.delta_tol and i < 10: 
@@ -51,63 +52,64 @@ class BlackScholesCalc:
                 K -= epsilon / grad
                 if K > K_r or K < K_l:
                     K = (K_l + K_r) / 2
-                    if g(K_l, delta)*epsilon > 0:
+                    if g(K_l)*epsilon > 0:
                         K_l = K
                     else:
                         K_r = K
                     K = (K_l + K_r) / 2
             else:
-                if g(K_l, delta)*epsilon > 0:
+                if g(K_l)*epsilon > 0:
                     K_l = K
                 else:
                     K_r = K
                 K = (K_l + K_r) / 2
             
-            epsilon = g(K, delta)
+            epsilon = g(K)
             grad = g_prime(K)
             i += 1
+
         return Strike(K)
         
-    def implied_vol(self, forward: Forward, strike: Strike, premium: Premium) -> ImpliedVol:
-          
-        def g(pv, sigma):
-            return pv - self.premium(forward, strike, ImpliedVol(sigma)).pv
+    def implied_vol(self, forward: Forward, strike: Strike, premium: Premium, option_type: OptionType) -> ImpliedVol:
+        pv = premium.pv
+
+        def g(sigma):
+            return pv - self.premium(forward, strike, ImpliedVol(sigma), option_type).pv
 
         def g_prime(sigma):
             return -self.vega(forward, strike, ImpliedVol(sigma)).pv 
         
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
-        pv = premium.pv
         
-        assert g(pv,sigma_l) * g(pv,sigma_r) <= 0
+        assert g(sigma_l) * g(pv,sigma_r) <= 0
         
         sigma = (sigma_l + sigma_r) / 2
-        epsilon = g(pv, sigma)
+        epsilon = g(sigma)
         grad = g_prime(sigma)
         while abs(epsilon) > self.tol:   
             if abs(grad) > 1e-6:
                 sigma -= epsilon / grad
                 if sigma > sigma_r or sigma < sigma_l:
                     sigma = (sigma_l + sigma_r) / 2
-                    if g(pv, sigma_l)*epsilon > 0:
+                    if g(sigma_l)*epsilon > 0:
                         sigma_l = sigma
                     else:
                         sigma_r = sigma
                     sigma = (sigma_l + sigma_r) / 2
             else:
-                if g(pv, sigma_l)*epsilon > 0:
+                if g(sigma_l)*epsilon > 0:
                     sigma_l = sigma
                 else:
                     sigma_r = sigma
                 sigma = (sigma_l + sigma_r) / 2
             
-            epsilon = g(pv, sigma)
+            epsilon = g(sigma)
             grad = g_prime(sigma) 
         return ImpliedVol(sigma)
        
-    def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Premium:
-        pm = 1 if self.is_call else -1
+    def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Premium:
+        pm = 1 if option_type.is_call else -1
         d1 = self._d1(forward, strike, implied_vol)
         d2 = self._d2(d1, forward, implied_vol)
         return Premium(
@@ -115,7 +117,7 @@ class BlackScholesCalc:
             np.exp(-forward.r * forward.T) * normal_cdf(pm * d2)
         )
     
-    def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Delta:
+    def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
         d1 = self._d1(forward, strike, implied_vol)
         return Delta(
             normal_cdf(d1) if self.is_call else normal_cdf(d1) - 1.0
@@ -146,7 +148,8 @@ class BlackScholesCalc:
         )
     
     def _d1(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
-        d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2) * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))
+        d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2)\
+               * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))
         return d1
     
     def _d2(self, d1: nb.float64, forward: Forward, implied_vol: ImpliedVol) -> nb.float64:

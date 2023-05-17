@@ -111,7 +111,7 @@ class VolSmileDeltaSpace:
         return -RR.iv.sigma/2 + (BB.sigma + self.ATM.sigma), RR.sigma/2 + (BB.sigma + self.ATM.sigma)
     
     def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
-        return BlackScholesCalc(OptionType(delta >= 0.)).strike_from_delta(
+        return BlackScholesCalc().strike_from_delta(
             self.forward, Delta(delta), ImpliedVol(sigma)).K
 
     def to_chain_space(self):
