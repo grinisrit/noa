@@ -1,6 +1,7 @@
 import numpy as np
 import numba as nb
 
+from .utils import *
 from .common import *
 
 
@@ -13,76 +14,67 @@ from .common import *
     ("tol", nb.float64),
     ("sigma_lower", nb.float64),
     ("sigma_upper", nb.float64),
-    
+    ("strike_lower", nb.float64),
+    ("strike_upper", nb.float64),
+    ("delta_tol", nb.float64)
 ])
-class BlackScholes:
-    def __init__(self, forward: Forward, strike: Strike, option_type: OptionType):
-        self.S = forward.S
-        self.r = forward.r
-        self.T = forward.T
-        self.K = strike.K
+class BlackScholesCalc:
+
+    def __init__(self, option_type: OptionType):
         self.is_call = option_type.is_call
         self.tol = 10**-6
-        self.sigma_lower = 10**-4
-        self.sigma_upper = 2.
+        self.sigma_lower = 10**-3
+        self.sigma_upper = 3
+        self.strike_lower = 0.1
+        self.strike_upper = 10.
+        self.delta_tol = 10**-12
         
-    @staticmethod
-    def from_delta_space(
-        forward: Forward, 
-        implied_vol: ImpliedVol,
-        delta: Delta, 
-        option_type: OptionType,
-        lower_strike: Strike, 
-        upper_strike: Strike,
-        tol = 10**-12
-    ):
-        K_l = lower_strike
-        K_r = upper_strike
+    def strike_from_delta(self, forward: Forward, delta: Delta, implied_vol: ImpliedVol) -> Strike:
+        K_l = self.strike_lower*forward.S
+        K_r = self.strike_lower*forward.S
         
         def g(K, delta):
-            return BlackScholes(forward, Strike(K), option_type).delta(implied_vol).pv - delta.pv
+            return self.delta(forward, Strike(K), implied_vol).pv - delta.pv
 
         def g_prime(K):
-            return BlackScholes(forward, Strike(K), option_type)._dDelta_dK(implied_vol.sigma)
+            return self._dDelta_dK(forward, Strike(K), implied_vol)
         
         assert g(K_l, delta) * g(K_r, delta) <= 0
         
-        res = BlackScholes(forward, 
-                           Strike((K_l+K_r) / 2), 
-                           option_type)
+        K = (K_l+K_r) / 2
         
-        epsilon = g(res.K, delta)
-        grad = g_prime(res.K)
+        epsilon = g(K, delta)
+        grad = g_prime(K)
         i = 0
-        while abs(epsilon) > tol and i < 10: 
+        while abs(epsilon) > self.delta_tol and i < 10: 
             if abs(grad) > 1e-6:
-                res.K -= epsilon / grad
-                if res.K > K_r or res.K < K_l:
-                    res.K = (K_l + K_r) / 2
+                K -= epsilon / grad
+                if K > K_r or K < K_l:
+                    K = (K_l + K_r) / 2
                     if g(K_l, delta)*epsilon > 0:
-                        K_l = res.K
+                        K_l = K
                     else:
-                        K_r = res.K
-                    res.K = (K_l + K_r) / 2
+                        K_r = K
+                    K = (K_l + K_r) / 2
             else:
                 if g(K_l, delta)*epsilon > 0:
-                    K_l = res.K
+                    K_l = K
                 else:
-                    K_r = res.K
-                res.K = (K_l + K_r) / 2
+                    K_r = K
+                K = (K_l + K_r) / 2
             
-            epsilon = g(res.K, delta)
-            grad = g_prime(res.K)
+            epsilon = g(K, delta)
+            grad = g_prime(K)
             i += 1
-        return res
+        return Strike(K)
         
-    def implied_vol(self, premium: Premium) -> ImpliedVol:
+    def implied_vol(self, forward: Forward, strike: Strike, premium: Premium) -> ImpliedVol:
           
         def g(pv, sigma):
-            return pv - self.premium(ImpliedVol(sigma)).pv
+            return pv - self.premium(forward, strike, ImpliedVol(sigma)).pv
 
         def g_prime(sigma):
-            return -self.vega(ImpliedVol(sigma)).pv 
+            return -self.vega(forward, strike, ImpliedVol(sigma)).pv 
         
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
@@ -114,57 +106,53 @@ class BlackScholes:
             grad = g_prime(sigma) 
         return ImpliedVol(sigma)
        
-    def premium(self, implied_vol: ImpliedVol) -> Premium:
-        sigma = implied_vol.sigma
+    def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Premium:
         pm = 1 if self.is_call else -1
-        d1 = self._d1(sigma)
-        d2 = self._d2(d1, sigma)
+        d1 = self._d1(forward, strike, implied_vol)
+        d2 = self._d2(d1, forward, implied_vol)
         return Premium(
-            pm * self.S * normal_cdf(pm * d1) - pm * self.K * \
-            np.exp(-self.r * self.T) * normal_cdf(pm * d2)
+            pm * forward.S * normal_cdf(pm * d1) - pm * strike.K * \
+            np.exp(-forward.r * forward.T) * normal_cdf(pm * d2)
         )
     
-    def delta(self, implied_vol: ImpliedVol) -> Delta:
-        d1 = self._d1(implied_vol.sigma)
+    def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Delta:
+        d1 = self._d1(forward, strike, implied_vol)
         return Delta(
             normal_cdf(d1) if self.is_call else normal_cdf(d1) - 1.0
         )
     
-    def gamma(self, implied_vol: ImpliedVol) -> Gamma:
-        sigma = implied_vol.sigma
-        d1 = self._d1(sigma) 
+    def gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
+        d1 = self._d1(forward, strike, implied_vol) 
         return Gamma(
-            normal_pdf(d1) / (self.S * sigma * np.sqrt(self.T))
+            normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
         )
     
-    def vega(self, implied_vol: ImpliedVol) -> Vega:
+    def vega(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vega:
         return Vega(
-            self.S * np.sqrt(self.T) * normal_pdf(self._d1(implied_vol.sigma))
+            forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
         )
     
-    def vanna(self, implied_vol: ImpliedVol) -> Vanna:
-        sigma = implied_vol.sigma
-        d2 = self._d2(self._d1(sigma), sigma)
+    def vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vanna:
+        d2 = self._d2(self._d1(forward, strike, implied_vol), forward, implied_vol)
         return Vanna(
-            self.vega(implied_vol).pv * d2 / (sigma * self.S)
+            self.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
         )
     
-    def volga(self, implied_vol: ImpliedVol) -> Volga:
-        sigma = implied_vol.sigma
-        d1 = self._d1(sigma)
-        d2 = self._d2(d1,sigma)
+    def volga(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Volga:
+        d1 = self._d1(forward, strike, implied_vol)
+        d2 = self._d2(d1, forward, implied_vol)
         return Volga(
-            self.vega(implied_vol).pv * d1 * d2 / sigma
+            self.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
         )
     
-    def _d1(self, sigma: nb.float64) -> nb.float64:
-        d1 = (np.log(self.S / self.K) + (self.r + sigma**2 / 2) * self.T) / (sigma * np.sqrt(self.T))
+    def _d1(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
+        d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2) * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))
         return d1
     
-    def _d2(self, d1: nb.float64, sigma: nb.float64) -> nb.float64:
-        return d1 - sigma * np.sqrt(self.T)
+    def _d2(self, d1: nb.float64, forward: Forward, implied_vol: ImpliedVol) -> nb.float64:
+        return d1 - implied_vol.sigma * np.sqrt(forward.T)
     
-    def _dDelta_dK(self, sigma: nb.float64) -> nb.float64:
-        d1 = self._d1(sigma)
-        return - normal_pdf(d1) / (self.K * np.sqrt(self.T) * sigma)
+    def _dDelta_dK(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
+        d1 = self._d1(forward, strike, implied_vol)
+        return - normal_pdf(d1) / (strike.K * np.sqrt(forward.T) * implied_vol.sigma)
     
