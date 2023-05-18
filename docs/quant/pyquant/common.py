@@ -191,6 +191,13 @@ class Delta:
     def __init__(self, delta: nb.float64):
         self.pv = delta
 
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Deltas:
+    def __init__(self, deltas: nb.float64[:]):
+        self.data = deltas
+
 
 @nb.experimental.jitclass([
     ("pv", nb.float64)

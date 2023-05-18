@@ -67,7 +67,8 @@ class SABRParams:
     ("tol", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
-    ("delta_tol", nb.float64)
+    ("delta_tol", nb.float64),
+    ("delta_grad_eps", nb.float64)
 ])        
 class SABRCalc:
     def __init__(self):
@@ -78,6 +79,7 @@ class SABRCalc:
         self.strike_lower = 0.1
         self.strike_upper = 10.
         self.delta_tol = 10**-12
+        self.delta_grad_eps = 1e-4
 
     def update_cached_params(self, params: SABRParams):
         self.cached_params = params.array()
@@ -85,8 +87,8 @@ class SABRCalc:
     def calibrate(self, chain: VolSmileChain, backbone: Backbone) -> SABRParams:
         forward = chain.f
         tenor = chain.T
-        strikes = chain.K
-        implied_vols = chain.sigma
+        strikes = chain.strikes
+        implied_vols = chain.sigmas
         beta = backbone.beta
     
         def clip_params(params):
@@ -200,13 +202,12 @@ class SABRCalc:
         epsilon = g(K)
         grad = g_prime(K)
 
-        i = 0
-        while abs(epsilon) > self.delta_tol and i < 100: 
-            if abs(grad) > 1e-6:
+        while abs(epsilon) > self.delta_tol: 
+            if abs(grad) > self.delta_grad_eps:
                 K -= epsilon / grad
                 if K > K_r or K < K_l:
                     K = (K_l + K_r) / 2
-                    if g(K_l)*epsilon > 0:
+                    if g(K_l)*g(K) > 0:
                         K_l = K
                     else:
                         K_r = K
@@ -217,11 +218,10 @@ class SABRCalc:
                 else:
                     K_r = K
                 K = (K_l + K_r) / 2
-            
+ 
             epsilon = g(K)
             grad = g_prime(K)
-            i += 1
-        
+         
         return Strike(K)
 
     def delta_space(self, forward: Forward, params: SABRParams) -> VolSmileDeltaSpace:
@@ -236,7 +236,7 @@ class SABRCalc:
 
         call10_K = self.strike_from_delta(forward, Delta(0.1), params)
         call10 = self.implied_vol(forward, call10_K, params).sigma
-
+       
         put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
         put10 = self.implied_vol(forward, put10_K, params).sigma
 

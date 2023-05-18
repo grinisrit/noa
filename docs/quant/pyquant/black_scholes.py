@@ -14,18 +14,22 @@ from .common import *
     ("tol", nb.float64),
     ("sigma_lower", nb.float64),
     ("sigma_upper", nb.float64),
+    ("grad_eps", nb.float64),
+    ("delta_tol", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
-    ("delta_tol", nb.float64)
+    ("delta_grad_eps", nb.float64)
 ])
 class BlackScholesCalc:
     def __init__(self):
         self.tol = 10**-6
         self.sigma_lower = 10**-3
         self.sigma_upper = 3
+        self.grad_eps = 1e-6
+        self.delta_tol = 10**-12
         self.strike_lower = 0.1
         self.strike_upper = 10.
-        self.delta_tol = 10**-12
+        self.delta_grad_eps = 1e-4
         
     def strike_from_delta(self, forward: Forward, delta: Delta, implied_vol: ImpliedVol) -> Strike:
         K_l = self.strike_lower*forward.S
@@ -43,13 +47,12 @@ class BlackScholesCalc:
         K = (K_l+K_r) / 2
         epsilon = g(K)
         grad = g_prime(K)
-        i = 0
-        while abs(epsilon) > self.delta_tol and i < 10: 
-            if abs(grad) > 1e-4:
+        while abs(epsilon) > self.delta_tol: 
+            if abs(grad) > self.delta_grad_eps:
                 K -= epsilon / grad
                 if K > K_r or K < K_l: 
                     K = (K_l + K_r) / 2
-                    if g(K_l)*epsilon > 0:
+                    if g(K_l)*g(K) > 0:
                         K_l = K
                     else:
                         K_r = K
@@ -60,10 +63,10 @@ class BlackScholesCalc:
                 else:
                     K_r = K
                 K = (K_l + K_r) / 2
+
             epsilon = g(K)
             grad = g_prime(K)
-            i += 1
-
+            
         return Strike(K)
         
     def implied_vol(self, forward: Forward, strike: Strike, premium: Premium, option_type: OptionType) -> ImpliedVol:
@@ -84,11 +87,11 @@ class BlackScholesCalc:
         epsilon = g(sigma)
         grad = g_prime(sigma)
         while abs(epsilon) > self.tol:   
-            if abs(grad) > 1e-6:
+            if abs(grad) > self.grad_eps:
                 sigma -= epsilon / grad
                 if sigma > sigma_r or sigma < sigma_l:
                     sigma = (sigma_l + sigma_r) / 2
-                    if g(sigma_l)*epsilon > 0:
+                    if g(sigma_l)*g(sigma) > 0:
                         sigma_l = sigma
                     else:
                         sigma_r = sigma
@@ -102,6 +105,7 @@ class BlackScholesCalc:
             
             epsilon = g(sigma)
             grad = g_prime(sigma) 
+
         return ImpliedVol(sigma)
        
     def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Premium:

@@ -45,18 +45,38 @@ class Butterfly:
 
 
 @nb.experimental.jitclass([
-    ("f", nb.float64),
     ("T", nb.float64),
-    ("sigma", nb.float64[:]),
-    ("K", nb.float64[:]),
+    ("S", nb.float64),
+    ("r", nb.float64),
+    ("f", nb.float64),
+    ("sigmas", nb.float64[:]),
+    ("strikes", nb.float64[:]),
 ])
 class VolSmileChain:
     def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
         assert strikes.data.shape == implied_vols.data.shape
-        self.f = forward.forward_rate().fv
+
         self.T = forward.T
-        self.sigma = implied_vols.data 
-        self.K = strikes.data                    
+        self.S = forward.S
+        self.r = forward.r
+        self.f = forward.forward_rate().fv
+
+        self.sigmas = implied_vols.data 
+        self.strikes = strikes.data 
+
+    def deltas(self) -> Deltas:
+        bs_calc = BlackScholesCalc()
+        res = np.zeros_like(self.strikes)
+        n = len(self.strikes)
+        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        for i in range(n):
+            res[i] = bs_calc.delta(
+                forward,
+                Strike(self.strikes[i]),
+                ImpliedVol(self.sigmas[i]),
+                OptionType(self.strikes[i] >= self.f)
+            ).pv 
+        return Deltas(res)                
     
 
 @nb.experimental.jitclass([
@@ -71,7 +91,8 @@ class VolSmileChain:
     ("BB10", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
-    ("delta_tol", nb.float64)
+    ("delta_tol", nb.float64),
+    ("delta_grad_eps", nb.float64)
 ]) 
 class VolSmileDeltaSpace:
     def __init__(
@@ -110,6 +131,7 @@ class VolSmileDeltaSpace:
         self.strike_lower = 0.1
         self.strike_upper = 10.
         self.delta_tol = 10**-12
+        self.delta_grad_eps = 1e-4
 
     def _implied_vols(self, RR: nb.float64, BB: nb.float64) -> tuple[nb.float64]:
         return -RR/2 + (BB + self.ATM), RR/2 + (BB + self.ATM)
@@ -119,6 +141,8 @@ class VolSmileDeltaSpace:
         bs.strike_lower = self.strike_lower
         bs.strike_upper = self.strike_upper
         bs.delta_tol = self.delta_tol
+        bs.delta_grad_eps = self.delta_grad_eps
+        
         return bs.strike_from_delta(
             Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)), 
             Delta(delta), 
