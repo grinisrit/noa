@@ -30,8 +30,7 @@ class BlackScholesCalc:
         
     def strike_from_delta(self, forward: Forward, delta: Delta, implied_vol: ImpliedVol) -> Strike:
         K_l = self.strike_lower*forward.S
-        K_r = self.strike_lower*forward.S
-
+        K_r = self.strike_upper*forward.S
         option_type = OptionType(delta.pv >= 0.)
         
         def g(K):
@@ -43,14 +42,13 @@ class BlackScholesCalc:
         assert g(K_l) * g(K_r) <= 0
         
         K = (K_l+K_r) / 2
-        
         epsilon = g(K)
         grad = g_prime(K)
         i = 0
         while abs(epsilon) > self.delta_tol and i < 10: 
-            if abs(grad) > 1e-6:
+            if abs(grad) > 1e-4:
                 K -= epsilon / grad
-                if K > K_r or K < K_l:
+                if K > K_r or K < K_l: 
                     K = (K_l + K_r) / 2
                     if g(K_l)*epsilon > 0:
                         K_l = K
@@ -63,7 +61,6 @@ class BlackScholesCalc:
                 else:
                     K_r = K
                 K = (K_l + K_r) / 2
-            
             epsilon = g(K)
             grad = g_prime(K)
             i += 1
@@ -82,7 +79,7 @@ class BlackScholesCalc:
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
         
-        assert g(sigma_l) * g(pv,sigma_r) <= 0
+        assert g(sigma_l) * g(sigma_r) <= 0
         
         sigma = (sigma_l + sigma_r) / 2
         epsilon = g(sigma)
@@ -120,7 +117,7 @@ class BlackScholesCalc:
     def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
         d1 = self._d1(forward, strike, implied_vol)
         return Delta(
-            normal_cdf(d1) if self.is_call else normal_cdf(d1) - 1.0
+            normal_cdf(d1) if option_type.is_call else normal_cdf(d1) - 1.0
         )
     
     def gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
