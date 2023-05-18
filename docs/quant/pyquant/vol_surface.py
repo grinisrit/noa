@@ -23,11 +23,11 @@ class Straddle:
     
 ])
 class RiskReversal:
-    def __init__(self, delta: Delta, implied_vol: ImpliedVol, tenor: Tenor):
+    def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
         assert delta.pv <=1
         assert delta.pv >= 0
         self.delta = delta.pv
-        self.sigma = implied_vol.sigma 
+        self.sigma = vol_quote.sigma 
         self.T = tenor.T
         
 @nb.experimental.jitclass([
@@ -36,11 +36,11 @@ class RiskReversal:
     ("T", nb.float64)
 ])
 class Butterfly:
-    def __init__(self, delta: Delta, implied_vol: ImpliedVol, tenor: Tenor):
+    def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
         assert delta.pv <=1
         assert delta.pv >= 0
         self.delta = delta.pv
-        self.sigma = implied_vol.sigma
+        self.sigma = vol_quote.sigma
         self.T = tenor.T
 
 
@@ -60,9 +60,10 @@ class VolSmileChain:
     
 
 @nb.experimental.jitclass([
+    ("T", nb.float64),
     ("S", nb.float64),
     ("r", nb.float64),
-    ("T", nb.float64),
+    ("f", nb.float64),
     ("ATM", nb.float64),
     ("RR25", nb.float64),
     ("BB25", nb.float64),
@@ -85,6 +86,7 @@ class VolSmileDeltaSpace:
         self.T = forward.T
         self.S = forward.S
         self.r = forward.r
+        self.f = forward.forward_rate().fv
 
         assert ATM.T == self.T
         self.ATM = ATM.sigma
@@ -133,7 +135,7 @@ class VolSmileDeltaSpace:
 
         strikes[0] = self._get_strike(ivs[0], -0.1)
         strikes[1] = self._get_strike(ivs[1], -0.25)
-        strikes[2] = self.forward.fv()
+        strikes[2] = self.f
         strikes[3] = self._get_strike(ivs[3], 0.25)
         strikes[4] = self._get_strike(ivs[4], 0.1)
         
@@ -163,13 +165,13 @@ class Straddles:
     
 ])
 class RiskReversals:
-    def __init__(self, delta: Delta, implied_vols: ImpliedVols, tenors: Tenors):
+    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, tenors: Tenors):
         assert delta.pv <=1
         assert delta.pv >= 0
-        assert implied_vols.data.shape == tenors.data.shape
+        assert volatility_quotes.data.shape == tenors.data.shape
         assert is_sorted(tenors.data)
         self.delta = delta.pv
-        self.sigma = implied_vols.data 
+        self.sigma = volatility_quotes.data 
         self.T = tenors.data  
 
 
@@ -179,13 +181,13 @@ class RiskReversals:
     ("T", nb.float64[:])
 ])
 class Butterflies:
-    def __init__(self, delta: Delta, implied_vols: ImpliedVols, tenors: Tenors):
+    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, tenors: Tenors):
         assert delta.pv <=1
         assert delta.pv >= 0
-        assert implied_vols.data.shape == tenors.data.shape
+        assert volatility_quotes.data.shape == tenors.data.shape
         assert is_sorted(tenors.data)
         self.delta = delta.pv
-        self.sigma = implied_vols.data 
+        self.sigma = volatility_quotes.data 
         self.T = tenors.data 
 
 
@@ -257,22 +259,22 @@ class VolSurface:
             ),
             RiskReversal(
                 Delta(.25),
-                ImpliedVol(self.RR25(T)),
+                VolatiltyQuote(self.RR25(T)),
                 tenor
             ),
             Butterfly(
                 Delta(.25),
-                ImpliedVol(self.BB25(T)),
+                VolatiltyQuote(self.BB25(T)),
                 tenor
             ),
             RiskReversal(
                 Delta(.1),
-                ImpliedVol(self.RR10(T)),
+                VolatiltyQuote(self.RR10(T)),
                 tenor
             ),
             Butterfly(
                 Delta(.1),
-                ImpliedVol(self.BB10(T)),
+                VolatiltyQuote(self.BB10(T)),
                 tenor
             )
         )

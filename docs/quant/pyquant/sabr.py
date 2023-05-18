@@ -175,9 +175,9 @@ class SABRCalc:
         )
 
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
-        K_l = self.strike_lower*forward.S
-        K_r = self.strike_lower*forward.S
         F = forward.forward_rate().fv
+        K_l = self.strike_lower*F
+        K_r = self.strike_upper*F
         T = forward.T
 
         bs = BlackScholesCalc()
@@ -187,13 +187,13 @@ class SABRCalc:
             return bs.delta(forward, Strike(K), self.implied_vol(forward, Strike(K), params), option_type).pv - delta.pv
 
         def g_prime(K): 
-            iv = self.implied_vol(forward, Strike(K), params).sigma
+            iv = self.implied_vol(forward, Strike(K), params)
             dsigma_dk = self._dsigma_dK(F, T, K, params)
             d1 = bs._d1(forward, Strike(K), iv)
             sigma = iv.sigma
             return np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2\
                                                    - forward.r*T*dsigma_dk/sigma**2 + T*dsigma_dk)
-    
+        
         assert g(K_l)*g(K_r) <= 0.
         
         K = (K_l + K_r) / 2
@@ -226,28 +226,31 @@ class SABRCalc:
 
     def delta_space(self, forward: Forward, params: SABRParams) -> VolSmileDeltaSpace:
         
-        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params)
+        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
 
         call25_K = self.strike_from_delta(forward, Delta(0.25), params) 
-        call25 = self.implied_vol(forward, call25_K, params)
+        call25 = self.implied_vol(forward, call25_K, params).sigma
 
         put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
-        put25 = self.implied_vol(forward, put25_K, params)
+        put25 = self.implied_vol(forward, put25_K, params).sigma
 
         call10_K = self.strike_from_delta(forward, Delta(0.1), params)
-        call10 = self.implied_vol(forward, call10_K, params)
+        call10 = self.implied_vol(forward, call10_K, params).sigma
 
         put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
-        put10 = self.implied_vol(forward, put10_K, params)
+        put10 = self.implied_vol(forward, put10_K, params).sigma
 
 
         return VolSmileDeltaSpace(
             forward,
-            Straddle(atm.sigma),
-            RiskReversal(Delta(0.25), call25.sigma - put25.sigma, Tenor(forward.T)),
-            Butterfly(Delta(0.25), 0.5*(call25.sigma + put25.sigma) - atm.sigma, Tenor(forward.T)),
-            RiskReversal(Delta(0.1), call10.sigma - put10.sigma, Tenor(forward.T)),
-            Butterfly(Delta(0.1), 0.5*(call10.sigma + put10.sigma) - atm.sigma, Tenor(forward.T))
+            Straddle(ImpliedVol(atm), Tenor(forward.T)),
+            RiskReversal(Delta(0.25), VolatilityQuote(call25 - put25), Tenor(forward.T)),
+            Butterfly(Delta(0.25), 
+                      VolatilityQuote(0.5*(call25 + put25) - atm), Tenor(forward.T)),
+            RiskReversal(Delta(0.1), 
+                         VolatilityQuote(call10 - put10), Tenor(forward.T)),
+            Butterfly(Delta(0.1), 
+                      VolatilityQuote(0.5*(call10 + put10) - atm), Tenor(forward.T))
         )
 
     def _vol_sabr(

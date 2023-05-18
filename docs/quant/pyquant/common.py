@@ -11,6 +11,13 @@ class ImpliedVol:
     def __init__(self, sigma: nb.float64):
         assert sigma > 0
         self.sigma = sigma
+                
+@nb.experimental.jitclass([
+    ("sigma", nb.float64)
+])
+class VolatilityQuote:
+    def __init__(self, sigma: nb.float64):
+        self.sigma = sigma
 
 
 @nb.experimental.jitclass([
@@ -20,6 +27,14 @@ class ImpliedVols:
     def __init__(self, sigmas: nb.float64[:]):
         assert np.all(sigmas >= 0.)
         self.data = sigmas
+   
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class VolatilityQuotes:
+    def __init__(self, sigma: nb.float64):
+        self.data = data
 
 
 @nb.experimental.jitclass([
