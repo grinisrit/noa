@@ -19,7 +19,6 @@ from .common import *
     ("delta_tol", nb.float64)
 ])
 class BlackScholesCalc:
-
     def __init__(self):
         self.tol = 10**-6
         self.sigma_lower = 10**-3

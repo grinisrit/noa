@@ -133,7 +133,7 @@ class SABRCalc:
             result_x = x
             result_error = F
 
-            for i in range(self._num_iter):
+            for i in range(self.num_iter):
                 multipl = J @ J.T
                 I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
                 dx = np.linalg.solve(mu * I + multipl, J @ res)
@@ -154,7 +154,7 @@ class SABRCalc:
             return result_x, result_error
 
         self.cached_params, self.calibration_error \
-            = levenberg_marquardt(500, get_residuals, clip_params, self.cached_params)
+            = levenberg_marquardt(get_residuals, clip_params, self.cached_params)
         
         return SABRParams(
             Volatility(self.cached_params[0]),
@@ -373,7 +373,7 @@ class SABRCalc:
                     / (sqrt * (rho - 1) * (sqrt - rho + z) * epsilon**2)
                 )
 
-            sig_alpha = dI_B_0_dalpha * (1 + I_H * T) + dI_H_1_dalpha * I_B * T T
+            sig_alpha = dI_B_0_dalpha * (1 + I_H * T) + dI_H_1_dalpha * I_B * T
             sig_v = dI_B_0_dv * (1 + I_H * T) + dI_h_v * I_B * T
             sig_rho = dI_B_0_drho * (1 + I_H * T) + dI_H_rho * I_B * T
 

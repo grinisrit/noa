@@ -2,7 +2,6 @@ import numpy as np
 import numba as nb
 from scipy.interpolate import CubicSpline
 
-
 from .common import *
 from .black_scholes import *
 
@@ -61,16 +60,17 @@ class VolSmileChain:
     
 
 @nb.experimental.jitclass([
-    ("forward", Forward),
-    ("ATM", Straddle),
-    ("RR25", RiskReversal),
-    ("BB25", Butterfly),
-    ("RR10", RiskReversal),
-    ("BB10", Butterfly),
-    ("tol", nb.float64),
-    ("upper_strike", nb.float64),
-    ("lower_strike", nb.float64),
-    
+    ("S", nb.float64),
+    ("r", nb.float64),
+    ("T", nb.float64),
+    ("ATM", nb.float64),
+    ("RR25", nb.float64),
+    ("BB25", nb.float64),
+    ("RR10", nb.float64),
+    ("BB10", nb.float64),
+    ("strike_lower", nb.float64),
+    ("strike_upper", nb.float64),
+    ("delta_tol", nb.float64)
 ]) 
 class VolSmileDeltaSpace:
     def __init__(
@@ -82,54 +82,63 @@ class VolSmileDeltaSpace:
         RR10: RiskReversal, 
         BB10: Butterfly
     ):
-        self.forward = forward
+        self.T = forward.T
+        self.S = forward.S
+        self.r = forward.r
 
-        assert ATM.T == forward.T
-        self.ATM = ATM
+        assert ATM.T == self.T
+        self.ATM = ATM.sigma
 
         assert RR25.delta == 0.25
-        assert RR25.T == forward.T
-        self.RR25 = RR25 
+        assert RR25.T == self.T
+        self.RR25 = RR25.sigma 
 
         assert BB25.delta == 0.25
-        assert BB25.T == forward.T
-        self.BB25 = BB25
+        assert BB25.T == self.T
+        self.BB25 = BB25.sigma
 
         assert RR10.delta == 0.1
-        assert RR10.T == forward.T
-        self.RR10 = RR10
+        assert RR10.T == self.T
+        self.RR10 = RR10.sigma
 
         assert BB10.delta == 0.1
-        assert BB10.T == forward.T
-        self.BB10 = BB10
+        assert BB10.T == self.T
+        self.BB10 = BB10.sigma
+        
+        self.strike_lower = 0.1
+        self.strike_upper = 10.
+        self.delta_tol = 10**-12
 
-        self.upper_strike = 100*self.forward.fv()
-        self.lower_strike = 0.01*self.forward.fv()
-
-    def _implied_vols(self, RR: RiskReversal, BB: Butterfly) -> tuple[nb.float64]:
-        assert RR.delta.pv == BB.delta.pv
-        return -RR.iv.sigma/2 + (BB.sigma + self.ATM.sigma), RR.sigma/2 + (BB.sigma + self.ATM.sigma)
+    def _implied_vols(self, RR: nb.float64, BB: nb.float64) -> tuple[nb.float64]:
+        return -RR/2 + (BB + self.ATM), RR/2 + (BB + self.ATM)
     
     def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
-        return BlackScholesCalc().strike_from_delta(
-            self.forward, Delta(delta), ImpliedVol(sigma)).K
+        bs = BlackScholesCalc()
+        bs.strike_lower = self.strike_lower
+        bs.strike_upper = self.strike_upper
+        bs.delta_tol = self.delta_tol
+        return bs.strike_from_delta(
+            Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)), 
+            Delta(delta), 
+            ImpliedVol(sigma)
+        ).K
 
     def to_chain_space(self):
         ivs = np.zeros(5, dtype=np.float64)
         strikes = np.zeros(5, dtype=np.float64)
         
-        ivs[2] = self.ATM.sigma     
+        ivs[2] = self.ATM     
         ivs[1], ivs[3] = self._implied_vols(self.RR25, self.BB25)
         ivs[0], ivs[4] = self._implied_vols(self.RR10, self.BB10)
 
-        strikes[0] = self._get_strike(ivs[0], -self.BB10.delta)
-        strikes[1] = self._get_strike(ivs[1], -self.BB25.delta)
+        strikes[0] = self._get_strike(ivs[0], -0.1)
+        strikes[1] = self._get_strike(ivs[1], -0.25)
         strikes[2] = self.forward.fv()
-        strikes[0] = self._get_strike(ivs[0], self.RR25.delta)
-        strikes[0] = self._get_strike(ivs[0], self.BB25.delta)
+        strikes[3] = self._get_strike(ivs[3], 0.25)
+        strikes[4] = self._get_strike(ivs[4], 0.1)
         
         return VolSmileChain(
-            self.forward,
+            Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)),
             Strikes(strikes),
             ImpliedVols(ivs)
         )   
