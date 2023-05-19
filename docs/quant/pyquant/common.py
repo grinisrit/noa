@@ -33,8 +33,8 @@ class ImpliedVols:
     ("data", nb.float64[:])
 ])
 class VolatilityQuotes:
-    def __init__(self, sigma: nb.float64):
-        self.data = data
+    def __init__(self, sigmas: nb.float64):
+        self.data = sigmas
 
 
 @nb.experimental.jitclass([

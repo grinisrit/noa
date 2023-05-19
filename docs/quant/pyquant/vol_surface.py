@@ -283,22 +283,22 @@ class VolSurface:
             ),
             RiskReversal(
                 Delta(.25),
-                VolatiltyQuote(self.RR25(T)),
+                VolatilityQuote(self.RR25(T)),
                 tenor
             ),
             Butterfly(
                 Delta(.25),
-                VolatiltyQuote(self.BB25(T)),
+                VolatilityQuote(self.BB25(T)),
                 tenor
             ),
             RiskReversal(
                 Delta(.1),
-                VolatiltyQuote(self.RR10(T)),
+                VolatilityQuote(self.RR10(T)),
                 tenor
             ),
             Butterfly(
                 Delta(.1),
-                VolatiltyQuote(self.BB10(T)),
+                VolatilityQuote(self.BB10(T)),
                 tenor
             )
         )
