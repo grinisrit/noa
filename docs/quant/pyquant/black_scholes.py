@@ -37,10 +37,10 @@ class BlackScholesCalc:
         option_type = OptionType(delta.pv >= 0.)
         
         def g(K):
-            return self.delta(forward, Strike(K), implied_vol, option_type).pv - delta.pv
+            return BlackScholesCalc.delta(forward, Strike(K), implied_vol, option_type).pv - delta.pv
 
         def g_prime(K):
-            return self._dDelta_dK(forward, Strike(K), implied_vol)
+            return BlackScholesCalc._dDelta_dK(forward, Strike(K), implied_vol)
         
         assert g(K_l) * g(K_r) <= 0
         
@@ -73,10 +73,10 @@ class BlackScholesCalc:
         pv = premium.pv
 
         def g(sigma):
-            return pv - self.premium(forward, strike, ImpliedVol(sigma), option_type).pv
+            return pv - BlackScholesCalc.premium(forward, strike, ImpliedVol(sigma), option_type).pv
 
         def g_prime(sigma):
-            return -self.vega(forward, strike, ImpliedVol(sigma)).pv 
+            return -BlackScholesCalc.vega(forward, strike, ImpliedVol(sigma)).pv 
         
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
@@ -107,55 +107,64 @@ class BlackScholesCalc:
             grad = g_prime(sigma) 
 
         return ImpliedVol(sigma)
-       
-    def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Premium:
+    
+    @staticmethod
+    def premium(forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Premium:
         pm = 1 if option_type.is_call else -1
-        d1 = self._d1(forward, strike, implied_vol)
-        d2 = self._d2(d1, forward, implied_vol)
+        d1 = BlackScholesCalc._d1(forward, strike, implied_vol)
+        d2 = BlackScholesCalc._d2(d1, forward, implied_vol)
         return Premium(
             pm * forward.S * normal_cdf(pm * d1) - pm * strike.K * \
             np.exp(-forward.r * forward.T) * normal_cdf(pm * d2)
         )
     
-    def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
-        d1 = self._d1(forward, strike, implied_vol)
+    @staticmethod
+    def delta(forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
+        d1 = BlackScholesCalc._d1(forward, strike, implied_vol)
         return Delta(
             normal_cdf(d1) if option_type.is_call else normal_cdf(d1) - 1.0
         )
     
-    def gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
-        d1 = self._d1(forward, strike, implied_vol) 
+    @staticmethod
+    def gamma(forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
+        d1 = BlackScholesCalc._d1(forward, strike, implied_vol) 
         return Gamma(
             normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
         )
     
-    def vega(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vega:
+    @staticmethod
+    def vega(forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vega:
         return Vega(
-            forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
+            forward.S * np.sqrt(forward.T) * normal_pdf(BlackScholesCalc._d1(forward, strike, implied_vol))
         )
     
-    def vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vanna:
-        d2 = self._d2(self._d1(forward, strike, implied_vol), forward, implied_vol)
+    @staticmethod
+    def vanna(forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vanna:
+        d2 = BlackScholesCalc._d2(BlackScholesCalc._d1(forward, strike, implied_vol), forward, implied_vol)
         return Vanna(
-            self.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
+            BlackScholesCalc.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
         )
     
-    def volga(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Volga:
-        d1 = self._d1(forward, strike, implied_vol)
-        d2 = self._d2(d1, forward, implied_vol)
+    @staticmethod
+    def volga(forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Volga:
+        d1 = BlackScholesCalc._d1(forward, strike, implied_vol)
+        d2 = BlackScholesCalc._d2(d1, forward, implied_vol)
         return Volga(
-            self.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
+            BlackScholesCalc.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
         )
     
-    def _d1(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
+    @staticmethod
+    def _d1(forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2)\
                * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))
         return d1
     
-    def _d2(self, d1: nb.float64, forward: Forward, implied_vol: ImpliedVol) -> nb.float64:
+    @staticmethod
+    def _d2(d1: nb.float64, forward: Forward, implied_vol: ImpliedVol) -> nb.float64:
         return d1 - implied_vol.sigma * np.sqrt(forward.T)
     
-    def _dDelta_dK(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
-        d1 = self._d1(forward, strike, implied_vol)
+    @staticmethod
+    def _dDelta_dK(forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
+        d1 = BlackScholesCalc._d1(forward, strike, implied_vol)
         return - normal_pdf(d1) / (strike.K * np.sqrt(forward.T) * implied_vol.sigma)
     

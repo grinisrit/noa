@@ -44,6 +44,13 @@ class Premium:
     def __init__(self, pv: nb.float64):
         self.pv = pv
 
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Premiums:
+    def __init__(self, pvs: nb.float64[:]):
+        self.data = pvs
+
 
 @nb.experimental.jitclass([
     ("S", nb.float64)
@@ -59,6 +66,15 @@ class Spot:
 class ForwardYield:
     def __init__(self, rate: nb.float64):
         self.r = rate
+
+
+@nb.experimental.jitclass([
+    ("pv", nb.float64)
+])
+class Numeraire:
+    def __init__(self, numeraire: nb.float64):
+        assert numeraire > 0
+        self.pv = numeraire
 
 
 @nb.experimental.jitclass([
@@ -127,6 +143,9 @@ class Forward:
         
     def forward_rate(self) -> ForwardRate:
         return ForwardRate(self.S * np.exp(self.r * self.T))
+    
+    def numeraire(self) -> Numeraire:
+        return Numeraire(np.exp(-self.r * self.T))
     
     @staticmethod
     def from_forward_rate(spot: Spot, forward_rate: ForwardRate, tenor: Tenor):
@@ -206,6 +225,13 @@ class Gamma:
     def __init__(self, gamma: nb.float64):
         self.pv = gamma
 
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Gammas:
+    def __init__(self, gammas: nb.float64[:]):
+        self.data = gammas
+
         
 @nb.experimental.jitclass([
     ("pv", nb.float64)
@@ -213,6 +239,42 @@ class Gamma:
 class Vega:
     def __init__(self, vega: nb.float64):
         self.pv = vega
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Vegas:
+    def __init__(self, vegas: nb.float64):
+        self.data = vegas
+
+@nb.experimental.jitclass([
+    ("pv", nb.float64)
+])
+class Rega:
+    def __init__(self, rega: nb.float64):
+        self.pv = rega
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Regas:
+    def __init__(self, regas: nb.float64):
+        self.data = regas
+
+
+@nb.experimental.jitclass([
+    ("pv", nb.float64)
+])
+class Sega:
+    def __init__(self, sega: nb.float64):
+        self.pv = sega
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Segas:
+    def __init__(self, segas: nb.float64):
+        self.data = segas
 
 
 @nb.experimental.jitclass([
@@ -222,6 +284,13 @@ class Vanna:
     def __init__(self, vanna: nb.float64):
         self.pv = vanna
 
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Vannas:
+    def __init__(self, vannas: nb.float64[:]):
+        self.data = vannas
+
 
 @nb.experimental.jitclass([
     ("pv", nb.float64)
@@ -230,4 +299,10 @@ class Volga:
     def __init__(self, volga: nb.float64):
         self.pv = volga
 
-     
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Volgas:
+    def __init__(self, volgas: nb.float64[:]):
+        self.data = volgas
+   

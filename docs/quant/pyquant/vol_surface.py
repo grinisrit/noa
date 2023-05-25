@@ -15,7 +15,6 @@ class Straddle:
         self.sigma = implied_vol.sigma 
         self.T = tenor.T
 
-
 @nb.experimental.jitclass([
     ("delta", nb.float64),
     ("sigma", nb.float64),
@@ -26,7 +25,7 @@ class RiskReversal:
     def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
         assert delta.pv <=1
         assert delta.pv >= 0
-        self.delta = delta.pv
+        BlackScholesCalc.delta = delta.pv
         self.sigma = vol_quote.sigma 
         self.T = tenor.T
         
@@ -39,7 +38,7 @@ class Butterfly:
     def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
         assert delta.pv <=1
         assert delta.pv >= 0
-        self.delta = delta.pv
+        BlackScholesCalc.delta = delta.pv
         self.sigma = vol_quote.sigma
         self.T = tenor.T
 
@@ -62,22 +61,46 @@ class VolSmileChain:
         self.f = forward.forward_rate().fv
 
         self.sigmas = implied_vols.data 
-        self.strikes = strikes.data 
+        self.strikes = strikes.data
+
+    def premiums(self) -> Premiums:
+        res = np.zeros_like(self.sigmas)
+        forward = Forward(self.S, self.r, self.T)
+        n = len(self.sigmas)
+        for i in range(n):
+            K = self.strikes[i]
+            res[i] = BlackScholesCalc.premium(forward, Strike(K), ImpliedVol(self.sigmas[i]), OptionType(K >= self.f)).pv
+        return Premiums(res)
 
     def deltas(self) -> Deltas:
-        bs_calc = BlackScholesCalc()
         res = np.zeros_like(self.strikes)
         n = len(self.strikes)
         forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
         for i in range(n):
-            res[i] = bs_calc.delta(
+            res[i] = BlackScholesCalc.delta(
                 forward,
                 Strike(self.strikes[i]),
                 ImpliedVol(self.sigmas[i]),
                 OptionType(self.strikes[i] >= self.f)
             ).pv 
-        return Deltas(res)                
+        return Deltas(res) 
     
+    
+@nb.experimental.jitclass([
+    ("ATM", nb.float64),
+    ("RR25", nb.float64),
+    ("BB25", nb.float64),
+    ("RR10", nb.float64),
+    ("BB10", nb.float64)
+])  
+class PremiumsDeltaSpace:
+    def __init__(self):
+        self.ATM = 0.
+        self.RR25 = 0.
+        self.BB25 = 0.
+        self.RR10 = 0.
+        self.BB10 = 0.
+
 
 @nb.experimental.jitclass([
     ("T", nb.float64),
@@ -167,7 +190,20 @@ class VolSmileDeltaSpace:
             Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)),
             Strikes(strikes),
             ImpliedVols(ivs)
-        )   
+        ) 
+
+    def premiums(self):
+        chain = self.to_chain_space()
+        vanilla_premiums = chain.premiums().data
+        res = PremiumsDeltaSpace()
+        res.ATM = vanilla_premiums[2]
+
+        res.RR25 = vanilla_premiums[3] - vanilla_premiums[1]
+        res.BB25 = 0.5*(vanilla_premiums[3] + vanilla_premiums[1]) - res.ATM
+        res.RR10 = vanilla_premiums[4] - vanilla_premiums[0]
+        self.BB10 = 0.5*(vanilla_premiums[4] + vanilla_premiums[0]) - res.ATM
+
+        return res
 
 
 @nb.experimental.jitclass([

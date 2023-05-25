@@ -102,7 +102,7 @@ class SABRCalc:
         
         def get_residuals(params):
             J = np.stack( 
-                self._jacobian_sabr(
+                SABRCalc._jacobian_sabr(
                     forward,
                     tenor,
                     strikes,
@@ -110,7 +110,7 @@ class SABRCalc:
                     beta
                 )
             )
-            iv = self._vol_sabr(
+            iv = SABRCalc._vol_sabr(
                 forward,
                 tenor,
                 strikes,
@@ -164,34 +164,52 @@ class SABRCalc:
             VolOfVol(self.cached_params[2]),
             backbone
         )
-        
-    def implied_vol(self, forward: Forward, strike: Strike, params: SABRParams) -> ImpliedVol:
+
+    @staticmethod  
+    def implied_vol(forward: Forward, strike: Strike, params: SABRParams) -> ImpliedVol:
         return ImpliedVol(
-            self._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
+            SABRCalc._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
         )
     
-
-    def implied_vols(self, forward: Forward, strikes: Strikes, params: SABRParams) -> ImpliedVols:
+    @staticmethod
+    def implied_vols(forward: Forward, strikes: Strikes, params: SABRParams) -> ImpliedVols:
         return ImpliedVols(
-            self._vol_sabr(forward.forward_rate().fv, forward.T, strikes.data,  params.array(), params.beta)
+            SABRCalc._vol_sabr(forward.forward_rate().fv, forward.T, strikes.data,  params.array(), params.beta)
         )
+    
+    @staticmethod
+    def premium(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Premium:
+        sigma =\
+            SABRCalc._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
+        return BlackScholesCalc.premium(forward, strike, ImpliedVol(sigma), option_type)
+
+    @staticmethod    
+    def premiums(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Premiums:
+        f = forward.forward_rate().fv
+        sigmas =\
+            SABRCalc._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
+        Ks = strikes.data
+        res = np.zeros_like(sigmas)
+        n = len(sigmas)
+        for i in range(n):
+            K = Ks[i]
+            res[i] = BlackScholesCalc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(K >= f)).pv
+        return Premiums(res)
 
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
         F = forward.forward_rate().fv
         K_l = self.strike_lower*F
         K_r = self.strike_upper*F
         T = forward.T
-
-        bs = BlackScholesCalc()
         option_type = OptionType(delta.pv >= 0.)
 
         def g(K):
-            return bs.delta(forward, Strike(K), self.implied_vol(forward, Strike(K), params), option_type).pv - delta.pv
+            return BlackScholesCalc.delta(forward, Strike(K), SABRCalc.implied_vol(forward, Strike(K), params), option_type).pv - delta.pv
 
         def g_prime(K): 
-            iv = self.implied_vol(forward, Strike(K), params)
-            dsigma_dk = self._dsigma_dK(F, T, K, params)
-            d1 = bs._d1(forward, Strike(K), iv)
+            iv = SABRCalc.implied_vol(forward, Strike(K), params)
+            dsigma_dk = SABRCalc._dsigma_dK(F, T, K, params)
+            d1 = BlackScholesCalc._d1(forward, Strike(K), iv)
             sigma = iv.sigma
             return np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2\
                                                    - forward.r*T*dsigma_dk/sigma**2 + T*dsigma_dk)
@@ -226,19 +244,19 @@ class SABRCalc:
 
     def delta_space(self, forward: Forward, params: SABRParams) -> VolSmileDeltaSpace:
         
-        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
+        atm = SABRCalc.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
 
         call25_K = self.strike_from_delta(forward, Delta(0.25), params) 
-        call25 = self.implied_vol(forward, call25_K, params).sigma
+        call25 = SABRCalc.implied_vol(forward, call25_K, params).sigma
 
         put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
-        put25 = self.implied_vol(forward, put25_K, params).sigma
+        put25 = SABRCalc.implied_vol(forward, put25_K, params).sigma
 
         call10_K = self.strike_from_delta(forward, Delta(0.1), params)
-        call10 = self.implied_vol(forward, call10_K, params).sigma
+        call10 = SABRCalc.implied_vol(forward, call10_K, params).sigma
        
         put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
-        put10 = self.implied_vol(forward, put10_K, params).sigma
+        put10 = SABRCalc.implied_vol(forward, put10_K, params).sigma
 
 
         return VolSmileDeltaSpace(
@@ -252,9 +270,397 @@ class SABRCalc:
             Butterfly(Delta(0.1), 
                       VolatilityQuote(0.5*(call10 + put10) - atm), Tenor(forward.T))
         )
+    
+    @staticmethod
+    def delta(forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Delta:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
 
+        delta_bsm = BlackScholesCalc.delta(forward, strike, sigma, option_type).pv
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[0][0]
+        
+        return Delta(
+            delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+        )
+
+    @staticmethod    
+    def deltas(forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+        delta_bsm = np.zeros_like(sigmas)
+        vega_bsm = np.zeros_like(sigmas)
+        dsigma_df = np.zeros_like(sigmas)
+
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            delta_bsm[i] = BlackScholesCalc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(K>=F)).pv
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+
+            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[0] 
+        return Deltas(
+            delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+        )
+    
+    @staticmethod 
+    def gamma(forward: Forward, strike: Strike, params: SABRParams) -> Gamma:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
+
+        gamma_bsm = BlackScholesCalc.gamma(forward, strike, sigma).pv
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        vanna_bsm = BlackScholesCalc.vanna(forward, strike, sigma).pv
+        volga_bsm = BlackScholesCalc.volga(forward, strike, sigma).pv
+                
+        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_df2 = SABRCalc._d2_sigma_df2(F, forward.T, strike.K, params)
+        d2_sigma_dalpha_df = SABRCalc._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[0][0]
+
+        sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
+        return Gamma(
+            gamma_bsm
+            + (2/D) * vanna_bsm * sticky_component
+            + (volga_bsm / (D**2)) * sticky_component**2
+            + (vega_bsm / (D**2)) 
+            * (
+                d2_sigma_df2
+                + d2_sigma_dalpha_df * params.rho * params.v / F**params.beta
+                - dsigma_dalpha * params.beta * params.rho * params.v / F ** (params.beta + 1)
+            )
+        )
+    
+    @staticmethod 
+    def gammas(forward: Forward, strikes: Strikes, params: SABRParams) -> Gammas:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+
+        gamma_bsm = np.zeros_like(sigmas)
+        vega_bsm = np.zeros_like(sigmas)
+        vanna_bsm = np.zeros_like(sigmas)
+        volga_bsm = np.zeros_like(sigmas)
+
+        dsigma_df = np.zeros_like(sigmas)
+        d2_sigma_df2 = np.zeros_like(sigmas)
+        d2_sigma_dalpha_df = np.zeros_like(sigmas)
+
+
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            gamma_bsm[i] = BlackScholesCalc.gamma(forward, Strike(K), sigma).pv
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            vanna_bsm[i] = BlackScholesCalc.vanna(forward, Strike(K), sigma).pv
+            volga_bsm[i] = BlackScholesCalc.volga(forward, Strike(K), sigma).pv
+
+            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+            d2_sigma_df2[i] = SABRCalc._d2_sigma_df2(F, forward.T, K, params)
+            d2_sigma_dalpha_df[i] = SABRCalc._d2_sigma_dalpha_df(F, forward.T, K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[0]
+
+        sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
+        return Gammas(
+            gamma_bsm
+            + (2/D) * vanna_bsm * sticky_component
+            + (volga_bsm / (D**2)) * sticky_component**2
+            + (vega_bsm / (D**2)) 
+            * (
+                d2_sigma_df2
+                + d2_sigma_dalpha_df * params.rho * params.v / F**params.beta
+                - dsigma_dalpha * params.beta * params.rho * params.v / F ** (params.beta + 1)
+            )
+        )
+    
+    @staticmethod
+    def vega(forward: Forward, strike: Strike, params: SABRParams) -> Vega:
+        F = forward.forward_rate().fv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
+
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+
+        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[0][0]
+
+        return Vega(
+            vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
+        )
+    
+    @staticmethod    
+    def vegas(forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
+        F = forward.forward_rate().fv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+       
+        vega_bsm = np.zeros_like(sigmas)
+        dsigma_df = np.zeros_like(sigmas)
+
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[0] 
+        return Vegas(
+            vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
+        )
+    
+    @staticmethod
+    def rega(forward: Forward, strike: Strike, params: SABRParams) -> Rega:
+        F = forward.forward_rate().fv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
+
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+
+        dsigma_drho = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[1][0]
+
+        return Rega(
+            vega_bsm * dsigma_drho
+        )
+    
+    @staticmethod    
+    def regas(forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
+        F = forward.forward_rate().fv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+       
+        vega_bsm = np.zeros_like(sigmas)
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+
+        dsigma_drho = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[1] 
+        return Regas(
+            vega_bsm * dsigma_drho
+        )
+    
+    @staticmethod
+    def sega(forward: Forward, strike: Strike, params: SABRParams) -> Sega:
+        F = forward.forward_rate().fv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
+
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+
+        dsigma_dv = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[2][0]
+
+        return Sega(
+            vega_bsm * dsigma_dv
+        )
+    
+    @staticmethod    
+    def segas(forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
+        F = forward.forward_rate().fv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+       
+        vega_bsm = np.zeros_like(sigmas)
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+
+        dsigma_dv = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[2] 
+        return Segas(
+            vega_bsm * dsigma_dv
+        )
+    
+    @staticmethod 
+    def volga(forward: Forward, strike: Strike, params: SABRParams) -> Volga:
+        F = forward.forward_rate().fv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
+
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        volga_bsm = BlackScholesCalc.volga(forward, strike, sigma).pv
+                
+        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_dalpha2 = SABRCalc._d2_sigma_dalpha2(F, forward.T, strike.K, params)
+        d2_sigma_dalpha_df = SABRCalc._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[0][0]
+
+        return Volga(
+            volga_bsm * (
+                dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
+            ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
+        )
+    
+    @staticmethod 
+    def volgas(forward: Forward, strikes: Strikes, params: SABRParams) -> Volgas:
+        F = forward.forward_rate().fv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+
+        vega_bsm = np.zeros_like(sigmas)
+        volga_bsm = np.zeros_like(sigmas)
+
+        dsigma_df = np.zeros_like(sigmas)
+        d2_sigma_dalpha2 = np.zeros_like(sigmas)
+        d2_sigma_dalpha_df = np.zeros_like(sigmas)
+
+
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            volga_bsm[i] = BlackScholesCalc.volga(forward, Strike(K), sigma).pv
+
+            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+            d2_sigma_dalpha2[i] = SABRCalc._d2_sigma_dalpha2(F, forward.T, K, params)
+            d2_sigma_dalpha_df[i] = SABRCalc._d2_sigma_dalpha_df(F, forward.T, K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[0]
+
+        return Volgas(
+            volga_bsm * (
+                dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
+            ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
+        )
+    
+    @staticmethod 
+    def vanna(forward: Forward, strike: Strike, params: SABRParams) -> Vanna:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigma = SABRCalc.implied_vol(forward, strike, params)
+
+        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        vanna_bsm = BlackScholesCalc.vanna(forward, strike, sigma).pv
+        volga_bsm = BlackScholesCalc.volga(forward, strike, sigma).pv
+                
+        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_df2 = SABRCalc._d2_sigma_df2(F, forward.T, strike.K, params)
+        d2_sigma_dalpha_df = SABRCalc._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            np.array([strike.K]),
+            params.array(),
+            params.beta
+        )[0][0]
+
+        return Vanna(
+            (vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)) 
+            * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) 
+            + (vega_bsm/D) * (
+                d2_sigma_dalpha_df
+                + d2_sigma_df2 * params.rho * F**params.beta / params.v
+                + dsigma_df * params.beta * params.rho * F ** (params.beta - 1) / params.v
+            )
+        )
+    
+    @staticmethod 
+    def vannas(forward: Forward, strikes: Strikes, params: SABRParams) -> Vannas:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        Ks = strikes.data
+        n = len(sigmas)
+
+        vega_bsm = np.zeros_like(sigmas)
+        vanna_bsm = np.zeros_like(sigmas)
+        volga_bsm = np.zeros_like(sigmas)
+
+        dsigma_df = np.zeros_like(sigmas)
+        d2_sigma_df2 = np.zeros_like(sigmas)
+        d2_sigma_dalpha_df = np.zeros_like(sigmas)
+
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            vanna_bsm[i] = BlackScholesCalc.vanna(forward, Strike(K), sigma).pv
+            volga_bsm[i] = BlackScholesCalc.volga(forward, Strike(K), sigma).pv
+
+            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+            d2_sigma_df2[i] = SABRCalc._d2_sigma_df2(F, forward.T, K, params)
+            d2_sigma_dalpha_df[i] = SABRCalc._d2_sigma_dalpha_df(F, forward.T, K, params)
+
+        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[0]
+
+        return Vannas(
+            (vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)) 
+            * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) 
+            + (vega_bsm/D) * (
+                d2_sigma_dalpha_df
+                + d2_sigma_df2 * params.rho * F**params.beta / params.v
+                + dsigma_df * params.beta * params.rho * F ** (params.beta - 1) / params.v
+            )
+        )
+
+    
+    @staticmethod
     def _vol_sabr(
-        self,
         F: nb.float64,
         T: nb.float64,
         Ks: nb.float64[:],
@@ -290,14 +696,14 @@ class SABRCalc:
             sigmas[index] = sigma
         return sigmas
 
+    @staticmethod
     def _jacobian_sabr(
-        self,
         F: nb.float64,
         T: nb.float64,
         Ks: nb.float64[:],
         params: nb.float64[:],
         beta: nb.float64       
-    ) ->  tuple[nb.float64[:]]: 
+    ) -> tuple[nb.float64[:]]: 
         
         n = len(Ks)
         alpha, rho, v = params[0], params[1], params[2]
@@ -385,8 +791,9 @@ class SABRCalc:
             ddrho[index] = sig_rho
 
         return ddalpha, ddrho, ddv
-       
-    def _dsigma_dK(self, F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+    
+    @staticmethod
+    def _dsigma_dK(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
         x = np.log(F / K)
         alpha, rho, v = params.alpha, params.rho, params.v
         beta = params.beta
@@ -440,3 +847,365 @@ class SABRCalc:
 
         dsigma_dK = dI_B_0_dK * (1 + I_H_1 * T) + dI_H_1_dK * I_B_0 * T
         return dsigma_dK
+    
+    @staticmethod
+    def _dsigma_df(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+        alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
+        x = np.log(F / K)
+        if x == 0.0:
+            dI_B_0_dF = 0.0
+            I_B_0 = K ** (beta - 1) * alpha
+        elif v == 0.0:
+            dI_B_0_dF = (
+                alpha
+                * (beta - 1)
+                * (
+                    F * (K ** (1 - beta) - F ** (1 - beta))
+                    - F ** (2 - beta) * (beta - 1) * x
+                )
+                / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
+            )
+            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+        else:
+            if beta == 1.0:
+                z = v * x / alpha
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                dI_B_0_dF = (
+                    v * (alpha * sqrt * epsilon - v * x) / (alpha * F * sqrt * epsilon**2)
+                )
+            elif beta < 1.0:
+                z = v * (F ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                dI_B_0_dF = (
+                    v
+                    * (
+                        alpha * F * (-rho + z + sqrt) * sqrt * epsilon
+                        + F ** (2 - beta) * v * x * (rho - z - sqrt)
+                    )
+                    / (alpha * F**2 * (-rho + z + sqrt) * sqrt * epsilon**2)
+                )
+            I_B_0 = v * x / (epsilon)
+
+        I_H_1 = (
+            alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 24
+            + alpha * beta * rho * v * (K * F) ** (beta / 2 + -1 / 2) / 4
+            + v**2 * (2 - 3 * rho**2) / 24
+        )
+        dI_H_1_dF = alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 * (beta - 1) / (
+            24 * F
+        ) + alpha * beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) * (beta / 2 - 1 / 2) / (
+            4 * F
+        )
+
+        dsigma_df = dI_B_0_dF * (1 + I_H_1 * T) + dI_H_1_dF * I_B_0 * T
+        return dsigma_df
+    
+    @staticmethod
+    def _d2_sigma_dalpha_df(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+        x = np.log(F / K)
+        alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
+        if x == 0.0:
+            d2I_B_0_dalpha_df = 0.0
+            dI_B_0_dalpha = K ** (beta - 1)
+            I_B_0 = K ** (beta - 1) * alpha
+            dI_B_0_dF = 0.0
+        elif v == 0.0:
+            d2I_B_0_dalpha_df = -(F ** (1 - beta)) * x * (1 - beta) ** 2 / (
+                F * (-(K ** (1 - beta)) + F ** (1 - beta)) ** 2
+            ) + (1 - beta) / (F * (-(K ** (1 - beta)) + F ** (1 - beta)))
+            dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+            dI_B_0_dF = (
+                alpha
+                * (beta - 1)
+                * (
+                    F * (K ** (1 - beta) - F ** (1 - beta))
+                    - F ** (2 - beta) * (beta - 1) * x
+                )
+                / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
+            )
+        else:
+            if beta == 1.0:
+                z = v * x / alpha
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                d2I_B_0_dalpha_df = (
+                    v
+                    * (
+                        sqrt**2 * alpha * z * epsilon
+                        + sqrt**2 * v * x * epsilon
+                        - 2 * sqrt * v * x * z
+                        + rho * v * x * z * epsilon
+                        - v * x * z**2 * epsilon
+                    )
+                    / (sqrt**3 * alpha**2 * F * epsilon**3)
+                )
+                dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+                dI_B_0_dF = (
+                    v * (alpha * sqrt * epsilon - v * x) / (alpha * F * sqrt * epsilon**2)
+                )
+            elif beta < 1.0:
+                z = v * (F ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                d2I_B_0_dalpha_df = (
+                    v
+                    * (
+                        sqrt**2 * alpha * F**beta * z * epsilon
+                        + sqrt**2 * F * v * x * epsilon
+                        - 2 * sqrt * F * v * x * z
+                        + F * rho * v * x * z * epsilon
+                        - F * v * x * z**2 * epsilon
+                    )
+                    / (sqrt**3 * alpha**2 * F * F**beta * epsilon**3)
+                )
+                dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+                dI_B_0_dF = (
+                    v
+                    * (
+                        alpha * F * (-rho + z + sqrt) * sqrt * epsilon
+                        + F ** (2 - beta) * v * x * (rho - z - sqrt)
+                    )
+                    / (alpha * F**2 * (-rho + z + sqrt) * sqrt * epsilon**2)
+                )
+            I_B_0 = v * x / (epsilon)
+
+        I_H_1 = (
+            alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 24
+            + alpha * beta * rho * v * (K * F) ** (beta / 2 + -1 / 2) / 4
+            + v**2 * (2 - 3 * rho**2) / 24
+        )
+        dI_H_1_dF = alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 * (beta - 1) / (
+            24 * F
+        ) + alpha * beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) * (beta / 2 - 1 / 2) / (
+            4 * F
+        )
+        dI_H_1_dalpha = (
+            alpha * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 12
+            + beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) / 4
+        )
+        d2I_H_1_dalpha_df = alpha * (K * F) ** (beta - 1) * (1 - beta) ** 2 * (beta - 1) / (
+            12 * F
+        ) + beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) * (beta / 2 - 1 / 2) / (4 * F)
+
+        d2_sigma_dalpha_df2 = (
+            d2I_B_0_dalpha_df * (1 + I_H_1 * T)
+            + dI_B_0_dalpha * dI_H_1_dF * T
+            + d2I_H_1_dalpha_df * I_B_0 * T
+            + dI_H_1_dalpha * dI_B_0_dF * T
+        )
+        return d2_sigma_dalpha_df2
+
+    @staticmethod
+    def _d2_sigma_df2(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+        alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
+        x = np.log(F / K)
+        if x == 0.0:
+            I_B_0 = K ** (beta - 1) * alpha
+            d2I_B_0_d2f = 0.0
+            dI_B_0_dF = 0.0
+        elif v == 0.0:
+            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+            d2I_B_0_d2f = (
+                alpha
+                * (beta - 1)
+                * (
+                    -(F**4) * (K ** (1 - beta) - F ** (1 - beta)) ** 2
+                    + F ** (5 - beta)
+                    * (K ** (1 - beta) - F ** (1 - beta))
+                    * (beta - 1)
+                    * (x * (beta - 1) + x - 2)
+                    + 2 * F ** (6 - 2 * beta) * x * (beta - 1) ** 2
+                )
+                / (F**6 * (K ** (1 - beta) - F ** (1 - beta)) ** 3)
+            )
+            dI_B_0_dF = (
+                alpha
+                * (beta - 1)
+                * (
+                    F * (K ** (1 - beta) - F ** (1 - beta))
+                    - F ** (2 - beta) * (beta - 1) * x
+                )
+                / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
+            )
+        else:
+            if beta == 1.0:
+                z = v * x / alpha
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                d2I_B_0_d2f = (
+                    v
+                    * (
+                        -(sqrt**3) * alpha**2 * epsilon**2
+                        + sqrt**2 * alpha * v * x * epsilon
+                        - 2 * sqrt**2 * alpha * v * epsilon
+                        + 2 * sqrt * v**2 * x
+                        - rho * v**2 * x * epsilon
+                        + v**2 * x * z * epsilon
+                    )
+                    / (sqrt**3 * alpha**2 * F**2 * epsilon**3)
+                )
+                dI_B_0_dF = (
+                    v * (alpha * sqrt * epsilon - v * x) / (alpha * F * sqrt * epsilon**2)
+                )
+            elif beta < 1.0:
+                z = v * (F ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                d2I_B_0_d2f = (
+                    v
+                    * (
+                        -(sqrt**3) * alpha**2 * F * (sqrt - rho + z) * epsilon**2
+                        - 2
+                        * sqrt**2
+                        * alpha
+                        * F ** (2 - beta)
+                        * v
+                        * (sqrt - rho + z)
+                        * epsilon
+                        + sqrt
+                        * F ** (3 - 2 * beta)
+                        * v**2
+                        * x
+                        * (sqrt - rho + z)
+                        * epsilon
+                        + 2 * sqrt * F ** (3 - 2 * beta) * v**2 * x * (sqrt - rho + z)
+                        + F
+                        * v
+                        * x
+                        * (
+                            sqrt**3 * alpha * beta * F ** (1 - beta)
+                            + sqrt**2
+                            * (
+                                alpha * F ** (1 - beta) * (-rho * (beta - 1) - rho + z)
+                                - v
+                                * (
+                                    F ** (1 - beta) * (-(K ** (1 - beta)) + F ** (1 - beta))
+                                    + F ** (2 - 2 * beta)
+                                )
+                            )
+                            + F ** (2 - 2 * beta) * v * (rho - z) ** 2
+                        )
+                        * epsilon
+                    )
+                    / (sqrt**3 * alpha**2 * F**3 * (sqrt - rho + z) * epsilon**3)
+                )
+                dI_B_0_dF = (
+                    v
+                    * (sqrt * alpha * F**beta * epsilon - F * v * x)
+                    / (sqrt * alpha * F * F**beta * epsilon**2)
+                )
+            I_B_0 = v * x / (epsilon)
+
+        I_H_1 = (
+            alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 24
+            + alpha * beta * rho * v * (K * F) ** (beta / 2 + -1 / 2) / 4
+            + v**2 * (2 - 3 * rho**2) / 24
+        )
+
+        dI_H_1_dF = alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 * (beta - 1) / (
+            24 * F
+        ) + alpha * beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) * (beta / 2 - 1 / 2) / (
+            4 * F
+        )
+        d2I_H_1_d2f = (
+            alpha**2
+            * (K * F) ** (beta - 1)
+            * (1 - beta) ** 2
+            * (beta - 1) ** 2
+            / (24 * F**2)
+            - alpha**2
+            * (K * F) ** (beta - 1)
+            * (1 - beta) ** 2
+            * (beta - 1)
+            / (24 * F**2)
+            + alpha
+            * beta
+            * rho
+            * v
+            * (K * F) ** (beta / 2 + -1 / 2)
+            * (beta / 2 - 1 / 2) ** 2
+            / (4 * F**2)
+            - alpha
+            * beta
+            * rho
+            * v
+            * (K * F) ** (beta / 2 - 1 / 2)
+            * (beta / 2 - 1 / 2)
+            / (4 * F**2)
+        )
+        d2_sigma_df2 = d2I_B_0_d2f + T * (
+            d2I_B_0_d2f * I_H_1 + d2I_H_1_d2f * I_B_0 + 2 * dI_B_0_dF * dI_H_1_dF
+        )
+        return d2_sigma_df2
+
+    @staticmethod
+    def _d2_sigma_dalpha2(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+        alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
+        x = np.log(F / K)
+        if x == 0.0:
+            I_B_0 = K ** (beta - 1) * alpha
+            dI_B_0_dalpha = K ** (beta - 1)
+            d2I_B_0_dalpha2 = 0.0
+        elif v == 0.0:
+            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+            dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+            d2I_B_0_dalpha2 = 0.0
+        else:
+            if beta == 1.0:
+                z = v * x / alpha
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+                d2I_B_0_dalpha2 = (
+                    v
+                    * x
+                    * z
+                    * (
+                        -2 * sqrt**2 * epsilon
+                        + 2 * sqrt * z
+                        - rho * z * epsilon
+                        + z**2 * epsilon
+                    )
+                    / (sqrt**3 * alpha**2 * epsilon**3)
+                )
+            elif beta < 1.0:
+                z = v * (F ** (1 - beta) - K ** (1 - beta)) / (alpha * (1 - beta))
+                sqrt = np.sqrt(1 - 2 * rho * z + z**2)
+                epsilon = np.log((-sqrt + rho - z) / (rho - 1))
+                dI_B_0_dalpha = v * x * z / (alpha * sqrt * epsilon**2)
+                d2I_B_0_dalpha2 = (
+                    v
+                    * x
+                    * z
+                    * (
+                        -2 * sqrt**2 * epsilon
+                        + 2 * sqrt * z
+                        - rho * z * epsilon
+                        + z**2 * epsilon
+                    )
+                    / (sqrt**3 * alpha**2 * epsilon**3)
+                )
+            I_B_0 = v * x / (epsilon)
+
+        I_H_1 = (
+            alpha**2 * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 24
+            + alpha * beta * rho * v * (K * F) ** (beta / 2 + -1 / 2) / 4
+            + v**2 * (2 - 3 * rho**2) / 24
+        )
+        dI_H_1_dalpha = (
+            alpha * (K * F) ** (beta - 1) * (1 - beta) ** 2 / 12
+            + beta * rho * v * (K * F) ** (beta / 2 - 1 / 2) / 4
+        )
+        d2I_H_1_d2alpha = (K * F) ** (beta - 1) * (1 - beta) ** 2 / 12
+
+        d2_sigma_dalpha2 = d2I_B_0_dalpha2 + T * (
+            d2I_B_0_dalpha2 * I_H_1
+            + d2I_H_1_d2alpha * I_B_0
+            + 2 * dI_B_0_dalpha * dI_H_1_dalpha
+        )
+        return d2_sigma_dalpha2
+
+    
