@@ -71,6 +71,8 @@ class SABRParams:
     ("delta_grad_eps", nb.float64)
 ])        
 class SABRCalc:
+    bs_calc: BSCalc
+
     def __init__(self):
         self.cached_params = np.array([1., -0.1, 0.0])
         self.calibration_error = 0.
@@ -80,6 +82,7 @@ class SABRCalc:
         self.strike_upper = 10.
         self.delta_tol = 10**-12
         self.delta_grad_eps = 1e-4
+        self.bs_calc = BSCalc()
 
     def update_cached_params(self, params: SABRParams):
         self.cached_params = params.array()
@@ -102,7 +105,7 @@ class SABRCalc:
         
         def get_residuals(params):
             J = np.stack( 
-                SABRCalc._jacobian_sabr(
+                self._jacobian_sabr(
                     forward,
                     tenor,
                     strikes,
@@ -110,7 +113,7 @@ class SABRCalc:
                     beta
                 )
             )
-            iv = SABRCalc._vol_sabr(
+            iv = self._vol_sabr(
                 forward,
                 tenor,
                 strikes,
@@ -164,36 +167,32 @@ class SABRCalc:
             VolOfVol(self.cached_params[2]),
             backbone
         )
-
-    @staticmethod  
-    def implied_vol(forward: Forward, strike: Strike, params: SABRParams) -> ImpliedVol:
+  
+    def implied_vol(self, forward: Forward, strike: Strike, params: SABRParams) -> ImpliedVol:
         return ImpliedVol(
-            SABRCalc._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
+            self._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
         )
     
-    @staticmethod
-    def implied_vols(forward: Forward, strikes: Strikes, params: SABRParams) -> ImpliedVols:
+    def implied_vols(self, forward: Forward, strikes: Strikes, params: SABRParams) -> ImpliedVols:
         return ImpliedVols(
-            SABRCalc._vol_sabr(forward.forward_rate().fv, forward.T, strikes.data,  params.array(), params.beta)
+            self._vol_sabr(forward.forward_rate().fv, forward.T, strikes.data,  params.array(), params.beta)
         )
     
-    @staticmethod
     def premium(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Premium:
         sigma =\
-            SABRCalc._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
-        return BlackScholesCalc.premium(forward, strike, ImpliedVol(sigma), option_type)
-
-    @staticmethod    
+            self._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
+        return self.bs_calc.premium(forward, strike, ImpliedVol(sigma), option_type)
+   
     def premiums(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Premiums:
         f = forward.forward_rate().fv
         sigmas =\
-            SABRCalc._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
+            self._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
         Ks = strikes.data
         res = np.zeros_like(sigmas)
         n = len(sigmas)
         for i in range(n):
             K = Ks[i]
-            res[i] = BlackScholesCalc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(K >= f)).pv
+            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(K >= f)).pv
         return Premiums(res)
 
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
@@ -204,12 +203,12 @@ class SABRCalc:
         option_type = OptionType(delta.pv >= 0.)
 
         def g(K):
-            return BlackScholesCalc.delta(forward, Strike(K), SABRCalc.implied_vol(forward, Strike(K), params), option_type).pv - delta.pv
+            return self.bs_calc.delta(forward, Strike(K), self.implied_vol(forward, Strike(K), params), option_type).pv - delta.pv
 
         def g_prime(K): 
-            iv = SABRCalc.implied_vol(forward, Strike(K), params)
-            dsigma_dk = SABRCalc._dsigma_dK(F, T, K, params)
-            d1 = BlackScholesCalc._d1(forward, Strike(K), iv)
+            iv = self.implied_vol(forward, Strike(K), params)
+            dsigma_dk = self._dsigma_dK(F, T, K, params)
+            d1 = self.bs_calc._d1(forward, Strike(K), iv)
             sigma = iv.sigma
             return np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2\
                                                    - forward.r*T*dsigma_dk/sigma**2 + T*dsigma_dk)
@@ -244,19 +243,19 @@ class SABRCalc:
 
     def delta_space(self, forward: Forward, params: SABRParams) -> VolSmileDeltaSpace:
         
-        atm = SABRCalc.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
+        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
 
         call25_K = self.strike_from_delta(forward, Delta(0.25), params) 
-        call25 = SABRCalc.implied_vol(forward, call25_K, params).sigma
+        call25 = self.implied_vol(forward, call25_K, params).sigma
 
         put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
-        put25 = SABRCalc.implied_vol(forward, put25_K, params).sigma
+        put25 = self.implied_vol(forward, put25_K, params).sigma
 
         call10_K = self.strike_from_delta(forward, Delta(0.1), params)
-        call10 = SABRCalc.implied_vol(forward, call10_K, params).sigma
+        call10 = self.implied_vol(forward, call10_K, params).sigma
        
         put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
-        put10 = SABRCalc.implied_vol(forward, put10_K, params).sigma
+        put10 = self.implied_vol(forward, put10_K, params).sigma
 
 
         return VolSmileDeltaSpace(
@@ -271,17 +270,16 @@ class SABRCalc:
                       VolatilityQuote(0.5*(call10 + put10) - atm), Tenor(forward.T))
         )
     
-    @staticmethod
-    def delta(forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Delta:
+    def delta(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Delta:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        delta_bsm = BlackScholesCalc.delta(forward, strike, sigma, option_type).pv
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
-        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+        delta_bsm = self.bs_calc.delta(forward, strike, sigma, option_type).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -290,12 +288,11 @@ class SABRCalc:
         return Delta(
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         )
-
-    @staticmethod    
-    def deltas(forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
+        
+    def deltas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
         delta_bsm = np.zeros_like(sigmas)
@@ -305,12 +302,12 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            delta_bsm[i] = BlackScholesCalc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(K>=F)).pv
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(K>=F)).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
 
-            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -319,22 +316,22 @@ class SABRCalc:
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         )
     
-    @staticmethod 
-    def gamma(forward: Forward, strike: Strike, params: SABRParams) -> Gamma:
+     
+    def gamma(self, forward: Forward, strike: Strike, params: SABRParams) -> Gamma:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        gamma_bsm = BlackScholesCalc.gamma(forward, strike, sigma).pv
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
-        vanna_bsm = BlackScholesCalc.vanna(forward, strike, sigma).pv
-        volga_bsm = BlackScholesCalc.volga(forward, strike, sigma).pv
+        gamma_bsm = self.bs_calc.gamma(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
+        volga_bsm = self.bs_calc.volga(forward, strike, sigma).pv
                 
-        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
-        d2_sigma_df2 = SABRCalc._d2_sigma_df2(F, forward.T, strike.K, params)
-        d2_sigma_dalpha_df = SABRCalc._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -353,11 +350,11 @@ class SABRCalc:
             )
         )
     
-    @staticmethod 
-    def gammas(forward: Forward, strikes: Strikes, params: SABRParams) -> Gammas:
+     
+    def gammas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Gammas:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
 
@@ -374,16 +371,16 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            gamma_bsm[i] = BlackScholesCalc.gamma(forward, Strike(K), sigma).pv
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
-            vanna_bsm[i] = BlackScholesCalc.vanna(forward, Strike(K), sigma).pv
-            volga_bsm[i] = BlackScholesCalc.volga(forward, Strike(K), sigma).pv
+            gamma_bsm[i] = self.bs_calc.gamma(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
+            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
 
-            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
-            d2_sigma_df2[i] = SABRCalc._d2_sigma_df2(F, forward.T, K, params)
-            d2_sigma_dalpha_df[i] = SABRCalc._d2_sigma_dalpha_df(F, forward.T, K, params)
+            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
+            d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
+            d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -402,16 +399,16 @@ class SABRCalc:
             )
         )
     
-    @staticmethod
-    def vega(forward: Forward, strike: Strike, params: SABRParams) -> Vega:
+    
+    def vega(self, forward: Forward, strike: Strike, params: SABRParams) -> Vega:
         F = forward.forward_rate().fv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
 
-        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -421,10 +418,10 @@ class SABRCalc:
             vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
         )
     
-    @staticmethod    
-    def vegas(forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
+        
+    def vegas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
         F = forward.forward_rate().fv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
        
@@ -434,10 +431,10 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
-            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -446,14 +443,14 @@ class SABRCalc:
             vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
         )
     
-    @staticmethod
-    def rega(forward: Forward, strike: Strike, params: SABRParams) -> Rega:
+    
+    def rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
         F = forward.forward_rate().fv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
 
-        dsigma_drho = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_drho = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -463,10 +460,10 @@ class SABRCalc:
             vega_bsm * dsigma_drho
         )
     
-    @staticmethod    
-    def regas(forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
+        
+    def regas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
         F = forward.forward_rate().fv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
        
@@ -474,9 +471,9 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
 
-        dsigma_drho = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_drho = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -485,14 +482,14 @@ class SABRCalc:
             vega_bsm * dsigma_drho
         )
     
-    @staticmethod
-    def sega(forward: Forward, strike: Strike, params: SABRParams) -> Sega:
+    
+    def sega(self, forward: Forward, strike: Strike, params: SABRParams) -> Sega:
         F = forward.forward_rate().fv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
 
-        dsigma_dv = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dv = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -502,10 +499,10 @@ class SABRCalc:
             vega_bsm * dsigma_dv
         )
     
-    @staticmethod    
-    def segas(forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
+        
+    def segas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
         F = forward.forward_rate().fv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
        
@@ -513,9 +510,9 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
 
-        dsigma_dv = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dv = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -524,19 +521,19 @@ class SABRCalc:
             vega_bsm * dsigma_dv
         )
     
-    @staticmethod 
-    def volga(forward: Forward, strike: Strike, params: SABRParams) -> Volga:
+     
+    def volga(self, forward: Forward, strike: Strike, params: SABRParams) -> Volga:
         F = forward.forward_rate().fv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
-        volga_bsm = BlackScholesCalc.volga(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        volga_bsm = self.bs_calc.volga(forward, strike, sigma).pv
                 
-        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
-        d2_sigma_dalpha2 = SABRCalc._d2_sigma_dalpha2(F, forward.T, strike.K, params)
-        d2_sigma_dalpha_df = SABRCalc._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_dalpha2 = self._d2_sigma_dalpha2(F, forward.T, strike.K, params)
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -548,10 +545,10 @@ class SABRCalc:
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
         )
     
-    @staticmethod 
-    def volgas(forward: Forward, strikes: Strikes, params: SABRParams) -> Volgas:
+     
+    def volgas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Volgas:
         F = forward.forward_rate().fv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
 
@@ -566,14 +563,14 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
-            volga_bsm[i] = BlackScholesCalc.volga(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
 
-            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
-            d2_sigma_dalpha2[i] = SABRCalc._d2_sigma_dalpha2(F, forward.T, K, params)
-            d2_sigma_dalpha_df[i] = SABRCalc._d2_sigma_dalpha_df(F, forward.T, K, params)
+            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
+            d2_sigma_dalpha2[i] = self._d2_sigma_dalpha2(F, forward.T, K, params)
+            d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -585,21 +582,21 @@ class SABRCalc:
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
         )
     
-    @staticmethod 
-    def vanna(forward: Forward, strike: Strike, params: SABRParams) -> Vanna:
+     
+    def vanna(self, forward: Forward, strike: Strike, params: SABRParams) -> Vanna:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigma = SABRCalc.implied_vol(forward, strike, params)
+        sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = BlackScholesCalc.vega(forward, strike, sigma).pv
-        vanna_bsm = BlackScholesCalc.vanna(forward, strike, sigma).pv
-        volga_bsm = BlackScholesCalc.volga(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
+        volga_bsm = self.bs_calc.volga(forward, strike, sigma).pv
                 
-        dsigma_df = SABRCalc._dsigma_df(F, forward.T, strike.K, params)
-        d2_sigma_df2 = SABRCalc._d2_sigma_df2(F, forward.T, strike.K, params)
-        d2_sigma_dalpha_df = SABRCalc._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
@@ -615,11 +612,11 @@ class SABRCalc:
             )
         )
     
-    @staticmethod 
-    def vannas(forward: Forward, strikes: Strikes, params: SABRParams) -> Vannas:
+     
+    def vannas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vannas:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigmas = SABRCalc.implied_vols(forward, strikes, params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         Ks = strikes.data
         n = len(sigmas)
 
@@ -634,15 +631,15 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            vega_bsm[i] = BlackScholesCalc.vega(forward, Strike(K), sigma).pv
-            vanna_bsm[i] = BlackScholesCalc.vanna(forward, Strike(K), sigma).pv
-            volga_bsm[i] = BlackScholesCalc.volga(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
+            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
 
-            dsigma_df[i] = SABRCalc._dsigma_df(F, forward.T, K, params)
-            d2_sigma_df2[i] = SABRCalc._d2_sigma_df2(F, forward.T, K, params)
-            d2_sigma_dalpha_df[i] = SABRCalc._d2_sigma_dalpha_df(F, forward.T, K, params)
+            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
+            d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
+            d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
 
-        dsigma_dalpha = SABRCalc._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
             params.array(),
             params.beta
@@ -659,8 +656,9 @@ class SABRCalc:
         )
 
     
-    @staticmethod
+    
     def _vol_sabr(
+        self,
         F: nb.float64,
         T: nb.float64,
         Ks: nb.float64[:],
@@ -696,8 +694,9 @@ class SABRCalc:
             sigmas[index] = sigma
         return sigmas
 
-    @staticmethod
+    
     def _jacobian_sabr(
+        self,
         F: nb.float64,
         T: nb.float64,
         Ks: nb.float64[:],
@@ -792,8 +791,8 @@ class SABRCalc:
 
         return ddalpha, ddrho, ddv
     
-    @staticmethod
-    def _dsigma_dK(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+    
+    def _dsigma_dK(self, F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
         x = np.log(F / K)
         alpha, rho, v = params.alpha, params.rho, params.v
         beta = params.beta
@@ -848,8 +847,8 @@ class SABRCalc:
         dsigma_dK = dI_B_0_dK * (1 + I_H_1 * T) + dI_H_1_dK * I_B_0 * T
         return dsigma_dK
     
-    @staticmethod
-    def _dsigma_df(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+    
+    def _dsigma_df(self, F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
         alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
         x = np.log(F / K)
         if x == 0.0:
@@ -902,8 +901,8 @@ class SABRCalc:
         dsigma_df = dI_B_0_dF * (1 + I_H_1 * T) + dI_H_1_dF * I_B_0 * T
         return dsigma_df
     
-    @staticmethod
-    def _d2_sigma_dalpha_df(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+    
+    def _d2_sigma_dalpha_df(self, F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
         x = np.log(F / K)
         alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
         if x == 0.0:
@@ -998,8 +997,8 @@ class SABRCalc:
         )
         return d2_sigma_dalpha_df2
 
-    @staticmethod
-    def _d2_sigma_df2(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+    
+    def _d2_sigma_df2(self, F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
         alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
         x = np.log(F / K)
         if x == 0.0:
@@ -1141,8 +1140,8 @@ class SABRCalc:
         )
         return d2_sigma_df2
 
-    @staticmethod
-    def _d2_sigma_dalpha2(F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
+    
+    def _d2_sigma_dalpha2(self, F: nb.float64, T: nb.float64, K: nb.float64, params: SABRParams) -> nb.float64:
         alpha, beta, v, rho = params.alpha, params.beta, params.v, params.rho
         x = np.log(F / K)
         if x == 0.0:

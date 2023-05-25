@@ -25,7 +25,7 @@ class RiskReversal:
     def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
         assert delta.pv <=1
         assert delta.pv >= 0
-        BlackScholesCalc.delta = delta.pv
+        self.delta = delta.pv
         self.sigma = vol_quote.sigma 
         self.T = tenor.T
         
@@ -38,7 +38,7 @@ class Butterfly:
     def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
         assert delta.pv <=1
         assert delta.pv >= 0
-        BlackScholesCalc.delta = delta.pv
+        self.delta = delta.pv
         self.sigma = vol_quote.sigma
         self.T = tenor.T
 
@@ -69,7 +69,7 @@ class VolSmileChain:
         n = len(self.sigmas)
         for i in range(n):
             K = self.strikes[i]
-            res[i] = BlackScholesCalc.premium(forward, Strike(K), ImpliedVol(self.sigmas[i]), OptionType(K >= self.f)).pv
+            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(self.sigmas[i]), OptionType(K >= self.f)).pv
         return Premiums(res)
 
     def deltas(self) -> Deltas:
@@ -77,7 +77,7 @@ class VolSmileChain:
         n = len(self.strikes)
         forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
         for i in range(n):
-            res[i] = BlackScholesCalc.delta(
+            res[i] = self.bs_calc.delta(
                 forward,
                 Strike(self.strikes[i]),
                 ImpliedVol(self.sigmas[i]),
@@ -118,6 +118,7 @@ class PremiumsDeltaSpace:
     ("delta_grad_eps", nb.float64)
 ]) 
 class VolSmileDeltaSpace:
+    bs_calc: BSCalc
     def __init__(
         self, 
         forward: Forward,
@@ -131,6 +132,11 @@ class VolSmileDeltaSpace:
         self.S = forward.S
         self.r = forward.r
         self.f = forward.forward_rate().fv
+        self.bs_calc = BSCalc()
+        self.bs_calc.strike_lower = self.strike_lower
+        self.bs_calc.strike_upper = self.strike_upper
+        self.bs_calc.delta_tol = self.delta_tol
+        self.bs_calc.delta_grad_eps = self.delta_grad_eps
 
         assert ATM.T == self.T
         self.ATM = ATM.sigma
@@ -160,13 +166,7 @@ class VolSmileDeltaSpace:
         return -RR/2 + (BB + self.ATM), RR/2 + (BB + self.ATM)
     
     def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
-        bs = BlackScholesCalc()
-        bs.strike_lower = self.strike_lower
-        bs.strike_upper = self.strike_upper
-        bs.delta_tol = self.delta_tol
-        bs.delta_grad_eps = self.delta_grad_eps
-        
-        return bs.strike_from_delta(
+        return self.bs_calc.strike_from_delta(
             Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)), 
             Delta(delta), 
             ImpliedVol(sigma)

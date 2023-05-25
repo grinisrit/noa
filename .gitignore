@@ -20,6 +20,8 @@ dist/
 .mypy_cache/
 .DS_Store
 .vs/
+venv/
+.venv/
 
 # User data
 data/
