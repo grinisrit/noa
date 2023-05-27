@@ -52,6 +52,7 @@ class Butterfly:
     ("strikes", nb.float64[:]),
 ])
 class VolSmileChain:
+    bs_calc: BSCalc
     def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
         assert strikes.data.shape == implied_vols.data.shape
 
@@ -62,6 +63,8 @@ class VolSmileChain:
 
         self.sigmas = implied_vols.data 
         self.strikes = strikes.data
+        
+        self.bs_calc = BSCalc()
 
     def premiums(self) -> Premiums:
         res = np.zeros_like(self.sigmas)
@@ -132,11 +135,6 @@ class VolSmileDeltaSpace:
         self.S = forward.S
         self.r = forward.r
         self.f = forward.forward_rate().fv
-        self.bs_calc = BSCalc()
-        self.bs_calc.strike_lower = self.strike_lower
-        self.bs_calc.strike_upper = self.strike_upper
-        self.bs_calc.delta_tol = self.delta_tol
-        self.bs_calc.delta_grad_eps = self.delta_grad_eps
 
         assert ATM.T == self.T
         self.ATM = ATM.sigma
@@ -161,6 +159,12 @@ class VolSmileDeltaSpace:
         self.strike_upper = 10.
         self.delta_tol = 10**-12
         self.delta_grad_eps = 1e-4
+        
+        self.bs_calc = BSCalc()
+        self.bs_calc.strike_lower = self.strike_lower
+        self.bs_calc.strike_upper = self.strike_upper
+        self.bs_calc.delta_tol = self.delta_tol
+        self.bs_calc.delta_grad_eps = self.delta_grad_eps
 
     def _implied_vols(self, RR: nb.float64, BB: nb.float64) -> tuple[nb.float64]:
         return -RR/2 + (BB + self.ATM), RR/2 + (BB + self.ATM)
@@ -175,7 +179,7 @@ class VolSmileDeltaSpace:
     def to_chain_space(self):
         ivs = np.zeros(5, dtype=np.float64)
         strikes = np.zeros(5, dtype=np.float64)
-        
+           
         ivs[2] = self.ATM     
         ivs[1], ivs[3] = self._implied_vols(self.RR25, self.BB25)
         ivs[0], ivs[4] = self._implied_vols(self.RR10, self.BB10)
