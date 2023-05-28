@@ -167,6 +167,11 @@ class PremiumsDeltaSpace:
     ("BB25", nb.float64),
     ("RR10", nb.float64),
     ("BB10", nb.float64),
+    ("atm_blip", nb.float64),
+    ("rr25_blip", nb.float64),
+    ("bb25_blip", nb.float64),
+    ("rr10_blip", nb.float64),
+    ("bb10_blip", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
     ("delta_tol", nb.float64),
@@ -215,6 +220,12 @@ class VolSmileDeltaSpace:
         if not BB10.T == self.T:
             raise ValueError('Inconsistent tenor for 10BB')
         self.BB10 = BB10.sigma
+
+        self.atm_blip = 0.0025
+        self.rr25_blip = 0.001
+        self.bb25_blip = 0.001
+        self.rr10_blip = 0.0016
+        self.bb10_blip = 0.00256
         
         self.strike_lower = 0.1
         self.strike_upper = 10.
@@ -269,6 +280,26 @@ class VolSmileDeltaSpace:
         self.BB10 = 0.5*(vanilla_premiums[4] + vanilla_premiums[0]) - res.ATM
 
         return res
+    
+    def blip_ATM(self):
+        self.ATM += self.atm_blip
+        return self
+
+    def blip_25RR(self):
+        self.RR25 += self.rr25_blip
+        return self
+
+    def blip_25BB(self):
+        self.BB25 += self.bb25_blip
+        return self
+
+    def blip_10RR(self):
+        self.RR10 += self.rr10_blip
+        return self
+
+    def blip_10BB(self):
+        self.BB10 += self.bb10_blip
+        return self
 
 
 @nb.experimental.jitclass([
