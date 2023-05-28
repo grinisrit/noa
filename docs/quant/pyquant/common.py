@@ -9,7 +9,8 @@ from .utils import *
 ])
 class ImpliedVol:
     def __init__(self, sigma: nb.float64):
-        assert sigma > 0
+        if not sigma > 0:
+            raise ValueError('Non-positive implied vol')
         self.sigma = sigma
                 
 @nb.experimental.jitclass([
@@ -25,7 +26,8 @@ class VolatilityQuote:
 ])
 class ImpliedVols:
     def __init__(self, sigmas: nb.float64[:]):
-        assert np.all(sigmas >= 0.)
+        if not np.all(sigmas > 0.):
+            raise ValueError('Not all implied vols are positive')
         self.data = sigmas
    
 
@@ -73,7 +75,8 @@ class ForwardYield:
 ])
 class Numeraire:
     def __init__(self, numeraire: nb.float64):
-        assert numeraire > 0
+        if not numeraire > 0:
+            raise ValueError('Non-positive numeraire')
         self.pv = numeraire
 
 
@@ -90,7 +93,8 @@ class ForwardYields:
 ])
 class Tenor:
     def __init__(self, tenor: nb.float64):
-        assert tenor > 0
+        if not tenor > 0:
+            raise ValueError('Non-positive tenor')
         self.T = tenor
 
 
@@ -99,7 +103,8 @@ class Tenor:
 ])
 class Tenors:
     def __init__(self, T: nb.float64[:]):
-        assert np.all(T >= 0)
+        if not np.all(T >= 0):
+            raise ValueError('Not all tenors are positive')
         self.data = T      
 
 
@@ -109,7 +114,8 @@ class Tenors:
 ])
 class ForwardYieldCurve:
     def __init__(self, forward_yields: ForwardYields, tenors: Tenors):
-        assert forward_yields.data.shape == tenors.data.shape
+        if not forward_yields.data.shape == tenors.data.shape:
+            raise ValueError('Inconsistent data between yields and tenors')
         self.r = forward_yields.data
         self.T = tenors.data
 
@@ -161,7 +167,8 @@ class Forward:
 ])
 class ForwardCurve:
     def __init__(self, spot: Spot, forward_yields: ForwardYieldCurve):
-        assert is_sorted(forward_yields.T)
+        if not is_sorted(forward_yields.T):
+            raise ValueError('Tenors are not ordered')
         self.S = spot.S
         self.r = forward_yields.r
         self.T = forward_yields.T

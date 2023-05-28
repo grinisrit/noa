@@ -42,7 +42,8 @@ class BSCalc:
         def g_prime(K):
             return self._dDelta_dK(forward, Strike(K), implied_vol)
         
-        assert g(K_l) * g(K_r) <= 0
+        if g(K_l) * g(K_r) > 0:
+            raise ValueError('No solution within strikes interval')
         
         K = (K_l+K_r) / 2
         epsilon = g(K)
@@ -81,7 +82,8 @@ class BSCalc:
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
         
-        assert g(sigma_l) * g(sigma_r) <= 0
+        if g(sigma_l) * g(sigma_r) > 0:
+            raise ValueError('No solution within implied vol interval')
         
         sigma = (sigma_l + sigma_r) / 2
         epsilon = g(sigma)

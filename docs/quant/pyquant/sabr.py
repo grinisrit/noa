@@ -11,8 +11,8 @@ from .vol_surface import *
 ])
 class Backbone:
     def __init__(self, beta: nb.float64):
-        assert beta <= 1
-        assert beta >= 0
+        if not (beta <= 1 and beta >= 0):
+            raise ValueError('Backbone not within [0,1]')
         self.beta = beta
 
 
@@ -214,7 +214,8 @@ class SABRCalc:
             return np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2\
                                                    - forward.r*T*dsigma_dk/sigma**2 + T*dsigma_dk)
         
-        assert g(K_l)*g(K_r) <= 0.
+        if g(K_l)*g(K_r) > 0.:
+            raise ValueError('No solution within strikes interval')
         
         K = (K_l + K_r) / 2
         epsilon = g(K)

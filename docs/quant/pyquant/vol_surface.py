@@ -23,8 +23,8 @@ class Straddle:
 ])
 class RiskReversal:
     def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
-        assert delta.pv <=1
-        assert delta.pv >= 0
+        if not (delta.pv <=1 and delta.pv >= 0):
+            raise ValueError('Delta expected within [0,1]')
         self.delta = delta.pv
         self.sigma = vol_quote.sigma 
         self.T = tenor.T
@@ -36,8 +36,8 @@ class RiskReversal:
 ])
 class Butterfly:
     def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
-        assert delta.pv <=1
-        assert delta.pv >= 0
+        if not (delta.pv <=1 and delta.pv >= 0):
+            raise ValueError('Delta expected within [0,1]')
         self.delta = delta.pv
         self.sigma = vol_quote.sigma
         self.T = tenor.T
@@ -54,8 +54,10 @@ class Butterfly:
 class VolSmileChain:
     bs_calc: BSCalc
     def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
-        assert strikes.data.shape == implied_vols.data.shape
-        assert is_sorted(strikes.data)
+        if not strikes.data.shape == implied_vols.data.shape:
+            raise ValueError('Inconsistent data between strikes and implied vols')
+        if not is_sorted(strikes.data):
+            raise ValueError('Strikes are not in order')
 
         self.T = forward.T
         self.S = forward.S
@@ -186,23 +188,32 @@ class VolSmileDeltaSpace:
         self.r = forward.r
         self.f = forward.forward_rate().fv
 
-        assert ATM.T == self.T
+        if not ATM.T == self.T:
+            raise ValueError('Inconsistent tenor for ATM')
         self.ATM = ATM.sigma
 
-        assert RR25.delta == 0.25
-        assert RR25.T == self.T
+        if not RR25.delta == 0.25:
+            raise ValueError('Inconsistent delta for 25RR')
+        if not RR25.T == self.T:
+            raise ValueError('Inconsistent tenor for 25RR')
         self.RR25 = RR25.sigma 
 
-        assert BB25.delta == 0.25
-        assert BB25.T == self.T
+        if not BB25.delta == 0.25:
+            raise ValueError('Inconsistent delta for 25BB')
+        if not BB25.T == self.T:
+            raise ValueError('Inconsistent tenor for 25BB')
         self.BB25 = BB25.sigma
 
-        assert RR10.delta == 0.1
-        assert RR10.T == self.T
+        if not RR10.delta == 0.1:
+            raise ValueError('Inconsistent delta for 10RR')
+        if not RR10.T == self.T:
+            raise ValueError('Inconsistent delta for 10RR')
         self.RR10 = RR10.sigma
 
-        assert BB10.delta == 0.1
-        assert BB10.T == self.T
+        if not BB10.delta == 0.1:
+            raise ValueError('Inconsistent delta for 10BB')
+        if not BB10.T == self.T:
+            raise ValueError('Inconsistent tenor for 10BB')
         self.BB10 = BB10.sigma
         
         self.strike_lower = 0.1
@@ -266,8 +277,10 @@ class VolSmileDeltaSpace:
 ])
 class Straddles:
     def __init__(self, implied_vols: ImpliedVols, tenors: Tenors):
-        assert implied_vols.data.shape == tenors.data.shape
-        assert is_sorted(tenors.data)
+        if not implied_vols.data.shape == tenors.data.shape:
+            raise ValueError('Inconsistent data between implied vols and tenors')
+        if not is_sorted(tenors.data):
+            raise ValueError('Tenors are not in order')
         self.sigma = implied_vols.sigma 
         self.T = tenors.T
 
@@ -280,10 +293,12 @@ class Straddles:
 ])
 class RiskReversals:
     def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, tenors: Tenors):
-        assert delta.pv <=1
-        assert delta.pv >= 0
-        assert volatility_quotes.data.shape == tenors.data.shape
-        assert is_sorted(tenors.data)
+        if not (delta.pv <=1 and delta.pv >= 0):
+            raise ValueError('Delta expected within [0,1]')
+        if not volatility_quotes.data.shape == tenors.data.shape:
+            raise ValueError('Inconsistent data between quotes and tenors')
+        if not is_sorted(tenors.data):
+            raise ValueError('Tenors are not in order')
         self.delta = delta.pv
         self.sigma = volatility_quotes.data 
         self.T = tenors.data  
@@ -296,10 +311,12 @@ class RiskReversals:
 ])
 class Butterflies:
     def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, tenors: Tenors):
-        assert delta.pv <=1
-        assert delta.pv >= 0
-        assert volatility_quotes.data.shape == tenors.data.shape
-        assert is_sorted(tenors.data)
+        if not (delta.pv <=1 and delta.pv >= 0):
+            raise ValueError('Delta expected within [0,1]')
+        if not volatility_quotes.data.shape == tenors.data.shape:
+            raise ValueError('Inconsistent data between quotes and tenors')
+        if not is_sorted(tenors.data):
+            raise ValueError('Tenors are not in order')
         self.delta = delta.pv
         self.sigma = volatility_quotes.data 
         self.T = tenors.data 
@@ -359,7 +376,8 @@ class VolSurface:
         
     def get_vol_smile(self, tenor: Tenor) -> VolSmileDeltaSpace:
         T = tenor.T
-        assert T > 0 and T <= self.max_T
+        if not (T > 0 and T <= self.max_T):
+            raise ValueError('Tenor outside available bounds')
     
         return VolSmileDeltaSpace(
             Forward.from_forward_rate(
