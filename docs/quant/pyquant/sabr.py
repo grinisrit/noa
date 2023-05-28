@@ -203,7 +203,8 @@ class SABRCalc:
         option_type = OptionType(delta.pv >= 0.)
 
         def g(K):
-            return self.bs_calc.delta(forward, Strike(K), self.implied_vol(forward, Strike(K), params), option_type).pv - delta.pv
+            iv = self.implied_vol(forward, Strike(K), params)         
+            return self.bs_calc.delta(forward, Strike(K), iv, option_type).pv - delta.pv
 
         def g_prime(K): 
             iv = self.implied_vol(forward, Strike(K), params)
@@ -680,7 +681,10 @@ class SABRCalc:
             if x == 0.0:
                 I_B_0 = K ** (beta - 1) * alpha
             elif v == 0.0:
-                I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+                if beta == 1.0:
+                    I_B_0 = alpha
+                else:
+                    I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
             else:
                 if beta == 1.0:
                     z = v * x / alpha
@@ -738,10 +742,16 @@ class SABRCalc:
                 dI_B_0_drho = 0.0
 
             elif v == 0.0:
-                I_B = alpha * (1 - beta) * x / (F ** (1 - beta) - (K ** (1 - beta)))
-                dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
-                dI_B_0_dv = 0.0
-                dI_B_0_drho = 0.0
+                if beta == 1.0:
+                    I_B = alpha
+                    dI_B_0_dalpha = 1.
+                    dI_B_0_dv = 0.0
+                    dI_B_0_drho = 0.0
+                else:
+                    I_B = alpha * (1 - beta) * x / (F ** (1 - beta) - (K ** (1 - beta)))
+                    dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+                    dI_B_0_dv = 0.0
+                    dI_B_0_drho = 0.0
 
             elif beta == 1.0:
                 z = v * x / alpha
@@ -800,17 +810,21 @@ class SABRCalc:
             I_B_0 = K ** (beta - 1) * alpha
             dI_B_0_dK = K ** (beta - 2) * alpha * (beta - 1)
         elif v == 0.0:
-            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+            if beta == 1.0:
+                I_B_0 = alpha
+                dI_B_0_dK = 0
+            else:
+                I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
 
-            dI_B_0_dK = (
-                alpha
-                * (beta - 1)
-                * (
-                    -K * (K ** (1 - beta) - F ** (1 - beta))
-                    + K ** (2 - beta) * (beta - 1) * np.log(F / K)
+                dI_B_0_dK = (
+                    alpha
+                    * (beta - 1)
+                    * (
+                        -K * (K ** (1 - beta) - F ** (1 - beta))
+                        + K ** (2 - beta) * (beta - 1) * np.log(F / K)
+                    )
+                    / (K**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
                 )
-                / (K**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
-            )
         else:
             if beta == 1.0:
                 z = v * x / alpha
@@ -855,16 +869,20 @@ class SABRCalc:
             dI_B_0_dF = 0.0
             I_B_0 = K ** (beta - 1) * alpha
         elif v == 0.0:
-            dI_B_0_dF = (
-                alpha
-                * (beta - 1)
-                * (
-                    F * (K ** (1 - beta) - F ** (1 - beta))
-                    - F ** (2 - beta) * (beta - 1) * x
+            if beta == 1.0:
+                I_B_0 = alpha
+                dI_B_0_dF = 0
+            else:
+                I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+                dI_B_0_dF = (
+                    alpha
+                    * (beta - 1)
+                    * (
+                        F * (K ** (1 - beta) - F ** (1 - beta))
+                        - F ** (2 - beta) * (beta - 1) * x
+                    )
+                    / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
                 )
-                / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
-            )
-            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
         else:
             if beta == 1.0:
                 z = v * x / alpha
@@ -911,20 +929,26 @@ class SABRCalc:
             I_B_0 = K ** (beta - 1) * alpha
             dI_B_0_dF = 0.0
         elif v == 0.0:
-            d2I_B_0_dalpha_df = -(F ** (1 - beta)) * x * (1 - beta) ** 2 / (
-                F * (-(K ** (1 - beta)) + F ** (1 - beta)) ** 2
-            ) + (1 - beta) / (F * (-(K ** (1 - beta)) + F ** (1 - beta)))
-            dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
-            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
-            dI_B_0_dF = (
-                alpha
-                * (beta - 1)
-                * (
-                    F * (K ** (1 - beta) - F ** (1 - beta))
-                    - F ** (2 - beta) * (beta - 1) * x
+            if beta == 1.0:
+                I_B_0 = alpha
+                dI_B_0_dalpha = 1.0
+                dI_B_0_dF = 0.0
+                d2I_B_0_dalpha_df = 0.0                
+            else:
+                d2I_B_0_dalpha_df = -(F ** (1 - beta)) * x * (1 - beta) ** 2 / (
+                    F * (-(K ** (1 - beta)) + F ** (1 - beta)) ** 2
+                ) + (1 - beta) / (F * (-(K ** (1 - beta)) + F ** (1 - beta)))
+                dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+                I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+                dI_B_0_dF = (
+                    alpha
+                    * (beta - 1)
+                    * (
+                        F * (K ** (1 - beta) - F ** (1 - beta))
+                        - F ** (2 - beta) * (beta - 1) * x
+                    )
+                    / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
                 )
-                / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
-            )
         else:
             if beta == 1.0:
                 z = v * x / alpha
@@ -1006,29 +1030,34 @@ class SABRCalc:
             d2I_B_0_d2f = 0.0
             dI_B_0_dF = 0.0
         elif v == 0.0:
-            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
-            d2I_B_0_d2f = (
-                alpha
-                * (beta - 1)
-                * (
-                    -(F**4) * (K ** (1 - beta) - F ** (1 - beta)) ** 2
-                    + F ** (5 - beta)
-                    * (K ** (1 - beta) - F ** (1 - beta))
+            if beta == 1.0:
+                I_B_0 = alpha 
+                d2I_B_0_d2f = 0.0
+                dI_B_0_dF = 0.0
+            else:
+                I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+                d2I_B_0_d2f = (
+                    alpha
                     * (beta - 1)
-                    * (x * (beta - 1) + x - 2)
-                    + 2 * F ** (6 - 2 * beta) * x * (beta - 1) ** 2
+                    * (
+                        -(F**4) * (K ** (1 - beta) - F ** (1 - beta)) ** 2
+                        + F ** (5 - beta)
+                        * (K ** (1 - beta) - F ** (1 - beta))
+                        * (beta - 1)
+                        * (x * (beta - 1) + x - 2)
+                        + 2 * F ** (6 - 2 * beta) * x * (beta - 1) ** 2
+                    )
+                    / (F**6 * (K ** (1 - beta) - F ** (1 - beta)) ** 3)
                 )
-                / (F**6 * (K ** (1 - beta) - F ** (1 - beta)) ** 3)
-            )
-            dI_B_0_dF = (
-                alpha
-                * (beta - 1)
-                * (
-                    F * (K ** (1 - beta) - F ** (1 - beta))
-                    - F ** (2 - beta) * (beta - 1) * x
+                dI_B_0_dF = (
+                    alpha
+                    * (beta - 1)
+                    * (
+                        F * (K ** (1 - beta) - F ** (1 - beta))
+                        - F ** (2 - beta) * (beta - 1) * x
+                    )
+                    / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
                 )
-                / (F**2 * (K ** (1 - beta) - F ** (1 - beta)) ** 2)
-            )
         else:
             if beta == 1.0:
                 z = v * x / alpha
@@ -1149,9 +1178,14 @@ class SABRCalc:
             dI_B_0_dalpha = K ** (beta - 1)
             d2I_B_0_dalpha2 = 0.0
         elif v == 0.0:
-            I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
-            dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
-            d2I_B_0_dalpha2 = 0.0
+            if beta == 1.0:
+                I_B_0 = alpha 
+                dI_B_0_dalpha = 1.0
+                d2I_B_0_dalpha2 = 0.0
+            else:
+                I_B_0 = alpha * (1 - beta) * x / (-(K ** (1 - beta)) + F ** (1 - beta))
+                dI_B_0_dalpha = (beta - 1) * x / (K ** (1 - beta) - F ** (1 - beta))
+                d2I_B_0_dalpha2 = 0.0
         else:
             if beta == 1.0:
                 z = v * x / alpha
