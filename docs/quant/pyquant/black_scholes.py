@@ -148,8 +148,7 @@ class BSCalc:
         )
     
     def _d1(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
-        d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2)\
-               * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))
+        d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2) * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))
         return d1
     
     def _d2(self, d1: nb.float64, forward: Forward, implied_vol: ImpliedVol) -> nb.float64:

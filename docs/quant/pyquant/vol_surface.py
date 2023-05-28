@@ -55,6 +55,7 @@ class VolSmileChain:
     bs_calc: BSCalc
     def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
         assert strikes.data.shape == implied_vols.data.shape
+        assert is_sorted(strikes.data)
 
         self.T = forward.T
         self.S = forward.S
@@ -68,11 +69,12 @@ class VolSmileChain:
 
     def premiums(self) -> Premiums:
         res = np.zeros_like(self.sigmas)
-        forward = Forward(self.S, self.r, self.T)
+        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
         n = len(self.sigmas)
         for i in range(n):
             K = self.strikes[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(self.sigmas[i]), OptionType(K >= self.f)).pv
+            sigma = self.sigmas[i]
+            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigma), OptionType(K >= self.f)).pv
         return Premiums(res)
 
     def deltas(self) -> Deltas:
@@ -87,6 +89,54 @@ class VolSmileChain:
                 OptionType(self.strikes[i] >= self.f)
             ).pv 
         return Deltas(res) 
+    
+    def gammas(self) -> Gammas:
+        res = np.zeros_like(self.strikes)
+        n = len(self.strikes)
+        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        for i in range(n):
+            res[i] = self.bs_calc.gamma(
+                forward,
+                Strike(self.strikes[i]),
+                ImpliedVol(self.sigmas[i])
+            ).pv 
+        return Gammas(res) 
+    
+    def vegas(self) -> Vegas:
+        res = np.zeros_like(self.strikes)
+        n = len(self.strikes)
+        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        for i in range(n):
+            res[i] = self.bs_calc.vega(
+                forward,
+                Strike(self.strikes[i]),
+                ImpliedVol(self.sigmas[i])
+            ).pv 
+        return Vegas(res) 
+    
+    def vannas(self) -> Vannas:
+        res = np.zeros_like(self.strikes)
+        n = len(self.strikes)
+        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        for i in range(n):
+            res[i] = self.bs_calc.vanna(
+                forward,
+                Strike(self.strikes[i]),
+                ImpliedVol(self.sigmas[i])
+            ).pv 
+        return Vannas(res) 
+    
+    def volgas(self) -> Volgas:
+        res = np.zeros_like(self.strikes)
+        n = len(self.strikes)
+        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        for i in range(n):
+            res[i] = self.bs_calc.volga(
+                forward,
+                Strike(self.strikes[i]),
+                ImpliedVol(self.sigmas[i])
+            ).pv 
+        return Volgas(res) 
     
     
 @nb.experimental.jitclass([

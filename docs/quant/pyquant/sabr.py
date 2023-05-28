@@ -304,7 +304,7 @@ class SABRCalc:
             K = Ks[i]
             sigma = sigmas[i]
             delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(K>=F)).pv
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), ImpliedVol(sigma)).pv
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
@@ -371,7 +371,7 @@ class SABRCalc:
 
         for i in range(n):
             K = Ks[i]
-            sigma = sigmas[i]
+            sigma = ImpliedVol(sigmas[i])
             gamma_bsm[i] = self.bs_calc.gamma(forward, Strike(K), sigma).pv
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
             vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
@@ -415,9 +415,12 @@ class SABRCalc:
             params.beta
         )[0][0]
 
-        return Vega(
-            vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
-        )
+        if params.v > 0 : 
+            res = vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
+        else:
+            res = vega_bsm * dsigma_dalpha
+
+        return Vega(res)
     
         
     def vegas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
@@ -431,7 +434,7 @@ class SABRCalc:
 
         for i in range(n):
             K = Ks[i]
-            sigma = sigmas[i]
+            sigma = ImpliedVol(sigmas[i])
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
@@ -440,9 +443,13 @@ class SABRCalc:
             params.array(),
             params.beta
         )[0] 
-        return Vegas(
-            vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
-        )
+
+        if params.v > 0 : 
+            res = vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
+        else:
+            res = vega_bsm * dsigma_dalpha
+
+        return Vegas(res)
     
     
     def rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
@@ -471,7 +478,7 @@ class SABRCalc:
         vega_bsm = np.zeros_like(sigmas)
         for i in range(n):
             K = Ks[i]
-            sigma = sigmas[i]
+            sigma = ImpliedVol(sigmas[i])
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
@@ -510,7 +517,7 @@ class SABRCalc:
         vega_bsm = np.zeros_like(sigmas)
         for i in range(n):
             K = Ks[i]
-            sigma = sigmas[i]
+            sigma = ImpliedVol(sigmas[i])
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
 
         dsigma_dv = self._jacobian_sabr(F, forward.T,
@@ -540,11 +547,14 @@ class SABRCalc:
             params.beta
         )[0][0]
 
-        return Volga(
-            volga_bsm * (
+        if params.v > 0 : 
+            res = volga_bsm * (
                 dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
-        )
+        else:
+            res = volga_bsm * (dsigma_dalpha) ** 2 + vega_bsm * d2_sigma_dalpha2
+
+        return Volga(res)
     
      
     def volgas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Volgas:
@@ -563,7 +573,7 @@ class SABRCalc:
 
         for i in range(n):
             K = Ks[i]
-            sigma = sigmas[i]
+            sigma = ImpliedVol(sigmas[i])
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
             volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
 
@@ -577,11 +587,14 @@ class SABRCalc:
             params.beta
         )[0]
 
-        return Volgas(
-            volga_bsm * (
+        if params.v > 0 : 
+            res = volga_bsm * (
                 dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
-        )
+        else:
+            res = volga_bsm * (dsigma_dalpha) ** 2 + vega_bsm * d2_sigma_dalpha2
+
+        return Volgas(res)
     
      
     def vanna(self, forward: Forward, strike: Strike, params: SABRParams) -> Vanna:
@@ -603,15 +616,21 @@ class SABRCalc:
             params.beta
         )[0][0]
 
-        return Vanna(
-            (vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)) 
-            * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) 
-            + (vega_bsm/D) * (
-                d2_sigma_dalpha_df
-                + d2_sigma_df2 * params.rho * F**params.beta / params.v
-                + dsigma_df * params.beta * params.rho * F ** (params.beta - 1) / params.v
-            )
-        )
+
+        if params.v > 0 : 
+            res = (
+                vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+                ) * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) + (vega_bsm/D) * (
+                    d2_sigma_dalpha_df
+                    + d2_sigma_df2 * params.rho * F**params.beta / params.v
+                    + dsigma_df * params.beta * params.rho * F ** (params.beta - 1) / params.v
+                )
+        else:
+            res = (
+                vanna_bsm + (volga_bsm/D) * dsigma_df 
+                ) * dsigma_dalpha + (vega_bsm/D) * d2_sigma_dalpha_df
+
+        return Vanna(res)
     
      
     def vannas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vannas:
@@ -631,7 +650,7 @@ class SABRCalc:
 
         for i in range(n):
             K = Ks[i]
-            sigma = sigmas[i]
+            sigma = ImpliedVol(sigmas[i])
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
             vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
             volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
@@ -646,15 +665,20 @@ class SABRCalc:
             params.beta
         )[0]
 
-        return Vannas(
-            (vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)) 
-            * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) 
-            + (vega_bsm/D) * (
-                d2_sigma_dalpha_df
-                + d2_sigma_df2 * params.rho * F**params.beta / params.v
-                + dsigma_df * params.beta * params.rho * F ** (params.beta - 1) / params.v
-            )
-        )
+        if params.v > 0 : 
+            res = (
+                vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+                ) * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) + (vega_bsm/D) * (
+                    d2_sigma_dalpha_df
+                    + d2_sigma_df2 * params.rho * F**params.beta / params.v
+                    + dsigma_df * params.beta * params.rho * F ** (params.beta - 1) / params.v
+                )
+        else:
+            res = (
+                vanna_bsm + (volga_bsm/D) * dsigma_df 
+                ) * dsigma_dalpha + (vega_bsm/D) * d2_sigma_dalpha_df
+
+        return Vannas(res)
 
     
     
