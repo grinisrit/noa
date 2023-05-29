@@ -87,7 +87,7 @@ noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
  * For path generation, Andersen's Quadratic Exponential scheme is used
  * (see [Andersen2007], [Grzelak2019, section 9.3.4]).
  *
- * @param n_paths Number of simulated paths.
+ * @param n_paths Number of paths to simulate.
  * @param n_steps Number of time steps.
  * @param dt Time step.
  * @param init_state Initial states of the paths, i.e. v(0). Shape: (n_paths,).

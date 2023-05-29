@@ -171,6 +171,8 @@ using Slice = torch::indexing::Slice;
  * @return 1) Values of the option on the (S, t) grid. Shape: (npoints_S, npoints_t).
  *         2) Underlying price values from the grid. Shape: (npoints_S,).
  *         3) Time values from the grid. Shape: (npoints_t,).
+ *         Note that the spacing of the grid in variable S is not uniform:
+ *         it increases exponentially. In variable t the spacing is uniform.
  */
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 price_american_put_bs(double K, double T, double r, double sigma,

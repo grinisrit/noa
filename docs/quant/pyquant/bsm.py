@@ -5,7 +5,7 @@ from typing import Tuple, List
 
 
 @nb.njit()
-def _brennan_schwartz(alpha: np.array, beta: np.array, gamma: np.array, b, g):
+def _brennan_schwartz(alpha: np.ndarray, beta: np.ndarray, gamma: np.ndarray, b, g):
     """Computes solution to Ax - b >= 0 ; x >= g and (Ax-b)'(x-g)=0.
     A is a tridiagonal matrix with alpha, beta, gamma coefficients.
 
@@ -82,7 +82,7 @@ def price_american_put_bs(
         S_max: float,
         npoints_S: int = 1000,
         npoints_t: int = 1000
-) -> Tuple[np.array, np.array, np.array]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Calculates the value of American put option under the Black-Scholes model,
        using the Brennan-Schwartz algorithm.
 
@@ -100,6 +100,8 @@ def price_american_put_bs(
         1) Values of the option on the (S, t) grid. Shape: (npoints_S, npoints_t).
         2) Underlying price values from the grid. Shape: (npoints_S,).
         3) Time values from the grid. Shape: (npoints_t,).
+        Note that the spacing of the grid in variable S is not uniform:
+        it increases exponentially. In variable t the spacing is uniform.
     """
     tau_max = T * (sigma ** 2) / 2
     x_min = math.log(S_min / K)

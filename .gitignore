@@ -5,13 +5,16 @@
 *_pb2_grpc.py
 *_pb2.py
 
-# python builds
+# Python builds
 __pycache__
 */__pycache__
 .pytest_cache
 build/
 dist/
 *egg-info*
+
+# Python virtual environment
+venv
 
 # IDE & notebooks files
 .vscode

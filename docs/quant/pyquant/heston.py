@@ -2,10 +2,15 @@
 
 
 import torch
-import math
+from typing import Tuple
+
+__all__ = ['noncentral_chisquare', 'generate_cir', 'generate_heston']
 
 
-def noncentral_chisquare(df: torch.Tensor, nonc: torch.Tensor) -> torch.Tensor:
+def noncentral_chisquare(
+        df: torch.Tensor,
+        nonc: torch.Tensor
+) -> torch.Tensor:
     PSI_CRIT = 1.5
     m = df + nonc
     s2 = 2*df + 4*nonc
@@ -25,8 +30,15 @@ def noncentral_chisquare(df: torch.Tensor, nonc: torch.Tensor) -> torch.Tensor:
     return torch.where(psi <= PSI_CRIT, sample_quad, sample_exp)
 
 
-def generate_cir(n_paths: int, n_steps: int, dt: float, init_state: torch.Tensor,
-                 kappa: float, theta: float, eps: float) -> torch.Tensor:
+def generate_cir(
+        n_paths: int,
+        n_steps: int,
+        dt: float,
+        init_state: torch.Tensor,
+        kappa: torch.Tensor,
+        theta: torch.Tensor,
+        eps: torch.Tensor
+) -> torch.Tensor:
     if init_state.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state` must be (n_paths,)')
 
@@ -34,7 +46,7 @@ def generate_cir(n_paths: int, n_steps: int, dt: float, init_state: torch.Tensor
     paths[:, 0] = init_state
 
     delta = 4 * kappa * theta / (eps * eps) * torch.ones_like(init_state)
-    exp = math.exp(-kappa*dt)
+    exp = torch.exp(-kappa*dt)
     c_bar = 1 / (4*kappa) * eps * eps * (1 - exp)
     for i in range(0, n_steps):
         v_cur = paths[:, i]
@@ -45,10 +57,18 @@ def generate_cir(n_paths: int, n_steps: int, dt: float, init_state: torch.Tensor
     return paths
 
 
-def generate_heston(n_paths: int, n_steps: int, dt: float,
-                    init_state_price: torch.Tensor,
-                    init_state_var: torch.Tensor,
-                    kappa: float, theta: float, eps: float, rho: float, drift: float):
+def generate_heston(
+        n_paths: int,
+        n_steps: int,
+        dt: float,
+        init_state_price: torch.Tensor,
+        init_state_var: torch.Tensor,
+        kappa: torch.Tensor,
+        theta: torch.Tensor,
+        eps: torch.Tensor,
+        rho: torch.Tensor,
+        drift: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor]:
     if init_state_price.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state_price` must be (n_paths,)')
     if init_state_var.shape != torch.Size((n_paths,)):
@@ -58,7 +78,7 @@ def generate_heston(n_paths: int, n_steps: int, dt: float,
     # regularity condition [Andersen 2007, section 4.3.2]
     if rho > 0:  # always satisfied when rho <= 0
         L = rho*dt*(kappa/eps - 0.5*rho)
-        R = 2*kappa/(eps*eps*(1 - math.exp(-kappa*dt))) - rho/eps
+        R = 2*kappa/(eps*eps*(1 - torch.exp(-kappa*dt))) - rho/eps
         if R<=0 or L==0 or (L<0 and R>=0):
             # When (L<0 && R<=0), L/R is always < 0.5.
             # (L>0 && R<=0) never happens.
@@ -74,14 +94,14 @@ def generate_heston(n_paths: int, n_steps: int, dt: float,
     k3 = gamma1 * dt * (1 - rho * rho)
     k4 = gamma2 * dt * (1 - rho * rho)
 
-    var = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps)
+    var_paths = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps)
     log_paths = torch.empty((n_paths, n_steps + 1), dtype=init_state_price.dtype)
     log_paths[:, 0] = init_state_price.log()
 
     for i in range(0, n_steps):
-        v_i = var[:, i]
-        v_next = var[:, i+1]
+        v_i = var_paths[:, i]
+        v_next = var_paths[:, i+1]
         next_vals = drift*dt + log_paths[:, i] + k0 + k1*v_i + k2*v_next + \
             torch.sqrt(k3*v_i + k4*v_next) * torch.randn_like(v_i)
         log_paths[:, i+1] = next_vals
-    return log_paths.exp(), var
+    return log_paths.exp(), var_paths

@@ -1,30 +1,33 @@
 import torch
-import math
 
 
 def price_barrier_option(
         paths: torch.Tensor,
-        strike: float,
-        maturity: float,
-        rate: float,
-        barrier: float,
+        strike: torch.Tensor,
+        maturity: torch.Tensor,
+        rate: torch.Tensor,
+        barrier: torch.Tensor,
         barrier_type: str,
         call: bool
-) -> float:
+) -> torch.Tensor:
     """Compute the price of a barrier option.
 
     Args:
-        paths: Simulated paths of the underlying. Shape: (N, M + 1), where
-               N is the number of paths, M is the number of time steps.
-               The last time point is assumed to be the expiration time.
+        paths: Simulated paths of the underlying.
         strike: Strike price.
         maturity: Expiration time in years (corresponding to `paths[:, -1]`).
         rate: Risk-free rate.
         barrier: Barrier price.
         barrier_type: One of 'up-in', 'up-out', 'down-in', 'down-out'.
         call: If `True`, price call option, otherwise price put option.
+
+    Shape:
+        - paths: (N, M + 1), where N is the number of paths, M is the number of
+            time steps. The last time point is assumed to be the expiration time.
+        - strike, maturity, rate, barrier: (1, ).
+
     Returns:
-        Price of the option.
+        Price of the option. Shape: (1, )
     """
     if barrier_type not in ('up-in', 'up-out', 'down-in', 'down-out'):
         raise ValueError("`barrier_type` must be one of: 'up-in', 'up-out', 'down-in', 'down-out'.")
@@ -41,4 +44,4 @@ def price_barrier_option(
         condition = torch.min(paths, dim=1).values <= barrier
     else:  # down-out
         condition = torch.min(paths, dim=1).values > barrier
-    return math.exp(-rate*maturity) * torch.mean(payoff * condition).item()
+    return torch.exp(-rate*maturity) * torch.mean(payoff * condition)
