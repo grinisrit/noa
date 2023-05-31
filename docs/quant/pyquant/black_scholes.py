@@ -110,6 +110,23 @@ class BSCalc:
 
         return ImpliedVol(sigma)
     
+    def implied_vols(self, forward: Forward, strikes: Strikes, premiums: Premiums) -> ImpliedVols:
+        if not strikes.data.shape == premiums.data.shape:
+            raise ValueError('Inconsistent data between strikes and premiums')
+        n = len(strikes.data)
+        fv = forward.forward_rate().fv
+        ivols = np.zeros(n, dtype=np.float64)
+        for index in range(n):
+            K = strikes.data[index]
+            PV = premiums.data[index]
+            ivols[index] = self.implied_vol(
+                forward,
+                Strike(K), 
+                Premium(PV),
+                OptionType(K>=fv)
+            ).sigma
+        return ImpliedVols(ivols)
+    
     def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Premium:
         pm = 1 if option_type.is_call else -1
         d1 = self._d1(forward, strike, implied_vol)
