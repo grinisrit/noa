@@ -307,7 +307,7 @@ class VolSmileDeltaSpace:
     ("T", nb.float64[:])
 ])
 class Straddles:
-    def __init__(self, implied_vols: ImpliedVols, times_to_maturity: Tenors):
+    def __init__(self, implied_vols: ImpliedVols, times_to_maturity: TimesToMaturity):
         if not implied_vols.data.shape == times_to_maturity.data.shape:
             raise ValueError('Inconsistent data between implied vols and times to maturity')
         if not is_sorted(times_to_maturity.data):
@@ -323,7 +323,7 @@ class Straddles:
     
 ])
 class RiskReversals:
-    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, times_to_maturity: Tenors):
+    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, times_to_maturity: TimesToMaturity):
         if not (delta.pv <=1 and delta.pv >= 0):
             raise ValueError('Delta expected within [0,1]')
         if not volatility_quotes.data.shape == times_to_maturity.data.shape:
@@ -341,7 +341,7 @@ class RiskReversals:
     ("T", nb.float64[:])
 ])
 class Butterflies:
-    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, times_to_maturity: Tenors):
+    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, times_to_maturity: TimesToMaturity):
         if not (delta.pv <=1 and delta.pv >= 0):
             raise ValueError('Delta expected within [0,1]')
         if not volatility_quotes.data.shape == times_to_maturity.data.shape:
