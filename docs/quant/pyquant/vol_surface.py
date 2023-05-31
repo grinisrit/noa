@@ -311,9 +311,9 @@ class Straddles:
         if not implied_vols.data.shape == times_to_maturity.data.shape:
             raise ValueError('Inconsistent data between implied vols and times to maturity')
         if not is_sorted(times_to_maturity.data):
-            raise ValueError('Tenors are not in order')
-        self.sigma = implied_vols.sigma 
-        self.T = times_to_maturity.T
+            raise ValueError('Times to maturity are not in order')
+        self.sigma = implied_vols.data 
+        self.T = times_to_maturity.data
 
 
 @nb.experimental.jitclass([
@@ -329,7 +329,7 @@ class RiskReversals:
         if not volatility_quotes.data.shape == times_to_maturity.data.shape:
             raise ValueError('Inconsistent data between quotes and times to maturity')
         if not is_sorted(times_to_maturity.data):
-            raise ValueError('Tenors are not in order')
+            raise ValueError('Times to maturity are not in order')
         self.delta = delta.pv
         self.sigma = volatility_quotes.data 
         self.T = times_to_maturity.data  
@@ -347,7 +347,7 @@ class Butterflies:
         if not volatility_quotes.data.shape == times_to_maturity.data.shape:
             raise ValueError('Inconsistent data between quotes and times to maturity')
         if not is_sorted(times_to_maturity.data):
-            raise ValueError('Tenors are not in order')
+            raise ValueError('Times to maturity are not in order')
         self.delta = delta.pv
         self.sigma = volatility_quotes.data 
         self.T = times_to_maturity.data 
