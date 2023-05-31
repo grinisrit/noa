@@ -218,7 +218,7 @@ class VolSmileDeltaSpace:
         if not BB10.delta == 0.1:
             raise ValueError('Inconsistent delta for 10BB')
         if not BB10.T == self.T:
-            raise ValueError('Inconsistent time_to_maturity for 10BB')
+            raise ValueError('Inconsistent time to maturity for 10BB')
         self.BB10 = BB10.sigma
 
         self.atm_blip = 0.0025
@@ -307,13 +307,13 @@ class VolSmileDeltaSpace:
     ("T", nb.float64[:])
 ])
 class Straddles:
-    def __init__(self, implied_vols: ImpliedVols, tenors: Tenors):
-        if not implied_vols.data.shape == tenors.data.shape:
-            raise ValueError('Inconsistent data between implied vols and tenors')
-        if not is_sorted(tenors.data):
+    def __init__(self, implied_vols: ImpliedVols, times_to_maturity: Tenors):
+        if not implied_vols.data.shape == times_to_maturity.data.shape:
+            raise ValueError('Inconsistent data between implied vols and times to maturity')
+        if not is_sorted(times_to_maturity.data):
             raise ValueError('Tenors are not in order')
         self.sigma = implied_vols.sigma 
-        self.T = tenors.T
+        self.T = times_to_maturity.T
 
 
 @nb.experimental.jitclass([
@@ -323,16 +323,16 @@ class Straddles:
     
 ])
 class RiskReversals:
-    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, tenors: Tenors):
+    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, times_to_maturity: Tenors):
         if not (delta.pv <=1 and delta.pv >= 0):
             raise ValueError('Delta expected within [0,1]')
-        if not volatility_quotes.data.shape == tenors.data.shape:
-            raise ValueError('Inconsistent data between quotes and tenors')
-        if not is_sorted(tenors.data):
+        if not volatility_quotes.data.shape == times_to_maturity.data.shape:
+            raise ValueError('Inconsistent data between quotes and times to maturity')
+        if not is_sorted(times_to_maturity.data):
             raise ValueError('Tenors are not in order')
         self.delta = delta.pv
         self.sigma = volatility_quotes.data 
-        self.T = tenors.data  
+        self.T = times_to_maturity.data  
 
 
 @nb.experimental.jitclass([
@@ -341,16 +341,16 @@ class RiskReversals:
     ("T", nb.float64[:])
 ])
 class Butterflies:
-    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, tenors: Tenors):
+    def __init__(self, delta: Delta, volatility_quotes: VolatilityQuotes, times_to_maturity: Tenors):
         if not (delta.pv <=1 and delta.pv >= 0):
             raise ValueError('Delta expected within [0,1]')
-        if not volatility_quotes.data.shape == tenors.data.shape:
-            raise ValueError('Inconsistent data between quotes and tenors')
-        if not is_sorted(tenors.data):
+        if not volatility_quotes.data.shape == times_to_maturity.data.shape:
+            raise ValueError('Inconsistent data between quotes and times to maturity')
+        if not is_sorted(times_to_maturity.data):
             raise ValueError('Tenors are not in order')
         self.delta = delta.pv
         self.sigma = volatility_quotes.data 
-        self.T = tenors.data 
+        self.T = times_to_maturity.data 
 
 
 class VolSurface:

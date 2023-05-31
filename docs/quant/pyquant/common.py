@@ -94,7 +94,7 @@ class ForwardYields:
 class TimeToMaturity:
     def __init__(self, time_to_maturity: nb.float64):
         if not time_to_maturity > 0:
-            raise ValueError('Non-positive time_to_maturity')
+            raise ValueError('Non-positive time to maturity')
         self.T = time_to_maturity
 
 
@@ -104,7 +104,7 @@ class TimeToMaturity:
 class Tenors:
     def __init__(self, T: nb.float64[:]):
         if not np.all(T >= 0):
-            raise ValueError('Not all tenors are positive')
+            raise ValueError('Not all times to maturity are positive')
         self.data = T      
 
 
@@ -113,11 +113,11 @@ class Tenors:
     ("T", nb.float64[:])
 ])
 class ForwardYieldCurve:
-    def __init__(self, forward_yields: ForwardYields, tenors: Tenors):
-        if not forward_yields.data.shape == tenors.data.shape:
-            raise ValueError('Inconsistent data between yields and tenors')
+    def __init__(self, forward_yields: ForwardYields, times_to_maturity: Tenors):
+        if not forward_yields.data.shape == times_to_maturity.data.shape:
+            raise ValueError('Inconsistent data between yields and times to maturity')
         self.r = forward_yields.data
-        self.T = tenors.data
+        self.T = times_to_maturity.data
 
 
 @nb.experimental.jitclass([
@@ -177,11 +177,11 @@ class ForwardCurve:
         return ForwardRates(self.S * np.exp(self.r * self.T))
     
     @staticmethod
-    def from_forward_rates(spot: Spot, forward_rates: ForwardRates, tenors: Tenors):
+    def from_forward_rates(spot: Spot, forward_rates: ForwardRates, times_to_maturity: Tenors):
         return ForwardCurve(
             spot, ForwardYieldCurve( 
-                    ForwardYields(- np.log(spot.S / forward_rates.data) / tenors.data),
-                    tenors
+                    ForwardYields(- np.log(spot.S / forward_rates.data) / times_to_maturity.data),
+                    times_to_maturity
                 )   
             )
 
