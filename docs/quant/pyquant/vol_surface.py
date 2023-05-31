@@ -11,9 +11,9 @@ from .black_scholes import *
     ("T", nb.float64)
 ])
 class Straddle:
-    def __init__(self, implied_vol: ImpliedVol, tenor: Tenor):
+    def __init__(self, implied_vol: ImpliedVol, time_to_maturity: TimeToMaturity):
         self.sigma = implied_vol.sigma 
-        self.T = tenor.T
+        self.T = time_to_maturity.T
 
 @nb.experimental.jitclass([
     ("delta", nb.float64),
@@ -22,12 +22,12 @@ class Straddle:
     
 ])
 class RiskReversal:
-    def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
+    def __init__(self, delta: Delta, vol_quote: VolatilityQuote, time_to_maturity: TimeToMaturity):
         if not (delta.pv <=1 and delta.pv >= 0):
             raise ValueError('Delta expected within [0,1]')
         self.delta = delta.pv
         self.sigma = vol_quote.sigma 
-        self.T = tenor.T
+        self.T = time_to_maturity.T
         
 @nb.experimental.jitclass([
     ("delta", nb.float64),
@@ -35,12 +35,12 @@ class RiskReversal:
     ("T", nb.float64)
 ])
 class Butterfly:
-    def __init__(self, delta: Delta, vol_quote: VolatilityQuote, tenor: Tenor):
+    def __init__(self, delta: Delta, vol_quote: VolatilityQuote, time_to_maturity: TimeToMaturity):
         if not (delta.pv <=1 and delta.pv >= 0):
             raise ValueError('Delta expected within [0,1]')
         self.delta = delta.pv
         self.sigma = vol_quote.sigma
-        self.T = tenor.T
+        self.T = time_to_maturity.T
 
 
 @nb.experimental.jitclass([
@@ -71,7 +71,7 @@ class VolSmileChain:
 
     def premiums(self) -> Premiums:
         res = np.zeros_like(self.sigmas)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
         n = len(self.sigmas)
         for i in range(n):
             K = self.strikes[i]
@@ -82,7 +82,7 @@ class VolSmileChain:
     def deltas(self) -> Deltas:
         res = np.zeros_like(self.strikes)
         n = len(self.strikes)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
         for i in range(n):
             res[i] = self.bs_calc.delta(
                 forward,
@@ -95,7 +95,7 @@ class VolSmileChain:
     def gammas(self) -> Gammas:
         res = np.zeros_like(self.strikes)
         n = len(self.strikes)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
         for i in range(n):
             res[i] = self.bs_calc.gamma(
                 forward,
@@ -107,7 +107,7 @@ class VolSmileChain:
     def vegas(self) -> Vegas:
         res = np.zeros_like(self.strikes)
         n = len(self.strikes)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
         for i in range(n):
             res[i] = self.bs_calc.vega(
                 forward,
@@ -119,7 +119,7 @@ class VolSmileChain:
     def vannas(self) -> Vannas:
         res = np.zeros_like(self.strikes)
         n = len(self.strikes)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
         for i in range(n):
             res[i] = self.bs_calc.vanna(
                 forward,
@@ -131,7 +131,7 @@ class VolSmileChain:
     def volgas(self) -> Volgas:
         res = np.zeros_like(self.strikes)
         n = len(self.strikes)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T))
+        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
         for i in range(n):
             res[i] = self.bs_calc.volga(
                 forward,
@@ -194,19 +194,19 @@ class VolSmileDeltaSpace:
         self.f = forward.forward_rate().fv
 
         if not ATM.T == self.T:
-            raise ValueError('Inconsistent tenor for ATM')
+            raise ValueError('Inconsistent time_to_maturity for ATM')
         self.ATM = ATM.sigma
 
         if not RR25.delta == 0.25:
             raise ValueError('Inconsistent delta for 25RR')
         if not RR25.T == self.T:
-            raise ValueError('Inconsistent tenor for 25RR')
+            raise ValueError('Inconsistent time_to_maturity for 25RR')
         self.RR25 = RR25.sigma 
 
         if not BB25.delta == 0.25:
             raise ValueError('Inconsistent delta for 25BB')
         if not BB25.T == self.T:
-            raise ValueError('Inconsistent tenor for 25BB')
+            raise ValueError('Inconsistent time_to_maturity for 25BB')
         self.BB25 = BB25.sigma
 
         if not RR10.delta == 0.1:
@@ -218,7 +218,7 @@ class VolSmileDeltaSpace:
         if not BB10.delta == 0.1:
             raise ValueError('Inconsistent delta for 10BB')
         if not BB10.T == self.T:
-            raise ValueError('Inconsistent tenor for 10BB')
+            raise ValueError('Inconsistent time_to_maturity for 10BB')
         self.BB10 = BB10.sigma
 
         self.atm_blip = 0.0025
@@ -243,7 +243,7 @@ class VolSmileDeltaSpace:
     
     def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
         return self.bs_calc.strike_from_delta(
-            Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)), 
+            Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T)), 
             Delta(delta), 
             ImpliedVol(sigma)
         ).K
@@ -263,7 +263,7 @@ class VolSmileDeltaSpace:
         strikes[4] = self._get_strike(ivs[4], 0.1)
         
         return VolSmileChain(
-            Forward(Spot(self.S), ForwardYield(self.r), Tenor(self.T)),
+            Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T)),
             Strikes(strikes),
             ImpliedVols(ivs)
         ) 
@@ -405,39 +405,39 @@ class VolSurface:
             butterflies_10.T[-1]
         ]))
         
-    def get_vol_smile(self, tenor: Tenor) -> VolSmileDeltaSpace:
-        T = tenor.T
+    def get_vol_smile(self, time_to_maturity: TimeToMaturity) -> VolSmileDeltaSpace:
+        T = time_to_maturity.T
         if not (T > 0 and T <= self.max_T):
-            raise ValueError('Tenor outside available bounds')
+            raise ValueError('TimeToMaturity outside available bounds')
     
         return VolSmileDeltaSpace(
             Forward.from_forward_rate(
                 Spot(self.S),
                 ForwardRate(self.f(T)),
-                tenor
+                time_to_maturity
             ),
             Straddle(
                 ImpliedVol(self.ATM(T)),
-                tenor
+                time_to_maturity
             ),
             RiskReversal(
                 Delta(.25),
                 VolatilityQuote(self.RR25(T)),
-                tenor
+                time_to_maturity
             ),
             Butterfly(
                 Delta(.25),
                 VolatilityQuote(self.BB25(T)),
-                tenor
+                time_to_maturity
             ),
             RiskReversal(
                 Delta(.1),
                 VolatilityQuote(self.RR10(T)),
-                tenor
+                time_to_maturity
             ),
             Butterfly(
                 Delta(.1),
                 VolatilityQuote(self.BB10(T)),
-                tenor
+                time_to_maturity
             )
         )

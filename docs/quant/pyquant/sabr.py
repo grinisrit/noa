@@ -92,7 +92,7 @@ class SABRCalc:
 
     def calibrate(self, chain: VolSmileChain, backbone: Backbone) -> SABRParams:
         forward = chain.f
-        tenor = chain.T
+        time_to_maturity = chain.T
         strikes = chain.strikes
         implied_vols = chain.sigmas
         beta = backbone.beta
@@ -110,7 +110,7 @@ class SABRCalc:
             J = np.stack( 
                 self._jacobian_sabr(
                     forward,
-                    tenor,
+                    time_to_maturity,
                     strikes,
                     params,
                     beta
@@ -118,7 +118,7 @@ class SABRCalc:
             )
             iv = self._vol_sabr(
                 forward,
-                tenor,
+                time_to_maturity,
                 strikes,
                 params,
                 beta
@@ -265,14 +265,14 @@ class SABRCalc:
 
         return VolSmileDeltaSpace(
             forward,
-            Straddle(ImpliedVol(atm), Tenor(forward.T)),
-            RiskReversal(Delta(0.25), VolatilityQuote(call25 - put25), Tenor(forward.T)),
+            Straddle(ImpliedVol(atm), TimeToMaturity(forward.T)),
+            RiskReversal(Delta(0.25), VolatilityQuote(call25 - put25), TimeToMaturity(forward.T)),
             Butterfly(Delta(0.25), 
-                      VolatilityQuote(0.5*(call25 + put25) - atm), Tenor(forward.T)),
+                      VolatilityQuote(0.5*(call25 + put25) - atm), TimeToMaturity(forward.T)),
             RiskReversal(Delta(0.1), 
-                         VolatilityQuote(call10 - put10), Tenor(forward.T)),
+                         VolatilityQuote(call10 - put10), TimeToMaturity(forward.T)),
             Butterfly(Delta(0.1), 
-                      VolatilityQuote(0.5*(call10 + put10) - atm), Tenor(forward.T))
+                      VolatilityQuote(0.5*(call10 + put10) - atm), TimeToMaturity(forward.T))
         )
     
     def delta(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Delta:

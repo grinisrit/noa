@@ -91,11 +91,11 @@ class ForwardYields:
 @nb.experimental.jitclass([
     ("T", nb.float64)
 ])
-class Tenor:
-    def __init__(self, tenor: nb.float64):
-        if not tenor > 0:
-            raise ValueError('Non-positive tenor')
-        self.T = tenor
+class TimeToMaturity:
+    def __init__(self, time_to_maturity: nb.float64):
+        if not time_to_maturity > 0:
+            raise ValueError('Non-positive time_to_maturity')
+        self.T = time_to_maturity
 
 
 @nb.experimental.jitclass([
@@ -142,10 +142,10 @@ class ForwardRates:
     ("T", nb.float64)
 ])
 class Forward:
-    def __init__(self, spot: Spot, forward_yield: ForwardYield, tenor: Tenor):
+    def __init__(self, spot: Spot, forward_yield: ForwardYield, time_to_maturity: TimeToMaturity):
         self.S = spot.S
         self.r = forward_yield.r
-        self.T = tenor.T
+        self.T = time_to_maturity.T
         
     def forward_rate(self) -> ForwardRate:
         return ForwardRate(self.S * np.exp(self.r * self.T))
@@ -154,9 +154,9 @@ class Forward:
         return Numeraire(np.exp(-self.r * self.T))
     
     @staticmethod
-    def from_forward_rate(spot: Spot, forward_rate: ForwardRate, tenor: Tenor):
+    def from_forward_rate(spot: Spot, forward_rate: ForwardRate, time_to_maturity: TimeToMaturity):
         return Forward(
-            spot, ForwardYield(- np.log(spot.S / forward_rate.fv)/ tenor.T), tenor
+            spot, ForwardYield(- np.log(spot.S / forward_rate.fv)/ time_to_maturity.T), time_to_maturity
             )
 
     
