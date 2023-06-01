@@ -368,7 +368,7 @@ class VolSurface:
 
         self.f = CubicSpline(
             np.append(np.array([0.]), forward_curve.T),
-            np.append(np.array([0.]), forward_curve.forward_rates())
+            np.append(np.array([0.]), forward_curve.forward_rates().data)
         )
 
         self.ATM = CubicSpline(
