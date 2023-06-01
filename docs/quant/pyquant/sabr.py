@@ -730,22 +730,22 @@ class SABRCalc:
         premium = self.premium(forward,  strike, option_type, params).pv
         delta_space = self.delta_space(forward, params)
 
-        blipped_chain = delta_space.blip_25BB().blip_10BB().to_chain_space()
+        blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone())
         blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
 
-        return Sega((blipped_premium - premium) / delta_space.bb25_blip) 
+        return Sega((blipped_premium - premium) / delta_space.bf25_blip) 
     
     
     def blip_segas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
         premiums = self.premiums(forward,  strikes, params).data
         delta_space = self.delta_space(forward, params)
 
-        blipped_chain = delta_space.blip_25BB().blip_10BB().to_chain_space()
+        blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone())
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
 
-        return Segas((blipped_premiums - premiums) / delta_space.bb25_blip) 
+        return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
 
     def _vol_sabr(
         self,

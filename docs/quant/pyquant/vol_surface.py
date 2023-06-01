@@ -144,17 +144,17 @@ class VolSmileChain:
 @nb.experimental.jitclass([
     ("ATM", nb.float64),
     ("RR25", nb.float64),
-    ("BB25", nb.float64),
+    ("BF25", nb.float64),
     ("RR10", nb.float64),
-    ("BB10", nb.float64)
+    ("BF10", nb.float64)
 ])  
 class PremiumsDeltaSpace:
     def __init__(self):
         self.ATM = 0.
         self.RR25 = 0.
-        self.BB25 = 0.
+        self.BF25 = 0.
         self.RR10 = 0.
-        self.BB10 = 0.
+        self.BF10 = 0.
 
 
 @nb.experimental.jitclass([
@@ -164,14 +164,14 @@ class PremiumsDeltaSpace:
     ("f", nb.float64),
     ("ATM", nb.float64),
     ("RR25", nb.float64),
-    ("BB25", nb.float64),
+    ("BF25", nb.float64),
     ("RR10", nb.float64),
-    ("BB10", nb.float64),
+    ("BF10", nb.float64),
     ("atm_blip", nb.float64),
     ("rr25_blip", nb.float64),
-    ("bb25_blip", nb.float64),
+    ("bf25_blip", nb.float64),
     ("rr10_blip", nb.float64),
-    ("bb10_blip", nb.float64),
+    ("bf10_blip", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
     ("delta_tol", nb.float64),
@@ -184,9 +184,9 @@ class VolSmileDeltaSpace:
         forward: Forward,
         ATM: Straddle, 
         RR25: RiskReversal, 
-        BB25: Butterfly, 
+        BF25: Butterfly, 
         RR10: RiskReversal, 
-        BB10: Butterfly
+        BF10: Butterfly
     ):
         self.T = forward.T
         self.S = forward.S
@@ -203,11 +203,11 @@ class VolSmileDeltaSpace:
             raise ValueError('Inconsistent time_to_maturity for 25RR')
         self.RR25 = RR25.sigma 
 
-        if not BB25.delta == 0.25:
-            raise ValueError('Inconsistent delta for 25BB')
-        if not BB25.T == self.T:
-            raise ValueError('Inconsistent time_to_maturity for 25BB')
-        self.BB25 = BB25.sigma
+        if not BF25.delta == 0.25:
+            raise ValueError('Inconsistent delta for 25BF')
+        if not BF25.T == self.T:
+            raise ValueError('Inconsistent time_to_maturity for 25BF')
+        self.BF25 = BF25.sigma
 
         if not RR10.delta == 0.1:
             raise ValueError('Inconsistent delta for 10RR')
@@ -215,17 +215,17 @@ class VolSmileDeltaSpace:
             raise ValueError('Inconsistent delta for 10RR')
         self.RR10 = RR10.sigma
 
-        if not BB10.delta == 0.1:
-            raise ValueError('Inconsistent delta for 10BB')
-        if not BB10.T == self.T:
-            raise ValueError('Inconsistent time to maturity for 10BB')
-        self.BB10 = BB10.sigma
+        if not BF10.delta == 0.1:
+            raise ValueError('Inconsistent delta for 10BF')
+        if not BF10.T == self.T:
+            raise ValueError('Inconsistent time to maturity for 10BF')
+        self.BF10 = BF10.sigma
 
         self.atm_blip = 0.0025
         self.rr25_blip = 0.001
-        self.bb25_blip = 0.001
+        self.bf25_blip = 0.001
         self.rr10_blip = 0.0016
-        self.bb10_blip = 0.00256
+        self.bf10_blip = 0.00256
         
         self.strike_lower = 0.1
         self.strike_upper = 10.
@@ -253,8 +253,8 @@ class VolSmileDeltaSpace:
         strikes = np.zeros(5, dtype=np.float64)
            
         ivs[2] = self.ATM     
-        ivs[1], ivs[3] = self._implied_vols(self.RR25, self.BB25)
-        ivs[0], ivs[4] = self._implied_vols(self.RR10, self.BB10)
+        ivs[1], ivs[3] = self._implied_vols(self.RR25, self.BF25)
+        ivs[0], ivs[4] = self._implied_vols(self.RR10, self.BF10)
 
         strikes[0] = self._get_strike(ivs[0], -0.1)
         strikes[1] = self._get_strike(ivs[1], -0.25)
@@ -275,9 +275,9 @@ class VolSmileDeltaSpace:
         res.ATM = vanilla_premiums[2]
 
         res.RR25 = vanilla_premiums[3] - vanilla_premiums[1]
-        res.BB25 = 0.5*(vanilla_premiums[3] + vanilla_premiums[1]) - res.ATM
+        res.BF25 = 0.5*(vanilla_premiums[3] + vanilla_premiums[1]) - res.ATM
         res.RR10 = vanilla_premiums[4] - vanilla_premiums[0]
-        self.BB10 = 0.5*(vanilla_premiums[4] + vanilla_premiums[0]) - res.ATM
+        self.BF10 = 0.5*(vanilla_premiums[4] + vanilla_premiums[0]) - res.ATM
 
         return res
     
@@ -289,16 +289,16 @@ class VolSmileDeltaSpace:
         self.RR25 += self.rr25_blip
         return self
 
-    def blip_25BB(self):
-        self.BB25 += self.bb25_blip
+    def blip_25BF(self):
+        self.BF25 += self.bf25_blip
         return self
 
     def blip_10RR(self):
         self.RR10 += self.rr10_blip
         return self
 
-    def blip_10BB(self):
-        self.BB10 += self.bb10_blip
+    def blip_10BF(self):
+        self.BF10 += self.bf10_blip
         return self
 
 
@@ -381,7 +381,7 @@ class VolSurface:
             np.append(np.array([0.]), risk_reversals_25.sigma)
         )
 
-        self.BB25 = CubicSpline(
+        self.BF25 = CubicSpline(
             np.append(np.array([0.]), butterflies_25.T),
             np.append(np.array([0.]), butterflies_25.sigma)
         )
@@ -391,7 +391,7 @@ class VolSurface:
             np.append(np.array([0.]), risk_reversals_10.sigma)
         )
 
-        self.BB10 = CubicSpline(
+        self.BF10 = CubicSpline(
             np.append(np.array([0.]), butterflies_10.T),
             np.append(np.array([0.]), butterflies_10.sigma)
         )
@@ -427,7 +427,7 @@ class VolSurface:
             ),
             Butterfly(
                 Delta(.25),
-                VolatilityQuote(self.BB25(T)),
+                VolatilityQuote(self.BF25(T)),
                 time_to_maturity
             ),
             RiskReversal(
@@ -437,7 +437,7 @@ class VolSurface:
             ),
             Butterfly(
                 Delta(.1),
-                VolatilityQuote(self.BB10(T)),
+                VolatilityQuote(self.BF10(T)),
                 time_to_maturity
             )
         )
