@@ -315,7 +315,7 @@ class SABRCalc:
     
     def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Delta:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.delta(forward, vanilla.strike(), vanilla.option_type(), params: SABRParams)
+        return self.delta(forward, vanilla.strike(), vanilla.option_type(), params)
         
     def deltas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
         F = forward.forward_rate().fv
@@ -346,7 +346,7 @@ class SABRCalc:
  
     def vanillas_deltas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Delta:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-                F = forward.forward_rate().fv
+        F = forward.forward_rate().fv
         D = forward.numeraire().pv
         Ks = vanillas.Ks
         sigmas = self.implied_vols(forward, Strikes(Ks), params).data

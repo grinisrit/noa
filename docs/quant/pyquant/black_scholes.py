@@ -127,7 +127,7 @@ class BSCalc:
             ).sigma
         return ImpliedVols(ivols)
     
-    def premium(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Premium:
+    def premium(self, forward: Forward, strike: Strike,  option_type: OptionType, implied_vol: ImpliedVol) -> Premium:
         pm = 1 if option_type.is_call else -1
         d1 = self._d1(forward, strike, implied_vol)
         d2 = self._d2(d1, forward, implied_vol)
