@@ -208,7 +208,45 @@ class Strikes:
 class OptionType:
     def __init__(self, is_call: nb.boolean):
         self.is_call = is_call
+        
+        
+@nb.experimental.jitclass([
+    ("data", nb.boolean[:])
+])
+class OptionTypes:
+    def __init__(self, is_call: nb.boolean[:]):
+        self.data = is_call
+      
+    
+@nb.experimental.jitclass([
+    ("is_call", nb.boolean),
+    ("K", nb.float64),
+    ("T", nb.float64)
+])
+class Vanilla:
+    def __init__(self, option_type: OptionType, strike: Strike, time_to_maturity: TimeToMaturity):
+        self.is_call = option_type.is_call
+        self.K = strike.K
+        self.T = time_to_maturity.T
+        
+    def time_to_maturity(self):
+        return TimeToMaturity(self.T)
+        
+        
+@nb.experimental.jitclass([
+    ("is_call", nb.boolean[:]),
+    ("strikes", nb.float64[:]),
+    ("T", nb.float64)
+])
+class Vanillas:
+    def __init__(self, option_types: OptionTypes, strikes: Strikes, time_to_maturity: TimeToMaturity):
+        self.is_call = option_types.data
+        self.strikes = strikes.data
+        self.T = time_to_maturity.T
 
+    def time_to_maturity(self):
+        return TimeToMaturity(self.T)
+        
 
 @nb.experimental.jitclass([
     ("pv", nb.float64)

@@ -78,6 +78,9 @@ class VolSmileChain:
             sigma = self.sigmas[i]
             res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigma), OptionType(K >= self.f)).pv
         return Premiums(res)
+    
+    def forward(self) -> Forward:
+        return Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
 
     def deltas(self) -> Deltas:
         res = np.zeros_like(self.strikes)
@@ -139,22 +142,6 @@ class VolSmileChain:
                 ImpliedVol(self.sigmas[i])
             ).pv 
         return Volgas(res) 
-    
-    
-@nb.experimental.jitclass([
-    ("ATM", nb.float64),
-    ("RR25", nb.float64),
-    ("BF25", nb.float64),
-    ("RR10", nb.float64),
-    ("BF10", nb.float64)
-])  
-class PremiumsDeltaSpace:
-    def __init__(self):
-        self.ATM = 0.
-        self.RR25 = 0.
-        self.BF25 = 0.
-        self.RR10 = 0.
-        self.BF10 = 0.
 
 
 @nb.experimental.jitclass([
@@ -248,7 +235,7 @@ class VolSmileDeltaSpace:
             ImpliedVol(sigma)
         ).K
 
-    def to_chain_space(self):
+    def to_chain_space(self) -> VolSmileChain:
         ivs = np.zeros(5, dtype=np.float64)
         strikes = np.zeros(5, dtype=np.float64)
            
@@ -267,19 +254,9 @@ class VolSmileDeltaSpace:
             Strikes(strikes),
             ImpliedVols(ivs)
         ) 
-
-    def premiums(self):
-        chain = self.to_chain_space()
-        vanilla_premiums = chain.premiums().data
-        res = PremiumsDeltaSpace()
-        res.ATM = vanilla_premiums[2]
-
-        res.RR25 = vanilla_premiums[3] - vanilla_premiums[1]
-        res.BF25 = 0.5*(vanilla_premiums[3] + vanilla_premiums[1]) - res.ATM
-        res.RR10 = vanilla_premiums[4] - vanilla_premiums[0]
-        self.BF10 = 0.5*(vanilla_premiums[4] + vanilla_premiums[0]) - res.ATM
-
-        return res
+    
+    def forward(self) -> Forward:
+        return Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
     
     def blip_ATM(self):
         self.ATM += self.atm_blip

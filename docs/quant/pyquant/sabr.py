@@ -77,7 +77,7 @@ class SABRCalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.cached_params = np.array([1., -0.1, 0.0])
+        self.cached_params = np.array([1., 0.0, 0.0])
         self.calibration_error = 0.
         self.num_iter = 500
         self.tol = 1e-5
@@ -197,6 +197,8 @@ class SABRCalc:
             K = Ks[i]
             res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(K >= f)).pv
         return Premiums(res)
+    
+    
 
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
         F = forward.forward_rate().fv
@@ -1329,5 +1331,4 @@ class SABRCalc:
             + 2 * dI_B_0_dalpha * dI_H_1_dalpha
         )
         return d2_sigma_dalpha2
-
     

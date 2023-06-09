@@ -136,6 +136,9 @@ class BSCalc:
             np.exp(-forward.r * forward.T) * normal_cdf(pm * d2)
         )
     
+    def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla) -> Premium:
+        foward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+    
     def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
         d1 = self._d1(forward, strike, implied_vol)
         return Delta(
