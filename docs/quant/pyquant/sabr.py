@@ -93,7 +93,7 @@ class SABRCalc:
     def calibrate(self, chain: VolSmileChain, backbone: Backbone) -> SABRParams:
         forward = chain.f
         time_to_maturity = chain.T
-        strikes = chain.strikes
+        strikes = chain.Ks
         implied_vols = chain.sigmas
         beta = backbone.beta
     
