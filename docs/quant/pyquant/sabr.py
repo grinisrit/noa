@@ -198,7 +198,24 @@ class SABRCalc:
             res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(K >= f)).pv
         return Premiums(res)
     
+    def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Premium:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return self.premium(forward, vanilla.strike(), vanilla.option_type(), params)
     
+    def vanillas_premiums(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Premiums:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        f = forward.forward_rate().fv
+        sigmas =\
+            self._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
+        Ks = vanillas.Ks
+        res = np.zeros_like(sigmas)
+        n = len(sigmas)
+        for i in range(n):
+            K = Ks[i]
+            is_call = vanillas.is_call[i]
+            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(is_call)).pv
+        return Premiums(res)
+        
 
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
         F = forward.forward_rate().fv
@@ -295,6 +312,10 @@ class SABRCalc:
         return Delta(
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         )
+    
+    def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Delta:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return self.delta(forward, vanilla.strike(), vanilla.option_type(), params: SABRParams)
         
     def deltas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
         F = forward.forward_rate().fv
@@ -322,7 +343,36 @@ class SABRCalc:
         return Deltas(
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         )
-    
+ 
+    def vanillas_deltas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Delta:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+                F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        Ks = vanillas.Ks
+        sigmas = self.implied_vols(forward, Strikes(Ks), params).data
+        n = len(sigmas)
+        delta_bsm = np.zeros_like(sigmas)
+        vega_bsm = np.zeros_like(sigmas)
+        dsigma_df = np.zeros_like(sigmas)
+
+        for i in range(n):
+            K = Ks[i]
+            sigma = sigmas[i]
+            is_call = vanillas.is_call[i]
+            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(is_call)).pv
+            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), ImpliedVol(sigma)).pv
+
+            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
+
+        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
+            Ks,
+            params.array(),
+            params.beta
+        )[0] 
+        return Deltas(
+            delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+        )
+        
      
     def gamma(self, forward: Forward, strike: Strike, params: SABRParams) -> Gamma:
         F = forward.forward_rate().fv

@@ -229,7 +229,13 @@ class Vanilla:
         self.K = strike.K
         self.T = time_to_maturity.T
         
-    def time_to_maturity(self):
+    def option_type(self) -> OptionType:
+        return OptionType(self.is_call)
+        
+    def strike(self) -> Strike:
+        return Strike(self.K)
+        
+    def time_to_maturity(self) -> TimeToMaturity:
         return TimeToMaturity(self.T)
         
         
