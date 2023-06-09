@@ -90,8 +90,8 @@ class VolSmileChain:
             res[i] = self.bs_calc.delta(
                 forward,
                 Strike(self.Ks[i]),
-                ImpliedVol(self.sigmas[i]),
-                OptionType(self.Ks[i] >= self.f)
+                OptionType(self.Ks[i] >= self.f),
+                ImpliedVol(self.sigmas[i])
             ).pv 
         return Deltas(res) 
     

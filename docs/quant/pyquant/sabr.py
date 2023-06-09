@@ -226,7 +226,7 @@ class SABRCalc:
 
         def g(K):
             iv = self.implied_vol(forward, Strike(K), params)         
-            return self.bs_calc.delta(forward, Strike(K), iv, option_type).pv - delta.pv
+            return self.bs_calc.delta(forward, Strike(K), option_type, iv).pv - delta.pv
 
         def g_prime(K): 
             iv = self.implied_vol(forward, Strike(K), params)
@@ -299,7 +299,7 @@ class SABRCalc:
         D = forward.numeraire().pv
         sigma = self.implied_vol(forward, strike, params)
 
-        delta_bsm = self.bs_calc.delta(forward, strike, sigma, option_type).pv
+        delta_bsm = self.bs_calc.delta(forward, strike, option_type, sigma).pv
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
 
@@ -330,7 +330,7 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = sigmas[i]
-            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(K>=F)).pv
+            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), OptionType(K>=F), ImpliedVol(sigma)).pv
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), ImpliedVol(sigma)).pv
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
@@ -359,7 +359,7 @@ class SABRCalc:
             K = Ks[i]
             sigma = sigmas[i]
             is_call = vanillas.is_call[i]
-            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), ImpliedVol(sigma), OptionType(is_call)).pv
+            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), OptionType(is_call), ImpliedVol(sigma)).pv
             vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), ImpliedVol(sigma)).pv
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)

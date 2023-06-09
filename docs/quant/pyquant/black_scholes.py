@@ -37,7 +37,7 @@ class BSCalc:
         option_type = OptionType(delta.pv >= 0.)
         
         def g(K):
-            return self.delta(forward, Strike(K), implied_vol, option_type).pv - delta.pv
+            return self.delta(forward, Strike(K), option_type, implied_vol).pv - delta.pv
 
         def g_prime(K):
             return self._dDelta_dK(forward, Strike(K), implied_vol)
@@ -140,7 +140,7 @@ class BSCalc:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
         return self.premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
     
-    def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
+    def delta(self, forward: Forward, strike: Strike, option_type: OptionType, implied_vol: ImpliedVol) -> Delta:
         d1 = self._d1(forward, strike, implied_vol)
         return Delta(
             normal_cdf(d1) if option_type.is_call else normal_cdf(d1) - 1.0
@@ -148,7 +148,7 @@ class BSCalc:
     
     def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Delta:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.delta(forward, vanilla.strike(), implied_vol, vanilla.option_type())
+        return self.delta(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
     
     def gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
         d1 = self._d1(forward, strike, implied_vol) 
