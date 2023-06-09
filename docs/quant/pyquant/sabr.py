@@ -184,7 +184,7 @@ class SABRCalc:
     def premium(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Premium:
         sigma =\
             self._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
-        return self.bs_calc.premium(forward, strike, ImpliedVol(sigma), option_type)
+        return self.bs_calc.premium(forward, strike, option_type, ImpliedVol(sigma))
    
     def premiums(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Premiums:
         f = forward.forward_rate().fv
@@ -195,7 +195,7 @@ class SABRCalc:
         n = len(sigmas)
         for i in range(n):
             K = Ks[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(K >= f)).pv
+            res[i] = self.bs_calc.premium(forward, Strike(K), OptionType(K >= f), ImpliedVol(sigmas[i])).pv
         return Premiums(res)
     
     def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Premium:
@@ -213,7 +213,7 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             is_call = vanillas.is_call[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigmas[i]), OptionType(is_call)).pv
+            res[i] = self.bs_calc.premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i])).pv
         return Premiums(res)
         
 
@@ -757,7 +757,8 @@ class SABRCalc:
 
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
     
-    def blip_rega(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Rega:
+    def blip_rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
+        option_type = OptionType(forward.forward_rate().fv >= strike.K)
         premium = self.premium(forward,  strike, option_type, params).pv
         delta_space = self.delta_space(forward, params)
 
@@ -778,7 +779,8 @@ class SABRCalc:
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
     
-    def blip_sega(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Sega:
+    def blip_sega(self, forward: Forward, strike: Strike, params: SABRParams) -> Sega:
+        option_type = OptionType(forward.forward_rate().fv >= strike.K)
         premium = self.premium(forward,  strike, option_type, params).pv
         delta_space = self.delta_space(forward, params)
 

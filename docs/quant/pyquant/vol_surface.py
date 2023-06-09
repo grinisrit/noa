@@ -76,7 +76,7 @@ class VolSmileChain:
         for i in range(n):
             K = self.Ks[i]
             sigma = self.sigmas[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), ImpliedVol(sigma), OptionType(K >= self.f)).pv
+            res[i] = self.bs_calc.premium(forward, Strike(K), OptionType(K >= self.f), ImpliedVol(sigma)).pv
         return Premiums(res)
     
     def forward(self) -> Forward:

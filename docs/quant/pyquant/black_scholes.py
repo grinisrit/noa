@@ -74,7 +74,7 @@ class BSCalc:
         pv = premium.pv
 
         def g(sigma):
-            return pv - self.premium(forward, strike, ImpliedVol(sigma), option_type).pv
+            return pv - self.premium(forward, strike, option_type, ImpliedVol(sigma)).pv
 
         def g_prime(sigma):
             return -self.vega(forward, strike, ImpliedVol(sigma)).pv 
@@ -138,7 +138,7 @@ class BSCalc:
     
     def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Premium:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.premium(forward, vanilla.strike(), implied_vol, vanilla.option_type())
+        return self.premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
     
     def delta(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol, option_type: OptionType) -> Delta:
         d1 = self._d1(forward, strike, implied_vol)
