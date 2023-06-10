@@ -138,7 +138,7 @@ class BSCalc:
     
     def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Premium:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
+        return Premium(vanilla.N * self.premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol).pv)
     
     def delta(self, forward: Forward, strike: Strike, option_type: OptionType, implied_vol: ImpliedVol) -> Delta:
         d1 = self._d1(forward, strike, implied_vol)
@@ -148,7 +148,9 @@ class BSCalc:
     
     def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Delta:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.delta(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
+        return Delta(vanilla.N*\
+            self.delta(forward, vanilla.strike(), vanilla.option_type(), implied_vol).pv
+        )
     
     def gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
         d1 = self._d1(forward, strike, implied_vol) 
@@ -156,9 +158,22 @@ class BSCalc:
             normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
         )
     
+    def vanilla_gamma(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Gamma:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Gamma(vanilla.N*\
+            self.gamma(forward, vanilla.strike(), implied_vol).pv
+        )
+    
     def vega(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vega:
         return Vega(
             forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
+        )
+    
+    
+    def vanilla_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Vega(vanilla.N*\
+            self.vega(forward, vanilla.strike(), implied_vol).pv
         )
     
     def vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vanna:
@@ -167,11 +182,23 @@ class BSCalc:
             self.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
         )
     
+    def vanilla_vanna(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vanna:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Vanna(vanilla.N*\
+            self.vanna(forward, vanilla.strike(), implied_vol).pv
+        )
+    
     def volga(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Volga:
         d1 = self._d1(forward, strike, implied_vol)
         d2 = self._d2(d1, forward, implied_vol)
         return Volga(
             self.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
+        )
+    
+    def vanilla_volga(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Volga:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Volga(vanilla.N*\
+            self.volga(forward, vanilla.strike(), implied_vol).pv
         )
     
     def _d1(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:

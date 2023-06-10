@@ -200,7 +200,9 @@ class SABRCalc:
     
     def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Premium:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.premium(forward, vanilla.strike(), vanilla.option_type(), params)
+        return Premium(vanilla.N*\
+            self.premium(forward, vanilla.strike(), vanilla.option_type(), params).pv
+        )
     
     def vanillas_premiums(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Premiums:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
@@ -208,12 +210,14 @@ class SABRCalc:
         sigmas =\
             self._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
         Ks = vanillas.Ks
+        Ns = vanillas.Ns
         res = np.zeros_like(sigmas)
         n = len(sigmas)
         for i in range(n):
             K = Ks[i]
+            N = Ns[i]
             is_call = vanillas.is_call[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i])).pv
+            res[i] = N*self.bs_calc.premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i])).pv
         return Premiums(res)
         
 
@@ -315,7 +319,9 @@ class SABRCalc:
     
     def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Delta:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return self.delta(forward, vanilla.strike(), vanilla.option_type(), params)
+        return Delta(vanilla.N *\
+                     self.delta(forward, vanilla.strike(), vanilla.option_type(), params).pv
+        )
         
     def deltas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
         F = forward.forward_rate().fv
@@ -369,9 +375,9 @@ class SABRCalc:
             params.array(),
             params.beta
         )[0] 
-        return Deltas(
+        return Deltas(vanillas.Ns*(
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
-        )
+        ))
         
      
     def gamma(self, forward: Forward, strike: Strike, params: SABRParams) -> Gamma:
@@ -407,6 +413,11 @@ class SABRCalc:
             )
         )
     
+    def vanilla_gamma(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Gamma:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Gamma(vanilla.N*\
+            self.gamma(forward, vanilla.strike(), params).pv
+        )
      
     def gammas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Gammas:
         F = forward.forward_rate().fv
@@ -456,6 +467,11 @@ class SABRCalc:
             )
         )
     
+      def vanillas_gammas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Gammas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Gammas(vanillas.Ns*\
+            self.gammas(forward, vanillas.strikes(), params).data
+        )  
     
     def vega(self, forward: Forward, strike: Strike, params: SABRParams) -> Vega:
         F = forward.forward_rate().fv
@@ -478,6 +494,11 @@ class SABRCalc:
 
         return Vega(res)
     
+    def vanilla_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Vega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Vega(vanilla.N*\
+            self.vega(forward, vanilla.strike(), params).pv
+        )
         
     def vegas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
         F = forward.forward_rate().fv
@@ -506,6 +527,12 @@ class SABRCalc:
             res = vega_bsm * dsigma_dalpha
 
         return Vegas(res)
+   
+    def vanillas_vegas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanilla, params: SABRParams) -> Vegas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Vegas(vanillas.Ns*\
+            self.vegas(forward, vanillas.strikes(), params).data
+        )
     
     
     def rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
@@ -524,6 +551,11 @@ class SABRCalc:
             vega_bsm * dsigma_drho
         )
     
+    def vanilla_rega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Rega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Rega(vanilla.N*\
+            self.rega(forward, vanilla.strike(), params).pv
+        )    
         
     def regas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
         F = forward.forward_rate().fv
@@ -546,6 +578,11 @@ class SABRCalc:
             vega_bsm * dsigma_drho
         )
     
+    def vanillas_regas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Regas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Regas(vanillas.Ns*\
+            self.regas(forward, vanillas.strikes(), params).data
+        )    
     
     def sega(self, forward: Forward, strike: Strike, params: SABRParams) -> Sega:
         F = forward.forward_rate().fv
@@ -562,7 +599,12 @@ class SABRCalc:
         return Sega(
             vega_bsm * dsigma_dv
         )
-    
+
+    def vanilla_sega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Sega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Sega(vanilla.N*\
+            self.sega(forward, vanilla.strike(), params).pv
+        ) 
         
     def segas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
         F = forward.forward_rate().fv
@@ -584,7 +626,12 @@ class SABRCalc:
         return Segas(
             vega_bsm * dsigma_dv
         )
-    
+
+    def vanillas_segas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Segas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Segas(vanillas.Ns*\
+            self.segas(forward, vanillas.strikes(), params).data
+        )    
      
     def volga(self, forward: Forward, strike: Strike, params: SABRParams) -> Volga:
         F = forward.forward_rate().fv
@@ -611,7 +658,12 @@ class SABRCalc:
             res = volga_bsm * (dsigma_dalpha) ** 2 + vega_bsm * d2_sigma_dalpha2
 
         return Volga(res)
-    
+
+    def vanilla_volga(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Volga:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Volga(vanilla.N*\
+            self.volga(forward, vanilla.strike(), params).pv
+        ) 
      
     def volgas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Volgas:
         F = forward.forward_rate().fv
@@ -651,6 +703,12 @@ class SABRCalc:
             res = volga_bsm * (dsigma_dalpha) ** 2 + vega_bsm * d2_sigma_dalpha2
 
         return Volgas(res)
+
+    def vanillas_volgas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanilla, params: SABRParams) -> Volgas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Volgas(vanillas.Ns*\
+            self.volgas(forward, vanillas.strikes(), params).data
+        )
     
      
     def vanna(self, forward: Forward, strike: Strike, params: SABRParams) -> Vanna:
@@ -688,6 +746,11 @@ class SABRCalc:
 
         return Vanna(res)
     
+    def vanilla_vanna(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Vanna:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Vanna(vanilla.N*\
+            self.vanna(forward, vanilla.strike(), params).pv
+        )    
      
     def vannas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vannas:
         F = forward.forward_rate().fv
@@ -736,16 +799,28 @@ class SABRCalc:
 
         return Vannas(res)
     
-    def blip_vega(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Vega:
-        premium = self.premium(forward,  strike, option_type, params).pv
+    def vanillas_vannas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Vannas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Vannas(vanillas.Ns*\
+            self.vannas(forward, vanillas.strikes(), params).data
+        )
+    
+    def blip_vega(self, forward: Forward, strike: Strike, params: SABRParams) -> Vega:
+        option_type = OptionType(forward.forward_rate().fv >= strike.K)
+        premium = self.premium(forward,  strike, vanilla.option_type(), params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone())
         blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
 
-        return Vega((blipped_premium - premium) / delta_space.atm_blip)
+        return Vega(vanilla.N * (blipped_premium - premium) / delta_space.atm_blip)
     
+    def vanilla_blip_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Vega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Vega(vanilla.N*\
+            self.blip_vega(forward, vanilla.strike(), params).pv
+        )    
     
     def blip_vegas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
         premiums = self.premiums(forward,  strikes, params).data
@@ -756,6 +831,12 @@ class SABRCalc:
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
 
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
+    
+    def vanillas_blip_vegas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Vegas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Vegas(vanillas.Ns*\
+            self.blip_vegas(forward, vanillas.strikes(), params).data
+        )
     
     def blip_rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
         option_type = OptionType(forward.forward_rate().fv >= strike.K)
@@ -768,6 +849,11 @@ class SABRCalc:
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
     
+    def vanilla_blip_rega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Rega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Rega(vanilla.N*\
+            self.blip_rega(forward, vanilla.strike(), params).pv
+        )     
     
     def blip_regas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
         premiums = self.premiums(forward,  strikes, params).data
@@ -778,6 +864,12 @@ class SABRCalc:
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
+    
+    def vanillas_blip_regas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Regas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Regas(vanillas.Ns*\
+            self.blip_regas(forward, vanillas.strikes(), params).data
+        )
     
     def blip_sega(self, forward: Forward, strike: Strike, params: SABRParams) -> Sega:
         option_type = OptionType(forward.forward_rate().fv >= strike.K)
@@ -790,6 +882,11 @@ class SABRCalc:
 
         return Sega((blipped_premium - premium) / delta_space.bf25_blip) 
     
+    def vanilla_blip_sega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Sega:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Sega(vanilla.N*\
+            self.blip_sega(forward, vanilla.strike(), params).pv
+        )     
     
     def blip_segas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
         premiums = self.premiums(forward,  strikes, params).data
@@ -800,7 +897,13 @@ class SABRCalc:
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
-
+    
+    def vanillas_blip_segas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Segas:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        return Segas(vanillas.Ns*\
+            self.blip_segas(forward, vanillas.strikes(), params).data
+        )
+    
     def _vol_sabr(
         self,
         F: nb.float64,

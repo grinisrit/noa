@@ -41,3 +41,22 @@ def is_sorted(a: nb.float64[:]) -> nb.boolean:
          if a[i+1] < a[i] :
                return False
     return True
+
+@nb.njit
+def mass_weights(t: nb.float64, Ts: nb.float64[:]) -> nb.float64[:]:
+    n = len(Ts)
+    w = np.zeros_like(Ts)
+    flag = False
+    for i in range(n):
+        wi = t - Ts[i]
+        flag = t - Ts[i] <= 0.
+        if flag:
+            w[i] = abs(wi)
+            if i-1 >= 0:
+                w[i-1] = abs(t - Ts[i-1])
+            break
+    if np.all(w<=0):
+        w[-1] = 1.
+    return w / w.sum()
+
+

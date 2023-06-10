@@ -53,6 +53,20 @@ class Premiums:
     def __init__(self, pvs: nb.float64[:]):
         self.data = pvs
 
+@nb.experimental.jitclass([
+    ("N", nb.float64)
+])
+class Notional:
+    def __init__(self, N: nb.float64):
+        self.N = N
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class Notionals:
+    def __init__(self, notionals: nb.float64[:]):
+        self.data = notionals
+        
 
 @nb.experimental.jitclass([
     ("S", nb.float64)
@@ -221,12 +235,14 @@ class OptionTypes:
 @nb.experimental.jitclass([
     ("is_call", nb.boolean),
     ("K", nb.float64),
+    ("N", nb.float64),
     ("T", nb.float64)
 ])
 class Vanilla:
-    def __init__(self, option_type: OptionType, strike: Strike, time_to_maturity: TimeToMaturity):
+    def __init__(self, option_type: OptionType, strike: Strike, notional: Notional, time_to_maturity: TimeToMaturity):
         self.is_call = option_type.is_call
         self.K = strike.K
+        self.N = notional.N
         self.T = time_to_maturity.T
         
     def option_type(self) -> OptionType:
@@ -242,13 +258,22 @@ class Vanilla:
 @nb.experimental.jitclass([
     ("is_call", nb.boolean[:]),
     ("Ks", nb.float64[:]),
+    ("Ns", nb.float64[:]),
     ("T", nb.float64)
 ])
 class Vanillas:
-    def __init__(self, option_types: OptionTypes, strikes: Strikes, time_to_maturity: TimeToMaturity):
+    def __init__(self, option_types: OptionTypes, strikes: Strikes, notionals: Notionals, time_to_maturity: TimeToMaturity):
+        if not option_types.data.shape == strikes.data.shape:
+            raise ValueError('Inconsistent data between strikes and option types')
+        if not notionals.data.shape == strikes.data.shape:
+            raise ValueError('Inconsistent data between strikes and notionals')
         self.is_call = option_types.data
         self.Ks = strikes.data
+        self.Ns = notionals.data
         self.T = time_to_maturity.T
+        
+    def strikes(self) -> Strikes:
+        return Strikes(self.Ks)
 
     def time_to_maturity(self):
         return TimeToMaturity(self.T)

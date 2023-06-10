@@ -345,32 +345,32 @@ class VolSurface:
 
         self.f = CubicSpline(
             np.append(np.array([0.]), forward_curve.T),
-            np.append(np.array([0.]), forward_curve.forward_rates().data)
+            np.append(np.array([self.S]), forward_curve.forward_rates().data)
         )
 
         self.ATM = CubicSpline(
             np.append(np.array([0.]), straddles.T),
-            np.append(np.array([0.]), straddles.sigma)
+            np.append(straddles.sigma[:1], straddles.sigma)
         )
 
         self.RR25 = CubicSpline(
             np.append(np.array([0.]), risk_reversals_25.T),
-            np.append(np.array([0.]), risk_reversals_25.sigma)
+            np.append(risk_reversals_25.sigma[:1], risk_reversals_25.sigma)
         )
 
         self.BF25 = CubicSpline(
             np.append(np.array([0.]), butterflies_25.T),
-            np.append(np.array([0.]), butterflies_25.sigma)
+            np.append(butterflies_25.sigma[:1], butterflies_25.sigma)
         )
 
         self.RR10 = CubicSpline(
             np.append(np.array([0.]), risk_reversals_10.T),
-            np.append(np.array([0.]), risk_reversals_10.sigma)
+            np.append(risk_reversals_10.sigma[:1], risk_reversals_10.sigma)
         )
 
         self.BF10 = CubicSpline(
             np.append(np.array([0.]), butterflies_10.T),
-            np.append(np.array([0.]), butterflies_10.sigma)
+            np.append(butterflies_10.sigma[:1], butterflies_10.sigma)
         )
 
         self.max_T = np.min(np.array([
