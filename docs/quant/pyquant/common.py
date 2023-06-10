@@ -161,6 +161,15 @@ class Forward:
         self.r = forward_yield.r
         self.T = time_to_maturity.T
         
+    def spot(self) -> Spot:
+        return Spot(self.S)
+    
+    def forward_yield(self) -> ForwardYield:
+        return ForwardYield(self.r)
+    
+    def time_to_maturity(self) -> TimeToMaturity:
+        return TimeToMaturity(self.T)
+        
     def forward_rate(self) -> ForwardRate:
         return ForwardRate(self.S * np.exp(self.r * self.T))
     

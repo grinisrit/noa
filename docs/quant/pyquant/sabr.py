@@ -92,10 +92,10 @@ class SABRCalc:
         self.cached_params = np.array([1., 0.0, 0.0])
         self.calibration_error = 0.
         self.num_iter = 50
-        self.tol = 1e-5
+        self.tol = 1e-8
         self.strike_lower = 0.1
         self.strike_upper = 10.
-        self.delta_tol = 10**-6
+        self.delta_tol = 1e-8
         self.delta_num_iter = 500
         self.delta_grad_eps = 1e-4
         self.bs_calc = BSCalc()
@@ -230,9 +230,9 @@ class SABRCalc:
     def vanillas_premiums(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Premiums:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
         f = forward.forward_rate().fv
-        sigmas =\
-            self._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
         Ks = vanillas.Ks
+        sigmas =\
+            self._vol_sabr(f, forward.T, Ks,  params.array(), params.beta)
         Ns = vanillas.Ns
         res = np.zeros_like(sigmas)
         n = len(sigmas)
@@ -829,103 +829,103 @@ class SABRCalc:
             self.vannas(forward, vanillas.strikes(), params).data
         )
     
-    def blip_vega(self, forward: Forward, strike: Strike, params: SABRParams) -> Vega:
+    def blip_vega(self, forward: Forward, strike: Strike, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
         option_type = OptionType(forward.forward_rate().fv >= strike.K)
-        premium = self.premium(forward,  strike, vanilla.option_type(), params).pv
+        premium = self.premium(forward, strike, option_type, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone())
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
         blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
 
-        return Vega(vanilla.N * (blipped_premium - premium) / delta_space.atm_blip)
+        return Vega((blipped_premium - premium) / delta_space.atm_blip)
     
-    def vanilla_blip_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Vega:
+    def vanilla_blip_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        print(vanilla.strike().K)
         return Vega(vanilla.N*\
-            self.blip_vega(forward, vanilla.strike(), params).pv
+            self.blip_vega(forward, vanilla.strike(), params, calibration_weights).pv
         )    
     
-    def blip_vegas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
+    def blip_vegas(self, forward: Forward, strikes: Strikes, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
         premiums = self.premiums(forward,  strikes, params).data
         delta_space = self.delta_space(forward, params)
-
+  
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone())
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
-
+    
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
     
-    def vanillas_blip_vegas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Vegas:
+    def vanillas_blip_vegas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
         return Vegas(vanillas.Ns*\
-            self.blip_vegas(forward, vanillas.strikes(), params).data
+            self.blip_vegas(forward, vanillas.strikes(), params, calibration_weights).data
         )
     
-    def blip_rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
+    def blip_rega(self, forward: Forward, strike: Strike, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
         option_type = OptionType(forward.forward_rate().fv >= strike.K)
         premium = self.premium(forward,  strike, option_type, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone())
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
         blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
     
-    def vanilla_blip_rega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Rega:
+    def vanilla_blip_rega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
         return Rega(vanilla.N*\
-            self.blip_rega(forward, vanilla.strike(), params).pv
+            self.blip_rega(forward, vanilla.strike(), params, calibration_weights).pv
         )     
     
-    def blip_regas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
+    def blip_regas(self, forward: Forward, strikes: Strikes, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
         premiums = self.premiums(forward,  strikes, params).data
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone())
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
     
-    def vanillas_blip_regas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Regas:
+    def vanillas_blip_regas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
         return Regas(vanillas.Ns*\
-            self.blip_regas(forward, vanillas.strikes(), params).data
+            self.blip_regas(forward, vanillas.strikes(), params, calibration_weights).data
         )
     
-    def blip_sega(self, forward: Forward, strike: Strike, params: SABRParams) -> Sega:
+    def blip_sega(self, forward: Forward, strike: Strike, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
         option_type = OptionType(forward.forward_rate().fv >= strike.K)
         premium = self.premium(forward,  strike, option_type, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone())
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
         blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
 
         return Sega((blipped_premium - premium) / delta_space.bf25_blip) 
     
-    def vanilla_blip_sega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Sega:
+    def vanilla_blip_sega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
         forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
         return Sega(vanilla.N*\
-            self.blip_sega(forward, vanilla.strike(), params).pv
+            self.blip_sega(forward, vanilla.strike(), params, calibration_weights).pv
         )     
     
-    def blip_segas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
+    def blip_segas(self, forward: Forward, strikes: Strikes, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
         premiums = self.premiums(forward,  strikes, params).data
         delta_space = self.delta_space(forward, params)
-
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone())
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
         blipped_premiums = self.premiums(forward, strikes, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
     
-    def vanillas_blip_segas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Segas:
+    def vanillas_blip_segas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
         return Segas(vanillas.Ns*\
-            self.blip_segas(forward, vanillas.strikes(), params).data
+            self.blip_segas(forward, vanillas.strikes(), params, calibration_weights).data
         )
     
     def _vol_sabr(
