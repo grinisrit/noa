@@ -61,6 +61,17 @@ class SABRParams:
     def backbone(self) -> Backbone:
         return Backbone(self.beta)
     
+@nb.experimental.jitclass([
+    ("w", nb.float64[:])
+])
+class CalibrationWeights:
+    def __init__(self, w: nb.float64):
+        if not np.all(w>=0):
+            raise ValueError('Weights must be non-negative')
+        if not w.sum() > 0:
+            raise ValueError('At least one weight must be non-trivial')
+        self.w = w
+        
         
 @nb.experimental.jitclass([
     ("beta", nb.float64),
@@ -79,7 +90,7 @@ class SABRCalc:
     def __init__(self):
         self.cached_params = np.array([1., 0.0, 0.0])
         self.calibration_error = 0.
-        self.num_iter = 500
+        self.num_iter = 50
         self.tol = 1e-5
         self.strike_lower = 0.1
         self.strike_upper = 10.
@@ -90,10 +101,21 @@ class SABRCalc:
     def update_cached_params(self, params: SABRParams):
         self.cached_params = params.array()
 
-    def calibrate(self, chain: VolSmileChain, backbone: Backbone) -> SABRParams:
+    def calibrate(self, chain: VolSmileChain, backbone: Backbone, calibration_weights: CalibrationWeights) -> SABRParams:
+        strikes = chain.Ks
+        w = calibration_weights.w
+        
+        if not strikes.shape == w.shape:
+            raise ValueError('Inconsistent data between strikes and calibration weights')
+            
+        m_n = len(strikes) - 2
+        
+        if not m_n > 0:
+            raise ValueError('Need at least 3 points to calibrate SABR')
+     
+        weights = w / w.sum()
         forward = chain.f
         time_to_maturity = chain.T
-        strikes = chain.Ks
         implied_vols = chain.sigmas
         beta = backbone.beta
     
@@ -123,42 +145,41 @@ class SABRCalc:
                 params,
                 beta
             )
-            weights = np.ones_like(strikes)
-            weights = weights / np.sum(weights)
             res = iv - implied_vols
             return res * weights, J @ np.diag(weights)
         
         def levenberg_marquardt(f, proj, x0):
             x = x0.copy()
 
-            mu = 100.0
+            mu = 1e-2
             nu1 = 2.0
             nu2 = 2.0
 
             res, J = f(x)
-            F = np.linalg.norm(res)
+            F = res.T @ res
 
             result_x = x
-            result_error = F
+            result_error = F / m_n
 
             for i in range(self.num_iter):
+                if result_error < self.tol:
+                    break
                 multipl = J @ J.T
                 I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
                 dx = np.linalg.solve(mu * I + multipl, J @ res)
                 x_ = proj(x - dx)
                 res_, J_ = f(x_)
-                F_ = np.linalg.norm(res_)
+                F_ = res_.T @ res_
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
                     mu /= nu1
-                    result_error = F
+                    result_error = F / m_n
                 else:
                     i -= 1
                     mu *= nu2
                     continue
-                if F < self.tol:
-                    break
                 result_x = x
+                
             return result_x, result_error
 
         self.cached_params, self.calibration_error \
@@ -467,7 +488,7 @@ class SABRCalc:
             )
         )
     
-      def vanillas_gammas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Gammas:
+    def vanillas_gammas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Gammas:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
         return Gammas(vanillas.Ns*\
             self.gammas(forward, vanillas.strikes(), params).data
