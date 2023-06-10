@@ -78,6 +78,7 @@ class CalibrationWeights:
     ("cached_params", nb.float64[:]),
     ("calibration_error", nb.float64),
     ("num_iter", nb.int64),
+    ("delta_num_iter", nb.int64),
     ("tol", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
@@ -94,7 +95,8 @@ class SABRCalc:
         self.tol = 1e-5
         self.strike_lower = 0.1
         self.strike_upper = 10.
-        self.delta_tol = 10**-12
+        self.delta_tol = 10**-6
+        self.delta_num_iter = 500
         self.delta_grad_eps = 1e-4
         self.bs_calc = BSCalc()
 
@@ -267,8 +269,9 @@ class SABRCalc:
         K = (K_l + K_r) / 2
         epsilon = g(K)
         grad = g_prime(K)
-
-        while abs(epsilon) > self.delta_tol: 
+        ii = 0
+        while abs(epsilon) > self.delta_tol and ii < self.delta_num_iter: 
+            ii = ii + 1    
             if abs(grad) > self.delta_grad_eps:
                 K -= epsilon / grad
                 if K > K_r or K < K_l:
