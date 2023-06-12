@@ -68,6 +68,9 @@ class VolSmileChain:
         self.Ks = strikes.data
         
         self.bs_calc = BSCalc()
+        
+    def strikes(self) -> Strikes:
+        return Strikes(self.Ks)
 
     def premiums(self) -> Premiums:
         res = np.zeros_like(self.sigmas)

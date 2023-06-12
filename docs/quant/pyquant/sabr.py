@@ -252,7 +252,7 @@ class SABRCalc:
         option_type = OptionType(delta.pv >= 0.)
 
         def g(K):
-            iv = self.implied_vol(forward, Strike(K), params)         
+            iv = self.implied_vol(forward, Strike(K), params)  
             return self.bs_calc.delta(forward, Strike(K), option_type, iv).pv - delta.pv
 
         def g_prime(K): 
@@ -262,7 +262,6 @@ class SABRCalc:
             sigma = iv.sigma
             return np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2\
                                                    - forward.r*T*dsigma_dk/sigma**2 + T*dsigma_dk)
-        
         if g(K_l)*g(K_r) > 0.:
             raise ValueError('No solution within strikes interval')
         
