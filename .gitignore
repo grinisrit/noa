@@ -43,4 +43,3 @@ tmp*
 /docs/quant/deribit/DeribitDataScrapper/.pypirc
 /docs/quant/deribit/DeribitDataScrapper/docs/src.*.rst
 /docs/quant/deribit/DeribitDataScrapper/docs/_build
-docs/quant/deribit/DeribitDataScrapper/src/Scrapper/Loging.log
