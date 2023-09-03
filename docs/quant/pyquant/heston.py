@@ -1,4 +1,12 @@
-"""For documentation, see C++ source code (src/noa/quant/heston.hh)."""
+"""
+References:
+    - [Grzelak2019] Oosterlee, C. W., & Grzelak, L. A. (2019). Mathematical
+      modeling and computation in finance: with exercises and Python and
+      MATLAB compute codes. World Scientific.
+
+    - [Andersen2007] Andersen, L.B., 2007. Efficient simulation of the Heston
+      stochastic volatility model. Available at SSRN 946405.
+"""
 
 
 import torch
@@ -11,7 +19,19 @@ def noncentral_chisquare(
         df: torch.Tensor,
         nonc: torch.Tensor
 ) -> torch.Tensor:
-    PSI_CRIT = 1.5
+    """ Generates samples from a noncentral chi-square distribution.
+    Quadratic Exponential scheme from [Andersen2007] is used.
+
+    Args:
+        df: Degrees of freedom, must be > 0.
+        nonc: Non-centrality parameter, must be >= 0.
+
+    Returns:
+        Tensor with generated tensor. Shape: same as `df` and `nonc`, if
+        they have the same shape.
+    """
+    # algorithm is summarized in [Andersen2007, section 3.2.4]
+    PSI_CRIT = 1.5  # threshold value for switching between sampling algorithms
     m = df + nonc
     s2 = 2*df + 4*nonc
     psi = s2 / m.pow(2)
@@ -39,6 +59,27 @@ def generate_cir(
         theta: torch.Tensor,
         eps: torch.Tensor
 ) -> torch.Tensor:
+    """Generates paths of Cox-Ingersoll-Ross (CIR) process.
+
+    CIR process is described by the SDE:
+        dv(t) = κ·(θ - v(t))·dt + ε·sqrt(v(t))·dW(t)
+    (see [Grzelak2019, section 8.1.2]).
+
+    For path generation, Andersen's Quadratic Exponential scheme is used
+    (see [Andersen2007], [Grzelak2019, section 9.3.4]).
+
+    Args:
+        n_paths: Number of paths to simulate.
+        n_steps: Number of time steps.
+        dt: Time step.
+        init_state: Initial states of the paths, i.e. v(0). Shape: (n_paths,).
+        kappa: Parameter κ.
+        theta: Parameter θ.
+        eps: Parameter ε.
+
+    Returns:
+        Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
+    """
     if init_state.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state` must be (n_paths,)')
 
@@ -69,6 +110,31 @@ def generate_heston(
         rho: torch.Tensor,
         drift: torch.Tensor
 ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Generates time series following the Heston model.
+
+    Stochastic process of the Heston model is described by a system of SDE's:
+        dS(t) = μ·S(t)·dt + sqrt(v(t))·S(t)·dW_1(t);
+        dv(t) = κ(θ - v(t))·dt + ε·sqrt(v(t))·dW_2(t).
+
+    Time series are generated using Andersen's Quadratic Exponential
+    scheme [Andersen2007]. Also see [Grzelak, section 9.4.3].
+
+    Args:
+        n_paths: Number of simulated paths.
+        n_steps: Number of time steps.
+        dt: Time step.
+        init_state_price: Initial states of the price paths, i.e. S(0). Shape: (n_paths,).
+        init_state_var: Initial states of the variance paths, i.e. v(0). Shape: (n_paths,).
+        kappa: Parameter κ - the rate at which v(t) reverts to θ.
+        theta: Parameter θ - long-run average variance.
+        eps: Parameter ε - volatility of variance.
+        rho: Correlation between underlying Brownian motions for S(t) and v(t).
+        drift: Drift parameter μ.
+
+    Returns:
+        Two tensors: 1) simulated paths for price, 2) simulated paths for variance.
+        Both tensors have the shape (n_paths, n_steps + 1).
+    """
     if init_state_price.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state_price` must be (n_paths,)')
     if init_state_var.shape != torch.Size((n_paths,)):
