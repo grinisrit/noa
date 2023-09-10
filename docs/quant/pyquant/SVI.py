@@ -196,7 +196,7 @@ class SVICalc:
         Ks: nb.float64[:],
         params: nb.float64[:],
     ) -> nb.float64[:]:
-        w = self._total_implied_var_svi(F=F, T=T, Ks=Ks, params=params)
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
         iv = np.sqrt(w / T)
         return iv
 
