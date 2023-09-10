@@ -91,6 +91,93 @@ class SVICalc:
     def update_cached_params(self, params: SVIRawParams):
         self.cached_params = params.array()
 
+    def implied_vol(
+        self, forward: Forward, strike: Strike, params: SVIRawParams
+    ) -> ImpliedVol:
+        return ImpliedVol(
+            self._vol_svi(
+                forward.forward_rate().fv,
+                forward.T,
+                np.array([strike.K]),
+                params.array(),
+            )[0]
+        )
+
+    def implied_vols(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> ImpliedVols:
+        return ImpliedVols(
+            self._vol_svi(
+                forward.forward_rate().fv, forward.T, strikes.data, params.array()
+            )
+        )
+
+    def premium(
+        self,
+        forward: Forward,
+        strike: Strike,
+        option_type: OptionType,
+        params: SVIRawParams,
+    ) -> Premium:
+        sigma = self._vol_svi(
+            forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array()
+        )[0]
+        return self.bs_calc.premium(forward, strike, option_type, ImpliedVol(sigma))
+
+    def premiums(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> Premiums:
+        f = forward.forward_rate().fv
+        sigmas = self._vol_svi(f, forward.T, strikes.data, params.array())
+        Ks = strikes.data
+        res = np.zeros_like(sigmas)
+        n = len(sigmas)
+        for i in range(n):
+            K = Ks[i]
+            res[i] = self.bs_calc.premium(
+                forward, Strike(K), OptionType(K >= f), ImpliedVol(sigmas[i])
+            ).pv
+        return Premiums(res)
+
+    def vanilla_premium(
+        self,
+        spot: Spot,
+        forward_yield: ForwardYield,
+        vanilla: Vanilla,
+        params: SVIRawParams,
+    ) -> Premium:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Premium(
+            vanilla.N
+            * self.premium(forward, vanilla.strike(), vanilla.option_type(), params).pv
+        )
+
+    def vanillas_premiums(
+        self,
+        spot: Spot,
+        forward_yield: ForwardYield,
+        vanillas: Vanillas,
+        params: SVIRawParams,
+    ) -> Premiums:
+        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+        f = forward.forward_rate().fv
+        Ks = vanillas.Ks
+        sigmas = self._vol_svi(f, forward.T, Ks, params.array(), params.beta)
+        Ns = vanillas.Ns
+        res = np.zeros_like(sigmas)
+        n = len(sigmas)
+        for i in range(n):
+            K = Ks[i]
+            N = Ns[i]
+            is_call = vanillas.is_call[i]
+            res[i] = (
+                N
+                * self.bs_calc.premium(
+                    forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i])
+                ).pv
+            )
+        return Premiums(res)
+
     def _total_implied_var_svi(
         self,
         F: nb.float64,
@@ -116,7 +203,6 @@ class SVICalc:
     def _jacobian_total_implied_var_svi_raw(
         self,
         F: nb.float64,
-        T: nb.float64,
         Ks: nb.float64[:],
         params: nb.float64[:],
     ) -> tuple[nb.float64[:]]:
@@ -140,14 +226,16 @@ class SVICalc:
     ) -> tuple[nb.float64[:]]:
         # iv = sqrt(w/T)
         # div/da = (dw/da)/(2*sqrt(T*w))
-        w = self._total_implied_var_svi(F=F, T=T, Ks=Ks, params=params)
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
         dda, ddb, ddrho, ddm, ddsigma = self._jacobian_total_implied_var_svi_raw(
-            F=F, T=T, Ks=Ks, params=params
+            F=F, Ks=Ks, params=params
         )
-        denominator = 2 * np.sqrt(T) * np.sqrt(w)
-        dda = dda / denominator
-        ddb = ddb / denominator
-        ddrho = ddrho / denominator
-        ddm = ddm / denominator
-        ddsigma = ddsigma / denominator
-        return dda, ddb, ddrho, ddm, ddsigma
+        denominator = 2 * np.sqrt(T * w)
+        return (
+            dda / denominator,
+            ddb / denominator,
+            ddrho / denominator,
+            ddm / denominator,
+            ddsigma / denominator,
+        )
+
