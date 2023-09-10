@@ -53,7 +53,7 @@ class Sigma:
     ("m", nb.float64),
     ("sigma", nb.float64)
 ])
-class SABRParams:
+class SVIRawParams:
     def __init__(
         self, a: A, b: B, rho: Rho, m: M, sigma: Sigma
     ): 
@@ -66,3 +66,13 @@ class SABRParams:
     def array(self) -> nb.float64[:]:
         return np.array([self.a, self.b, self.rho, self.m, self.sigma])
     
+@nb.experimental.jitclass([
+    ("w", nb.float64[:])
+])
+class CalibrationWeights:
+    def __init__(self, w: nb.float64):
+        if not np.all(w>=0):
+            raise ValueError('Weights must be non-negative')
+        if not w.sum() > 0:
+            raise ValueError('At least one weight must be non-trivial')
+        self.w = w
