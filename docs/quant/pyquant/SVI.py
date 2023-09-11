@@ -91,6 +91,101 @@ class SVICalc:
     def update_cached_params(self, params: SVIRawParams):
         self.cached_params = params.array()
 
+    def calibrate(
+        self, chain: VolSmileChain, calibration_weights: CalibrationWeights
+    ) -> SVIRawParams:
+        strikes = chain.Ks
+        w = calibration_weights.w
+
+        if not strikes.shape == w.shape:
+            raise ValueError(
+                "Inconsistent data between strikes and calibration weights"
+            )
+
+        m_n = len(strikes) - 2
+
+        if not m_n > 0:
+            raise ValueError("Need at least 3 points to calibrate SVI")
+
+        weights = w / w.sum()
+        forward = chain.f
+        time_to_maturity = chain.T
+        implied_vols = chain.sigmas
+
+        def clip_params(params):
+            eps = 1e-4
+            a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
+            b = np_clip(b, eps, 1000000.0)
+            rho = np_clip(rho, -1.0 + eps, 1.0 - eps)
+            sigma = np_clip(sigma, eps, 1000000.0)
+            # TODO: a + b*sigma*sqrt(1 - rho^2) >= 0
+            svi_params = np.array([a, b, rho, m, sigma])
+            return svi_params
+
+        def get_residuals(params):
+            J = np.stack(
+                self._jacobian_vol_svi_raw(
+                    forward,
+                    time_to_maturity,
+                    strikes,
+                    params,
+                )
+            )
+            iv = self._vol_svi(
+                forward,
+                time_to_maturity,
+                strikes,
+                params,
+            )
+            res = iv - implied_vols
+            return res * weights, J @ np.diag(weights)
+
+        def levenberg_marquardt(f, proj, x0):
+            x = x0.copy()
+
+            mu = 1e-2
+            nu1 = 2.0
+            nu2 = 2.0
+
+            res, J = f(x)
+            F = res.T @ res
+
+            result_x = x
+            result_error = F / m_n
+
+            for i in range(self.num_iter):
+                if result_error < self.tol:
+                    break
+                multipl = J @ J.T
+                I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
+                dx = np.linalg.solve(mu * I + multipl, J @ res)
+                x_ = proj(x - dx)
+                res_, J_ = f(x_)
+                F_ = res_.T @ res_
+                if F_ < F:
+                    x, F, res, J = x_, F_, res_, J_
+                    mu /= nu1
+                    result_error = F / m_n
+                else:
+                    i -= 1
+                    mu *= nu2
+                    continue
+                result_x = x
+
+            return result_x, result_error
+
+        self.cached_params, self.calibration_error = levenberg_marquardt(
+            get_residuals, clip_params, self.cached_params
+        )
+
+        return SVIRawParams(
+            A(self.cached_params[0]),
+            B(self.cached_params[1]),
+            Rho(self.cached_params[2]),
+            M(self.cached_params[3]),
+            Sigma(self.cached_params[4]),
+        )
+
     def implied_vol(
         self, forward: Forward, strike: Strike, params: SVIRawParams
     ) -> ImpliedVol:
@@ -238,4 +333,3 @@ class SVICalc:
             ddm / denominator,
             ddsigma / denominator,
         )
-
