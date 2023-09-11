@@ -63,6 +63,57 @@ class SVIRawParams:
         return np.array([self.a, self.b, self.rho, self.m, self.sigma])
 
 
+@nb.experimental.jitclass([("v", nb.float64)])
+class V:
+    def __init__(self, v: nb.float64):
+        self.v = v
+
+
+@nb.experimental.jitclass([("psi", nb.float64)])
+class Psi:
+    def __init__(self, psi: nb.float64):
+        self.psi = psi
+
+
+@nb.experimental.jitclass([("p", nb.float64)])
+class P:
+    def __init__(self, p: nb.float64):
+        self.p = p
+
+
+@nb.experimental.jitclass([("c", nb.float64)])
+class C:
+    def __init__(self, c: nb.float64):
+        self.c = c
+
+
+@nb.experimental.jitclass([("v_tilda", nb.float64)])
+class V_tilda:
+    def __init__(self, v_tilda: nb.float64):
+        self.v_tilda = v_tilda
+
+
+@nb.experimental.jitclass(
+    [
+        ("v", nb.float64),
+        ("psi", nb.float64),
+        ("p", nb.float64),
+        ("c", nb.float64),
+        ("v_tilda", nb.float64),
+    ]
+)
+class SVIJumpWingParams:
+    def __init__(self, v: V, psi: Psi, p: P, c: C, v_tilda: V_tilda):
+        self.v = v.v
+        self.psi = psi.psi
+        self.p = p.p
+        self.c = c.c
+        self.v_tilda = v_tilda.v_tilda
+
+    def array(self) -> nb.float64[:]:
+        return np.array([self.v, self.psi, self.p, self.c, self.v_tilda])
+
+
 @nb.experimental.jitclass([("w", nb.float64[:])])
 class CalibrationWeights:
     def __init__(self, w: nb.float64):
@@ -77,7 +128,7 @@ class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.cached_params = np.array([1.0, 0.0, 0.0])
+        self.cached_params = np.array([1.0, 0.0, 0.0, 0.0, 0.1])
         self.calibration_error = 0.0
         self.num_iter = 50
         self.tol = 1e-8
@@ -184,6 +235,22 @@ class SVICalc:
             Rho(self.cached_params[2]),
             M(self.cached_params[3]),
             Sigma(self.cached_params[4]),
+        )
+
+    def _get_jump_wing_params(self, T: nb.float64) -> SVIJumpWingParams:
+        a, b, rho, m, sigma = self.cached_params
+        v = (a + b * (-rho * m + np.sqrt(m**2 + sigma**2))) / T
+        w = v * T
+        psi = 1 / np.sqrt(w) * b / 2 * (-m / np.sqrt(m**2 + sigma**2) + rho)
+        p = b * (1 - rho) / np.sqrt(w)
+        c = b * (1 + rho) / np.sqrt(w)
+        v_tilda = 1 / T * (a + b * sigma * np.sqrt(1 - rho**2))
+        return SVIJumpWingParams(
+            V(v),
+            Psi(psi),
+            P(p),
+            C(c),
+            V_tilda(v_tilda),
         )
 
     def implied_vol(
