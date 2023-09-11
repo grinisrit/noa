@@ -128,7 +128,7 @@ class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.cached_params = np.array([1.0, 0.0, 0.0, 0.0, 0.1])
+        self.cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
         self.calibration_error = 0.0
         self.num_iter = 50
         self.tol = 1e-8
