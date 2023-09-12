@@ -128,7 +128,8 @@ class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
+        self.raw_cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
+        self.jump_wing_cached_params = self.raw_cached_params
         self.calibration_error = 0.0
         self.num_iter = 50
         self.tol = 1e-8
@@ -139,8 +140,11 @@ class SVICalc:
         self.delta_grad_eps = 1e-4
         self.bs_calc = BSCalc()
 
-    def update_cached_params(self, params: SVIRawParams):
-        self.cached_params = params.array()
+    def update_raw_cached_params(self, params: SVIRawParams):
+        self.raw_cached_params = params.array()
+
+    def update_jump_wing_cached_params(self, params: SVIJumpWingParams):
+        self.jump_wing_cached_params = params.array()
 
     def calibrate(
         self, chain: VolSmileChain, calibration_weights: CalibrationWeights
@@ -225,20 +229,24 @@ class SVICalc:
 
             return result_x, result_error
 
-        self.cached_params, self.calibration_error = levenberg_marquardt(
-            get_residuals, clip_params, self.cached_params
+        self.raw_cached_params, self.calibration_error = levenberg_marquardt(
+            get_residuals, clip_params, self.raw_cached_params
         )
 
+        self.jump_wing_cached_params = self._get_jump_wing_params(
+            time_to_maturity
+        ).array()
+
         return SVIRawParams(
-            A(self.cached_params[0]),
-            B(self.cached_params[1]),
-            Rho(self.cached_params[2]),
-            M(self.cached_params[3]),
-            Sigma(self.cached_params[4]),
+            A(self.raw_cached_params[0]),
+            B(self.raw_cached_params[1]),
+            Rho(self.raw_cached_params[2]),
+            M(self.raw_cached_params[3]),
+            Sigma(self.raw_cached_params[4]),
         )
 
     def _get_jump_wing_params(self, T: nb.float64) -> SVIJumpWingParams:
-        a, b, rho, m, sigma = self.cached_params
+        a, b, rho, m, sigma = self.raw_cached_params
         v = (a + b * (-rho * m + np.sqrt(m**2 + sigma**2))) / T
         w = v * T
         psi = 1 / np.sqrt(w) * b / 2 * (-m / np.sqrt(m**2 + sigma**2) + rho)
