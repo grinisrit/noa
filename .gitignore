@@ -34,3 +34,12 @@ data/
 tmp*
 /docs/quant/deribit/dataStorage/
 /docs/quant/deribit/logs.txt
+
+
+/docs/quant/deribit/DeribitDataScrapper/build
+/docs/quant/deribit/DeribitDataScrapper/*.egg-info
+/docs/quant/deribit/DeribitDataScrapper/dist
+/docs/quant/deribit/DeribitDataScrapper/venv
+/docs/quant/deribit/DeribitDataScrapper/.pypirc
+/docs/quant/deribit/DeribitDataScrapper/docs/src.*.rst
+/docs/quant/deribit/DeribitDataScrapper/docs/_build
