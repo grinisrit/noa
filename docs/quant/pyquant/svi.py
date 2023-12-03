@@ -233,9 +233,9 @@ class SVICalc:
             get_residuals, clip_params, self.raw_cached_params
         )
 
-        self.jump_wing_cached_params = self._get_jump_wing_params(
-            time_to_maturity
-        ).array()
+        # self.jump_wing_cached_params = self._get_jump_wing_params(
+        #     self.raw_cached_params, time_to_maturity
+        # ).array()
 
         return SVIRawParams(
             A(self.raw_cached_params[0]),
@@ -245,8 +245,10 @@ class SVICalc:
             Sigma(self.raw_cached_params[4]),
         )
 
-    def _get_jump_wing_params(self, T: nb.float64) -> SVIJumpWingParams:
-        a, b, rho, m, sigma = self.raw_cached_params
+    def _get_jump_wing_params(
+        self, params: SVIRawParams, T: nb.float64
+    ) -> SVIJumpWingParams:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
         v = (a + b * (-rho * m + np.sqrt(m**2 + sigma**2))) / T
         w = v * T
         psi = 1 / np.sqrt(w) * b / 2 * (-m / np.sqrt(m**2 + sigma**2) + rho)
@@ -408,3 +410,139 @@ class SVICalc:
             ddm / denominator,
             ddsigma / denominator,
         )
+
+    def _dsigma_df(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        ddf = b * (-rho / F - (k - m) / (F * sqrt))
+        return ddf / denominator
+
+    def _d2_sigma_df2(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        dddff = (
+            rho / F**2
+            - (k - m) ** 2 / (F**2 * sqrt**3)
+            + (k - m) / (F**2 * sqrt)
+            + 1 / (F**2 * sqrt)
+        )
+        dddff = dddff * b
+        return dddff / denominator
+
+    def _da_dv_t(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIJumpWingParams
+    ) -> nb.float64:
+        _, psi_t, p_t, c_t, _ = (
+            params.v,
+            params.psi,
+            params.p,
+            params.c,
+            params.v_tilda,
+        )
+        epsilon = (-2 * p_t / (c_t + p_t) - 4 * psi_t / (c_t + p_t) + 1) ** 2
+        numerator = T * np.sqrt(-1 + 1 / epsilon) * np.sqrt(1 - epsilon)
+        denominator = (
+            2 * p_t / (c_t + p_t)
+            - np.sqrt(-1 + 1 / epsilon) * np.sqrt(1 - (1 - 2 * p_t / (c_t + p_t)) ** 2)
+            + np.sqrt(1 / epsilon) * np.sign(np.sqrt(-1 + 1 / epsilon))
+            - 1
+        )
+
+        return numerator / denominator
+
+    def delta(self, forward: Forward, strike: Strike, params: SVIRawParams) -> Delta:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        return Delta(vega_bsm * dsigma_df)
+
+    def vanilla_delta(
+        self,
+        spot: Spot,
+        forward_yield: ForwardYield,
+        vanilla: Vanilla,
+        params: SVIRawParams,
+    ) -> Delta:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Delta(vanilla.N * self.delta(forward, vanilla.strike(), params).pv)
+
+    def deltas(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> Deltas:
+        Ks = strikes.data
+        n = len(Ks)
+        deltas = np.zeros_like(Ks)
+        for i in range(n):
+            deltas[i] = self.delta(forward, Strike(Ks[i]), params).pv
+
+        return Deltas(deltas)
+
+    def gamma(self, forward: Forward, strike: Strike, params: SVIRawParams) -> Gamma:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
+        return Gamma(vanna_bsm * dsigma_df + vega_bsm * d2_sigma_df2)
+
+    def gammas(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> Gammas:
+        Ks = strikes.data
+        n = len(Ks)
+        gammas = np.zeros_like(Ks)
+        for i in range(n):
+            gammas[i] = self.gamma(forward, Strike(Ks[i]), params).pv
+
+        return Gammas(gammas)
+
+    def v_t_greek(
+        self,
+        forward: Forward,
+        time_to_maturity: TimeToMaturity,
+        strike: Strike,
+        params: SVIRawParams,
+    ) -> nb.float64:
+        F = forward.forward_rate().fv
+        T = time_to_maturity.T
+        K = strike.K
+        sigma = self.implied_vol(forward, strike, params)
+        # dC/dv_t = (dC/d sigma) * (d sigma/d a) * (d a/d v_t) = Vega_BSM * (d sigma/d a) * (d a/d v_t)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_da, _, _, _, _ = self._jacobian_vol_svi_raw(
+            F, T, np.array([K]), params.array()
+        )
+        jump_wing_params = self._get_jump_wing_params(params, T)
+        da_dvt = self._da_dv_t(F, T, K, jump_wing_params)
+        return vega_bsm * dsigma_da * da_dvt
+
+    def v_t_greeks(
+        self,
+        forward: Forward,
+        time_to_maturity: TimeToMaturity,
+        strikes: Strikes,
+        params: SVIRawParams,
+    ) -> nb.float64[:]:
+        Ks = strikes.data
+        n = len(Ks)
+        vt_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            vt_greeks[i] = self.v_t_greek(
+                forward, time_to_maturity, Strike(Ks[i]), params
+            )
+
+        return vt_greeks
