@@ -1,8 +1,8 @@
-import numpy as np
 import numba as nb
+import numpy as np
 
-from .common import *
 from .black_scholes import *
+from .common import *
 from .vol_surface import *
 
 
@@ -112,6 +112,78 @@ class SVIJumpWingParams:
 
     def array(self) -> nb.float64[:]:
         return np.array([self.v, self.psi, self.p, self.c, self.v_tilda])
+
+
+@nb.experimental.jitclass([("pv", nb.float64)])
+class AGreek:
+    def __init__(self, a_greek: nb.float64):
+        self.pv = a_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class AGreeks:
+    def __init__(self, a_greeks: nb.float64[:]):
+        self.data = a_greeks
+
+
+@nb.experimental.jitclass([("pv", nb.float64)])
+class BGreek:
+    def __init__(self, b_greek: nb.float64):
+        self.pv = b_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class BGreeks:
+    def __init__(self, b_greeks: nb.float64[:]):
+        self.data = b_greeks
+
+
+@nb.experimental.jitclass([("pv", nb.float64)])
+class RhoGreek:
+    def __init__(self, rho_greek: nb.float64):
+        self.pv = rho_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class RhoGreeks:
+    def __init__(self, rho_greeks: nb.float64[:]):
+        self.data = rho_greeks
+
+
+@nb.experimental.jitclass([("pv", nb.float64)])
+class MGreek:
+    def __init__(self, m_greek: nb.float64):
+        self.pv = m_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class MGreeks:
+    def __init__(self, m_greeks: nb.float64[:]):
+        self.data = m_greeks
+
+
+@nb.experimental.jitclass([("pv", nb.float64)])
+class SigmaGreek:
+    def __init__(self, sigma_greek: nb.float64):
+        self.pv = sigma_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class SigmaGreeks:
+    def __init__(self, sigma_greeks: nb.float64[:]):
+        self.data = sigma_greeks
+
+
+@nb.experimental.jitclass([("pv", nb.float64)])
+class KGreek:
+    def __init__(self, k_greek: nb.float64):
+        self.pv = k_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class KGreeks:
+    def __init__(self, k_greeks: nb.float64[:]):
+        self.data = k_greeks
 
 
 @nb.experimental.jitclass([("w", nb.float64[:])])
@@ -233,11 +305,7 @@ class SVICalc:
             get_residuals, clip_params, self.raw_cached_params
         )
 
-        self.jump_wing_cached_params = self._get_jump_wing_params(
-            time_to_maturity
-        ).array()
-
-        return SVIRawParams(
+        raw_params = SVIRawParams(
             A(self.raw_cached_params[0]),
             B(self.raw_cached_params[1]),
             Rho(self.raw_cached_params[2]),
@@ -245,8 +313,16 @@ class SVICalc:
             Sigma(self.raw_cached_params[4]),
         )
 
-    def _get_jump_wing_params(self, T: nb.float64) -> SVIJumpWingParams:
-        a, b, rho, m, sigma = self.raw_cached_params
+        self.jump_wing_cached_params = self._get_jump_wing_params(
+            raw_params, time_to_maturity
+        ).array()
+
+        return raw_params
+
+    def _get_jump_wing_params(
+        self, params: SVIRawParams, T: nb.float64
+    ) -> SVIJumpWingParams:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
         v = (a + b * (-rho * m + np.sqrt(m**2 + sigma**2))) / T
         w = v * T
         psi = 1 / np.sqrt(w) * b / 2 * (-m / np.sqrt(m**2 + sigma**2) + rho)
@@ -408,3 +484,235 @@ class SVICalc:
             ddm / denominator,
             ddsigma / denominator,
         )
+
+    # ================ Derivatives of implied vol by raw params a, b, rho, m, sigma ================
+    def _dsigma_df(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        ddf = b * (-rho / F - (k - m) / (F * sqrt))
+        return ddf / denominator
+
+    def _dsigma_dk(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        # by strike to compute BBs, RRs
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        ddk = b * (rho / K + (k - m) / (K * sqrt))
+        return ddk / denominator
+
+    def _d2_sigma_df2(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        dddff = (
+            rho / F**2
+            - (k - m) ** 2 / (F**2 * sqrt**3)
+            + (k - m) / (F**2 * sqrt)
+            + 1 / (F**2 * sqrt)
+        )
+        dddff = dddff * b
+        return dddff / denominator
+
+    # ================ Greeks by ray and f, f^2(delta, gamma) ================
+    def delta(
+        self,
+        forward: Forward,
+        strike: Strike,
+        option_type: OptionType,
+        params: SVIRawParams,
+    ) -> Delta:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigma = self.implied_vol(forward, strike, params)
+        delta_bsm = self.bs_calc.delta(forward, strike, option_type, sigma).pv
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        return Delta(delta_bsm + (1 / D) * vega_bsm * dsigma_df)
+
+    def vanilla_delta(
+        self,
+        spot: Spot,
+        forward_yield: ForwardYield,
+        vanilla: Vanilla,
+        params: SVIRawParams,
+    ) -> Delta:
+        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+        return Delta(vanilla.N * self.delta(forward, vanilla.strike(), params).pv)
+
+    def deltas(
+        self,
+        forward: Forward,
+        strikes: Strikes,
+        option_types: OptionTypes,
+        params: SVIRawParams,
+    ) -> Deltas:
+        Ks = strikes.data
+        Ot = option_types.data
+        n = len(Ks)
+        deltas = np.zeros_like(Ks)
+        for i in range(n):
+            deltas[i] = self.delta(forward, Strike(Ks[i]), OptionType(Ot[i]), params).pv
+
+        return Deltas(deltas)
+
+    def gamma(self, forward: Forward, strike: Strike, params: SVIRawParams) -> Gamma:
+        F = forward.forward_rate().fv
+        D = forward.numeraire().pv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
+        return Gamma(
+            (2 / D) * vanna_bsm * dsigma_df + vega_bsm * d2_sigma_df2 / (D**2)
+        )
+
+    def gammas(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> Gammas:
+        Ks = strikes.data
+        n = len(Ks)
+        gammas = np.zeros_like(Ks)
+        for i in range(n):
+            gammas[i] = self.gamma(forward, Strike(Ks[i]), params).pv
+
+        return Gammas(gammas)
+
+    def k_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> KGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_dk = self._dsigma_dk(F, forward.T, strike.K, params)
+        return KGreek(vega_bsm * dsigma_dk)
+
+    def k_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> KGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        k_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            k_greeks[i] = self.k_greek(forward, Strike(Ks[i]), params).pv
+
+        return KGreeks(k_greeks)
+
+    def a_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> AGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_da = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[0][0]
+        return AGreek(vega_bsm * dsigma_da)
+
+    def a_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> AGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        a_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            a_greeks[i] = self.a_greek(forward, Strike(Ks[i]), params).pv
+
+        return AGreeks(a_greeks)
+
+    def b_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> BGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_db = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[1][0]
+        return BGreek(vega_bsm * dsigma_db)
+
+    def b_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> BGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        b_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            b_greeks[i] = self.b_greek(forward, Strike(Ks[i]), params).pv
+
+        return BGreeks(b_greeks)
+
+    def rho_greek(
+        self, forward: Forward, strike: Strike, params: SVIRawParams
+    ) -> RhoGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_drho = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[2][0]
+        return RhoGreek(vega_bsm * dsigma_drho)
+
+    def rho_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> RhoGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        rho_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            rho_greeks[i] = self.rho_greek(forward, Strike(Ks[i]), params).pv
+
+        return RhoGreeks(rho_greeks)
+
+    def m_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> MGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_dm = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[3][0]
+        return MGreek(vega_bsm * dsigma_dm)
+
+    def m_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> MGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        m_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            m_greeks[i] = self.m_greek(forward, Strike(Ks[i]), params).pv
+
+        return MGreeks(m_greeks)
+
+    def sigma_greek(
+        self, forward: Forward, strike: Strike, params: SVIRawParams
+    ) -> SigmaGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_dsigma = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[4][0]
+        return SigmaGreek(vega_bsm * dsigma_dsigma)
+
+    def sigma_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> SigmaGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        sigma_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            sigma_greeks[i] = self.sigma_greek(forward, Strike(Ks[i]), params).pv
+        return SigmaGreeks(sigma_greeks)
+
+    # ================ Greeks by Jump-Wing ================
