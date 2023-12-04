@@ -529,73 +529,21 @@ class SVICalc:
         dddff = dddff * b
         return dddff / denominator
 
-    def _dsigma_da(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        # sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        dda = 1
-        return dda / denominator
-
-    def _dsigma_db(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        ddb = rho * (k - m) + sqrt
-        return ddb / denominator
-
-    def _dsigma_drho(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        ddrho = b * (k - m)
-        return ddrho / denominator
-
-    def _dsigma_dm(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        ddm = b * (-rho + (m - k) / sqrt)
-        return ddm / denominator
-
-    def _dsigma_dsigma(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        # not 1 :), by sigma raw param and iv is sigma ordinary too
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        ddsigma = b * sigma / sqrt
-        return ddsigma / denominator
-
     # ================ Greeks by ray and f, f^2(delta, gamma) ================
-    def delta(self, forward: Forward, strike: Strike, params: SVIRawParams) -> Delta:
+    def delta(
+        self,
+        forward: Forward,
+        strike: Strike,
+        option_type: OptionType,
+        params: SVIRawParams,
+    ) -> Delta:
         F = forward.forward_rate().fv
+        D = forward.numeraire().pv
         sigma = self.implied_vol(forward, strike, params)
+        delta_bsm = self.bs_calc.delta(forward, strike, option_type, sigma).pv
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
-        return Delta(vega_bsm * dsigma_df)
+        return Delta(delta_bsm + (1 / D) * vega_bsm * dsigma_df)
 
     def vanilla_delta(
         self,
@@ -608,24 +556,32 @@ class SVICalc:
         return Delta(vanilla.N * self.delta(forward, vanilla.strike(), params).pv)
 
     def deltas(
-        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+        self,
+        forward: Forward,
+        strikes: Strikes,
+        option_types: OptionTypes,
+        params: SVIRawParams,
     ) -> Deltas:
         Ks = strikes.data
+        Ot = option_types.data
         n = len(Ks)
         deltas = np.zeros_like(Ks)
         for i in range(n):
-            deltas[i] = self.delta(forward, Strike(Ks[i]), params).pv
+            deltas[i] = self.delta(forward, Strike(Ks[i]), OptionType(Ot[i]), params).pv
 
         return Deltas(deltas)
 
     def gamma(self, forward: Forward, strike: Strike, params: SVIRawParams) -> Gamma:
         F = forward.forward_rate().fv
+        D = forward.numeraire().pv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
         vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
         d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
-        return Gamma(vanna_bsm * dsigma_df + vega_bsm * d2_sigma_df2)
+        return Gamma(
+            (2 / D) * vanna_bsm * dsigma_df + vega_bsm * d2_sigma_df2 / (D**2)
+        )
 
     def gammas(
         self, forward: Forward, strikes: Strikes, params: SVIRawParams
@@ -660,7 +616,9 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_da = self._dsigma_da(F, forward.T, strike.K, params)
+        dsigma_da = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[0][0]
         return AGreek(vega_bsm * dsigma_da)
 
     def a_greeks(
@@ -678,7 +636,9 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_db = self._dsigma_db(F, forward.T, strike.K, params)
+        dsigma_db = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[1][0]
         return BGreek(vega_bsm * dsigma_db)
 
     def b_greeks(
@@ -698,7 +658,9 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_drho = self._dsigma_drho(F, forward.T, strike.K, params)
+        dsigma_drho = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[2][0]
         return RhoGreek(vega_bsm * dsigma_drho)
 
     def rho_greeks(
@@ -716,7 +678,9 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_dm = self._dsigma_dm(F, forward.T, strike.K, params)
+        dsigma_dm = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[3][0]
         return MGreek(vega_bsm * dsigma_dm)
 
     def m_greeks(
@@ -736,7 +700,9 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_dsigma = self._dsigma_dsigma(F, forward.T, strike.K, params)
+        dsigma_dsigma = self._jacobian_vol_svi_raw(
+            F, forward.T, np.array([strike.K]), params.array()
+        )[4][0]
         return SigmaGreek(vega_bsm * dsigma_dsigma)
 
     def sigma_greeks(
