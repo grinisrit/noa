@@ -114,10 +114,10 @@ class SVIJumpWingParams:
         return np.array([self.v, self.psi, self.p, self.c, self.v_tilda])
 
 
-@nb.experimental.jitclass([("a_greek", nb.float64)])
+@nb.experimental.jitclass([("pv", nb.float64)])
 class AGreek:
     def __init__(self, a_greek: nb.float64):
-        self.a_greek = a_greek
+        self.pv = a_greek
 
 
 @nb.experimental.jitclass([("data", nb.float64[:])])
@@ -126,10 +126,10 @@ class AGreeks:
         self.data = a_greeks
 
 
-@nb.experimental.jitclass([("b_greek", nb.float64)])
+@nb.experimental.jitclass([("pv", nb.float64)])
 class BGreek:
     def __init__(self, b_greek: nb.float64):
-        self.b_greek = b_greek
+        self.pv = b_greek
 
 
 @nb.experimental.jitclass([("data", nb.float64[:])])
@@ -138,10 +138,10 @@ class BGreeks:
         self.data = b_greeks
 
 
-@nb.experimental.jitclass([("rho_greek", nb.float64)])
+@nb.experimental.jitclass([("pv", nb.float64)])
 class RhoGreek:
     def __init__(self, rho_greek: nb.float64):
-        self.rho_greek = rho_greek
+        self.pv = rho_greek
 
 
 @nb.experimental.jitclass([("data", nb.float64[:])])
@@ -150,10 +150,10 @@ class RhoGreeks:
         self.data = rho_greeks
 
 
-@nb.experimental.jitclass([("m_greek", nb.float64)])
+@nb.experimental.jitclass([("pv", nb.float64)])
 class MGreek:
     def __init__(self, m_greek: nb.float64):
-        self.m_greek = m_greek
+        self.pv = m_greek
 
 
 @nb.experimental.jitclass([("data", nb.float64[:])])
@@ -162,10 +162,10 @@ class MGreeks:
         self.data = m_greeks
 
 
-@nb.experimental.jitclass([("sigma_greek", nb.float64)])
+@nb.experimental.jitclass([("pv", nb.float64)])
 class SigmaGreek:
     def __init__(self, sigma_greek: nb.float64):
-        self.sigma_greek = sigma_greek
+        self.pv = sigma_greek
 
 
 @nb.experimental.jitclass([("data", nb.float64[:])])
@@ -174,10 +174,10 @@ class SigmaGreeks:
         self.data = sigma_greeks
 
 
-@nb.experimental.jitclass([("k_greek", nb.float64)])
+@nb.experimental.jitclass([("pv", nb.float64)])
 class KGreek:
     def __init__(self, k_greek: nb.float64):
-        self.k_greek = k_greek
+        self.pv = k_greek
 
 
 @nb.experimental.jitclass([("data", nb.float64[:])])
