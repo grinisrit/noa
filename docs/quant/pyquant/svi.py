@@ -174,6 +174,18 @@ class SigmaGreeks:
         self.data = sigma_greeks
 
 
+@nb.experimental.jitclass([("k_greek", nb.float64)])
+class KGreek:
+    def __init__(self, k_greek: nb.float64):
+        self.k_greek = k_greek
+
+
+@nb.experimental.jitclass([("data", nb.float64[:])])
+class KGreeks:
+    def __init__(self, k_greeks: nb.float64[:]):
+        self.data = k_greeks
+
+
 @nb.experimental.jitclass([("w", nb.float64[:])])
 class CalibrationWeights:
     def __init__(self, w: nb.float64):
@@ -486,6 +498,19 @@ class SVICalc:
         ddf = b * (-rho / F - (k - m) / (F * sqrt))
         return ddf / denominator
 
+    def _dsigma_dk(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        # by strike to compute BBs, RRs
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        ddk = b * (rho / K + (k - m) / (K * sqrt))
+        return ddk / denominator
+
     def _d2_sigma_df2(
         self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
     ) -> nb.float64:
@@ -613,6 +638,24 @@ class SVICalc:
 
         return Gammas(gammas)
 
+    def k_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> KGreek:
+        F = forward.forward_rate().fv
+        sigma = self.implied_vol(forward, strike, params)
+        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        dsigma_dk = self._dsigma_dk(F, forward.T, strike.K, params)
+        return KGreek(vega_bsm * dsigma_dk)
+
+    def k_greeks(
+        self, forward: Forward, strikes: Strikes, params: SVIRawParams
+    ) -> KGreeks:
+        Ks = strikes.data
+        n = len(Ks)
+        k_greeks = np.zeros_like(Ks)
+        for i in range(n):
+            k_greeks[i] = self.k_greek(forward, Strike(Ks[i]), params).pv
+
+        return KGreeks(k_greeks)
+
     def a_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> AGreek:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
@@ -705,3 +748,5 @@ class SVICalc:
         for i in range(n):
             sigma_greeks[i] = self.sigma_greek(forward, Strike(Ks[i]), params).pv
         return SigmaGreeks(sigma_greeks)
+
+    # ================ Greeks by Jump-Wing ================
