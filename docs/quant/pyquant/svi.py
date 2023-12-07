@@ -223,7 +223,6 @@ class SVICalc:
     ) -> SVIRawParams:
         strikes = chain.Ks
         w = calibration_weights.w
-
         if not strikes.shape == w.shape:
             raise ValueError(
                 "Inconsistent data between strikes and calibration weights"
@@ -509,7 +508,7 @@ class SVICalc:
         k = np.log(K / F)
         sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
         ddk = b * (rho / K + (k - m) / (K * sqrt))
-        return ddk / denominator
+        return (ddk / denominator)[0]
 
     def _d2_sigma_df2(
         self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
@@ -715,4 +714,128 @@ class SVICalc:
             sigma_greeks[i] = self.sigma_greek(forward, Strike(Ks[i]), params).pv
         return SigmaGreeks(sigma_greeks)
 
-    # ================ Greeks by Jump-Wing ================
+    # ================ Blip Greeks ================
+
+    def strike_from_delta(
+        self, forward: Forward, delta: Delta, params: SVIRawParams
+    ) -> Strike:
+        F = forward.forward_rate().fv
+        K_l = self.strike_lower * F
+        K_r = self.strike_upper * F
+        T = forward.T
+        option_type = OptionType(delta.pv >= 0.0)
+
+        def g(K):
+            iv = self.implied_vol(forward, Strike(K), params)
+            return self.bs_calc.delta(forward, Strike(K), option_type, iv).pv - delta.pv
+
+        def g_prime(K):
+            iv = self.implied_vol(forward, Strike(K), params)
+            dsigma_dk = self._dsigma_dk(F, T, K, params)
+            d1 = self.bs_calc._d1(forward, Strike(K), iv)
+            sigma = iv.sigma
+            return (
+                np.exp(-(d1**2) / 2)
+                / np.sqrt(T)
+                * (
+                    -1 / (K * sigma)
+                    - dsigma_dk * np.log(F / K) / sigma**2
+                    - forward.r * T * dsigma_dk / sigma**2
+                    + T * dsigma_dk
+                )
+            )
+
+        if g(K_l) * g(K_r) > 0.0:
+            raise ValueError("No solution within strikes interval")
+
+        K = (K_l + K_r) / 2
+        epsilon = g(K)
+        grad = g_prime(K)
+        ii = 0
+        while abs(epsilon) > self.delta_tol and ii < self.delta_num_iter:
+            ii = ii + 1
+            if abs(grad) > self.delta_grad_eps:
+                K -= epsilon / grad
+                if K > K_r or K < K_l:
+                    K = (K_l + K_r) / 2
+                    if g(K_l) * g(K) > 0:
+                        K_l = K
+                    else:
+                        K_r = K
+                    K = (K_l + K_r) / 2
+            else:
+                if g(K_l) * epsilon > 0:
+                    K_l = K
+                else:
+                    K_r = K
+                K = (K_l + K_r) / 2
+
+            epsilon = g(K)
+            grad = g_prime(K)
+
+        return Strike(K)
+
+    def delta_space(self, forward: Forward, params: SVIRawParams) -> VolSmileDeltaSpace:
+        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
+
+        call25_K = self.strike_from_delta(forward, Delta(0.25), params)
+        call25 = self.implied_vol(forward, call25_K, params).sigma
+
+        put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
+        put25 = self.implied_vol(forward, put25_K, params).sigma
+
+        call10_K = self.strike_from_delta(forward, Delta(0.1), params)
+        call10 = self.implied_vol(forward, call10_K, params).sigma
+
+        put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
+        put10 = self.implied_vol(forward, put10_K, params).sigma
+
+        return VolSmileDeltaSpace(
+            forward,
+            Straddle(ImpliedVol(atm), TimeToMaturity(forward.T)),
+            RiskReversal(
+                Delta(0.25), VolatilityQuote(call25 - put25), TimeToMaturity(forward.T)
+            ),
+            Butterfly(
+                Delta(0.25),
+                VolatilityQuote(0.5 * (call25 + put25) - atm),
+                TimeToMaturity(forward.T),
+            ),
+            RiskReversal(
+                Delta(0.1), VolatilityQuote(call10 - put10), TimeToMaturity(forward.T)
+            ),
+            Butterfly(
+                Delta(0.1),
+                VolatilityQuote(0.5 * (call10 + put10) - atm),
+                TimeToMaturity(forward.T),
+            ),
+        )
+
+    def blip_a_greek(
+        self,
+        forward: Forward,
+        strike: Strike,
+        params: SVIRawParams,
+        calibration_weights: CalibrationWeights,
+    ) -> AGreek:
+        option_type = OptionType(forward.forward_rate().fv >= strike.K)
+        premium = self.premium(forward, strike, option_type, params).pv
+        delta_space = self.delta_space(forward, params)
+
+        # blipped_chain = delta_space.blip_ATM().to_chain_space()
+        # blipped_params = self.calibrate(blipped_chain, calibration_weights)
+        # blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+
+        # return AGreek((blipped_premium - premium) / delta_space.atm_blip)
+
+        # blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
+        # blipped_params = self.calibrate(blipped_chain, calibration_weights)
+        # blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+
+        # return AGreek((blipped_premium - premium) / delta_space.rr25_blip)
+
+        blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
+        blipped_params = self.calibrate(blipped_chain, calibration_weights)
+        blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+
+        return AGreek((blipped_premium - premium) / delta_space.bf25_blip) 
