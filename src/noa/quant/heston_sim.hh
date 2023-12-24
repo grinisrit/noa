@@ -99,7 +99,9 @@ noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
 torch::Tensor
 generate_cir(int64_t n_paths, int64_t n_steps, double dt,
              const torch::Tensor& init_state,
-             double kappa, double theta, double eps)
+             const torch::Tensor& kappa,
+             const torch::Tensor& theta,
+             const torch::Tensor& eps)
 {
     if (init_state.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state` must be (n_paths,)");
@@ -108,8 +110,8 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
     paths.index_put_({Slice(), 0}, init_state);
 
     torch::Tensor delta = 4 * kappa * theta / (eps * eps) * torch::ones_like(init_state);
-    double exp = std::exp(-kappa*dt);
-    double c_bar = 1 / (4*kappa) * eps * eps * (1 - exp);
+    torch::Tensor exp = torch::exp(-kappa*dt);
+    torch::Tensor c_bar = 1 / (4*kappa) * eps * eps * (1 - exp);
     for (int64_t i = 0; i < n_steps; i++) {
         torch::Tensor v_cur = paths.index({Slice(), i});
         torch::Tensor kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp));
@@ -146,34 +148,39 @@ std::tuple<torch::Tensor, torch::Tensor>
 generate_heston(int64_t n_paths, int64_t n_steps, double dt,
                 const torch::Tensor& init_state_price,
                 const torch::Tensor& init_state_var,
-                double kappa, double theta, double eps, double rho, double drift)
+                const torch::Tensor& kappa,
+                const torch::Tensor& theta,
+                const torch::Tensor& eps,
+                const torch::Tensor& rho,
+                const torch::Tensor& drift)
 {
     if (init_state_price.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state_price` must be (n_paths,)");
     if (init_state_var.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state_var` must be (n_paths,)");
 
-    double gamma2 = 0.5;
+    torch::Tensor gamma2 = torch::tensor(0.5, torch::kFloat64);
     // regularity condition [Andersen 2007, section 4.3.2]
-    if (rho > 0) { // always satisfied when rho <= 0
-        double L = rho*dt*(kappa/eps - 0.5*rho);
-        double R = 2*kappa/(eps*eps*(1 - std::exp(-kappa*dt))) - rho/eps;
-        if (R<=0 || L==0 || (L<0 && R>=0)) {
+    if (rho.item<double>() > 0) { // always satisfied when rho <= 0
+        torch::Tensor L = rho*dt*(kappa/eps - 0.5*rho);
+        torch::Tensor R = 2*kappa/(eps*eps*(1 - torch::exp(-kappa*dt))) - rho/eps;
+        if (R.item<double>() <= 0 || L.item<double>() == 0 || (L.item<double>() < 0 && R.item<double>() >= 0)) {
             // When (L<0 && R<=0), L/R is always < 0.5.
             // (L>0 && R<=0) never happens.
             // In other cases, regularity condition is always satisfied.
         }
-        else if (L > 0) {
-            gamma2 = std::min(0.5, R / L * 0.9); // multiply by 0.9 to have some margin
+        else if (L.item<double>() > 0) {
+            torch::Tensor one_half = torch::tensor(0.5, torch::kFloat64);
+            gamma2 = torch::minimum(one_half, R / L * 0.9); // multiply by 0.9 to have some margin
         }
     }
-    double gamma1 = 1.0 - gamma2;
+    torch::Tensor gamma1 = 1.0 - gamma2;
 
-    double k0 = -rho * kappa * theta * dt / eps;
-    double k1 = gamma1 * dt * (kappa * rho / eps - 0.5) - rho / eps;
-    double k2 = gamma2 * dt * (kappa * rho / eps - 0.5) + rho / eps;
-    double k3 = gamma1 * dt * (1 - rho * rho);
-    double k4 = gamma2 * dt * (1 - rho * rho);
+    torch::Tensor k0 = -rho * kappa * theta * dt / eps;
+    torch::Tensor k1 = gamma1 * dt * (kappa * rho / eps - 0.5) - rho / eps;
+    torch::Tensor k2 = gamma2 * dt * (kappa * rho / eps - 0.5) + rho / eps;
+    torch::Tensor k3 = gamma1 * dt * (1 - rho * rho);
+    torch::Tensor k4 = gamma2 * dt * (1 - rho * rho);
 
     torch::Tensor var = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps);
     torch::Tensor log_paths = torch::empty({n_paths, n_steps + 1}, init_state_price.dtype());
