@@ -1,4 +1,4 @@
-#include <noa/quant/heston.hh>
+#include <noa/quant/heston_sim.hh>
 
 #include <cstdint>
 #include <cmath>
@@ -9,17 +9,18 @@
 using namespace torch::indexing;
 using namespace noa::quant;
 
+
 int64_t n_paths = 10000;
 int64_t n_steps = 2500;
 double dt = 1.0/250;
-double rho = -0.6;
-double S0 = 100.0;
 
-double eps = 0.009;
-double theta = 0.01;
-double v0 = theta;
-double kappa = 0.06;
-double drift = 0;
+torch::Tensor rho   = torch::tensor(-0.6, torch::kFloat64);
+torch::Tensor S0    = torch::tensor(100.0, torch::kFloat64);
+torch::Tensor eps   = torch::tensor(0.009, torch::kFloat64);
+torch::Tensor theta = torch::tensor(0.01, torch::kFloat64);
+torch::Tensor v0    = torch::tensor(0.01, torch::kFloat64);
+torch::Tensor kappa = torch::tensor(0.06, torch::kFloat64);
+torch::Tensor drift = torch::tensor(0, torch::kFloat64);
 
 
 double nonc_chi2_moment_true(double df, double nonc, int moment_num) {
@@ -112,6 +113,7 @@ void test_heston() {
     torch::save(heston_paths, "heston_paths.pt");
     torch::save(var_paths, "var_paths.pt");
 }
+
 
 int main(int argc, char* argv[]) {
     test_noncentral_chi2();

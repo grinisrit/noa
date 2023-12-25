@@ -1,4 +1,4 @@
-#include "noa/quant/heston.hh"
+#include "noa/quant/heston_sim.hh"
 #include <torch/extension.h>
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
