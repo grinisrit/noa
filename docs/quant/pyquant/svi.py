@@ -219,7 +219,7 @@ class SVICalc:
         self.jump_wing_cached_params = params.array()
 
     def calibrate(
-        self, chain: VolSmileChain, calibration_weights: CalibrationWeights
+        self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights
     ) -> SVIRawParams:
         strikes = chain.Ks
         w = calibration_weights.w

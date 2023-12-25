@@ -103,7 +103,7 @@ class SABRCalc:
     def update_cached_params(self, params: SABRParams):
         self.cached_params = params.array()
 
-    def calibrate(self, chain: VolSmileChain, backbone: Backbone, calibration_weights: CalibrationWeights) -> SABRParams:
+    def calibrate(self, chain: VolSmileChainSpace, backbone: Backbone, calibration_weights: CalibrationWeights) -> SABRParams:
         strikes = chain.Ks
         w = calibration_weights.w
         
@@ -975,7 +975,7 @@ class SABRCalc:
         Ks: nb.float64[:],
         params: nb.float64[:],
         beta: nb.float64       
-    ) -> tuple[nb.float64[:]]: 
+    ) -> Tuple[nb.float64[:]]:
         
         n = len(Ks)
         alpha, rho, v = params[0], params[1], params[2]
