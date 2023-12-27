@@ -109,11 +109,11 @@ class SABRCalc:
         
         if not strikes.shape == w.shape:
             raise ValueError('Inconsistent data between strikes and calibration weights')
-            
-        m_n = len(strikes) - 2
-        
-        if not m_n > 0:
-            raise ValueError('Need at least 3 points to calibrate SABR')
+
+        n_points = len(strikes)
+        PARAMS_TO_CALIBRATE = 3
+        if not n_points - PARAMS_TO_CALIBRATE >= 0:
+            raise ValueError('Need at least 3 points to calibrate SABR model')
      
         weights = w / w.sum()
         forward = chain.f
@@ -161,7 +161,7 @@ class SABRCalc:
             F = res.T @ res
 
             result_x = x
-            result_error = F / m_n
+            result_error = F / n_points
 
             for i in range(self.num_iter):
                 if result_error < self.tol:
@@ -175,7 +175,7 @@ class SABRCalc:
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
                     mu /= nu1
-                    result_error = F / m_n
+                    result_error = F / n_points
                 else:
                     i -= 1
                     mu *= nu2
