@@ -1,6 +1,7 @@
 import numpy as np
 import numba as nb
 from scipy.interpolate import CubicSpline
+from typing import Tuple
 
 from .common import *
 from .black_scholes import *
@@ -51,7 +52,7 @@ class Butterfly:
     ("sigmas", nb.float64[:]),
     ("Ks", nb.float64[:]),
 ])
-class VolSmileChain:
+class VolSmileChainSpace:
     bs_calc: BSCalc
     def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
         if not strikes.data.shape == implied_vols.data.shape:
@@ -228,7 +229,7 @@ class VolSmileDeltaSpace:
         self.bs_calc.delta_tol = self.delta_tol
         self.bs_calc.delta_grad_eps = self.delta_grad_eps
 
-    def _implied_vols(self, RR: nb.float64, BB: nb.float64) -> tuple[nb.float64]:
+    def _implied_vols(self, RR: nb.float64, BB: nb.float64) -> Tuple[nb.float64]:
         return -RR/2 + (BB + self.ATM), RR/2 + (BB + self.ATM)
     
     def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
@@ -238,7 +239,7 @@ class VolSmileDeltaSpace:
             ImpliedVol(sigma)
         ).K
 
-    def to_chain_space(self) -> VolSmileChain:
+    def to_chain_space(self) -> VolSmileChainSpace:
         ivs = np.zeros(5, dtype=np.float64)
         strikes = np.zeros(5, dtype=np.float64)
            
@@ -252,7 +253,7 @@ class VolSmileDeltaSpace:
         strikes[3] = self._get_strike(ivs[3], 0.25)
         strikes[4] = self._get_strike(ivs[4], 0.1)
         
-        return VolSmileChain(
+        return VolSmileChainSpace(
             Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T)),
             Strikes(strikes),
             ImpliedVols(ivs)
@@ -333,7 +334,7 @@ class Butterflies:
         self.T = times_to_maturity.data 
 
 
-class VolSurface:
+class VolSurfaceDeltaSpace:
 
     def __init__(
         self, 
