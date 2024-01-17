@@ -243,7 +243,9 @@ class HestonParams:
     ("premiums", nb.float64[:]),
 ])
 class MarketParams:
-    """Describes market state at a single moment of time."""
+    """Describes market state at a single moment of time.
+    The field `premiums` is used only for calibration.
+    """
     def __init__(
         self,
         spot: Spot,
