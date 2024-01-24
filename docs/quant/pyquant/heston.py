@@ -406,9 +406,18 @@ class HestonCalc:
         spot: Spot,
         tenor: TimeToMaturity,
         strike: Strike,
-        option_type: OptionType
+        option_type: OptionType,
+        forward_yield: nb.optional(ForwardYield) = None
     ) -> Premium:
-        """Calculates the premium for a vanilla option."""
+        """Calculates the premium for one vanilla option.
+
+        If `forward_yield` parameter isn't provided, use the forward yield value
+        that Heston model was calibrated with.
+        """
+
+        if forward_yield is None:
+            forward_yield = ForwardYield(self.r_from_calibration)
+
         result = self._heston_vanilla_premium(
             HestonParams(
                 Variance(self.cached_params[0]),
@@ -419,7 +428,7 @@ class HestonCalc:
             ),
             MarketParams(
                 spot,
-                ForwardYield(self.r_from_calibration),
+                forward_yield,
                 TimesToMaturity(np.array([tenor.T])),
                 Strikes(np.array([strike.K])),
                 OptionTypes(np.array([option_type.is_call])),
@@ -433,8 +442,17 @@ class HestonCalc:
         spot: Spot,
         tenors: TimesToMaturity,
         strikes: Strikes,
-        option_types: OptionTypes
+        option_types: OptionTypes,
+        forward_yield: nb.optional(ForwardYield) = None
     ) -> Premiums:
+        """Calculates the premiums for vanilla options.
+
+        If `forward_yield` parameter isn't provided, use the forward yield value
+        that Heston model was calibrated with.
+        """
+        if forward_yield is None:
+            forward_yield = ForwardYield(self.r_from_calibration)
+
         result = self._heston_vanilla_premium(
             HestonParams(
                 Variance(self.cached_params[0]),
@@ -445,7 +463,7 @@ class HestonCalc:
             ),
             MarketParams(
                 spot,
-                ForwardYield(self.r_from_calibration),
+                forward_yield,
                 tenors,
                 strikes,
                 option_types,
