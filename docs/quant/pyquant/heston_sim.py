@@ -10,7 +10,7 @@ References:
 
 
 import torch
-from typing import Tuple
+from typing import Tuple, Optional
 
 __all__ = ['noncentral_chisquare', 'generate_cir', 'generate_heston']
 
@@ -57,7 +57,8 @@ def generate_cir(
         init_state: torch.Tensor,
         kappa: torch.Tensor,
         theta: torch.Tensor,
-        eps: torch.Tensor
+        eps: torch.Tensor,
+        minimum_value: Optional[float] = None,
 ) -> torch.Tensor:
     """Generates paths of Cox-Ingersoll-Ross (CIR) process.
 
@@ -76,6 +77,9 @@ def generate_cir(
         kappa: Parameter κ.
         theta: Parameter θ.
         eps: Parameter ε.
+        minimum_value: On each step, the value of a process is clamped to the
+            range [minimum_value, +∞). This may be needed in certain cases, e.g.
+            for automatic differentiation.
 
     Returns:
         Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
@@ -94,6 +98,8 @@ def generate_cir(
         kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp))
         # [Grzelak2019, definition 8.1.1]
         v_next = c_bar * noncentral_chisquare(delta, kappa_bar)
+        if minimum_value is not None:
+            v_next = torch.clamp(v_next, min=minimum_value)
         paths[:, i+1] = v_next
     return paths
 
@@ -108,7 +114,8 @@ def generate_heston(
         theta: torch.Tensor,
         eps: torch.Tensor,
         rho: torch.Tensor,
-        drift: torch.Tensor
+        drift: torch.Tensor,
+        minimum_var: Optional[float] = None
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Generates time series following the Heston model.
 
@@ -130,6 +137,10 @@ def generate_heston(
         eps: Parameter ε - volatility of variance.
         rho: Correlation between underlying Brownian motions for S(t) and v(t).
         drift: Drift parameter μ.
+        minimum_var: On each step, clamp the value of the variance process to
+            the range [minimum_var, +∞) to prevent it from being too close to
+            zero. This is necessary when using autograd to compute the
+            derivative of generated values w.r.t. v(0).
 
     Returns:
         Two tensors: 1) simulated paths for price, 2) simulated paths for variance.
@@ -160,7 +171,7 @@ def generate_heston(
     k3 = gamma1 * dt * (1 - rho * rho)
     k4 = gamma2 * dt * (1 - rho * rho)
 
-    var_paths = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps)
+    var_paths = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps, minimum_var)
     log_paths = torch.empty((n_paths, n_steps + 1), dtype=init_state_price.dtype)
     log_paths[:, 0] = init_state_price.log()
 

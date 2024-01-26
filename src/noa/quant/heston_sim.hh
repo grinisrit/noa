@@ -94,6 +94,9 @@ noncentral_chisquare(const torch::Tensor& df, const torch::Tensor& nonc) {
  * @param kappa Parameter κ.
  * @param theta Parameter θ.
  * @param eps Parameter ε.
+ * @param minimum_value On each step, the value of a process is clamped to the
+            range [minimum_value, +∞). This may be needed in certain cases, e.g.
+            for automatic differentiation.
  * @return Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
  */
 torch::Tensor
@@ -101,7 +104,8 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
              const torch::Tensor& init_state,
              const torch::Tensor& kappa,
              const torch::Tensor& theta,
-             const torch::Tensor& eps)
+             const torch::Tensor& eps,
+             double minimum_value = 0)
 {
     if (init_state.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state` must be (n_paths,)");
@@ -117,6 +121,8 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
         torch::Tensor kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp));
         // [Grzelak2019, definition 8.1.1]
         torch::Tensor v_next = c_bar * noncentral_chisquare(delta, kappa_bar);
+        if (minimum_value != 0)
+            v_next = torch::clamp(v_next, minimum_value);
         paths.index_put_({Slice(), i+1}, v_next);
     }
     return paths;
@@ -141,6 +147,10 @@ generate_cir(int64_t n_paths, int64_t n_steps, double dt,
  * @param eps Parameter ε - volatility of variance.
  * @param rho Correlation between underlying Brownian motions for S(t) and v(t).
  * @param drift Drift parameter μ.
+ * @param minimum_var On each step, clamp the value of the variance process to
+            the range [minimum_var, +∞) to prevent it from being too close to
+            zero. This is necessary when using autograd to compute the
+            derivative of generated values w.r.t. v(0).
  * @return Two tensors: simulated paths for price, simulated paths for variance.
  *     Both tensors have shape (n_paths, n_steps + 1).
  */
@@ -152,7 +162,8 @@ generate_heston(int64_t n_paths, int64_t n_steps, double dt,
                 const torch::Tensor& theta,
                 const torch::Tensor& eps,
                 const torch::Tensor& rho,
-                const torch::Tensor& drift)
+                const torch::Tensor& drift,
+                double minimum_var = 0)
 {
     if (init_state_price.sizes() != torch::IntArrayRef{n_paths})
         throw std::invalid_argument("Shape of `init_state_price` must be (n_paths,)");
@@ -182,19 +193,19 @@ generate_heston(int64_t n_paths, int64_t n_steps, double dt,
     torch::Tensor k3 = gamma1 * dt * (1 - rho * rho);
     torch::Tensor k4 = gamma2 * dt * (1 - rho * rho);
 
-    torch::Tensor var = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps);
+    torch::Tensor var_paths = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps, minimum_var);
     torch::Tensor log_paths = torch::empty({n_paths, n_steps + 1}, init_state_price.dtype());
     log_paths.index_put_({Slice(), 0}, init_state_price.log());
 
     for (int64_t i = 0; i < n_steps; i++) {
-        torch::Tensor v_i = var.index({Slice(), i});
-        torch::Tensor v_next = var.index({Slice(), i+1});
+        torch::Tensor v_i = var_paths.index({Slice(), i});
+        torch::Tensor v_next = var_paths.index({Slice(), i + 1});
         torch::Tensor next_vals = drift*dt +
                 log_paths.index({Slice(), i}) + k0 + k1*v_i + k2*v_next +
                 torch::sqrt(k3*v_i + k4*v_next) * torch::randn_like(v_i);
         log_paths.index_put_({Slice(), i+1}, next_vals);
     }
-    return std::make_tuple(log_paths.exp(), var);
+    return std::make_tuple(log_paths.exp(), var_paths);
 }
 
 } // namespace noa::quant
