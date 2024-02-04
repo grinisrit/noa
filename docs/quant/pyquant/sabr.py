@@ -60,6 +60,16 @@ class SABRParams:
     
     def backbone(self) -> Backbone:
         return Backbone(self.beta)
+
+    def scale_alpha(self, s: nb.float64) -> nb.float64:
+        return SABRParams(Volatility(s*self.alpha), Correlation(self.rho), VolOfVol(self.v), Backbone(self.beta))
+
+    def scale_rho(self, s: nb.float64) -> nb.float64:
+        return SABRParams(Volatility(self.alpha), Correlation(s*self.rho), VolOfVol(self.v), Backbone(self.beta))
+
+    def scale_v(self, s: nb.float64) -> nb.float64:
+        return SABRParams(Volatility(self.alpha), Correlation(self.rho), VolOfVol(s*self.v), Backbone(self.beta))
+        
     
 @nb.experimental.jitclass([
     ("w", nb.float64[:])
@@ -340,8 +350,8 @@ class SABRCalc:
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         )
     
-    def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Delta:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+    def vanilla_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Delta:
+        assert forward.time_to_maturity().T == vanilla.time_to_maturity().T
         return Delta(vanilla.N *\
                      self.delta(forward, vanilla.strike(), vanilla.option_type(), params).pv
         )
@@ -373,8 +383,8 @@ class SABRCalc:
             delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         )
  
-    def vanillas_deltas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Delta:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+    def vanillas_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Delta:
+        forward.time_to_maturity().T == vanillas.time_to_maturity().T
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         Ks = vanillas.Ks
@@ -399,7 +409,7 @@ class SABRCalc:
             params.beta
         )[0] 
         return Deltas(vanillas.Ns*(
-            delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+            delta_bsm #+ (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         ))
         
      

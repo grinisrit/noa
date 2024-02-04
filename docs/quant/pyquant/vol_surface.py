@@ -73,6 +73,16 @@ class VolSmileChainSpace:
     def strikes(self) -> Strikes:
         return Strikes(self.Ks)
 
+    def time_to_maturity(self) -> TimeToMaturity:
+        return TimeToMaturity(self.T)
+
+    def vanillas(self) -> Vanillas:
+        return Vanillas(
+            OptionTypes(self.Ks >= self.f),
+            self.strikes(),
+            Notionals(np.ones_like(self.Ks)),
+            self.time_to_maturity())
+
     def premiums(self) -> Premiums:
         res = np.zeros_like(self.sigmas)
         forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))

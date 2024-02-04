@@ -6,9 +6,9 @@ import numba as nb
 YEAR_NANOS: int = 31536000000000000
 
 
-@nb.njit()
+@nb.njit(nb.float64(nb.float64))
 def normal_cdf(x: nb.float64) -> nb.float64:
-    t = 1 / (1 + 0.2316419 * abs(x))
+    t = 1 / (1 + 0.2316419 * np.absolute(x))
     summ = (
         0.319381530 * t
         - 0.356563782 * t**2
@@ -21,6 +21,9 @@ def normal_cdf(x: nb.float64) -> nb.float64:
     else:
         return summ * np.exp(-np.absolute(x) ** 2 / 2) / np.sqrt(2 * np.pi)
 
+@nb.vectorize([nb.float64(nb.float64)], nopython=True)
+def normal_cdf_vec(x: nb.float64[:]) -> nb.float64[:]:
+    return normal_cdf(x)
 
 @nb.njit()
 def normal_pdf(x: nb.float64) -> nb.float64:
