@@ -81,7 +81,13 @@ class CalibrationWeights:
         if not w.sum() > 0:
             raise ValueError('At least one weight must be non-trivial')
         self.w = w
-        
+
+@nb.experimental.jitclass([
+    ("v", nb.boolean)
+])
+class StickyStrike:
+    def __init__(self, v: nb.boolean = False):
+        self.v = v        
         
 @nb.experimental.jitclass([
     ("beta", nb.float64),
@@ -214,44 +220,26 @@ class SABRCalc:
             self._vol_sabr(forward.forward_rate().fv, forward.T, strikes.data,  params.array(), params.beta)
         )
     
-    def premium(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Premium:
+    def premium(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Premium:
+        assert forward.T == vanilla.T
         sigma =\
-            self._vol_sabr(forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array(), params.beta)[0]
-        return self.bs_calc.premium(forward, strike, option_type, ImpliedVol(sigma))
-   
-    def premiums(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Premiums:
-        f = forward.forward_rate().fv
-        sigmas =\
-            self._vol_sabr(f, forward.T, strikes.data,  params.array(), params.beta)
-        Ks = strikes.data
-        res = np.zeros_like(sigmas)
-        n = len(sigmas)
-        for i in range(n):
-            K = Ks[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), OptionType(K >= f), ImpliedVol(sigmas[i])).pv
-        return Premiums(res)
-    
-    def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Premium:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Premium(vanilla.N*\
-            self.premium(forward, vanilla.strike(), vanilla.option_type(), params).pv
+            self._vol_sabr(forward.forward_rate().fv, forward.T, np.array([vanilla.K]), params.array(), params.beta)[0]
+        return Premium(self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
         )
-    
-    def vanillas_premiums(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Premiums:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
+   
+    def premiums(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Premiums:
+        assert forward.T == vanillas.T
         f = forward.forward_rate().fv
         Ks = vanillas.Ks
         sigmas =\
             self._vol_sabr(f, forward.T, Ks,  params.array(), params.beta)
-        Ns = vanillas.Ns
         res = np.zeros_like(sigmas)
         n = len(sigmas)
         for i in range(n):
             K = Ks[i]
-            N = Ns[i]
             is_call = vanillas.is_call[i]
-            res[i] = N*self.bs_calc.premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i])).pv
-        return Premiums(res)
+            res[i] = self.bs_calc._premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i]))
+        return Premiums(vanillas.Ns * res)
         
 
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
@@ -263,7 +251,7 @@ class SABRCalc:
 
         def g(K):
             iv = self.implied_vol(forward, Strike(K), params)  
-            return self.bs_calc.delta(forward, Strike(K), option_type, iv).pv - delta.pv
+            return self.bs_calc._delta(forward, Strike(K), option_type, iv) - delta.pv
 
         def g_prime(K): 
             iv = self.implied_vol(forward, Strike(K), params)
@@ -331,64 +319,35 @@ class SABRCalc:
                       VolatilityQuote(0.5*(call10 + put10) - atm), TimeToMaturity(forward.T))
         )
     
-    def delta(self, forward: Forward, strike: Strike, option_type: OptionType, params: SABRParams) -> Delta:
+    def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Delta:
+        assert forward.T == vanilla.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
+        strike = vanilla.strike()
+       
         sigma = self.implied_vol(forward, strike, params)
 
-        delta_bsm = self.bs_calc.delta(forward, strike, option_type, sigma).pv
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        delta_bsm = self.bs_calc._delta(forward, strike, vanilla.option_type(), sigma)
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0]
-        
-        return Delta(
-            delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
-        )
-    
-    def vanilla_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Delta:
-        assert forward.time_to_maturity().T == vanilla.time_to_maturity().T
-        return Delta(vanilla.N *\
-                     self.delta(forward, vanilla.strike(), vanilla.option_type(), params).pv
-        )
-        
-    def deltas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Deltas:
+        )[0][0] if not sK else 0.
+
+        res_delta = delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+        return Delta(vanilla.N*res_delta)
+      
+    def sticky_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: bool = False) -> Delta:
+        assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigmas = self.implied_vols(forward, strikes, params).data
+        strikes = vanillas.strikes()
         Ks = strikes.data
-        n = len(sigmas)
-        delta_bsm = np.zeros_like(sigmas)
-        vega_bsm = np.zeros_like(sigmas)
-        dsigma_df = np.zeros_like(sigmas)
-
-        for i in range(n):
-            K = Ks[i]
-            sigma = sigmas[i]
-            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), OptionType(K>=F), ImpliedVol(sigma)).pv
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), ImpliedVol(sigma)).pv
-
-            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
-
-        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
-            Ks,
-            params.array(),
-            params.beta
-        )[0] 
-        return Deltas(
-            delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
-        )
- 
-    def vanillas_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Delta:
-        forward.time_to_maturity().T == vanillas.time_to_maturity().T
-        F = forward.forward_rate().fv
-        D = forward.numeraire().pv
-        Ks = vanillas.Ks
-        sigmas = self.implied_vols(forward, Strikes(Ks), params).data
+        sigmas = self.implied_vols(forward, strikes, params).data
         n = len(sigmas)
         delta_bsm = np.zeros_like(sigmas)
         vega_bsm = np.zeros_like(sigmas)
@@ -398,65 +357,66 @@ class SABRCalc:
             K = Ks[i]
             sigma = sigmas[i]
             is_call = vanillas.is_call[i]
-            delta_bsm[i] = self.bs_calc.delta(forward, Strike(K), OptionType(is_call), ImpliedVol(sigma)).pv
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), ImpliedVol(sigma)).pv
+            delta_bsm[i] = self.bs_calc._delta(forward, Strike(K), OptionType(is_call), ImpliedVol(sigma))
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), ImpliedVol(sigma))
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
-        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
-            Ks,
-            params.array(),
-            params.beta
-        )[0] 
-        return Deltas(vanillas.Ns*(
-            delta_bsm #+ (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
-        ))
-        
+        if sticky_strike:
+            res_delta = delta_bsm + (1/D) * vega_bsm * dsigma_df
+
+        else:
+            dsigma_dalpha = self._jacobian_sabr(F, forward.T,
+                Ks,
+                params.array(),
+                params.beta
+            )[0]
+            res_delta = delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
+
+        return Deltas(vanillas.Ns*res_delta)  
      
-    def gamma(self, forward: Forward, strike: Strike, params: SABRParams) -> Gamma:
+    def sticky_gamma(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Gamma:
+        assert forward.T == vanilla.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
+        strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        gamma_bsm = self.bs_calc.gamma(forward, strike, sigma).pv
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
-        volga_bsm = self.bs_calc.volga(forward, strike, sigma).pv
+        gamma_bsm = self.bs_calc._gamma(forward, strike, sigma)
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
+        vanna_bsm = self.bs_calc._vanna(forward, strike, sigma)
+        volga_bsm = self.bs_calc._volga(forward, strike, sigma)
                 
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
         d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
-        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sK else 0.
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0]
+        )[0][0] if not sK else 0.
 
         sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
-        return Gamma(
-            gamma_bsm
-            + (2/D) * vanna_bsm * sticky_component
-            + (volga_bsm / (D**2)) * sticky_component**2
-            + (vega_bsm / (D**2)) 
-            * (
+        res_gamma = gamma_bsm +\
+            (2/D) * vanna_bsm * sticky_component +\
+            (volga_bsm / (D**2)) * sticky_component**2 +\
+            (vega_bsm / (D**2)) * (
                 d2_sigma_df2
                 + d2_sigma_dalpha_df * params.rho * params.v / F**params.beta
                 - dsigma_dalpha * params.beta * params.rho * params.v / F ** (params.beta + 1)
             )
-        )
+        return Gamma(vanilla.N*res_gamma)
     
-    def vanilla_gamma(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Gamma:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Gamma(vanilla.N*\
-            self.gamma(forward, vanilla.strike(), params).pv
-        )
-     
-    def gammas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Gammas:
+    def sticky_gammas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Gammas:
+        assert forward.T == vanillas.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
-        sigmas = self.implied_vols(forward, strikes, params).data
-        Ks = strikes.data
+        sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
+        Ks = vanillas.Ks
         n = len(sigmas)
 
         gamma_bsm = np.zeros_like(sigmas)
@@ -466,51 +426,55 @@ class SABRCalc:
 
         dsigma_df = np.zeros_like(sigmas)
         d2_sigma_df2 = np.zeros_like(sigmas)
-        d2_sigma_dalpha_df = np.zeros_like(sigmas)
-
 
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            gamma_bsm[i] = self.bs_calc.gamma(forward, Strike(K), sigma).pv
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
-            vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
-            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
+            gamma_bsm[i] = self.bs_calc._gamma(forward, Strike(K), sigma)
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
+            vanna_bsm[i] = self.bs_calc._vanna(forward, Strike(K), sigma)
+            volga_bsm[i] = self.bs_calc._volga(forward, Strike(K), sigma)
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
             d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
-            d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
 
-        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
-            Ks,
-            params.array(),
-            params.beta
-        )[0]
+        if sticky_strike:
+            res_gammas = gamma_bsm + (2/D) * vanna_bsm * dsigma_df + (volga_bsm / (D**2)) * dsigma_df**2 + \
+                (vega_bsm / (D**2)) * d2_sigma_df2
 
-        sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
-        return Gammas(
-            gamma_bsm
-            + (2/D) * vanna_bsm * sticky_component
-            + (volga_bsm / (D**2)) * sticky_component**2
-            + (vega_bsm / (D**2)) 
-            * (
-                d2_sigma_df2
-                + d2_sigma_dalpha_df * params.rho * params.v / F**params.beta
-                - dsigma_dalpha * params.beta * params.rho * params.v / F ** (params.beta + 1)
-            )
-        )
+        else:
+            d2_sigma_dalpha_df = np.zeros_like(sigmas)
+            for i in range(n):
+                K = Ks[i]
+                d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
+
+            dsigma_dalpha = self._jacobian_sabr(F, forward.T,
+                Ks,
+                params.array(),
+                params.beta
+            )[0]
+            sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
+
+            res_gammas = gamma_bsm + \
+                (2/D) * vanna_bsm * sticky_component + \
+                (volga_bsm / (D**2)) * sticky_component**2 + \
+                (vega_bsm / (D**2)) * (
+                    d2_sigma_df2
+                    + d2_sigma_dalpha_df * params.rho * params.v / F**params.beta
+                    - dsigma_dalpha * params.beta * params.rho * params.v / F ** (params.beta + 1)
+                )
+            
+        return Gammas(vanillas.Ns*res_gammas)
     
-    def vanillas_gammas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Gammas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Gammas(vanillas.Ns*\
-            self.gammas(forward, vanillas.strikes(), params).data
-        )  
     
-    def vega(self, forward: Forward, strike: Strike, params: SABRParams) -> Vega:
+    def sticky_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vega:
+        assert forward.T == vanilla.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
+        strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
 
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
 
@@ -518,35 +482,30 @@ class SABRCalc:
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0]
+        )[0][0] if not sK else 0.
 
-        if params.v > 0 : 
+        if params.v > 0 and not sK: 
             res = vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
         else:
             res = vega_bsm * dsigma_dalpha
 
         return Vega(res)
     
-    def vanilla_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Vega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Vega(vanilla.N*\
-            self.vega(forward, vanilla.strike(), params).pv
-        )
-        
-    def vegas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vegas:
+    
+    def sticky_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vegas:
+        assert forward.T == vanillas.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
-        sigmas = self.implied_vols(forward, strikes, params).data
-        Ks = strikes.data
+        sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
+        Ks = vanillas.Ks
         n = len(sigmas)
        
         vega_bsm = np.zeros_like(sigmas)
-        dsigma_df = np.zeros_like(sigmas)
 
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
-            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -554,25 +513,24 @@ class SABRCalc:
             params.beta
         )[0] 
 
-        if params.v > 0 : 
+        if params.v > 0 and not sK: 
+            dsigma_df = np.zeros_like(sigmas)
+            for i in range(n):
+                dsigma_df[i] = self._dsigma_df(F, forward.T, Ks[i], params)
             res = vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
         else:
             res = vega_bsm * dsigma_dalpha
 
         return Vegas(res)
    
-    def vanillas_vegas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanilla, params: SABRParams) -> Vegas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Vegas(vanillas.Ns*\
-            self.vegas(forward, vanillas.strikes(), params).data
-        )
-    
-    
-    def rega(self, forward: Forward, strike: Strike, params: SABRParams) -> Rega:
+
+    def rega_rho(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Rega:
+        assert forward.T == vanilla.T
         F = forward.forward_rate().fv
+        strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma).pv
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -581,26 +539,22 @@ class SABRCalc:
         )[1][0]
 
         return Rega(
-            vega_bsm * dsigma_drho
+            vanilla.N * vega_bsm * dsigma_drho
         )
-    
-    def vanilla_rega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Rega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Rega(vanilla.N*\
-            self.rega(forward, vanilla.strike(), params).pv
-        )    
+       
         
-    def regas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Regas:
+    def regas_rho(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Regas:
+        assert forward.T == vanillas.T
         F = forward.forward_rate().fv
-        sigmas = self.implied_vols(forward, strikes, params).data
-        Ks = strikes.data
+        sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
+        Ks = vanillas.Ks
         n = len(sigmas)
        
         vega_bsm = np.zeros_like(sigmas)
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma).pv
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -608,17 +562,13 @@ class SABRCalc:
             params.beta
         )[1] 
         return Regas(
-            vega_bsm * dsigma_drho
-        )
-    
-    def vanillas_regas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Regas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Regas(vanillas.Ns*\
-            self.regas(forward, vanillas.strikes(), params).data
+            vanillas.Ns * vega_bsm * dsigma_drho
         )    
     
-    def sega(self, forward: Forward, strike: Strike, params: SABRParams) -> Sega:
+    def sega_volvol(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Sega:
+        assert forward.T == vanilla.T
         F = forward.forward_rate().fv
+        strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
@@ -630,19 +580,14 @@ class SABRCalc:
         )[2][0]
 
         return Sega(
-            vega_bsm * dsigma_dv
+            vanilla.N * vega_bsm * dsigma_dv
         )
-
-    def vanilla_sega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Sega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Sega(vanilla.N*\
-            self.sega(forward, vanilla.strike(), params).pv
-        ) 
         
-    def segas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Segas:
+    def segas_volvol(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Segas:
+        assert forward.T == vanillas.T
         F = forward.forward_rate().fv
-        sigmas = self.implied_vols(forward, strikes, params).data
-        Ks = strikes.data
+        sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
+        Ks = vanillas.Ks
         n = len(sigmas)
        
         vega_bsm = np.zeros_like(sigmas)
@@ -657,25 +602,25 @@ class SABRCalc:
             params.beta
         )[2] 
         return Segas(
-            vega_bsm * dsigma_dv
+            vanillas.Ns * vega_bsm * dsigma_dv
         )
-
-    def vanillas_segas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Segas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Segas(vanillas.Ns*\
-            self.segas(forward, vanillas.strikes(), params).data
-        )    
+   
      
-    def volga(self, forward: Forward, strike: Strike, params: SABRParams) -> Volga:
+    def sticky_volga(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Volga:
+        assert forward.T == vanilla.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
+        strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        volga_bsm = self.bs_calc.volga(forward, strike, sigma).pv
-                
-        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
+        volga_bsm = self.bs_calc._volga(forward, strike, sigma)
+
         d2_sigma_dalpha2 = self._d2_sigma_dalpha2(F, forward.T, strike.K, params)
-        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
+        
+                
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params) if not sK else 0.
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sK else 0.
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -683,44 +628,35 @@ class SABRCalc:
             params.beta
         )[0][0]
 
-        if params.v > 0 : 
+        if params.v > 0 and not sK : 
             res = volga_bsm * (
                 dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
         else:
             res = volga_bsm * (dsigma_dalpha) ** 2 + vega_bsm * d2_sigma_dalpha2
 
-        return Volga(res)
-
-    def vanilla_volga(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Volga:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Volga(vanilla.N*\
-            self.volga(forward, vanilla.strike(), params).pv
-        ) 
+        return Volga(vanilla.N*res)
      
-    def volgas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Volgas:
+    def sticky_volgas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Volgas:
+        assert forward.T == vanillas.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
-        sigmas = self.implied_vols(forward, strikes, params).data
-        Ks = strikes.data
+        sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
+        Ks = vanillas.Ks
         n = len(sigmas)
 
         vega_bsm = np.zeros_like(sigmas)
         volga_bsm = np.zeros_like(sigmas)
 
-        dsigma_df = np.zeros_like(sigmas)
         d2_sigma_dalpha2 = np.zeros_like(sigmas)
-        d2_sigma_dalpha_df = np.zeros_like(sigmas)
-
 
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
-            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
-
-            dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
+            volga_bsm[i] = self.bs_calc._volga(forward, Strike(K), sigma)
             d2_sigma_dalpha2[i] = self._d2_sigma_dalpha2(F, forward.T, K, params)
-            d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
+           
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -728,33 +664,35 @@ class SABRCalc:
             params.beta
         )[0]
 
-        if params.v > 0 : 
+        if params.v > 0 and not sK: 
+            dsigma_df = np.zeros_like(sigmas)
+            d2_sigma_dalpha_df = np.zeros_like(sigmas)
+            for i in range(n):
+                dsigma_df[i] = self._dsigma_df(F, forward.T, Ks[i], params)
+                d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, Ks[i], params)
+
             res = volga_bsm * (
                 dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
         else:
             res = volga_bsm * (dsigma_dalpha) ** 2 + vega_bsm * d2_sigma_dalpha2
 
-        return Volgas(res)
-
-    def vanillas_volgas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanilla, params: SABRParams) -> Volgas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Volgas(vanillas.Ns*\
-            self.volgas(forward, vanillas.strikes(), params).data
-        )
+        return Volgas(vanillas.Ns * res)
     
      
-    def vanna(self, forward: Forward, strike: Strike, params: SABRParams) -> Vanna:
+    def sticky_vanna(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vanna:
+        assert forward.T == vanilla.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
+        strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
-        volga_bsm = self.bs_calc.volga(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
+        vanna_bsm = self.bs_calc._vanna(forward, strike, sigma)
+        volga_bsm = self.bs_calc._volga(forward, strike, sigma)
                 
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
-        d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
         d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params)
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
@@ -764,7 +702,8 @@ class SABRCalc:
         )[0][0]
 
 
-        if params.v > 0 : 
+        if params.v > 0 and not sK: 
+            d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
             res = (
                 vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
                 ) * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) + (vega_bsm/D) * (
@@ -777,19 +716,16 @@ class SABRCalc:
                 vanna_bsm + (volga_bsm/D) * dsigma_df 
                 ) * dsigma_dalpha + (vega_bsm/D) * d2_sigma_dalpha_df
 
-        return Vanna(res)
-    
-    def vanilla_vanna(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams) -> Vanna:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Vanna(vanilla.N*\
-            self.vanna(forward, vanilla.strike(), params).pv
-        )    
+        return Vanna(vanilla.N * res)  
      
-    def vannas(self, forward: Forward, strikes: Strikes, params: SABRParams) -> Vannas:
+    def sticky_vannas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vannas:
+        assert forward.T == vanillas.T
+        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
+        strikes = vanillas.strikes()
         sigmas = self.implied_vols(forward, strikes, params).data
-        Ks = strikes.data
+        Ks = vanillas.Ks
         n = len(sigmas)
 
         vega_bsm = np.zeros_like(sigmas)
@@ -797,7 +733,6 @@ class SABRCalc:
         volga_bsm = np.zeros_like(sigmas)
 
         dsigma_df = np.zeros_like(sigmas)
-        d2_sigma_df2 = np.zeros_like(sigmas)
         d2_sigma_dalpha_df = np.zeros_like(sigmas)
 
         for i in range(n):
@@ -817,7 +752,11 @@ class SABRCalc:
             params.beta
         )[0]
 
-        if params.v > 0 : 
+        if params.v > 0 and not sK: 
+            d2_sigma_df2 = np.zeros_like(sigmas)
+            for i in range(n):
+                d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, Ks[i], params)   
+
             res = (
                 vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
                 ) * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v) + (vega_bsm/D) * (
@@ -830,112 +769,72 @@ class SABRCalc:
                 vanna_bsm + (volga_bsm/D) * dsigma_df 
                 ) * dsigma_dalpha + (vega_bsm/D) * d2_sigma_dalpha_df
 
-        return Vannas(res)
+        return Vannas(vanillas.Ns * res)
     
-    def vanillas_vannas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams) -> Vannas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Vannas(vanillas.Ns*\
-            self.vannas(forward, vanillas.strikes(), params).data
-        )
-    
-    def blip_vega(self, forward: Forward, strike: Strike, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
-        option_type = OptionType(forward.forward_rate().fv >= strike.K)
-        premium = self.premium(forward, strike, option_type, params).pv
+    def blip_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
+        premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
-        blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+        blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Vega((blipped_premium - premium) / delta_space.atm_blip)
+   
     
-    def vanilla_blip_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        print(vanilla.strike().K)
-        return Vega(vanilla.N*\
-            self.blip_vega(forward, vanilla.strike(), params, calibration_weights).pv
-        )    
-    
-    def blip_vegas(self, forward: Forward, strikes: Strikes, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
-        premiums = self.premiums(forward,  strikes, params).data
+    def blip_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
+        premiums = self.premiums(forward, vanillas, params).data
         delta_space = self.delta_space(forward, params)
   
         blipped_chain = delta_space.blip_ATM().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
-        blipped_premiums = self.premiums(forward, strikes, blipped_params).data
+        blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
     
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
     
-    def vanillas_blip_vegas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Vegas(vanillas.Ns*\
-            self.blip_vegas(forward, vanillas.strikes(), params, calibration_weights).data
-        )
     
-    def blip_rega(self, forward: Forward, strike: Strike, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
-        option_type = OptionType(forward.forward_rate().fv >= strike.K)
-        premium = self.premium(forward,  strike, option_type, params).pv
+    def blip_rega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
+        premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
-        blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+        blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
+     
     
-    def vanilla_blip_rega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Rega(vanilla.N*\
-            self.blip_rega(forward, vanilla.strike(), params, calibration_weights).pv
-        )     
-    
-    def blip_regas(self, forward: Forward, strikes: Strikes, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
-        premiums = self.premiums(forward,  strikes, params).data
+    def blip_regas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
+        premiums = self.premiums(forward, vanillas, params).data
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
-        blipped_premiums = self.premiums(forward, strikes, blipped_params).data
+        blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
+
     
-    def vanillas_blip_regas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Regas(vanillas.Ns*\
-            self.blip_regas(forward, vanillas.strikes(), params, calibration_weights).data
-        )
-    
-    def blip_sega(self, forward: Forward, strike: Strike, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
-        option_type = OptionType(forward.forward_rate().fv >= strike.K)
-        premium = self.premium(forward,  strike, option_type, params).pv
+    def blip_sega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
+        premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
-        blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+        blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
-        return Sega((blipped_premium - premium) / delta_space.bf25_blip) 
+        return Sega((blipped_premium - premium) / delta_space.bf25_blip)     
     
-    def vanilla_blip_sega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Sega(vanilla.N*\
-            self.blip_sega(forward, vanilla.strike(), params, calibration_weights).pv
-        )     
-    
-    def blip_segas(self, forward: Forward, strikes: Strikes, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
-        premiums = self.premiums(forward,  strikes, params).data
+
+    def blip_segas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
+        premiums = self.premiums(forward,  vanillas, params).data
         delta_space = self.delta_space(forward, params)
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
         blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
-        blipped_premiums = self.premiums(forward, strikes, blipped_params).data
+        blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
     
-    def vanillas_blip_segas(self, spot: Spot, forward_yield: ForwardYield, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        return Segas(vanillas.Ns*\
-            self.blip_segas(forward, vanillas.strikes(), params, calibration_weights).data
-        )
     
     def _vol_sabr(
         self,

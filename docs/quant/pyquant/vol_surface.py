@@ -53,7 +53,6 @@ class Butterfly:
     ("Ks", nb.float64[:]),
 ])
 class VolSmileChainSpace:
-    bs_calc: BSCalc
     def __init__(self, forward: Forward, strikes: Strikes, implied_vols: ImpliedVols):
         if not strikes.data.shape == implied_vols.data.shape:
             raise ValueError('Inconsistent data between strikes and implied vols')
@@ -68,8 +67,6 @@ class VolSmileChainSpace:
         self.sigmas = implied_vols.data 
         self.Ks = strikes.data
         
-        self.bs_calc = BSCalc()
-        
     def strikes(self) -> Strikes:
         return Strikes(self.Ks)
 
@@ -82,80 +79,9 @@ class VolSmileChainSpace:
             self.strikes(),
             Notionals(np.ones_like(self.Ks)),
             self.time_to_maturity())
-
-    def premiums(self) -> Premiums:
-        res = np.zeros_like(self.sigmas)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-        n = len(self.sigmas)
-        for i in range(n):
-            K = self.Ks[i]
-            sigma = self.sigmas[i]
-            res[i] = self.bs_calc.premium(forward, Strike(K), OptionType(K >= self.f), ImpliedVol(sigma)).pv
-        return Premiums(res)
     
     def forward(self) -> Forward:
         return Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-
-    def deltas(self) -> Deltas:
-        res = np.zeros_like(self.Ks)
-        n = len(self.Ks)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-        for i in range(n):
-            res[i] = self.bs_calc.delta(
-                forward,
-                Strike(self.Ks[i]),
-                OptionType(self.Ks[i] >= self.f),
-                ImpliedVol(self.sigmas[i])
-            ).pv 
-        return Deltas(res) 
-    
-    def gammas(self) -> Gammas:
-        res = np.zeros_like(self.Ks)
-        n = len(self.Ks)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-        for i in range(n):
-            res[i] = self.bs_calc.gamma(
-                forward,
-                Strike(self.Ks[i]),
-                ImpliedVol(self.sigmas[i])
-            ).pv 
-        return Gammas(res) 
-    
-    def vegas(self) -> Vegas:
-        res = np.zeros_like(self.Ks)
-        n = len(self.Ks)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-        for i in range(n):
-            res[i] = self.bs_calc.vega(
-                forward,
-                Strike(self.Ks[i]),
-                ImpliedVol(self.sigmas[i])
-            ).pv 
-        return Vegas(res) 
-    
-    def vannas(self) -> Vannas:
-        res = np.zeros_like(self.Ks)
-        n = len(self.Ks)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-        for i in range(n):
-            res[i] = self.bs_calc.vanna(
-                forward,
-                Strike(self.Ks[i]),
-                ImpliedVol(self.sigmas[i])
-            ).pv 
-        return Vannas(res) 
-    
-    def volgas(self) -> Volgas:
-        res = np.zeros_like(self.Ks)
-        n = len(self.Ks)
-        forward = Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
-        for i in range(n):
-            res[i] = self.bs_calc.volga(
-                forward,
-                Strike(self.Ks[i]),
-                ImpliedVol(self.sigmas[i])
-            ).pv 
-        return Volgas(res) 
 
 
 @nb.experimental.jitclass([
