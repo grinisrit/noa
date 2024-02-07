@@ -37,7 +37,7 @@ class BSCalc:
         option_type = OptionType(delta.pv >= 0.)
         
         def g(K):
-            return self.delta(forward, Strike(K), option_type, implied_vol).pv - delta.pv
+            return self._delta(forward, Strike(K), option_type, implied_vol) - delta.pv
 
         def g_prime(K):
             return self._dDelta_dK(forward, Strike(K), implied_vol)
@@ -70,14 +70,15 @@ class BSCalc:
             
         return Strike(K)
         
-    def implied_vol(self, forward: Forward, strike: Strike, premium: Premium, option_type: OptionType) -> ImpliedVol:
+    def implied_vol(self, forward: Forward, strike: Strike, premium: Premium) -> ImpliedVol:
         pv = premium.pv
+        fv = forward.forward_rate().fv
 
         def g(sigma):
-            return pv - self.premium(forward, strike, option_type, ImpliedVol(sigma)).pv
+            return pv - self._premium(forward, strike, OptionType(strike.K >= fv), ImpliedVol(sigma))
 
         def g_prime(sigma):
-            return -self.vega(forward, strike, ImpliedVol(sigma)).pv 
+            return -self._vega(forward, strike, ImpliedVol(sigma))
         
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
@@ -122,84 +123,135 @@ class BSCalc:
             ivols[index] = self.implied_vol(
                 forward,
                 Strike(K), 
-                Premium(PV),
-                OptionType(K>=fv)
-            ).sigma
+                Premium(PV)).sigma
         return ImpliedVols(ivols)
     
-    def premium(self, forward: Forward, strike: Strike,  option_type: OptionType, implied_vol: ImpliedVol) -> Premium:
+    def _premium(self, forward: Forward, strike: Strike, option_type: OptionType, implied_vol: ImpliedVol) -> nb.float64:
         pm = 1 if option_type.is_call else -1
         d1 = self._d1(forward, strike, implied_vol)
         d2 = self._d2(d1, forward, implied_vol)
-        return Premium(
-            pm * forward.S * normal_cdf(pm * d1) - pm * strike.K * \
+        return pm * forward.S * normal_cdf(pm * d1) - pm * strike.K * \
             np.exp(-forward.r * forward.T) * normal_cdf(pm * d2)
-        )
     
-    def vanilla_premium(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Premium:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Premium(vanilla.N * self.premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol).pv)
+    def premium(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Premium:
+        assert forward.T == vanilla.T
+        return Premium(vanilla.N * self._premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol))
     
-    def delta(self, forward: Forward, strike: Strike, option_type: OptionType, implied_vol: ImpliedVol) -> Delta:
+    def premiums(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Premiums:
+        assert forward.T == vanillas.T
+        ivs = implied_vols.data
+        Ks = vanillas.Ks
+        assert ivs.shape == Ks.shape
+        res_premiums = np.zeros_like(ivs)
+        is_calls = vanillas.is_call
+        for i in len(ivs):
+            res_premiums[i] = self._premium(forward, Strike(Ks[i]), OptionType(is_calls[i]), ImpliedVol(ivs[i]))
+        return Premiums(vanillas.Ns * res_premiums)
+    
+    def _delta(self, forward: Forward, strike: Strike, option_type: OptionType, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol)
-        return Delta(
-            normal_cdf(d1) if option_type.is_call else normal_cdf(d1) - 1.0
-        )
+        return normal_cdf(d1) if option_type.is_call else normal_cdf(d1) - 1.0
+        
     
-    def vanilla_delta(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Delta:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+    def delta(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Delta:
+        assert forward.T == vanilla.T
         return Delta(vanilla.N*\
-            self.delta(forward, vanilla.strike(), vanilla.option_type(), implied_vol).pv
+            self._delta(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
         )
+
+    def deltas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Deltas:
+        assert forward.T == vanillas.T
+        ivs = implied_vols.data
+        Ks = vanillas.Ks
+        assert ivs.shape == Ks.shape
+        res_deltas = np.zeros_like(ivs)
+        is_call = vanillas.is_call
+        for i in len(ivs):
+            res_deltas[i] = self._delta(forward, Strike(Ks[i]), OptionType(is_call[i]), ImpliedVol(ivs[i]))
+        return Deltas(vanillas.Ns * res_deltas)
     
-    def gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Gamma:
+    def _gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol) 
-        return Gamma(
-            normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
-        )
+        return normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
     
-    def vanilla_gamma(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Gamma:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+    def gamma(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Gamma:
+        assert forward.T == vanilla.T
         return Gamma(vanilla.N*\
-            self.gamma(forward, vanilla.strike(), implied_vol).pv
+            self._gamma(forward, vanilla.strike(), implied_vol)
         )
+
+    def gammas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Gammas:
+        assert forward.T == vanillas.T
+        ivs = implied_vols.data
+        Ks = vanillas.Ks
+        assert ivs.shape == Ks.shape
+        res_gammas = np.zeros_like(ivs)
+        for i in len(ivs):
+            res_gammas[i] = self._gamma(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
+        return Gammas(vanillas.Ns * res_gammas)
     
-    def vega(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vega:
-        return Vega(
-            forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
-        )
+    def _vega(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
+        return forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
     
     
-    def vanilla_vega(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vega:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+    def vega(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vega:
+        assert forward.T == vanilla.T
         return Vega(vanilla.N*\
-            self.vega(forward, vanilla.strike(), implied_vol).pv
+            self._vega(forward, vanilla.strike(), implied_vol)
         )
     
-    def vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Vanna:
+    def vegas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Vegas:
+        assert forward.T == vanillas.T
+        ivs = implied_vols.data
+        Ks = vanillas.Ks
+        assert ivs.shape == Ks.shape
+        res_gammas = np.zeros_like(ivs)
+        for i in len(ivs):
+            res_gammas[i] = self._gamma(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
+        return Gammas(vanillas.Ns * res_gammas)
+    
+    
+    def _vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d2 = self._d2(self._d1(forward, strike, implied_vol), forward, implied_vol)
-        return Vanna(
-            self.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
-        )
+        return self.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
     
-    def vanilla_vanna(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vanna:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
+    def vanna(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vanna:
+        assert forward.T == vanilla.T
         return Vanna(vanilla.N*\
-            self.vanna(forward, vanilla.strike(), implied_vol).pv
+            self._vanna(forward, vanilla.strike(), implied_vol)
         )
     
-    def volga(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> Volga:
+    def vannas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Vannas:
+        assert forward.T == vanillas.T
+        ivs = implied_vols.data
+        Ks = vanillas.Ks
+        assert ivs.shape == Ks.shape
+        res_vannas = np.zeros_like(ivs)
+        for i in len(ivs):
+            res_vannas[i] = self._vanna(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
+        return Vannas(vanillas.Ns * res_vannas)
+    
+    def _volga(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol)
         d2 = self._d2(d1, forward, implied_vol)
-        return Volga(
-            self.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
+        return self.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
+        
+    
+    def volga(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Volga:
+        assert forward.T == vanilla.T
+        return Volga(vanilla.N*\
+            self._volga(forward, vanilla.strike(), implied_vol)
         )
     
-    def vanilla_volga(self, spot: Spot, forward_yield: ForwardYield, vanilla: Vanilla, implied_vol: ImpliedVol) -> Volga:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Volga(vanilla.N*\
-            self.volga(forward, vanilla.strike(), implied_vol).pv
-        )
+    def volgas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Volgas:
+        assert forward.T == vanillas.T
+        ivs = implied_vols.data
+        Ks = vanillas.Ks
+        assert ivs.shape == Ks.shape
+        res_volgas = np.zeros_like(ivs)
+        for i in len(ivs):
+            res_volgas[i] = self._volga(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
+        return Volgas(vanillas.Ns * res_volgas)
     
     def _d1(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = (np.log(forward.S / strike.K) + (forward.r + implied_vol.sigma**2 / 2) * forward.T) / (implied_vol.sigma * np.sqrt(forward.T))

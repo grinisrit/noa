@@ -27,7 +27,7 @@ def price_barrier_option(
         - strike, maturity, rate, barrier: (1, ).
 
     Returns:
-        Price of the option. Shape: (1, )
+        Price of the option. Shape: (1, ).
     """
     if barrier_type not in ('up-in', 'up-out', 'down-in', 'down-out'):
         raise ValueError("`barrier_type` must be one of: 'up-in', 'up-out', 'down-in', 'down-out'.")
