@@ -144,7 +144,7 @@ class BSCalc:
         assert ivs.shape == Ks.shape
         res_premiums = np.zeros_like(ivs)
         is_calls = vanillas.is_call
-        for i in len(ivs):
+        for i in range(len(ivs)):
             res_premiums[i] = self._premium(forward, Strike(Ks[i]), OptionType(is_calls[i]), ImpliedVol(ivs[i]))
         return Premiums(vanillas.Ns * res_premiums)
     
@@ -166,7 +166,7 @@ class BSCalc:
         assert ivs.shape == Ks.shape
         res_deltas = np.zeros_like(ivs)
         is_call = vanillas.is_call
-        for i in len(ivs):
+        for i in range(len(ivs)):
             res_deltas[i] = self._delta(forward, Strike(Ks[i]), OptionType(is_call[i]), ImpliedVol(ivs[i]))
         return Deltas(vanillas.Ns * res_deltas)
     
@@ -186,7 +186,7 @@ class BSCalc:
         Ks = vanillas.Ks
         assert ivs.shape == Ks.shape
         res_gammas = np.zeros_like(ivs)
-        for i in len(ivs):
+        for i in range(len(ivs)):
             res_gammas[i] = self._gamma(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
         return Gammas(vanillas.Ns * res_gammas)
     
@@ -206,14 +206,14 @@ class BSCalc:
         Ks = vanillas.Ks
         assert ivs.shape == Ks.shape
         res_gammas = np.zeros_like(ivs)
-        for i in len(ivs):
+        for i in range(len(ivs)):
             res_gammas[i] = self._gamma(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
         return Gammas(vanillas.Ns * res_gammas)
     
     
     def _vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d2 = self._d2(self._d1(forward, strike, implied_vol), forward, implied_vol)
-        return self.vega(forward, strike, implied_vol).pv * d2 / (implied_vol.sigma * forward.S)
+        return self._vega(forward, strike, implied_vol) * d2 / (implied_vol.sigma * forward.S)
     
     def vanna(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vanna:
         assert forward.T == vanilla.T
@@ -227,14 +227,14 @@ class BSCalc:
         Ks = vanillas.Ks
         assert ivs.shape == Ks.shape
         res_vannas = np.zeros_like(ivs)
-        for i in len(ivs):
+        for i in range(len(ivs)):
             res_vannas[i] = self._vanna(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
         return Vannas(vanillas.Ns * res_vannas)
     
     def _volga(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol)
         d2 = self._d2(d1, forward, implied_vol)
-        return self.vega(forward, strike, implied_vol).pv * d1 * d2 / implied_vol.sigma
+        return self._vega(forward, strike, implied_vol) * d1 * d2 / implied_vol.sigma
         
     
     def volga(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Volga:
@@ -249,7 +249,7 @@ class BSCalc:
         Ks = vanillas.Ks
         assert ivs.shape == Ks.shape
         res_volgas = np.zeros_like(ivs)
-        for i in len(ivs):
+        for i in range(len(ivs)):
             res_volgas[i] = self._volga(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
         return Volgas(vanillas.Ns * res_volgas)
     

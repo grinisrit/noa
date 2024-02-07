@@ -319,9 +319,9 @@ class SABRCalc:
                       VolatilityQuote(0.5*(call10 + put10) - atm), TimeToMaturity(forward.T))
         )
     
-    def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Delta:
+    def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strike = vanilla.strike()
@@ -336,12 +336,12 @@ class SABRCalc:
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0] if not sK else 0.
+        )[0][0] if not sticky_strike.v else 0.
 
         res_delta = delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         return Delta(vanilla.N*res_delta)
       
-    def sticky_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: bool = False) -> Delta:
+    def sticky_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = False) -> Delta:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
@@ -375,9 +375,9 @@ class SABRCalc:
 
         return Deltas(vanillas.Ns*res_delta)  
      
-    def sticky_gamma(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Gamma:
+    def sticky_gamma(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Gamma:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strike = vanilla.strike()
@@ -391,13 +391,13 @@ class SABRCalc:
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
         d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
 
-        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sK else 0.
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sticky_strike.v else 0.
 
-        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = 0. if sticky_strike else self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0] if not sK else 0.
+        )[0][0]
 
         sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
         res_gamma = gamma_bsm +\
@@ -410,9 +410,8 @@ class SABRCalc:
             )
         return Gamma(vanilla.N*res_gamma)
     
-    def sticky_gammas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Gammas:
+    def sticky_gammas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Gammas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
@@ -438,7 +437,7 @@ class SABRCalc:
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
             d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
 
-        if sticky_strike:
+        if not sticky_strike.v:
             res_gammas = gamma_bsm + (2/D) * vanna_bsm * dsigma_df + (volga_bsm / (D**2)) * dsigma_df**2 + \
                 (vega_bsm / (D**2)) * d2_sigma_df2
 
@@ -467,9 +466,9 @@ class SABRCalc:
         return Gammas(vanillas.Ns*res_gammas)
     
     
-    def sticky_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vega:
+    def sticky_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Vega:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
@@ -482,9 +481,9 @@ class SABRCalc:
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0] if not sK else 0.
+        )[0][0] if not sticky_strike.v else 0.
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             res = vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
         else:
             res = vega_bsm * dsigma_dalpha
@@ -492,9 +491,9 @@ class SABRCalc:
         return Vega(res)
     
     
-    def sticky_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vegas:
+    def sticky_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vegas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
         Ks = vanillas.Ks
@@ -513,7 +512,7 @@ class SABRCalc:
             params.beta
         )[0] 
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             dsigma_df = np.zeros_like(sigmas)
             for i in range(n):
                 dsigma_df[i] = self._dsigma_df(F, forward.T, Ks[i], params)
@@ -571,7 +570,7 @@ class SABRCalc:
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
 
         dsigma_dv = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -594,7 +593,7 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
 
         dsigma_dv = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -606,9 +605,9 @@ class SABRCalc:
         )
    
      
-    def sticky_volga(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Volga:
+    def sticky_volga(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Volga:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
@@ -619,8 +618,8 @@ class SABRCalc:
         d2_sigma_dalpha2 = self._d2_sigma_dalpha2(F, forward.T, strike.K, params)
         
                 
-        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params) if not sK else 0.
-        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sK else 0.
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params) if not sticky_strike.v else 0.
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sticky_strike.v else 0.
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -628,7 +627,7 @@ class SABRCalc:
             params.beta
         )[0][0]
 
-        if params.v > 0 and not sK : 
+        if params.v > 0 and not sticky_strike.v : 
             res = volga_bsm * (
                 dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
@@ -637,9 +636,9 @@ class SABRCalc:
 
         return Volga(vanilla.N*res)
      
-    def sticky_volgas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Volgas:
+    def sticky_volgas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Volgas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
         Ks = vanillas.Ks
@@ -664,7 +663,7 @@ class SABRCalc:
             params.beta
         )[0]
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             dsigma_df = np.zeros_like(sigmas)
             d2_sigma_dalpha_df = np.zeros_like(sigmas)
             for i in range(n):
@@ -680,9 +679,9 @@ class SABRCalc:
         return Volgas(vanillas.Ns * res)
     
      
-    def sticky_vanna(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vanna:
+    def sticky_vanna(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Vanna:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strike = vanilla.strike()
@@ -702,7 +701,7 @@ class SABRCalc:
         )[0][0]
 
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
             res = (
                 vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
@@ -718,9 +717,9 @@ class SABRCalc:
 
         return Vanna(vanilla.N * res)  
      
-    def sticky_vannas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vannas:
+    def sticky_vannas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vannas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strikes = vanillas.strikes()
@@ -738,9 +737,9 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
-            vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
-            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
+            vanna_bsm[i] = self.bs_calc._vanna(forward, Strike(K), sigma)
+            volga_bsm[i] = self.bs_calc._volga(forward, Strike(K), sigma)
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
             d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
@@ -752,7 +751,7 @@ class SABRCalc:
             params.beta
         )[0]
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             d2_sigma_df2 = np.zeros_like(sigmas)
             for i in range(n):
                 d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, Ks[i], params)   
