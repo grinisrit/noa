@@ -227,7 +227,7 @@ class SABRCalc:
         return Premium(self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
         )
    
-    def premiums(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Premiums:
+    def premiums(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Premiums:
         assert forward.T == vanillas.T
         f = forward.forward_rate().fv
         Ks = vanillas.Ks
@@ -341,7 +341,7 @@ class SABRCalc:
         res_delta = delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         return Delta(vanilla.N*res_delta)
       
-    def sticky_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = False) -> Delta:
+    def sticky_deltas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
@@ -362,7 +362,7 @@ class SABRCalc:
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
-        if sticky_strike:
+        if sticky_strike.v:
             res_delta = delta_bsm + (1/D) * vega_bsm * dsigma_df
 
         else:
@@ -410,7 +410,7 @@ class SABRCalc:
             )
         return Gamma(vanilla.N*res_gamma)
     
-    def sticky_gammas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Gammas:
+    def sticky_gammas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Gammas:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
@@ -488,10 +488,10 @@ class SABRCalc:
         else:
             res = vega_bsm * dsigma_dalpha
 
-        return Vega(res)
+        return Vega(vanilla.N * res)
     
     
-    def sticky_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vegas:
+    def sticky_vegas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vegas:
         assert forward.T == vanillas.T
         
         F = forward.forward_rate().fv
@@ -520,7 +520,7 @@ class SABRCalc:
         else:
             res = vega_bsm * dsigma_dalpha
 
-        return Vegas(res)
+        return Vegas(vanillas.Ns * res)
    
 
     def rega_rho(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Rega:
@@ -529,7 +529,7 @@ class SABRCalc:
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc._vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -542,7 +542,7 @@ class SABRCalc:
         )
        
         
-    def regas_rho(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Regas:
+    def regas_rho(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Regas:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
@@ -553,7 +553,7 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -582,7 +582,7 @@ class SABRCalc:
             vanilla.N * vega_bsm * dsigma_dv
         )
         
-    def segas_volvol(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Segas:
+    def segas_volvol(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Segas:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
@@ -636,7 +636,7 @@ class SABRCalc:
 
         return Volga(vanilla.N*res)
      
-    def sticky_volgas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Volgas:
+    def sticky_volgas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Volgas:
         assert forward.T == vanillas.T
         
         F = forward.forward_rate().fv
@@ -717,7 +717,7 @@ class SABRCalc:
 
         return Vanna(vanilla.N * res)  
      
-    def sticky_vannas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vannas:
+    def sticky_vannas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vannas:
         assert forward.T == vanillas.T
         
         F = forward.forward_rate().fv
@@ -742,7 +742,6 @@ class SABRCalc:
             volga_bsm[i] = self.bs_calc._volga(forward, Strike(K), sigma)
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
-            d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
             d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
@@ -770,66 +769,66 @@ class SABRCalc:
 
         return Vannas(vanillas.Ns * res)
     
-    def blip_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
+    def blip_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Vega:
         premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Vega((blipped_premium - premium) / delta_space.atm_blip)
    
     
-    def blip_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
+    def blip_vegas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Vegas:
         premiums = self.premiums(forward, vanillas, params).data
         delta_space = self.delta_space(forward, params)
   
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
     
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
     
     
-    def blip_rega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
+    def blip_rega(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Rega:
         premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
      
     
-    def blip_regas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
+    def blip_regas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Regas:
         premiums = self.premiums(forward, vanillas, params).data
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
 
     
-    def blip_sega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
+    def blip_sega(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Sega:
         premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Sega((blipped_premium - premium) / delta_space.bf25_blip)     
     
 
-    def blip_segas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
+    def blip_segas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Segas:
         premiums = self.premiums(forward,  vanillas, params).data
         delta_space = self.delta_space(forward, params)
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 

@@ -270,7 +270,7 @@ class Vanilla:
     ("Ns", nb.float64[:]),
     ("T", nb.float64)
 ])
-class Vanillas:
+class SingleMaturityVanillas:
     def __init__(self, option_types: OptionTypes, strikes: Strikes, notionals: Notionals, time_to_maturity: TimeToMaturity):
         if not option_types.data.shape == strikes.data.shape:
             raise ValueError('Inconsistent data between strikes and option types')

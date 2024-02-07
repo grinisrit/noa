@@ -137,7 +137,7 @@ class BSCalc:
         assert forward.T == vanilla.T
         return Premium(vanilla.N * self._premium(forward, vanilla.strike(), vanilla.option_type(), implied_vol))
     
-    def premiums(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Premiums:
+    def premiums(self, forward: Forward, vanillas: SingleMaturityVanillas, implied_vols: ImpliedVols) -> Premiums:
         assert forward.T == vanillas.T
         ivs = implied_vols.data
         Ks = vanillas.Ks
@@ -159,7 +159,7 @@ class BSCalc:
             self._delta(forward, vanilla.strike(), vanilla.option_type(), implied_vol)
         )
 
-    def deltas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Deltas:
+    def deltas(self, forward: Forward, vanillas: SingleMaturityVanillas, implied_vols: ImpliedVols) -> Deltas:
         assert forward.T == vanillas.T
         ivs = implied_vols.data
         Ks = vanillas.Ks
@@ -180,7 +180,7 @@ class BSCalc:
             self._gamma(forward, vanilla.strike(), implied_vol)
         )
 
-    def gammas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Gammas:
+    def gammas(self, forward: Forward, vanillas: SingleMaturityVanillas, implied_vols: ImpliedVols) -> Gammas:
         assert forward.T == vanillas.T
         ivs = implied_vols.data
         Ks = vanillas.Ks
@@ -200,7 +200,7 @@ class BSCalc:
             self._vega(forward, vanilla.strike(), implied_vol)
         )
     
-    def vegas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Vegas:
+    def vegas(self, forward: Forward, vanillas: SingleMaturityVanillas, implied_vols: ImpliedVols) -> Vegas:
         assert forward.T == vanillas.T
         ivs = implied_vols.data
         Ks = vanillas.Ks
@@ -221,7 +221,7 @@ class BSCalc:
             self._vanna(forward, vanilla.strike(), implied_vol)
         )
     
-    def vannas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Vannas:
+    def vannas(self, forward: Forward, vanillas: SingleMaturityVanillas, implied_vols: ImpliedVols) -> Vannas:
         assert forward.T == vanillas.T
         ivs = implied_vols.data
         Ks = vanillas.Ks
@@ -243,7 +243,7 @@ class BSCalc:
             self._volga(forward, vanilla.strike(), implied_vol)
         )
     
-    def volgas(self, forward: Forward, vanillas: Vanillas, implied_vols: ImpliedVols) -> Volgas:
+    def volgas(self, forward: Forward, vanillas: SingleMaturityVanillas, implied_vols: ImpliedVols) -> Volgas:
         assert forward.T == vanillas.T
         ivs = implied_vols.data
         Ks = vanillas.Ks

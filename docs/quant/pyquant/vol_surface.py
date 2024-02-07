@@ -73,8 +73,8 @@ class VolSmileChainSpace:
     def time_to_maturity(self) -> TimeToMaturity:
         return TimeToMaturity(self.T)
 
-    def vanillas(self) -> Vanillas:
-        return Vanillas(
+    def vanillas(self) -> SingleMaturityVanillas:
+        return SingleMaturityVanillas(
             OptionTypes(self.Ks >= self.f),
             self.strikes(),
             Notionals(np.ones_like(self.Ks)),
