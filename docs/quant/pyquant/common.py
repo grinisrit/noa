@@ -35,7 +35,7 @@ class ImpliedVols:
     ("data", nb.float64[:])
 ])
 class VolatilityQuotes:
-    def __init__(self, sigmas: nb.float64):
+    def __init__(self, sigmas: nb.float64[:]):
         self.data = sigmas
 
 
@@ -127,11 +127,21 @@ class TimesToMaturity:
     ("T", nb.float64[:])
 ])
 class ForwardYieldCurve:
+    _spline: CubicSpline1D
+
     def __init__(self, forward_yields: ForwardYields, times_to_maturity: TimesToMaturity):
         if not forward_yields.data.shape == times_to_maturity.data.shape:
             raise ValueError('Inconsistent data between yields and times to maturity')
         self.r = forward_yields.data
         self.T = times_to_maturity.data
+
+        self._spline = CubicSpline1D(
+           XAxis(np.append(np.array([0.]), self.T)),
+           YAxis(np.append(np.array([0.]), self.r)) 
+        )
+    
+    def forward_yield(self, time_to_maturity: TimesToMaturity) -> ForwardYield:
+        return ForwardYield(self._spline.apply(time_to_maturity.T))
 
 
 @nb.experimental.jitclass([
@@ -184,20 +194,29 @@ class Forward:
 
     
 @nb.experimental.jitclass([
-    ("S", nb.float64),
-    ("r", nb.float64[:]),
-    ("T", nb.float64[:])
+    ("S", nb.float64)
 ])
 class ForwardCurve:
-    def __init__(self, spot: Spot, forward_yields: ForwardYieldCurve):
-        if not is_sorted(forward_yields.T):
+    _curve: ForwardYieldCurve
+
+    def __init__(self, spot: Spot, forward_yield_curve: ForwardYieldCurve):
+        if not is_sorted(forward_yield_curve.T):
             raise ValueError('Tenors are not ordered')
         self.S = spot.S
-        self.r = forward_yields.r
-        self.T = forward_yields.T
+        self.r = forward_yield_curve.r
+        self.T = forward_yield_curve.T
+        self._curve = forward_yield_curve
         
     def forward_rates(self) -> ForwardRates:
         return ForwardRates(self.S * np.exp(self.r * self.T))
+    
+    def forward(self, time_to_maturity: TimesToMaturity) -> Forward:
+        return Forward(
+            Spot(self.S), 
+            self._curve.forward_yield(time_to_maturity), 
+            time_to_maturity
+        )
+            
     
     @staticmethod
     def from_forward_rates(spot: Spot, forward_rates: ForwardRates, times_to_maturity: TimesToMaturity):

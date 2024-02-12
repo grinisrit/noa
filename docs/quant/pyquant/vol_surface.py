@@ -5,6 +5,7 @@ from typing import Tuple
 
 from .common import *
 from .black_scholes import *
+from .utils import *
 
 
 @nb.experimental.jitclass([
@@ -270,7 +271,17 @@ class Butterflies:
         self.T = times_to_maturity.data 
 
 
+@nb.experimental.jitclass([
+    ("S", nb.float64),
+    ("max_T", nb.float64)
+])
 class VolSurfaceDeltaSpace:
+    FWD: ForwardCurve
+    ATM: CubicSpline1D
+    RR25: CubicSpline1D
+    BF25: CubicSpline1D
+    RR10: CubicSpline1D
+    BF10: CubicSpline1D
 
     def __init__(
         self, 
@@ -283,34 +294,31 @@ class VolSurfaceDeltaSpace:
     ): 
         self.S = forward_curve.S
 
-        self.f = CubicSpline(
-            np.append(np.array([0.]), forward_curve.T),
-            np.append(np.array([self.S]), forward_curve.forward_rates().data)
+        self.FWD = forward_curve
+
+        self.ATM = CubicSpline1D(
+            XAxis(np.append(np.array([0.]), straddles.T)),
+            YAxis(np.append(straddles.sigma[:1], straddles.sigma))
         )
 
-        self.ATM = CubicSpline(
-            np.append(np.array([0.]), straddles.T),
-            np.append(straddles.sigma[:1], straddles.sigma)
+        self.RR25 = CubicSpline1D(
+            XAxis(np.append(np.array([0.]), risk_reversals_25.T)),
+            YAxis(np.append(risk_reversals_25.sigma[:1], risk_reversals_25.sigma))
         )
 
-        self.RR25 = CubicSpline(
-            np.append(np.array([0.]), risk_reversals_25.T),
-            np.append(risk_reversals_25.sigma[:1], risk_reversals_25.sigma)
+        self.BF25 = CubicSpline1D(
+            XAxis(np.append(np.array([0.]), butterflies_25.T)),
+            YAxis(np.append(butterflies_25.sigma[:1], butterflies_25.sigma))
         )
 
-        self.BF25 = CubicSpline(
-            np.append(np.array([0.]), butterflies_25.T),
-            np.append(butterflies_25.sigma[:1], butterflies_25.sigma)
+        self.RR10 = CubicSpline1D(
+            XAxis(np.append(np.array([0.]), risk_reversals_10.T)),
+            YAxis(np.append(risk_reversals_10.sigma[:1], risk_reversals_10.sigma))
         )
 
-        self.RR10 = CubicSpline(
-            np.append(np.array([0.]), risk_reversals_10.T),
-            np.append(risk_reversals_10.sigma[:1], risk_reversals_10.sigma)
-        )
-
-        self.BF10 = CubicSpline(
-            np.append(np.array([0.]), butterflies_10.T),
-            np.append(butterflies_10.sigma[:1], butterflies_10.sigma)
+        self.BF10 = CubicSpline1D(
+            XAxis(np.append(np.array([0.]), butterflies_10.T)),
+            YAxis(np.append(butterflies_10.sigma[:1], butterflies_10.sigma))
         )
 
         self.max_T = np.min(np.array([
@@ -328,33 +336,69 @@ class VolSurfaceDeltaSpace:
             raise ValueError('TimeToMaturity outside available bounds')
     
         return VolSmileDeltaSpace(
-            Forward.from_forward_rate(
-                Spot(self.S),
-                ForwardRate(self.f(T)),
-                time_to_maturity
-            ),
+            self.FWD.forward(T),
             Straddle(
-                ImpliedVol(self.ATM(T)),
+                ImpliedVol(self.ATM.apply(T)),
                 time_to_maturity
             ),
             RiskReversal(
                 Delta(.25),
-                VolatilityQuote(self.RR25(T)),
+                VolatilityQuote(self.RR25.apply(T)),
                 time_to_maturity
             ),
             Butterfly(
                 Delta(.25),
-                VolatilityQuote(self.BF25(T)),
+                VolatilityQuote(self.BF25.apply(T)),
                 time_to_maturity
             ),
             RiskReversal(
                 Delta(.1),
-                VolatilityQuote(self.RR10(T)),
+                VolatilityQuote(self.RR10.apply(T)),
                 time_to_maturity
             ),
             Butterfly(
                 Delta(.1),
-                VolatilityQuote(self.BF10(T)),
+                VolatilityQuote(self.BF10.apply(T)),
                 time_to_maturity
             )
         )
+    
+
+@nb.experimental.jitclass([
+    ("S", nb.float64),
+    ("T", nb.float64[:]),
+    ("K", nb.float64[:]),
+    ("types", nb.boolean[:]),
+    ("premiums", nb.float64[:]),
+])
+class VolSurfaceChainSpace:
+    FWD: ForwardCurve
+  
+    def __init__(
+        self,
+        forward_curve: ForwardCurve, 
+        tenors: TimesToMaturity,
+        strikes: Strikes,
+        option_types: OptionTypes,
+        premiums: Premiums
+    ):
+        if not tenors.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
+            raise ValueError('Inconsistent data shape between tenors, strikes, premiums and option types')
+        self.S = forward_curve.S
+        self.T = tenors.data
+        self.K = strikes.data
+        self.types = option_types.data
+        self.premiums = premiums.data
+
+        self.FWD = forward_curve
+
+    def _OTM(self):
+        pass
+
+    def vol_smile_chain_space(self, time_to_maturity: TimeToMaturity) -> VolSmileChainSpace:
+        return VolSmileChainSpace(
+            self.FWD.forward(time_to_maturity) #,strikes: Strikes, implied_vols: ImpliedVols)
+        )
+        
+
+ 

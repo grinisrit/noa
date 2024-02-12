@@ -3,6 +3,7 @@ from numba.experimental import jitclass
 from typing import Final, Tuple
 
 from .common import *
+from .vol_surface import *
 
 
 ################# Helper classes and variables for HestonCalc #################
@@ -242,7 +243,7 @@ class HestonParams:
     ("types", nb.boolean[:]),
     ("premiums", nb.float64[:]),
 ])
-class MarketParams:
+class VolSurfaceChainSpace:
     """Describes market state at a single moment of time.
     The field `premiums` is used only for calibration.
     """
@@ -272,7 +273,7 @@ class MarketParams:
         option_types: OptionTypes,
         premiums: Premiums
     ):
-        return MarketParams(
+        return VolSurfaceChainSpace(
             Spot(forward_curve.S),
             ForwardYield(forward_curve.r[0]),
             tenors,
@@ -317,20 +318,20 @@ class HestonCalc:
 
     def calibrate(
         self,
-        market_params: MarketParams,
+        market_chain: VolSurfaceChainSpace,
         calibration_weights: CalibrationWeights
     ) -> HestonParams:
         w = calibration_weights.w
-        if not w.shape == market_params.premiums.shape:
-            raise ValueError('Inconsistent data shape between `calibration_weights` and `market_params`')
+        if not w.shape == market_chain.premiums.shape:
+            raise ValueError('Inconsistent data shape between `calibration_weights` and `market_chain`')
         weights = w / w.sum()
 
-        n_points = len(market_params.premiums)
+        n_points = len(market_chain.premiums)
         PARAMS_TO_CALIBRATE: nb.int64 = 5
         if not n_points - PARAMS_TO_CALIBRATE >= 0:
             raise ValueError('Need at least 5 points to calibrate Heston model')
 
-        self.r_from_calibration = market_params.r
+        self.r_from_calibration = market_chain.r
 
         def clip_params(params: np.ndarray) -> np.ndarray:
             small = 1e-4
@@ -351,9 +352,9 @@ class HestonCalc:
                 VolOfVar(params[3]),
                 Correlation(params[4])
             )
-            premiums = self._heston_vanilla_premium(heston_params, market_params)
-            residuals = (premiums - market_params.premiums) * weights
-            jacobian = self._jac_hes(heston_params, market_params) @ np.diag(weights)
+            premiums = self._heston_vanilla_premium(heston_params, market_chain)
+            residuals = (premiums - market_chain.premiums) * weights
+            jacobian = self._jac_hes(heston_params, market_chain) @ np.diag(weights)
             return residuals, jacobian
 
         def levenberg_marquardt(f, proj, x0):
@@ -426,7 +427,7 @@ class HestonCalc:
                 VolOfVar(self.cached_params[3]),
                 Correlation(self.cached_params[4])
             ),
-            MarketParams(
+            VolSurfaceChainSpace(
                 spot,
                 forward_yield,
                 TimesToMaturity(np.array([tenor.T])),
@@ -461,7 +462,7 @@ class HestonCalc:
                 VolOfVar(self.cached_params[3]),
                 Correlation(self.cached_params[4])
             ),
-            MarketParams(
+            VolSurfaceChainSpace(
                 spot,
                 forward_yield,
                 tenors,
@@ -475,7 +476,7 @@ class HestonCalc:
     def _hes_int_jac(
         self,
         heston_params: HestonParams,
-        market_params: MarketParams,
+        market_chain: VolSurfaceChainSpace,
         market_pointer: int,
     ) -> _TagMNJac:
         """Calculates real-valued integrands for Jacobian."""
@@ -485,12 +486,12 @@ class HestonCalc:
         _imPQ_M = _I * (PQ_M - _I)
         _imPQ_N = _I * (PQ_N - _I)
 
-        h_M = np.divide(np.power(market_params.K[market_pointer], -imPQ_M), imPQ_M)
-        h_N = np.divide(np.power(market_params.K[market_pointer], -imPQ_N), imPQ_N)
+        h_M = np.divide(np.power(market_chain.K[market_pointer], -imPQ_M), imPQ_M)
+        h_N = np.divide(np.power(market_chain.K[market_pointer], -imPQ_N), imPQ_N)
 
         x0 = (
-            np.log(market_params.S)
-            + market_params.r * market_params.T[market_pointer]
+            np.log(market_chain.S)
+            + market_chain.r * market_chain.T[market_pointer]
         )
         tmp = heston_params.eps * heston_params.rho
         kes_M1 = heston_params.kappa - np.multiply(tmp, _imPQ_M)
@@ -518,7 +519,7 @@ class HestonCalc:
             heston_params.kappa
             * heston_params.theta
             * heston_params.rho
-            * market_params.T[market_pointer]
+            * market_chain.T[market_pointer]
         )
         tmp1 = -abrt / heston_params.eps
         tmp2 = np.exp(tmp1)
@@ -528,7 +529,7 @@ class HestonCalc:
         g_M1 = g_M2 * tmp2
         g_N1 = g_N2 * tmp2
 
-        halft = 0.5 * market_params.T[market_pointer]
+        halft = 0.5 * market_chain.T[market_pointer]
         alpha = d_M1 * halft
         calp_M1 = np.cosh(alpha)
         salp_M1 = np.sinh(alpha)
@@ -580,7 +581,7 @@ class HestonCalc:
             (d_M1 + kes_M1) * 0.5
             + (d_M1 - kes_M1)
             * 0.5
-            * np.exp(-d_M1 * market_params.T[market_pointer])
+            * np.exp(-d_M1 * market_chain.T[market_pointer])
         )
         )
         D_M2 = (
@@ -590,7 +591,7 @@ class HestonCalc:
             (d_M2 + kes_M2) * 0.5
             + (d_M1 - kes_M2)
             * 0.5
-            * np.exp(-d_M2 * market_params.T[market_pointer])
+            * np.exp(-d_M2 * market_chain.T[market_pointer])
         )
         )
         D_N1 = (
@@ -600,7 +601,7 @@ class HestonCalc:
             (d_N1 + kes_N1) * 0.5
             + (d_N1 - kes_N1)
             * 0.5
-            * np.exp(-d_N1 * market_params.T[market_pointer])
+            * np.exp(-d_N1 * market_chain.T[market_pointer])
         )
         )
         D_N2 = (
@@ -610,7 +611,7 @@ class HestonCalc:
             (d_N2 + kes_N2) * 0.5
             + (d_N2 - kes_N2)
             * 0.5
-            * np.exp(-d_N2 * market_params.T[market_pointer])
+            * np.exp(-d_N2 * market_chain.T[market_pointer])
         )
         )
 
@@ -684,7 +685,7 @@ class HestonCalc:
         tmp1 = (
             heston_params.theta
             * heston_params.rho
-            * market_params.T[market_pointer]
+            * market_chain.T[market_pointer]
             / heston_params.eps
         )
         tmp2 = tmp3 / heston_params.kappa  # 2*b/csqr;
@@ -737,7 +738,7 @@ class HestonCalc:
             tmp * pA2_prho_M1
             - _ONE
             / _imPQ_M
-            * (_TWO / (market_params.T[market_pointer] * kes_M1) + _ONE)
+            * (_TWO / (market_chain.T[market_pointer] * kes_M1) + _ONE)
             * pA1_prho_M1
             + heston_params.eps * halft * A1_M1
         )
@@ -757,7 +758,7 @@ class HestonCalc:
             tmp * pA2_prho_M2
             - _ONE
             / imPQ_M
-            * (_TWO / (market_params.T[market_pointer] * kes_M2) + _ONE)
+            * (_TWO / (market_chain.T[market_pointer] * kes_M2) + _ONE)
             * pA1_prho_M2
             + heston_params.eps * halft * A1_M2
         )
@@ -776,7 +777,7 @@ class HestonCalc:
             tmp * pA2_prho_N1
             - _ONE
             / (_imPQ_N)
-            * (_TWO / (market_params.T[market_pointer] * kes_N1) + _ONE)
+            * (_TWO / (market_chain.T[market_pointer] * kes_N1) + _ONE)
             * pA1_prho_N1
             + heston_params.eps * halft * A1_N1
         )
@@ -795,7 +796,7 @@ class HestonCalc:
             tmp * pA2_prho_N2
             - _ONE
             / (imPQ_N)
-            * (_TWO / (market_params.T[market_pointer] * kes_N2) + _ONE)
+            * (_TWO / (market_chain.T[market_pointer] * kes_N2) + _ONE)
             * pA1_prho_N2
             + heston_params.eps * halft * A1_N2
         )
@@ -829,23 +830,23 @@ class HestonCalc:
     def _heston_vanilla_premium(
         self,
         heston_params: HestonParams,
-        market_params: MarketParams
+        market_chain: VolSurfaceChainSpace
     ) -> np.array:
         """Calculates the premium of vanilla option under the Heson model."""
-        n = len(market_params.K)
+        n = len(market_chain.K)
         x = np.zeros(n, dtype=np.float64)
         for l in range(n):
-            K = market_params.K[l]
-            T = market_params.T[l]
-            disc = np.exp(-market_params.r * T)
-            tmp = 0.5 * (market_params.S - K * disc)
+            K = market_chain.K[l]
+            T = market_chain.T[l]
+            disc = np.exp(-market_chain.r * T)
+            tmp = 0.5 * (market_chain.S - K * disc)
             # tmp = 0.5 * (market_parameters.S - K) * disc
             disc = disc / _PI
             y1, y2 = nb.float64(0.0), nb.float64(0.0)
 
             MN: _TagMn = self._hes_int_MN(
                 heston_params=heston_params,
-                market_params=market_params,
+                market_chain=market_chain,
                 market_pointer=np.int32(l),
             )
             y1 = y1 + np.multiply(_W64, (MN.M1 + MN.N1)).sum()
@@ -857,7 +858,7 @@ class HestonCalc:
             delta = 0.5 + Qv1 / _PI
             # print(delta)
 
-            if market_params.types[l]:
+            if market_chain.types[l]:
                 # calls
                 # p1 = market_parameters.S*(0.5 + Qv1/pi)
                 # p2 = K*np.exp(-market_parameters.r * T)*(0.5 + Qv2/pi)
@@ -876,7 +877,7 @@ class HestonCalc:
     def _hes_int_MN(
         self,
         heston_params: HestonParams,
-        market_params: MarketParams,
+        market_chain: VolSurfaceChainSpace,
         market_pointer: int,
     ) -> _TagMn:
         csqr = np.power(heston_params.eps, 2)
@@ -887,12 +888,12 @@ class HestonCalc:
         _imPQ_M = _I * (PQ_M - _I)
         _imPQ_N = _I * (PQ_N - _I)
 
-        h_M = np.divide(np.power(market_params.K[market_pointer], -imPQ_M), imPQ_M)
-        h_N = np.divide(np.power(market_params.K[market_pointer], -imPQ_N), imPQ_N)
+        h_M = np.divide(np.power(market_chain.K[market_pointer], -imPQ_M), imPQ_M)
+        h_N = np.divide(np.power(market_chain.K[market_pointer], -imPQ_N), imPQ_N)
 
         x0 = (
-        np.log(market_params.S)
-        + market_params.r * market_params.T[market_pointer]
+        np.log(market_chain.S)
+        + market_chain.r * market_chain.T[market_pointer]
         )
         tmp = heston_params.eps * heston_params.rho
 
@@ -915,7 +916,7 @@ class HestonCalc:
         -heston_params.kappa
         * heston_params.theta
         * heston_params.rho
-        * market_params.T[market_pointer]
+        * market_chain.T[market_pointer]
         / heston_params.eps
         )
 
@@ -926,7 +927,7 @@ class HestonCalc:
         g_M1 = g_M2 * tmp
         g_N1 = g_N2 * tmp
 
-        tmp = 0.5 * market_params.T[market_pointer]
+        tmp = 0.5 * market_chain.T[market_pointer]
         alpha = d_M1 * tmp
         calp_M1 = np.cosh(alpha)
         salp_M1 = np.sinh(alpha)
@@ -959,7 +960,7 @@ class HestonCalc:
         A_N2 = np.divide(A1_N2, A2_N2)
 
         tmp = 2 * heston_params.kappa * heston_params.theta / csqr
-        halft = 0.5 * market_params.T[market_pointer]
+        halft = 0.5 * market_chain.T[market_pointer]
 
         D_M1 = (
         np.log(d_M1)
@@ -968,7 +969,7 @@ class HestonCalc:
         (d_M1 + kes_M1) * 0.5
         + (d_M1 - kes_M1)
         * 0.5
-        * np.exp(-d_M1 * market_params.T[market_pointer])
+        * np.exp(-d_M1 * market_chain.T[market_pointer])
         )
         )
         D_M2 = (
@@ -978,7 +979,7 @@ class HestonCalc:
         (d_M2 + kes_M2) * 0.5
         + (d_M1 - kes_M2)
         * 0.5
-        * np.exp(-d_M2 * market_params.T[market_pointer])
+        * np.exp(-d_M2 * market_chain.T[market_pointer])
         )
         )
         D_N1 = (
@@ -988,7 +989,7 @@ class HestonCalc:
         (d_N1 + kes_N1) * 0.5
         + (d_N1 - kes_N1)
         * 0.5
-        * np.exp(-d_N1 * market_params.T[market_pointer])
+        * np.exp(-d_N1 * market_chain.T[market_pointer])
         )
         )
         D_N2 = (
@@ -998,7 +999,7 @@ class HestonCalc:
         (d_N2 + kes_N2) * 0.5
         + (d_N2 - kes_N2)
         * 0.5
-        * np.exp(-d_N2 * market_params.T[market_pointer])
+        * np.exp(-d_N2 * market_chain.T[market_pointer])
         )
         )
 
@@ -1021,7 +1022,7 @@ class HestonCalc:
     def _jac_hes(
         self,
         heston_params: HestonParams,
-        market_params: MarketParams,
+        market_chain: VolSurfaceChainSpace,
     ) -> np.array:
         """Computes Jacobian w.r.t. HestonParams.
 
@@ -1032,8 +1033,8 @@ class HestonCalc:
         Returns the array with shape (M, N_POINTS), where M = 5 (the number of
         Heston parameters, and N_POINTS is the number of market points).
         """
-        n = np.int32(len(market_params.K))
-        r = market_params.r
+        n = np.int32(len(market_chain.K))
+        r = market_chain.r
 
         da, db, dc, drho, dv0 = (
             np.float64(0.0),
@@ -1044,8 +1045,8 @@ class HestonCalc:
         )
         jacs = np.zeros((5, n), dtype=np.float64)
         for l in range(n):
-            K = market_params.K[l]
-            T = market_params.T[l]
+            K = market_chain.K[l]
+            T = market_chain.T[l]
             discpi = np.exp(-r * T) / _PI
             pa1, pa2, pb1, pb2, pc1, pc2, prho1, prho2, pv01, pv02 = (
                 np.float64(0.0),
@@ -1061,7 +1062,7 @@ class HestonCalc:
             )
             jacint: _TagMNJac = self._hes_int_jac(
                 heston_params=heston_params,
-                market_params=market_params,
+                market_chain=market_chain,
                 market_pointer=l,
             )
             pa1 += np.multiply(_W64, jacint.pa1s).sum()
