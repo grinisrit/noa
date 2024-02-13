@@ -368,10 +368,12 @@ class VolSurfaceDeltaSpace:
     ("S", nb.float64),
     ("T", nb.float64[:]),
     ("K", nb.float64[:]),
-    ("types", nb.boolean[:]),
-    ("premiums", nb.float64[:]),
+    ("is_call", nb.boolean[:]),
+    ("pvs", nb.float64[:]),
+    ("sigmas", nb.float64[:])
 ])
 class VolSurfaceChainSpace:
+    bs_calc: BSCalc
     FWD: ForwardCurve
   
     def __init__(
@@ -383,22 +385,82 @@ class VolSurfaceChainSpace:
         premiums: Premiums
     ):
         if not tenors.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
-            raise ValueError('Inconsistent data shape between tenors, strikes, premiums and option types')
+            raise ValueError('Inconsistent data shape between times to maturity, strikes, premiums and option types')
+        
         self.S = forward_curve.S
-        self.T = tenors.data
-        self.K = strikes.data
-        self.types = option_types.data
-        self.premiums = premiums.data
-
         self.FWD = forward_curve
 
-    def _OTM(self):
-        pass
+        self.bs_calc = BSCalc()
+
+        self._process(tenors.data.flatten(), strikes.data.flatten(), option_types.data.flatten(), premiums.data.flatten())
+
+    def _process(self, Ts: nb.float64[:], Ks: nb.float64[:], Cs: nb.float64[:], PVs: nb.float64[:]):
+        lTs = []
+        lKs = []
+        lCs = []
+        lPVs = []
+        lIVs = []
+        n = len(Ts)
+        
+        lT = Ts[0]
+        assert lT > 0
+
+        F = self.FWD.forward(TimeToMaturity(lT))
+        f = F.forward_rate().fv
+
+        for i in range(n):
+            T = Ts[i]
+            assert T >= lT
+            if T > lT:
+                F = self.FWD.forward(TimeToMaturity(T))
+                f = F.forward_rate().fv
+                lT = T
+
+            K = Ks[i]
+            is_call = Cs[i]
+
+            if (f > K and is_call) or (K >= f and not is_call):
+                continue
+            else:
+                pv = PVs[i]
+                iv = self.bs_calc.implied_vol(F, Strike(K), Premium(pv)).sigma
+
+                lTs.append(T)
+                lKs.append(K)
+                lCs.append(is_call)
+                lPVs.append(pv)
+                lIVs.append(iv)
+        
+        self.Ts = np.array(lTs)
+        self.Ks = np.array(lKs)
+        self.is_call = np.array(lCs)
+        self.pvs = np.array(lPVs)
+        self.sigmas = np.array(lIVs)
+
 
     def vol_smile_chain_space(self, time_to_maturity: TimeToMaturity) -> VolSmileChainSpace:
-        return VolSmileChainSpace(
-            self.FWD.forward(time_to_maturity) #,strikes: Strikes, implied_vols: ImpliedVols)
-        )
+        F = self.FWD.forward(time_to_maturity)
+        T = time_to_maturity.T
+        n = len(self.Ts)
+
+        lKs = []
+        lsigmas = []
+
+        for i in range(n):
+            cT = self.Ts[i]
+            if cT < T:
+                continue
+            elif cT == T:
+                lKs.append(self.Ks[i])
+                lsigmas.append(self.sigmas[i])
+            else:
+                break
+
+        Ks = np.array(lKs)
+        sigmas = np.array(lsigmas)
+        idx = np.argsort(Ks)
+
+        return VolSmileChainSpace(F , Strikes(Ks[idx]), ImpliedVol(sigmas[idx]))
         
 
  
