@@ -70,6 +70,9 @@ class VolSmileChainSpace:
         
     def strikes(self) -> Strikes:
         return Strikes(self.Ks)
+    
+    def implied_vols(self) -> ImpliedVols:
+        return ImpliedVols(self.sigmas)
 
     def time_to_maturity(self) -> TimeToMaturity:
         return TimeToMaturity(self.T)
@@ -362,13 +365,15 @@ class VolSurfaceDeltaSpace:
                 time_to_maturity
             )
         )
+
+    def forward_curve(self) -> ForwardCurve:
+        return self.forward_curve
     
 
 @nb.experimental.jitclass([
     ("S", nb.float64),
     ("Ts", nb.float64[:]),
     ("Ks", nb.float64[:]),
-    ("is_call", nb.boolean[:]),
     ("pvs", nb.float64[:]),
     ("sigmas", nb.float64[:])
 ])
@@ -386,6 +391,8 @@ class VolSurfaceChainSpace:
     ):
         if not tenors.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
             raise ValueError('Inconsistent data shape between times to maturity, strikes, premiums and option types')
+        if not np.all(premiums.data > 0):
+            raise ValueError('Invalid premiums data')
         
         self.bs_calc = BSCalc()
         
@@ -397,7 +404,6 @@ class VolSurfaceChainSpace:
     def _process(self, Ts: nb.float64[:], Ks: nb.float64[:], Cs: nb.float64[:], PVs: nb.float64[:]):
         lTs = []
         lKs = []
-        lCs = []
         lPVs = []
         lIVs = []
         n = len(Ts)
@@ -427,18 +433,16 @@ class VolSurfaceChainSpace:
 
                 lTs.append(T)
                 lKs.append(K)
-                lCs.append(is_call)
                 lPVs.append(pv)
                 lIVs.append(iv)
         
         self.Ts = np.array(lTs)
         self.Ks = np.array(lKs)
-        self.is_call = np.array(lCs)
         self.pvs = np.array(lPVs)
         self.sigmas = np.array(lIVs)
 
 
-    def vol_smile_chain_space(self, time_to_maturity: TimeToMaturity) -> VolSmileChainSpace:
+    def get_vol_smile(self, time_to_maturity: TimeToMaturity) -> VolSmileChainSpace:
         F = self.FWD.forward(time_to_maturity)
         T = time_to_maturity.T
         n = len(self.Ts)
@@ -460,7 +464,10 @@ class VolSurfaceChainSpace:
         sigmas = np.array(lsigmas)
         idx = np.argsort(Ks)
 
-        return VolSmileChainSpace(F , Strikes(Ks[idx]), ImpliedVol(sigmas[idx]))
+        return VolSmileChainSpace(F , Strikes(Ks[idx]), ImpliedVols(sigmas[idx]))
+    
+    def forward_curve(self) -> ForwardCurve:
+        return self.forward_curve
         
 
  
