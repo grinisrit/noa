@@ -366,8 +366,8 @@ class VolSurfaceDeltaSpace:
 
 @nb.experimental.jitclass([
     ("S", nb.float64),
-    ("T", nb.float64[:]),
-    ("K", nb.float64[:]),
+    ("Ts", nb.float64[:]),
+    ("Ks", nb.float64[:]),
     ("is_call", nb.boolean[:]),
     ("pvs", nb.float64[:]),
     ("sigmas", nb.float64[:])
@@ -387,10 +387,10 @@ class VolSurfaceChainSpace:
         if not tenors.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
             raise ValueError('Inconsistent data shape between times to maturity, strikes, premiums and option types')
         
+        self.bs_calc = BSCalc()
+        
         self.S = forward_curve.S
         self.FWD = forward_curve
-
-        self.bs_calc = BSCalc()
 
         self._process(tenors.data.flatten(), strikes.data.flatten(), option_types.data.flatten(), premiums.data.flatten())
 
