@@ -241,7 +241,6 @@ class SABRCalc:
             res[i] = self.bs_calc._premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i]))
         return Premiums(vanillas.Ns * res)
         
-
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
         F = forward.forward_rate().fv
         K_l = self.strike_lower*F
@@ -319,6 +318,39 @@ class SABRCalc:
                       VolatilityQuote(0.5*(call10 + put10) - atm), TimeToMaturity(forward.T))
         )
     
+    def smile_to_delta_space(self, chain: VolSmileChainSpace, backbone: Backbone) -> VolSmileDeltaSpace:
+        params = self.calibrate(chain, backbone, CalibrationWeights(np.ones_like(chain.Ks)))
+        return self.delta_space(chain.forward(), params)
+    
+    def surface_to_delta_space(self, surface_chain: VolSurfaceChainSpace, backbone: Backbone) -> VolSurfaceDeltaSpace:
+        times_to_maturities = surface_chain.times_to_maturities()
+        Ts = times_to_maturities.data
+
+        atm = np.zeros_like(Ts)
+        rr25 = np.zeros_like(Ts)
+        bf25 = np.zeros_like(Ts)
+        rr10 = np.zeros_like(Ts)
+        bf10 = np.zeros_like(Ts)
+
+        for i in nb.prange(len(Ts)):
+            T = Ts[i]
+            smile_chain = surface_chain.get_vol_smile(TimeToMaturity(T))
+            smile_delta = self.smile_to_delta_space(smile_chain, backbone)
+            atm[i] = smile_delta.ATM
+            rr25[i] = smile_delta.RR25
+            bf25[i] = smile_delta.BF25
+            rr10[i] = smile_delta.RR10
+            bf10[i] = smile_delta.BF10
+
+        return VolSurfaceDeltaSpace(
+            surface_chain.forward_curve(),
+            Straddles(ImpliedVols(atm), times_to_maturities),
+            RiskReversals(Delta(0.25), VolatilityQuotes(rr25), times_to_maturities),
+            Butterflies(Delta(0.25), VolatilityQuotes(bf25), times_to_maturities),
+            RiskReversals(Delta(0.1), VolatilityQuotes(rr10), times_to_maturities),
+            Butterflies(Delta(0.1), VolatilityQuotes(bf10), times_to_maturities)
+        )
+
     def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanilla.T
         

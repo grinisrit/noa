@@ -324,8 +324,7 @@ class VolSurfaceDeltaSpace:
             YAxis(np.append(butterflies_10.sigma[:1], butterflies_10.sigma))
         )
 
-        self.max_T = np.min(np.array([
-            forward_curve.T[-1], 
+        self.max_T = np.min(np.array([ 
             straddles.T[-1],
             risk_reversals_25.T[-1],
             butterflies_25.T[-1],
@@ -441,6 +440,8 @@ class VolSurfaceChainSpace:
         self.pvs = np.array(lPVs)
         self.sigmas = np.array(lIVs)
 
+    def times_to_maturities(self) -> TimesToMaturity:
+        return TimesToMaturity(np.unique(self.Ts))
 
     def get_vol_smile(self, time_to_maturity: TimeToMaturity) -> VolSmileChainSpace:
         F = self.FWD.forward(time_to_maturity)
@@ -467,7 +468,7 @@ class VolSurfaceChainSpace:
         return VolSmileChainSpace(F , Strikes(Ks[idx]), ImpliedVols(sigmas[idx]))
     
     def forward_curve(self) -> ForwardCurve:
-        return self.forward_curve
+        return self.FWD
         
 
  
