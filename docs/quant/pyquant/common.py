@@ -186,8 +186,15 @@ class ForwardYieldCurve:
            YAxis(np.append(np.array([0.]), forward_yields.data)) 
         )
     
-    def forward_yield(self, time_to_maturity: TimesToMaturity) -> ForwardYield:
+    def forward_yield(self, time_to_maturity: TimeToMaturity) -> ForwardYield:
         return ForwardYield(self._spline.apply(time_to_maturity.T))
+    
+    def forward_yields(self, times_to_maturity: TimeToMaturity) -> ForwardYields:
+        Ts = times_to_maturity.data
+        res = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            res[i] = self._spline.apply(Ts[i])
+        return ForwardYields(res)
 
 
 @nb.experimental.jitclass([
@@ -200,13 +207,18 @@ class ForwardCurve:
         self.S = spot.S
         self._curve = forward_yield_curve
   
-    def forward(self, time_to_maturity: TimesToMaturity) -> Forward:
+    def forward(self, time_to_maturity: TimeToMaturity) -> Forward:
         return Forward(
             Spot(self.S), 
             self._curve.forward_yield(time_to_maturity), 
             time_to_maturity
         )
-            
+    
+    def forward_rates(self, times_to_maturity: TimesToMaturity) -> ForwardRates:
+        return ForwardRates(
+            self.S * np.exp(times_to_maturity.data * self._curve.forward_yields(times_to_maturity).data)
+        )
+               
     @staticmethod
     def from_forward_rates(spot: Spot, forward_rates: ForwardRates, times_to_maturity: TimesToMaturity):
         return ForwardCurve(

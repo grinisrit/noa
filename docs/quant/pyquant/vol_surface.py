@@ -368,6 +368,41 @@ class VolSurfaceDeltaSpace:
     def forward_curve(self) -> ForwardCurve:
         return self.forward_curve
     
+    def atm_quotes(self, times_to_maturity: TimesToMaturity) -> ImpliedVols:
+        Ts = times_to_maturity.data
+        atm = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            atm[i] = self.ATM.apply(Ts[i])
+        return ImpliedVols(atm)
+    
+    def rr25_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
+        Ts = times_to_maturity.data
+        rr = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            rr[i] = self.RR25.apply(Ts[i])
+        return VolatilityQuotes(rr)
+    
+    def bf25_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
+        Ts = times_to_maturity.data
+        bf = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            bf[i] = self.BF25.apply(Ts[i])
+        return VolatilityQuotes(bf)
+    
+    def rr10_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
+        Ts = times_to_maturity.data
+        rr = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            rr[i] = self.RR10.apply(Ts[i])
+        return VolatilityQuotes(rr)
+
+    def bf10_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
+        Ts = times_to_maturity.data
+        bf = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            bf[i] = self.BF10.apply(Ts[i])
+        return VolatilityQuotes(bf)
+
 
 @nb.experimental.jitclass([
     ("S", nb.float64),
