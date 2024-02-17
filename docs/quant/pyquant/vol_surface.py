@@ -344,11 +344,11 @@ class VolSurfaceDeltaSpace:
         
     def get_vol_smile(self, time_to_maturity: TimeToMaturity) -> VolSmileDeltaSpace:
         T = time_to_maturity.T
-        if not (T > self.min_T and T <= self.max_T):
+        if not (T >= self.min_T and T <= self.max_T):
             print('TimeToMaturity outside available bounds, calendar arbitrage possible!')
     
         return VolSmileDeltaSpace(
-            self.FWD.forward(T),
+            self.FWD.forward(time_to_maturity),
             Straddle(
                 ImpliedVol(self.ATM.apply(T)),
                 time_to_maturity

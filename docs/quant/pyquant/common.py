@@ -3,6 +3,13 @@ import numba as nb
 
 from .utils import *
 
+@nb.experimental.jitclass([
+    ("v", nb.float64)
+])
+class CalibrationError:
+    def __init__(self, value: nb.float64):
+        self.v = value
+
 
 @nb.experimental.jitclass([
     ("sigma", nb.float64)
@@ -117,8 +124,8 @@ class TimeToMaturity:
 ])
 class TimesToMaturity:
     def __init__(self, T: nb.float64[:]):
-        if not np.all(T >= 0):
-            raise ValueError('Not all times to maturity are positive')
+        if not np.all(T >= 0) and is_sorted(T):
+            raise ValueError('Not all times to maturity are positive and sorted')
         self.data = T      
 
 
@@ -246,7 +253,16 @@ class Strike:
 class Strikes:
     def __init__(self, strikes:  nb.float64[:]):
         self.data = strikes
-              
+
+
+@nb.experimental.jitclass([
+    ("Ks",  nb.float64[:,:]),
+    ("Ts",  nb.float64[:,:])  
+])
+class VolSurfaceMesh:
+    def __init__(self, strikes: Strikes, times_to_maturity: TimesToMaturity):
+        self.Ks, self.Ts = np.meshgrid(strikes.data, times_to_maturity.data)
+            
 
 @nb.experimental.jitclass([
     ("is_call", nb.boolean)

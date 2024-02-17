@@ -82,6 +82,7 @@ class CalibrationWeights:
             raise ValueError('At least one weight must be non-trivial')
         self.w = w
 
+
 @nb.experimental.jitclass([
     ("v", nb.boolean)
 ])
@@ -92,7 +93,6 @@ class StickyStrike:
 @nb.experimental.jitclass([
     ("beta", nb.float64),
     ("cached_params", nb.float64[:]),
-    ("calibration_error", nb.float64),
     ("num_iter", nb.int64),
     ("delta_num_iter", nb.int64),
     ("tol", nb.float64),
@@ -106,7 +106,6 @@ class SABRCalc:
 
     def __init__(self):
         self.cached_params = np.array([1., 0.0, 0.0])
-        self.calibration_error = 0.
         self.num_iter = 50
         self.tol = 1e-8
         self.strike_lower = 0.1
@@ -119,7 +118,7 @@ class SABRCalc:
     def update_cached_params(self, params: SABRParams):
         self.cached_params = params.array()
 
-    def calibrate(self, chain: VolSmileChainSpace, backbone: Backbone, calibration_weights: CalibrationWeights) -> SABRParams:
+    def calibrate(self, chain: VolSmileChainSpace, backbone: Backbone, calibration_weights: CalibrationWeights) -> Tuple[SABRParams, CalibrationError]:
         strikes = chain.Ks
         w = calibration_weights.w
         
@@ -200,15 +199,15 @@ class SABRCalc:
                 
             return result_x, result_error
 
-        self.cached_params, self.calibration_error \
+        calc_params, calibration_error \
             = levenberg_marquardt(get_residuals, clip_params, self.cached_params)
         
         return SABRParams(
-            Volatility(self.cached_params[0]),
-            Correlation(self.cached_params[1]),
-            VolOfVol(self.cached_params[2]),
+            Volatility(calc_params[0]),
+            Correlation(calc_params[1]),
+            VolOfVol(calc_params[2]),
             backbone
-        )
+        ), CalibrationError(calibration_error)
   
     def implied_vol(self, forward: Forward, strike: Strike, params: SABRParams) -> ImpliedVol:
         return ImpliedVol(
@@ -319,7 +318,7 @@ class SABRCalc:
         )
     
     def smile_to_delta_space(self, chain: VolSmileChainSpace, backbone: Backbone) -> VolSmileDeltaSpace:
-        params = self.calibrate(chain, backbone, CalibrationWeights(np.ones_like(chain.Ks)))
+        params,_ = self.calibrate(chain, backbone, CalibrationWeights(np.ones_like(chain.Ks)))
         return self.delta_space(chain.forward(), params)
     
     def surface_to_delta_space(self, surface_chain: VolSurfaceChainSpace, backbone: Backbone) -> VolSurfaceDeltaSpace:
@@ -350,6 +349,20 @@ class SABRCalc:
             RiskReversals(Delta(0.1), VolatilityQuotes(rr10), times_to_maturities),
             Butterflies(Delta(0.1), VolatilityQuotes(bf10), times_to_maturities)
         )
+
+    def surface_grid_ivs(self, surface: VolSurfaceDeltaSpace, strikes: Strikes, times_to_maturity: TimesToMaturity, backbone: Backbone) -> ImpliedVols:
+        Ks = strikes.data
+        Ts = times_to_maturity.data
+        n = len(Ts)
+        m = len(Ks)
+        ivs = np.zeros(n*m)
+        
+        for i in nb.prange(n):
+            smile = surface.get_vol_smile(TimeToMaturity(Ts[i]))
+            smile_params,_ = self.calibrate(smile.to_chain_space(), backbone, CalibrationWeights(np.ones(5)))
+            ivs[i*m: (i+1)*m] = self.implied_vols(smile.forward(), strikes, smile_params).data
+
+        return ImpliedVols(ivs)
 
     def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanilla.T
@@ -806,7 +819,7 @@ class SABRCalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Vega((blipped_premium - premium) / delta_space.atm_blip)
@@ -817,7 +830,7 @@ class SABRCalc:
         delta_space = self.delta_space(forward, params)
   
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
     
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
@@ -828,7 +841,7 @@ class SABRCalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
@@ -839,7 +852,7 @@ class SABRCalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
@@ -850,7 +863,7 @@ class SABRCalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Sega((blipped_premium - premium) / delta_space.bf25_blip)     
@@ -860,7 +873,7 @@ class SABRCalc:
         premiums = self.premiums(forward,  vanillas, params).data
         delta_space = self.delta_space(forward, params)
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
