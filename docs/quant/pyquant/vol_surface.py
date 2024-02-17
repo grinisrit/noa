@@ -276,7 +276,8 @@ class Butterflies:
 
 @nb.experimental.jitclass([
     ("S", nb.float64),
-    ("max_T", nb.float64)
+    ("max_T", nb.float64),
+    ("min_T", nb.float64)
 ])
 class VolSurfaceDeltaSpace:
     FWD: ForwardCurve
@@ -300,28 +301,28 @@ class VolSurfaceDeltaSpace:
         self.FWD = forward_curve
 
         self.ATM = CubicSpline1D(
-            XAxis(np.append(np.array([0.]), straddles.T)),
-            YAxis(np.append(straddles.sigma[:1], straddles.sigma))
+            XAxis(straddles.T),
+            YAxis(straddles.sigma)
         )
 
         self.RR25 = CubicSpline1D(
-            XAxis(np.append(np.array([0.]), risk_reversals_25.T)),
-            YAxis(np.append(risk_reversals_25.sigma[:1], risk_reversals_25.sigma))
+            XAxis(risk_reversals_25.T),
+            YAxis(risk_reversals_25.sigma)
         )
 
         self.BF25 = CubicSpline1D(
-            XAxis(np.append(np.array([0.]), butterflies_25.T)),
-            YAxis(np.append(butterflies_25.sigma[:1], butterflies_25.sigma))
+            XAxis(butterflies_25.T),
+            YAxis(butterflies_25.sigma)
         )
 
         self.RR10 = CubicSpline1D(
-            XAxis(np.append(np.array([0.]), risk_reversals_10.T)),
-            YAxis(np.append(risk_reversals_10.sigma[:1], risk_reversals_10.sigma))
+            XAxis(risk_reversals_10.T),
+            YAxis(risk_reversals_10.sigma)
         )
 
         self.BF10 = CubicSpline1D(
-            XAxis(np.append(np.array([0.]), butterflies_10.T)),
-            YAxis(np.append(butterflies_10.sigma[:1], butterflies_10.sigma))
+            XAxis(butterflies_10.T),
+            YAxis(butterflies_10.sigma)
         )
 
         self.max_T = np.min(np.array([ 
@@ -331,11 +332,20 @@ class VolSurfaceDeltaSpace:
             risk_reversals_10.T[-1],
             butterflies_10.T[-1]
         ]))
+
+        self.min_T = np.max(np.array([ 
+            straddles.T[0],
+            risk_reversals_25.T[0],
+            butterflies_25.T[0],
+            risk_reversals_10.T[0],
+            butterflies_10.T[0]
+        ]))
+        assert self.max_T > self.min_T
         
     def get_vol_smile(self, time_to_maturity: TimeToMaturity) -> VolSmileDeltaSpace:
         T = time_to_maturity.T
-        if not (T > 0 and T <= self.max_T):
-            raise ValueError('TimeToMaturity outside available bounds')
+        if not (T > self.min_T and T <= self.max_T):
+            print('TimeToMaturity outside available bounds, calendar arbitrage possible!')
     
         return VolSmileDeltaSpace(
             self.FWD.forward(T),
