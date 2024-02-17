@@ -218,6 +218,9 @@ class ForwardCurve:
         return ForwardRates(
             self.S * np.exp(times_to_maturity.data * self._curve.forward_yields(times_to_maturity).data)
         )
+    
+    def forward_yields(self, times_to_maturity: TimesToMaturity) -> ForwardYields:
+        return self._curve.forward_yields(times_to_maturity)
                
     @staticmethod
     def from_forward_rates(spot: Spot, forward_rates: ForwardRates, times_to_maturity: TimesToMaturity):
