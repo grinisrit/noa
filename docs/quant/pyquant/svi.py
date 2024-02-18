@@ -401,7 +401,7 @@ class SVICalc:
         self,
         spot: Spot,
         forward_yield: ForwardYield,
-        vanillas: Vanillas,
+        vanillas: SingleMaturityVanillas,
         params: SVIRawParams,
     ) -> Premiums:
         forward = Forward(spot, forward_yield, vanillas.time_to_maturity())

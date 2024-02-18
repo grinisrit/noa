@@ -3,6 +3,13 @@ import numba as nb
 
 from .utils import *
 
+@nb.experimental.jitclass([
+    ("v", nb.float64)
+])
+class CalibrationError:
+    def __init__(self, value: nb.float64):
+        self.v = value
+
 
 @nb.experimental.jitclass([
     ("sigma", nb.float64)
@@ -35,7 +42,7 @@ class ImpliedVols:
     ("data", nb.float64[:])
 ])
 class VolatilityQuotes:
-    def __init__(self, sigmas: nb.float64):
+    def __init__(self, sigmas: nb.float64[:]):
         self.data = sigmas
 
 
@@ -117,21 +124,9 @@ class TimeToMaturity:
 ])
 class TimesToMaturity:
     def __init__(self, T: nb.float64[:]):
-        if not np.all(T >= 0):
-            raise ValueError('Not all times to maturity are positive')
+        if not np.all(T >= 0) and is_sorted(T):
+            raise ValueError('Not all times to maturity are positive and sorted')
         self.data = T      
-
-
-@nb.experimental.jitclass([
-    ("r", nb.float64[:]),
-    ("T", nb.float64[:])
-])
-class ForwardYieldCurve:
-    def __init__(self, forward_yields: ForwardYields, times_to_maturity: TimesToMaturity):
-        if not forward_yields.data.shape == times_to_maturity.data.shape:
-            raise ValueError('Inconsistent data between yields and times to maturity')
-        self.r = forward_yields.data
-        self.T = times_to_maturity.data
 
 
 @nb.experimental.jitclass([
@@ -182,23 +177,58 @@ class Forward:
             spot, ForwardYield(- np.log(spot.S / forward_rate.fv)/ time_to_maturity.T), time_to_maturity
             )
 
+
+@nb.experimental.jitclass()
+class ForwardYieldCurve:
+    _spline: CubicSpline1D
+
+    def __init__(self, forward_yields: ForwardYields, times_to_maturity: TimesToMaturity):
+        if not forward_yields.data.shape == times_to_maturity.data.shape:
+            raise ValueError('Inconsistent data between yields and times to maturity')
+        if not is_sorted(times_to_maturity.data) and np.all(times_to_maturity.data > 0):
+            raise ValueError('Times to maturity are invalid')
     
+        self._spline = CubicSpline1D(
+           XAxis(np.append(np.array([0.]), times_to_maturity.data)),
+           YAxis(np.append(np.array([0.]), forward_yields.data)) 
+        )
+    
+    def forward_yield(self, time_to_maturity: TimeToMaturity) -> ForwardYield:
+        return ForwardYield(self._spline.apply(time_to_maturity.T))
+    
+    def forward_yields(self, times_to_maturity: TimeToMaturity) -> ForwardYields:
+        Ts = times_to_maturity.data
+        res = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            res[i] = self._spline.apply(Ts[i])
+        return ForwardYields(res)
+
+
 @nb.experimental.jitclass([
-    ("S", nb.float64),
-    ("r", nb.float64[:]),
-    ("T", nb.float64[:])
+    ("S", nb.float64)
 ])
 class ForwardCurve:
-    def __init__(self, spot: Spot, forward_yields: ForwardYieldCurve):
-        if not is_sorted(forward_yields.T):
-            raise ValueError('Tenors are not ordered')
+    _curve: ForwardYieldCurve
+
+    def __init__(self, spot: Spot, forward_yield_curve: ForwardYieldCurve):
         self.S = spot.S
-        self.r = forward_yields.r
-        self.T = forward_yields.T
-        
-    def forward_rates(self) -> ForwardRates:
-        return ForwardRates(self.S * np.exp(self.r * self.T))
+        self._curve = forward_yield_curve
+  
+    def forward(self, time_to_maturity: TimeToMaturity) -> Forward:
+        return Forward(
+            Spot(self.S), 
+            self._curve.forward_yield(time_to_maturity), 
+            time_to_maturity
+        )
     
+    def forward_rates(self, times_to_maturity: TimesToMaturity) -> ForwardRates:
+        return ForwardRates(
+            self.S * np.exp(times_to_maturity.data * self._curve.forward_yields(times_to_maturity).data)
+        )
+    
+    def forward_yields(self, times_to_maturity: TimesToMaturity) -> ForwardYields:
+        return self._curve.forward_yields(times_to_maturity)
+               
     @staticmethod
     def from_forward_rates(spot: Spot, forward_rates: ForwardRates, times_to_maturity: TimesToMaturity):
         return ForwardCurve(
@@ -223,7 +253,16 @@ class Strike:
 class Strikes:
     def __init__(self, strikes:  nb.float64[:]):
         self.data = strikes
-              
+
+
+@nb.experimental.jitclass([
+    ("Ks",  nb.float64[:,:]),
+    ("Ts",  nb.float64[:,:])  
+])
+class VolSurfaceMesh:
+    def __init__(self, strikes: Strikes, times_to_maturity: TimesToMaturity):
+        self.Ks, self.Ts = np.meshgrid(strikes.data, times_to_maturity.data)
+            
 
 @nb.experimental.jitclass([
     ("is_call", nb.boolean)
@@ -270,7 +309,7 @@ class Vanilla:
     ("Ns", nb.float64[:]),
     ("T", nb.float64)
 ])
-class Vanillas:
+class SingleMaturityVanillas:
     def __init__(self, option_types: OptionTypes, strikes: Strikes, notionals: Notionals, time_to_maturity: TimeToMaturity):
         if not option_types.data.shape == strikes.data.shape:
             raise ValueError('Inconsistent data between strikes and option types')

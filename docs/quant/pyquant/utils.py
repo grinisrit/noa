@@ -70,3 +70,72 @@ def mass_weights(t: nb.float64, Ts: nb.float64[:], tol: nb.float64 = 1e-6) -> nb
     return w / w.sum()
 
 
+@nb.njit(cache = True, fastmath = True)
+def searchsorted(a: nb.float64[:], b: nb.float64) -> nb.int64:
+    idx = 0
+    pa, pb = 0, 0
+    while pb < 1:
+        if pa < len(a) and a[pa] < b:
+            pa += 1
+        else:
+            idx = pa
+            pb += 1
+    return idx
+
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class XAxis:
+    def __init__(self, x: nb.float64[:]):
+        self.data = x
+
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class YAxis:
+    def __init__(self, y: nb.float64[:]):
+        self.data = y
+
+
+@nb.experimental.jitclass([
+    ("_x0", nb.float64[:]),
+    ("_a", nb.float64[:]),
+    ("_b", nb.float64[:]),
+    ("_c", nb.float64[:]),
+    ("_d", nb.float64[:]),
+])
+class CubicSpline1D:
+    def __init__(self, x: XAxis, y: YAxis):
+        self._x0 = x.data
+        self._calc_spline_params(x.data, y.data)
+
+    def _calc_spline_params(self, x: nb.float64[:], y: nb.float64[:]):
+        n = x.size - 1
+        a = y.copy()
+        h = x[1:] - x[:-1]
+        alpha = 3 * ((a[2:] - a[1:-1]) / h[1:] - (a[1:-1] - a[:-2]) / h[:-1])
+        c = np.zeros(n+1)
+        ell, mu, z = np.ones(n+1), np.zeros(n), np.zeros(n+1)
+        for i in range(1, n):
+            ell[i] = 2 * (x[i+1] - x[i-1]) - h[i-1] * mu[i-1]
+            mu[i] = h[i] / ell[i]
+            z[i] = (alpha[i-1] - h[i-1] * z[i-1]) / ell[i]
+        for i in range(n-1, -1, -1):
+            c[i] = z[i] - mu[i] * c[i+1]
+        b = (a[1:] - a[:-1]) / h + (c[:-1] + 2 * c[1:]) * h / 3
+        d = np.diff(c) / (3 * h)
+
+        self._a = a[1:]
+        self._b = b
+        self._c = c[1:]
+        self._d = d
+
+    def _func_spline(self, x: nb.float64, ix: nb.int64) -> nb.float64:
+        dx = x - self._x0[1:][ix]
+        return self._a[ix] + (self._b[ix] + (self._c[ix] + self._d[ix] * dx) * dx) * dx
+    
+    def apply(self, x: nb.float64) -> nb.float64:
+        ix = searchsorted(self._x0[1 : -1], x)
+        return self._func_spline(x, ix)

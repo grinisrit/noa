@@ -82,6 +82,7 @@ class CalibrationWeights:
             raise ValueError('At least one weight must be non-trivial')
         self.w = w
 
+
 @nb.experimental.jitclass([
     ("v", nb.boolean)
 ])
@@ -92,7 +93,6 @@ class StickyStrike:
 @nb.experimental.jitclass([
     ("beta", nb.float64),
     ("cached_params", nb.float64[:]),
-    ("calibration_error", nb.float64),
     ("num_iter", nb.int64),
     ("delta_num_iter", nb.int64),
     ("tol", nb.float64),
@@ -106,7 +106,6 @@ class SABRCalc:
 
     def __init__(self):
         self.cached_params = np.array([1., 0.0, 0.0])
-        self.calibration_error = 0.
         self.num_iter = 50
         self.tol = 1e-8
         self.strike_lower = 0.1
@@ -119,7 +118,7 @@ class SABRCalc:
     def update_cached_params(self, params: SABRParams):
         self.cached_params = params.array()
 
-    def calibrate(self, chain: VolSmileChainSpace, backbone: Backbone, calibration_weights: CalibrationWeights) -> SABRParams:
+    def calibrate(self, chain: VolSmileChainSpace, backbone: Backbone, calibration_weights: CalibrationWeights) -> Tuple[SABRParams, CalibrationError]:
         strikes = chain.Ks
         w = calibration_weights.w
         
@@ -200,15 +199,15 @@ class SABRCalc:
                 
             return result_x, result_error
 
-        self.cached_params, self.calibration_error \
+        calc_params, calibration_error \
             = levenberg_marquardt(get_residuals, clip_params, self.cached_params)
         
         return SABRParams(
-            Volatility(self.cached_params[0]),
-            Correlation(self.cached_params[1]),
-            VolOfVol(self.cached_params[2]),
+            Volatility(calc_params[0]),
+            Correlation(calc_params[1]),
+            VolOfVol(calc_params[2]),
             backbone
-        )
+        ), CalibrationError(calibration_error)
   
     def implied_vol(self, forward: Forward, strike: Strike, params: SABRParams) -> ImpliedVol:
         return ImpliedVol(
@@ -227,7 +226,7 @@ class SABRCalc:
         return Premium(self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
         )
    
-    def premiums(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Premiums:
+    def premiums(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Premiums:
         assert forward.T == vanillas.T
         f = forward.forward_rate().fv
         Ks = vanillas.Ks
@@ -241,7 +240,6 @@ class SABRCalc:
             res[i] = self.bs_calc._premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i]))
         return Premiums(vanillas.Ns * res)
         
-
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
         F = forward.forward_rate().fv
         K_l = self.strike_lower*F
@@ -319,9 +317,56 @@ class SABRCalc:
                       VolatilityQuote(0.5*(call10 + put10) - atm), TimeToMaturity(forward.T))
         )
     
-    def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Delta:
+    def smile_to_delta_space(self, chain: VolSmileChainSpace, backbone: Backbone) -> VolSmileDeltaSpace:
+        params,_ = self.calibrate(chain, backbone, CalibrationWeights(np.ones_like(chain.Ks)))
+        return self.delta_space(chain.forward(), params)
+    
+    def surface_to_delta_space(self, surface_chain: VolSurfaceChainSpace, backbone: Backbone) -> VolSurfaceDeltaSpace:
+        times_to_maturities = surface_chain.times_to_maturities()
+        Ts = times_to_maturities.data
+
+        atm = np.zeros_like(Ts)
+        rr25 = np.zeros_like(Ts)
+        bf25 = np.zeros_like(Ts)
+        rr10 = np.zeros_like(Ts)
+        bf10 = np.zeros_like(Ts)
+
+        for i in nb.prange(len(Ts)):
+            T = Ts[i]
+            smile_chain = surface_chain.get_vol_smile(TimeToMaturity(T))
+            smile_delta = self.smile_to_delta_space(smile_chain, backbone)
+            atm[i] = smile_delta.ATM
+            rr25[i] = smile_delta.RR25
+            bf25[i] = smile_delta.BF25
+            rr10[i] = smile_delta.RR10
+            bf10[i] = smile_delta.BF10
+
+        return VolSurfaceDeltaSpace(
+            surface_chain.forward_curve(),
+            Straddles(ImpliedVols(atm), times_to_maturities),
+            RiskReversals(Delta(0.25), VolatilityQuotes(rr25), times_to_maturities),
+            Butterflies(Delta(0.25), VolatilityQuotes(bf25), times_to_maturities),
+            RiskReversals(Delta(0.1), VolatilityQuotes(rr10), times_to_maturities),
+            Butterflies(Delta(0.1), VolatilityQuotes(bf10), times_to_maturities)
+        )
+
+    def surface_grid_ivs(self, surface: VolSurfaceDeltaSpace, strikes: Strikes, times_to_maturity: TimesToMaturity, backbone: Backbone) -> ImpliedVols:
+        Ks = strikes.data
+        Ts = times_to_maturity.data
+        n = len(Ts)
+        m = len(Ks)
+        ivs = np.zeros(n*m)
+        
+        for i in nb.prange(n):
+            smile = surface.get_vol_smile(TimeToMaturity(Ts[i]))
+            smile_params,_ = self.calibrate(smile.to_chain_space(), backbone, CalibrationWeights(np.ones(5)))
+            ivs[i*m: (i+1)*m] = self.implied_vols(smile.forward(), strikes, smile_params).data
+
+        return ImpliedVols(ivs)
+
+    def sticky_delta(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strike = vanilla.strike()
@@ -336,12 +381,12 @@ class SABRCalc:
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0] if not sK else 0.
+        )[0][0] if not sticky_strike.v else 0.
 
         res_delta = delta_bsm + (1/D) * vega_bsm * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
         return Delta(vanilla.N*res_delta)
       
-    def sticky_deltas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: bool = False) -> Delta:
+    def sticky_deltas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
@@ -362,7 +407,7 @@ class SABRCalc:
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
 
-        if sticky_strike:
+        if sticky_strike.v:
             res_delta = delta_bsm + (1/D) * vega_bsm * dsigma_df
 
         else:
@@ -375,9 +420,9 @@ class SABRCalc:
 
         return Deltas(vanillas.Ns*res_delta)  
      
-    def sticky_gamma(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Gamma:
+    def sticky_gamma(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Gamma:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strike = vanilla.strike()
@@ -391,13 +436,13 @@ class SABRCalc:
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
         d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
 
-        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sK else 0.
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sticky_strike.v else 0.
 
-        dsigma_dalpha = self._jacobian_sabr(F, forward.T,
+        dsigma_dalpha = 0. if sticky_strike else self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0] if not sK else 0.
+        )[0][0]
 
         sticky_component = dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta
         res_gamma = gamma_bsm +\
@@ -410,9 +455,8 @@ class SABRCalc:
             )
         return Gamma(vanilla.N*res_gamma)
     
-    def sticky_gammas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Gammas:
+    def sticky_gammas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Gammas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
@@ -438,7 +482,7 @@ class SABRCalc:
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
             d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
 
-        if sticky_strike:
+        if not sticky_strike.v:
             res_gammas = gamma_bsm + (2/D) * vanna_bsm * dsigma_df + (volga_bsm / (D**2)) * dsigma_df**2 + \
                 (vega_bsm / (D**2)) * d2_sigma_df2
 
@@ -467,9 +511,9 @@ class SABRCalc:
         return Gammas(vanillas.Ns*res_gammas)
     
     
-    def sticky_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vega:
+    def sticky_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Vega:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
@@ -482,19 +526,19 @@ class SABRCalc:
             np.array([strike.K]),
             params.array(),
             params.beta
-        )[0][0] if not sK else 0.
+        )[0][0] if not sticky_strike.v else 0.
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             res = vega_bsm * (dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v)
         else:
             res = vega_bsm * dsigma_dalpha
 
-        return Vega(res)
+        return Vega(vanilla.N * res)
     
     
-    def sticky_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vegas:
+    def sticky_vegas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vegas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
         Ks = vanillas.Ks
@@ -513,7 +557,7 @@ class SABRCalc:
             params.beta
         )[0] 
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             dsigma_df = np.zeros_like(sigmas)
             for i in range(n):
                 dsigma_df[i] = self._dsigma_df(F, forward.T, Ks[i], params)
@@ -521,7 +565,7 @@ class SABRCalc:
         else:
             res = vega_bsm * dsigma_dalpha
 
-        return Vegas(res)
+        return Vegas(vanillas.Ns * res)
    
 
     def rega_rho(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Rega:
@@ -530,7 +574,7 @@ class SABRCalc:
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc._vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -543,7 +587,7 @@ class SABRCalc:
         )
        
         
-    def regas_rho(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Regas:
+    def regas_rho(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Regas:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
@@ -554,7 +598,7 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
 
         dsigma_drho = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -571,7 +615,7 @@ class SABRCalc:
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
 
         dsigma_dv = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -583,7 +627,7 @@ class SABRCalc:
             vanilla.N * vega_bsm * dsigma_dv
         )
         
-    def segas_volvol(self, forward: Forward, vanillas: Vanillas, params: SABRParams) -> Segas:
+    def segas_volvol(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Segas:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
@@ -594,7 +638,7 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
 
         dsigma_dv = self._jacobian_sabr(F, forward.T,
             Ks,
@@ -606,9 +650,9 @@ class SABRCalc:
         )
    
      
-    def sticky_volga(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Volga:
+    def sticky_volga(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Volga:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
@@ -619,8 +663,8 @@ class SABRCalc:
         d2_sigma_dalpha2 = self._d2_sigma_dalpha2(F, forward.T, strike.K, params)
         
                 
-        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params) if not sK else 0.
-        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sK else 0.
+        dsigma_df = self._dsigma_df(F, forward.T, strike.K, params) if not sticky_strike.v else 0.
+        d2_sigma_dalpha_df = self._d2_sigma_dalpha_df(F, forward.T, strike.K, params) if not sticky_strike.v else 0.
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
             np.array([strike.K]),
@@ -628,7 +672,7 @@ class SABRCalc:
             params.beta
         )[0][0]
 
-        if params.v > 0 and not sK : 
+        if params.v > 0 and not sticky_strike.v : 
             res = volga_bsm * (
                 dsigma_dalpha + dsigma_df * params.rho * F**params.beta / params.v
             ) ** 2 + vega_bsm * (d2_sigma_dalpha2 + d2_sigma_dalpha_df * params.rho * F**params.beta / params.v)
@@ -637,9 +681,9 @@ class SABRCalc:
 
         return Volga(vanilla.N*res)
      
-    def sticky_volgas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Volgas:
+    def sticky_volgas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Volgas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
         Ks = vanillas.Ks
@@ -664,7 +708,7 @@ class SABRCalc:
             params.beta
         )[0]
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             dsigma_df = np.zeros_like(sigmas)
             d2_sigma_dalpha_df = np.zeros_like(sigmas)
             for i in range(n):
@@ -680,9 +724,9 @@ class SABRCalc:
         return Volgas(vanillas.Ns * res)
     
      
-    def sticky_vanna(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vanna:
+    def sticky_vanna(self, forward: Forward, vanilla: Vanilla, params: SABRParams, sticky_strike: StickyStrike) -> Vanna:
         assert forward.T == vanilla.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strike = vanilla.strike()
@@ -702,7 +746,7 @@ class SABRCalc:
         )[0][0]
 
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
             res = (
                 vanna_bsm + (volga_bsm/D) * (dsigma_df + dsigma_dalpha * params.rho * params.v / F**params.beta)
@@ -718,9 +762,9 @@ class SABRCalc:
 
         return Vanna(vanilla.N * res)  
      
-    def sticky_vannas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, sticky_strike: StickyStrike = StickyStrike()) -> Vannas:
+    def sticky_vannas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Vannas:
         assert forward.T == vanillas.T
-        sK = sticky_strike.v
+        
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         strikes = vanillas.strikes()
@@ -738,12 +782,11 @@ class SABRCalc:
         for i in range(n):
             K = Ks[i]
             sigma = ImpliedVol(sigmas[i])
-            vega_bsm[i] = self.bs_calc.vega(forward, Strike(K), sigma).pv
-            vanna_bsm[i] = self.bs_calc.vanna(forward, Strike(K), sigma).pv
-            volga_bsm[i] = self.bs_calc.volga(forward, Strike(K), sigma).pv
+            vega_bsm[i] = self.bs_calc._vega(forward, Strike(K), sigma)
+            vanna_bsm[i] = self.bs_calc._vanna(forward, Strike(K), sigma)
+            volga_bsm[i] = self.bs_calc._volga(forward, Strike(K), sigma)
 
             dsigma_df[i] = self._dsigma_df(F, forward.T, K, params)
-            d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, K, params)
             d2_sigma_dalpha_df[i] = self._d2_sigma_dalpha_df(F, forward.T, K, params)
 
         dsigma_dalpha = self._jacobian_sabr(F, forward.T,
@@ -752,7 +795,7 @@ class SABRCalc:
             params.beta
         )[0]
 
-        if params.v > 0 and not sK: 
+        if params.v > 0 and not sticky_strike.v: 
             d2_sigma_df2 = np.zeros_like(sigmas)
             for i in range(n):
                 d2_sigma_df2[i] = self._d2_sigma_df2(F, forward.T, Ks[i], params)   
@@ -771,66 +814,66 @@ class SABRCalc:
 
         return Vannas(vanillas.Ns * res)
     
-    def blip_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Vega:
+    def blip_vega(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Vega:
         premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Vega((blipped_premium - premium) / delta_space.atm_blip)
    
     
-    def blip_vegas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Vegas:
+    def blip_vegas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Vegas:
         premiums = self.premiums(forward, vanillas, params).data
         delta_space = self.delta_space(forward, params)
   
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
     
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
     
     
-    def blip_rega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Rega:
+    def blip_rega(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Rega:
         premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
      
     
-    def blip_regas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Regas:
+    def blip_regas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Regas:
         premiums = self.premiums(forward, vanillas, params).data
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
 
     
-    def blip_sega(self, forward: Forward, vanilla: Vanilla, params: SABRParams, calibration_weights: CalibrationWeights) -> Sega:
+    def blip_sega(self, forward: Forward, vanilla: Vanilla, params: SABRParams) -> Sega:
         premium = self.premium(forward, vanilla, params).pv
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Sega((blipped_premium - premium) / delta_space.bf25_blip)     
     
 
-    def blip_segas(self, forward: Forward, vanillas: Vanillas, params: SABRParams, calibration_weights: CalibrationWeights) -> Segas:
+    def blip_segas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams) -> Segas:
         premiums = self.premiums(forward,  vanillas, params).data
         delta_space = self.delta_space(forward, params)
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, params.backbone(), calibration_weights)
+        blipped_params,_ = self.calibrate(blipped_chain, params.backbone(), CalibrationWeights(np.ones(5)))
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
