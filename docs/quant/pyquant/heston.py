@@ -373,7 +373,7 @@ class HestonCalc:
             F = Forward(S,r,T)
             ivs[i] = self.bs_calc.implied_vol(F, Strike(grid.Ks[i]), Premium(pvs[i])).sigma
     
-        return ImpliedVols(ivs), pvs
+        return ImpliedVols(ivs)
 
     def _hes_int_jac(
         self,
