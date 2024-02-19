@@ -5,6 +5,7 @@ from typing import Final, Tuple
 from .utils import *
 from .common import *
 from .vol_surface import *
+from .black_scholes import *
 
 
 ################# Helper classes and variables for HestonCalc #################
@@ -264,7 +265,7 @@ class HestonCalc:
         self.num_iter = 50
         self.tol = 1e-8
 
-        bs_calc = BSCalc()
+        self.bs_calc = BSCalc()
       
     def update_cached_params(self, params: HestonParams):
         self.cached_params = params.array()
@@ -360,19 +361,19 @@ class HestonCalc:
 
     def surface_grid_ivs(self, params: HestonParams, grid: StrikesMaturitiesGrid) -> ImpliedVols:
         Fs = grid.S * np.exp(params.r * grid.Ts)
-        is_call = OptionTypes(Fs >= grid.Ks)
+        is_call = OptionTypes(Fs <= grid.Ks)
         pvs = self._grid_premiums(params, grid, is_call)
-
+    
         ivs = np.zeros_like(pvs)
         r = ForwardYield(params.r)
         S = grid.spot()
 
-        for i in nb.prange(len(pvs)):
-            T = TimesToMaturity(grid.Ts[i])
+        for i in range(len(pvs)):
+            T = TimeToMaturity(grid.Ts[i])
             F = Forward(S,r,T)
-            ivs[i] = self.bs_calc.implied_vol(F, Strike(grid.Ks[i]), pvs[i])
-
-        return ImpliedVols(ivs)
+            ivs[i] = self.bs_calc.implied_vol(F, Strike(grid.Ks[i]), Premium(pvs[i])).sigma
+    
+        return ImpliedVols(ivs), pvs
 
     def _hes_int_jac(
         self,
@@ -779,7 +780,7 @@ class HestonCalc:
                 # p2 = K*np.exp(-market_parameters.r * T)*(- 0.5 + Qv2/pi)
                 # orig = p1 - p2
                 pv = disc * (Qv1 - K * Qv2) - tmp
-            x[l] = pv
+            x[l] = pv if pv >= 0.01 else 0.
         return x
 
     def _hes_int_MN(
