@@ -72,6 +72,14 @@ class BSCalc:
         
     def implied_vol(self, forward: Forward, strike: Strike, premium: Premium) -> ImpliedVol:
         pv = premium.pv
+
+        if pv < 0.:
+            raise ValueError('Negative PV provided to implied vol solver')
+     
+        if pv == 0.0:
+            print('WARNING: trivial PV provided, setting PV = 1 cent')
+            pv = 0.01
+
         fv = forward.forward_rate().fv
 
         def g(sigma):
@@ -82,7 +90,7 @@ class BSCalc:
         
         sigma_l = self.sigma_lower
         sigma_r = self.sigma_upper
-        
+       
         if g(sigma_l) * g(sigma_r) > 0:
             raise ValueError('No solution within implied vol interval')
         
