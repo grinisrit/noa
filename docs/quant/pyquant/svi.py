@@ -61,6 +61,21 @@ class SVIRawParams:
 
     def array(self) -> nb.float64[:]:
         return np.array([self.a, self.b, self.rho, self.m, self.sigma])
+    
+    def scale_a(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(s*self.a), B(self.b), Rho(self.rho), M(self.m), Sigma(self.sigma))
+
+    def scale_b(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(s*self.b), Rho(self.rho), M(self.m), Sigma(self.sigma))
+
+    def scale_rho(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(self.b), Rho(s*self.rho), M(self.m), Sigma(self.sigma))
+    
+    def scale_m(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(self.b), Rho(self.rho), M(s*self.m), Sigma(self.sigma))
+    
+    def scale_sigma(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(self.b), Rho(self.rho), M(self.m), Sigma(s*self.sigma))
 
 
 @nb.experimental.jitclass([("v", nb.float64)])
@@ -195,14 +210,23 @@ class CalibrationWeights:
             raise ValueError("At least one weight must be non-trivial")
         self.w = w
 
-
+@nb.experimental.jitclass([
+    ("raw_cached_params", nb.float64[:]),
+    ("jump_wing_cached_params", nb.float64[:]),
+    ("num_iter", nb.int64),
+    ("delta_num_iter", nb.int64),
+    ("tol", nb.float64),
+    ("strike_lower", nb.float64),
+    ("strike_upper", nb.float64),
+    ("delta_tol", nb.float64),
+    ("delta_grad_eps", nb.float64)
+])  
 class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
         self.raw_cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
         self.jump_wing_cached_params = self.raw_cached_params
-        self.calibration_error = 0.0
         self.num_iter = 50
         self.tol = 1e-8
         self.strike_lower = 0.1
