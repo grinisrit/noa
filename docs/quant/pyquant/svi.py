@@ -220,9 +220,13 @@ class SVICalc:
 
     def calibrate(
         self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights
-    ) -> SVIRawParams:
+    ) -> Tuple[SVIRawParams, CalibrationError]:
         strikes = chain.Ks
         w = calibration_weights.w
+
+        if not strikes.shape == w.shape:
+            raise ValueError('Inconsistent data between strikes and calibration weights')
+        
         if not strikes.shape == w.shape:
             raise ValueError(
                 "Inconsistent data between strikes and calibration weights"
@@ -300,17 +304,17 @@ class SVICalc:
 
             return result_x, result_error
 
-        self.raw_cached_params, self.calibration_error = levenberg_marquardt(
+        calc_params, calibration_error = levenberg_marquardt(
             get_residuals, clip_params, self.raw_cached_params
         )
 
         raw_params = SVIRawParams(
-            A(self.raw_cached_params[0]),
-            B(self.raw_cached_params[1]),
-            Rho(self.raw_cached_params[2]),
-            M(self.raw_cached_params[3]),
-            Sigma(self.raw_cached_params[4]),
-        )
+            A(calc_params[0]),
+            B(calc_params[1]),
+            Rho(calc_params[2]),
+            M(calc_params[3]),
+            Sigma(calc_params[4]),
+        ), CalibrationError(calibration_error)
 
         self.jump_wing_cached_params = self._get_jump_wing_params(
             raw_params, time_to_maturity
@@ -811,16 +815,16 @@ class SVICalc:
             ),
         )
 
-    def blip_a_greek(
-        self,
-        forward: Forward,
-        strike: Strike,
-        params: SVIRawParams,
-        calibration_weights: CalibrationWeights,
-    ) -> AGreek:
-        option_type = OptionType(forward.forward_rate().fv >= strike.K)
-        premium = self.premium(forward, strike, option_type, params).pv
-        delta_space = self.delta_space(forward, params)
+    # def blip_a_greek(
+    #     self,
+    #     forward: Forward,
+    #     strike: Strike,
+    #     params: SVIRawParams,
+    #     calibration_weights: CalibrationWeights,
+    # ) -> AGreek:
+    #     option_type = OptionType(forward.forward_rate().fv >= strike.K)
+    #     premium = self.premium(forward, strike, option_type, params).pv
+    #     delta_space = self.delta_space(forward, params)
 
         # blipped_chain = delta_space.blip_ATM().to_chain_space()
         # blipped_params = self.calibrate(blipped_chain, calibration_weights)
@@ -834,8 +838,8 @@ class SVICalc:
 
         # return AGreek((blipped_premium - premium) / delta_space.rr25_blip)
 
-        blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params = self.calibrate(blipped_chain, calibration_weights)
-        blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
+        # blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
+        # blipped_params = self.calibrate(blipped_chain, calibration_weights)
+        # blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
 
-        return AGreek((blipped_premium - premium) / delta_space.bf25_blip) 
+        # return AGreek((blipped_premium - premium) / delta_space.bf25_blip) 
