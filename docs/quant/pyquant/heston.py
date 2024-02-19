@@ -739,8 +739,8 @@ class HestonCalc:
     ) -> nb.float64[:]:
         """Calculates the premium of vanilla option under the Heston model."""
 
-        Ks = grid.data
-        Ts = grid.data
+        Ks = grid.Ks
+        Ts = grid.Ts
         is_call = option_types.data
         assert Ks.shape == is_call.shape
 
