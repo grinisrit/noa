@@ -314,13 +314,13 @@ class SVICalc:
             Rho(calc_params[2]),
             M(calc_params[3]),
             Sigma(calc_params[4]),
-        ), CalibrationError(calibration_error)
+        )
 
-        self.jump_wing_cached_params = self._get_jump_wing_params(
-            raw_params, time_to_maturity
-        ).array()
+        # self.jump_wing_cached_params = self._get_jump_wing_params(
+        #     calc_params, time_to_maturity
+        # ).array()
 
-        return raw_params
+        return raw_params, CalibrationError(calibration_error)
 
     def _get_jump_wing_params(
         self, params: SVIRawParams, T: nb.float64
@@ -501,7 +501,7 @@ class SVICalc:
         ddf = b * (-rho / F - (k - m) / (F * sqrt))
         return ddf / denominator
 
-    def _dsigma_dk(
+    def _dsigma_dK(
         self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
     ) -> nb.float64:
         # by strike to compute BBs, RRs
@@ -601,7 +601,7 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_dk = self._dsigma_dk(F, forward.T, strike.K, params)
+        dsigma_dk = self._dsigma_dK(F, forward.T, strike.K, params)
         return KGreek(vega_bsm * dsigma_dk)
 
     def k_greeks(
@@ -731,11 +731,11 @@ class SVICalc:
 
         def g(K):
             iv = self.implied_vol(forward, Strike(K), params)
-            return self.bs_calc.delta(forward, Strike(K), option_type, iv).pv - delta.pv
+            return self.bs_calc._delta(forward, Strike(K), option_type, iv) - delta.pv
 
         def g_prime(K):
             iv = self.implied_vol(forward, Strike(K), params)
-            dsigma_dk = self._dsigma_dk(F, T, K, params)
+            dsigma_dk = self._dsigma_dK(F, T, K, params)
             d1 = self.bs_calc._d1(forward, Strike(K), iv)
             sigma = iv.sigma
             return (
