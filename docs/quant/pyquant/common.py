@@ -12,6 +12,26 @@ class CalibrationError:
 
 
 @nb.experimental.jitclass([
+    ("w", nb.float64[:])
+])
+class CalibrationWeights:
+    def __init__(self, w: nb.float64):
+        if not np.all(w>=0):
+            raise ValueError('Weights must be non-negative')
+        if not w.sum() > 0:
+            raise ValueError('At least one weight must be non-trivial')
+        self.w = w
+
+
+@nb.experimental.jitclass([
+    ("v", nb.boolean)
+])
+class StickyStrike:
+    def __init__(self, v: nb.boolean = False):
+        self.v = v  
+
+
+@nb.experimental.jitclass([
     ("sigma", nb.float64)
 ])
 class ImpliedVol:
@@ -213,6 +233,9 @@ class ForwardCurve:
     def __init__(self, spot: Spot, forward_yield_curve: ForwardYieldCurve):
         self.S = spot.S
         self._curve = forward_yield_curve
+
+    def spot(self) -> Spot:
+        return Spot(self.S)
   
     def forward(self, time_to_maturity: TimeToMaturity) -> Forward:
         return Forward(
@@ -429,4 +452,25 @@ class Volga:
 class Volgas:
     def __init__(self, volgas: nb.float64[:]):
         self.data = volgas
+
+@nb.experimental.jitclass([
+    ("S", nb.float64),
+    ("Ts", nb.float64[:]),
+    ("Ks", nb.float64[:])
+])
+class StrikesMaturitiesGrid:
+    def __init__(
+        self,
+        spot: Spot,
+        times_to_maturity: TimesToMaturity,
+        strikes: Strikes):
+
+        assert times_to_maturity.data.shape == strikes.data.shape
+        self.S = spot.S
+        self.Ts = times_to_maturity.data
+        self.Ks = strikes.data
+
+    def spot(self) -> Spot:
+        return Spot(self.S)
+
    

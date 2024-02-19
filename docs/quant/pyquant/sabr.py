@@ -69,26 +69,7 @@ class SABRParams:
 
     def scale_v(self, s: nb.float64) -> nb.float64:
         return SABRParams(Volatility(self.alpha), Correlation(self.rho), VolOfVol(s*self.v), Backbone(self.beta))
-        
-    
-@nb.experimental.jitclass([
-    ("w", nb.float64[:])
-])
-class CalibrationWeights:
-    def __init__(self, w: nb.float64):
-        if not np.all(w>=0):
-            raise ValueError('Weights must be non-negative')
-        if not w.sum() > 0:
-            raise ValueError('At least one weight must be non-trivial')
-        self.w = w
-
-
-@nb.experimental.jitclass([
-    ("v", nb.boolean)
-])
-class StickyStrike:
-    def __init__(self, v: nb.boolean = False):
-        self.v = v        
+            
         
 @nb.experimental.jitclass([
     ("beta", nb.float64),

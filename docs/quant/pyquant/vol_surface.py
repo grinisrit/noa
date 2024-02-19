@@ -428,12 +428,12 @@ class VolSurfaceChainSpace:
     def __init__(
         self,
         forward_curve: ForwardCurve, 
-        tenors: TimesToMaturity,
+        times_to_maturity: TimesToMaturity,
         strikes: Strikes,
         option_types: OptionTypes,
         premiums: Premiums
     ):
-        if not tenors.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
+        if not times_to_maturity.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
             raise ValueError('Inconsistent data shape between times to maturity, strikes, premiums and option types')
         if not np.all(premiums.data > 0):
             raise ValueError('Invalid premiums data')
@@ -443,7 +443,7 @@ class VolSurfaceChainSpace:
         self.S = forward_curve.S
         self.FWD = forward_curve
 
-        self._process(tenors.data.flatten(), strikes.data.flatten(), option_types.data.flatten(), premiums.data.flatten())
+        self._process(times_to_maturity.data.flatten(), strikes.data.flatten(), option_types.data.flatten(), premiums.data.flatten())
 
     def _process(self, Ts: nb.float64[:], Ks: nb.float64[:], Cs: nb.float64[:], PVs: nb.float64[:]):
         lTs = []
@@ -514,6 +514,14 @@ class VolSurfaceChainSpace:
     
     def forward_curve(self) -> ForwardCurve:
         return self.FWD
+    
+    def strikes_maturities_grid(self) -> Tuple[StrikesMaturitiesGrid, OptionTypes]:
+        forwards = self.FWD.forward_rates(TimesToMaturity(self.Ts))
+        return StrikesMaturitiesGrid(
+            self.FWD.spot(),
+            TimesToMaturity(self.Ts),
+            Strikes(self.Ks)
+        ), OptionTypes(forwards.data <= self.Ks)
         
 
  
