@@ -276,15 +276,6 @@ class Strike:
 class Strikes:
     def __init__(self, strikes:  nb.float64[:]):
         self.data = strikes
-
-
-@nb.experimental.jitclass([
-    ("Ks",  nb.float64[:,:]),
-    ("Ts",  nb.float64[:,:])  
-])
-class VolSurfaceMesh:
-    def __init__(self, strikes: Strikes, times_to_maturity: TimesToMaturity):
-        self.Ks, self.Ts = np.meshgrid(strikes.data, times_to_maturity.data)
             
 
 @nb.experimental.jitclass([
