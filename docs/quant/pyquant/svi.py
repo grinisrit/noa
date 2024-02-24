@@ -385,32 +385,26 @@ class SVICalc:
             )
         )
 
-    def premium(
-        self,
-        forward: Forward,
-        strike: Strike,
-        option_type: OptionType,
-        params: SVIRawParams,
-    ) -> Premium:
-        sigma = self._vol_svi(
-            forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array()
-        )[0]
-        return self.bs_calc.premium(forward, strike, option_type, ImpliedVol(sigma))
-
-    def premiums(
-        self, forward: Forward, strikes: Strikes, params: SVIRawParams
-    ) -> Premiums:
+    def premium(self, forward: Forward, vanilla: Vanilla, params: SVIRawParams) -> Premium:
+        assert forward.T == vanilla.T
+        sigma =\
+            self._vol_svi(forward.forward_rate().fv, forward.T, np.array([vanilla.K]), params.array())[0]
+        return Premium(self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
+        )
+   
+    def premiums(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams) -> Premiums:
+        assert forward.T == vanillas.T
         f = forward.forward_rate().fv
-        sigmas = self._vol_svi(f, forward.T, strikes.data, params.array())
-        Ks = strikes.data
+        Ks = vanillas.Ks
+        sigmas =\
+            self._vol_svi(f, forward.T, Ks,  params.array())
         res = np.zeros_like(sigmas)
         n = len(sigmas)
         for i in range(n):
             K = Ks[i]
-            res[i] = self.bs_calc.premium(
-                forward, Strike(K), OptionType(K >= f), ImpliedVol(sigmas[i])
-            ).pv
-        return Premiums(res)
+            is_call = vanillas.is_call[i]
+            res[i] = self.bs_calc._premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i]))
+        return Premiums(vanillas.Ns * res)
 
     def vanilla_premium(
         self,
