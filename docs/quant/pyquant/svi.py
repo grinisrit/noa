@@ -201,15 +201,6 @@ class KGreeks:
         self.data = k_greeks
 
 
-@nb.experimental.jitclass([("w", nb.float64[:])])
-class CalibrationWeights:
-    def __init__(self, w: nb.float64):
-        if not np.all(w >= 0):
-            raise ValueError("Weights must be non-negative")
-        if not w.sum() > 0:
-            raise ValueError("At least one weight must be non-trivial")
-        self.w = w
-
 @nb.experimental.jitclass([
     ("raw_cached_params", nb.float64[:]),
     ("jump_wing_cached_params", nb.float64[:]),
