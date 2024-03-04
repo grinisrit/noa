@@ -61,6 +61,21 @@ class SVIRawParams:
 
     def array(self) -> nb.float64[:]:
         return np.array([self.a, self.b, self.rho, self.m, self.sigma])
+    
+    def scale_a(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(s*self.a), B(self.b), Rho(self.rho), M(self.m), Sigma(self.sigma))
+
+    def scale_b(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(s*self.b), Rho(self.rho), M(self.m), Sigma(self.sigma))
+
+    def scale_rho(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(self.b), Rho(s*self.rho), M(self.m), Sigma(self.sigma))
+    
+    def scale_m(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(self.b), Rho(self.rho), M(s*self.m), Sigma(self.sigma))
+    
+    def scale_sigma(self, s: nb.float64) -> nb.float64:
+        return SVIRawParams(A(self.a), B(self.b), Rho(self.rho), M(self.m), Sigma(s*self.sigma))
 
 
 @nb.experimental.jitclass([("v", nb.float64)])
@@ -195,14 +210,23 @@ class CalibrationWeights:
             raise ValueError("At least one weight must be non-trivial")
         self.w = w
 
-
+@nb.experimental.jitclass([
+    ("raw_cached_params", nb.float64[:]),
+    ("jump_wing_cached_params", nb.float64[:]),
+    ("num_iter", nb.int64),
+    ("delta_num_iter", nb.int64),
+    ("tol", nb.float64),
+    ("strike_lower", nb.float64),
+    ("strike_upper", nb.float64),
+    ("delta_tol", nb.float64),
+    ("delta_grad_eps", nb.float64)
+])  
 class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
         self.raw_cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
         self.jump_wing_cached_params = self.raw_cached_params
-        self.calibration_error = 0.0
         self.num_iter = 50
         self.tol = 1e-8
         self.strike_lower = 0.1
@@ -220,10 +244,13 @@ class SVICalc:
 
     def calibrate(
         self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights
-    ) -> SVIRawParams:
+    ) -> Tuple[SVIRawParams, CalibrationError]:
         strikes = chain.Ks
         w = calibration_weights.w
 
+        if not strikes.shape == w.shape:
+            raise ValueError('Inconsistent data between strikes and calibration weights')
+        
         if not strikes.shape == w.shape:
             raise ValueError(
                 "Inconsistent data between strikes and calibration weights"
@@ -301,23 +328,23 @@ class SVICalc:
 
             return result_x, result_error
 
-        self.raw_cached_params, self.calibration_error = levenberg_marquardt(
+        calc_params, calibration_error = levenberg_marquardt(
             get_residuals, clip_params, self.raw_cached_params
         )
 
         raw_params = SVIRawParams(
-            A(self.raw_cached_params[0]),
-            B(self.raw_cached_params[1]),
-            Rho(self.raw_cached_params[2]),
-            M(self.raw_cached_params[3]),
-            Sigma(self.raw_cached_params[4]),
+            A(calc_params[0]),
+            B(calc_params[1]),
+            Rho(calc_params[2]),
+            M(calc_params[3]),
+            Sigma(calc_params[4]),
         )
 
-        self.jump_wing_cached_params = self._get_jump_wing_params(
-            raw_params, time_to_maturity
-        ).array()
+        # self.jump_wing_cached_params = self._get_jump_wing_params(
+        #     calc_params, time_to_maturity
+        # ).array()
 
-        return raw_params
+        return raw_params, CalibrationError(calibration_error)
 
     def _get_jump_wing_params(
         self, params: SVIRawParams, T: nb.float64
@@ -358,32 +385,26 @@ class SVICalc:
             )
         )
 
-    def premium(
-        self,
-        forward: Forward,
-        strike: Strike,
-        option_type: OptionType,
-        params: SVIRawParams,
-    ) -> Premium:
-        sigma = self._vol_svi(
-            forward.forward_rate().fv, forward.T, np.array([strike.K]), params.array()
-        )[0]
-        return self.bs_calc.premium(forward, strike, option_type, ImpliedVol(sigma))
-
-    def premiums(
-        self, forward: Forward, strikes: Strikes, params: SVIRawParams
-    ) -> Premiums:
+    def premium(self, forward: Forward, vanilla: Vanilla, params: SVIRawParams) -> Premium:
+        assert forward.T == vanilla.T
+        sigma =\
+            self._vol_svi(forward.forward_rate().fv, forward.T, np.array([vanilla.K]), params.array())[0]
+        return Premium(self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
+        )
+   
+    def premiums(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams) -> Premiums:
+        assert forward.T == vanillas.T
         f = forward.forward_rate().fv
-        sigmas = self._vol_svi(f, forward.T, strikes.data, params.array())
-        Ks = strikes.data
+        Ks = vanillas.Ks
+        sigmas =\
+            self._vol_svi(f, forward.T, Ks,  params.array())
         res = np.zeros_like(sigmas)
         n = len(sigmas)
         for i in range(n):
             K = Ks[i]
-            res[i] = self.bs_calc.premium(
-                forward, Strike(K), OptionType(K >= f), ImpliedVol(sigmas[i])
-            ).pv
-        return Premiums(res)
+            is_call = vanillas.is_call[i]
+            res[i] = self.bs_calc._premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i]))
+        return Premiums(vanillas.Ns * res)
 
     def vanilla_premium(
         self,
@@ -498,7 +519,7 @@ class SVICalc:
         ddf = b * (-rho / F - (k - m) / (F * sqrt))
         return ddf / denominator
 
-    def _dsigma_dk(
+    def _dsigma_dK(
         self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
     ) -> nb.float64:
         # by strike to compute BBs, RRs
@@ -509,7 +530,7 @@ class SVICalc:
         k = np.log(K / F)
         sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
         ddk = b * (rho / K + (k - m) / (K * sqrt))
-        return ddk / denominator
+        return (ddk / denominator)[0]
 
     def _d2_sigma_df2(
         self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
@@ -598,7 +619,7 @@ class SVICalc:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_dk = self._dsigma_dk(F, forward.T, strike.K, params)
+        dsigma_dk = self._dsigma_dK(F, forward.T, strike.K, params)
         return KGreek(vega_bsm * dsigma_dk)
 
     def k_greeks(
@@ -715,4 +736,99 @@ class SVICalc:
             sigma_greeks[i] = self.sigma_greek(forward, Strike(Ks[i]), params).pv
         return SigmaGreeks(sigma_greeks)
 
-    # ================ Greeks by Jump-Wing ================
+    # ================ Blip Greeks ================
+
+    def strike_from_delta(
+        self, forward: Forward, delta: Delta, params: SVIRawParams
+    ) -> Strike:
+        F = forward.forward_rate().fv
+        K_l = self.strike_lower * F
+        K_r = self.strike_upper * F
+        T = forward.T
+        option_type = OptionType(delta.pv >= 0.0)
+
+        def g(K):
+            iv = self.implied_vol(forward, Strike(K), params)
+            return self.bs_calc._delta(forward, Strike(K), option_type, iv) - delta.pv
+
+        def g_prime(K):
+            iv = self.implied_vol(forward, Strike(K), params)
+            dsigma_dk = self._dsigma_dK(F, T, K, params)
+            d1 = self.bs_calc._d1(forward, Strike(K), iv)
+            sigma = iv.sigma
+            return (
+                np.exp(-(d1**2) / 2)
+                / np.sqrt(T)
+                * (
+                    -1 / (K * sigma)
+                    - dsigma_dk * np.log(F / K) / sigma**2
+                    - forward.r * T * dsigma_dk / sigma**2
+                    + T * dsigma_dk
+                )
+            )
+
+        if g(K_l) * g(K_r) > 0.0:
+            raise ValueError("No solution within strikes interval")
+
+        K = (K_l + K_r) / 2
+        epsilon = g(K)
+        grad = g_prime(K)
+        ii = 0
+        while abs(epsilon) > self.delta_tol and ii < self.delta_num_iter:
+            ii = ii + 1
+            if abs(grad) > self.delta_grad_eps:
+                K -= epsilon / grad
+                if K > K_r or K < K_l:
+                    K = (K_l + K_r) / 2
+                    if g(K_l) * g(K) > 0:
+                        K_l = K
+                    else:
+                        K_r = K
+                    K = (K_l + K_r) / 2
+            else:
+                if g(K_l) * epsilon > 0:
+                    K_l = K
+                else:
+                    K_r = K
+                K = (K_l + K_r) / 2
+
+            epsilon = g(K)
+            grad = g_prime(K)
+
+        return Strike(K)
+
+    def delta_space(self, forward: Forward, params: SVIRawParams) -> VolSmileDeltaSpace:
+        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
+
+        call25_K = self.strike_from_delta(forward, Delta(0.25), params)
+        call25 = self.implied_vol(forward, call25_K, params).sigma
+
+        put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
+        put25 = self.implied_vol(forward, put25_K, params).sigma
+
+        call10_K = self.strike_from_delta(forward, Delta(0.1), params)
+        call10 = self.implied_vol(forward, call10_K, params).sigma
+
+        put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
+        put10 = self.implied_vol(forward, put10_K, params).sigma
+
+        return VolSmileDeltaSpace(
+            forward,
+            Straddle(ImpliedVol(atm), TimeToMaturity(forward.T)),
+            RiskReversal(
+                Delta(0.25), VolatilityQuote(call25 - put25), TimeToMaturity(forward.T)
+            ),
+            Butterfly(
+                Delta(0.25),
+                VolatilityQuote(0.5 * (call25 + put25) - atm),
+                TimeToMaturity(forward.T),
+            ),
+            RiskReversal(
+                Delta(0.1), VolatilityQuote(call10 - put10), TimeToMaturity(forward.T)
+            ),
+            Butterfly(
+                Delta(0.1),
+                VolatilityQuote(0.5 * (call10 + put10) - atm),
+                TimeToMaturity(forward.T),
+            ),
+        )
