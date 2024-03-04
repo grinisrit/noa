@@ -61,13 +61,13 @@ class SABRParams:
     def backbone(self) -> Backbone:
         return Backbone(self.beta)
 
-    def scale_alpha(self, s: nb.float64) -> SABRParams:
+    def scale_alpha(self, s: nb.float64) -> 'SABRParams':
         return SABRParams(Volatility(s*self.alpha), Correlation(self.rho), VolOfVol(self.v), Backbone(self.beta))
 
-    def scale_rho(self, s: nb.float64) -> SABRParams:
+    def scale_rho(self, s: nb.float64) -> 'SABRParams':
         return SABRParams(Volatility(self.alpha), Correlation(s*self.rho), VolOfVol(self.v), Backbone(self.beta))
 
-    def scale_v(self, s: nb.float64) -> SABRParams:
+    def scale_v(self, s: nb.float64) -> 'SABRParams':
         return SABRParams(Volatility(self.alpha), Correlation(self.rho), VolOfVol(s*self.v), Backbone(self.beta))
             
         
