@@ -832,32 +832,3 @@ class SVICalc:
                 TimeToMaturity(forward.T),
             ),
         )
-
-    # def blip_a_greek(
-    #     self,
-    #     forward: Forward,
-    #     strike: Strike,
-    #     params: SVIRawParams,
-    #     calibration_weights: CalibrationWeights,
-    # ) -> AGreek:
-    #     option_type = OptionType(forward.forward_rate().fv >= strike.K)
-    #     premium = self.premium(forward, strike, option_type, params).pv
-    #     delta_space = self.delta_space(forward, params)
-
-        # blipped_chain = delta_space.blip_ATM().to_chain_space()
-        # blipped_params = self.calibrate(blipped_chain, calibration_weights)
-        # blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
-
-        # return AGreek((blipped_premium - premium) / delta_space.atm_blip)
-
-        # blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        # blipped_params = self.calibrate(blipped_chain, calibration_weights)
-        # blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
-
-        # return AGreek((blipped_premium - premium) / delta_space.rr25_blip)
-
-        # blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        # blipped_params = self.calibrate(blipped_chain, calibration_weights)
-        # blipped_premium = self.premium(forward, strike, option_type, blipped_params).pv
-
-        # return AGreek((blipped_premium - premium) / delta_space.bf25_blip) 
