@@ -189,18 +189,6 @@ class SigmaGreeks:
         self.data = sigma_greeks
 
 
-@nb.experimental.jitclass([("pv", nb.float64)])
-class KGreek:
-    def __init__(self, k_greek: nb.float64):
-        self.pv = k_greek
-
-
-@nb.experimental.jitclass([("data", nb.float64[:])])
-class KGreeks:
-    def __init__(self, k_greeks: nb.float64[:]):
-        self.data = k_greeks
-
-
 @nb.experimental.jitclass([
     ("raw_cached_params", nb.float64[:]),
     ("jump_wing_cached_params", nb.float64[:]),
@@ -218,7 +206,7 @@ class SVICalc:
     def __init__(self):
         self.raw_cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
         self.jump_wing_cached_params = self.raw_cached_params
-        self.num_iter = 50
+        self.num_iter = 500
         self.tol = 1e-8
         self.strike_lower = 0.1
         self.strike_upper = 10.0
@@ -380,8 +368,7 @@ class SVICalc:
         assert forward.T == vanilla.T
         sigma =\
             self._vol_svi(forward.forward_rate().fv, forward.T, np.array([vanilla.K]), params.array())[0]
-        return Premium(self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
-        )
+        return self.bs_calc.premium(forward, vanilla, ImpliedVol(sigma))
    
     def premiums(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams) -> Premiums:
         assert forward.T == vanillas.T
@@ -493,7 +480,7 @@ class SVICalc:
         )
 
     def smile_to_delta_space(self, chain: VolSmileChainSpace) -> VolSmileDeltaSpace:
-        params,_ = self.calibrate(chain, CalibrationWeights(np.ones_like(chain.Ks)))
+        params, _= self.calibrate(chain, CalibrationWeights(np.ones_like(chain.Ks)))
         return self.delta_space(chain.forward(), params)
 
     def surface_to_delta_space(self, surface_chain: VolSurfaceChainSpace) -> VolSurfaceDeltaSpace:
@@ -516,6 +503,8 @@ class SVICalc:
             rr10[i] = smile_delta.RR10
             bf10[i] = smile_delta.BF10
 
+        print(atm)
+
         return VolSurfaceDeltaSpace(
             surface_chain.forward_curve(),
             Straddles(ImpliedVols(atm), times_to_maturities),
@@ -531,10 +520,10 @@ class SVICalc:
         n = len(Ts)
         m = len(Ks)
         ivs = np.zeros(n*m)
-        
-        for i in nb.prange(n):
+
+        for i in range(n):
             smile = surface.get_vol_smile(TimeToMaturity(Ts[i]))
-            smile_params,_ = self.calibrate(smile.to_chain_space(), CalibrationWeights(np.ones(5)))
+            smile_params, err = self.calibrate(smile.to_chain_space(), CalibrationWeights(np.ones(5)))
             ivs[i*m: (i+1)*m] = self.implied_vols(smile.forward(), strikes, smile_params).data
 
         return ImpliedVols(ivs)
@@ -550,8 +539,8 @@ class SVICalc:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         sigma = self.implied_vol(forward, strike, params)
-        delta_bsm = self.bs_calc.delta(forward, strike, option_type, sigma).pv
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        delta_bsm = self.bs_calc._delta(forward, strike, option_type, sigma)
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
         return delta_bsm + (1 / D) * vega_bsm * dsigma_df
 
@@ -584,8 +573,8 @@ class SVICalc:
         F = forward.forward_rate().fv
         D = forward.numeraire().pv
         sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        vanna_bsm = self.bs_calc.vanna(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
+        vanna_bsm = self.bs_calc._vanna(forward, strike, sigma)
         dsigma_df = self._dsigma_df(F, forward.T, strike.K, params)
         d2_sigma_df2 = self._d2_sigma_df2(F, forward.T, strike.K, params)
         return (2 / D) * vanna_bsm * dsigma_df + vega_bsm * d2_sigma_df2 / (D**2)
@@ -606,33 +595,10 @@ class SVICalc:
 
         return Gammas(vanillas.Ns * gammas)
 
-    def _k_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> nb.float64:
-        F = forward.forward_rate().fv
-        sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
-        dsigma_dk = self._dsigma_dK(F, forward.T, strike.K, params)
-        return vega_bsm * dsigma_dk
-    
-    def k_greek(self, forward: Forward, vanilla: Vanilla, params: SVIRawParams) -> KGreek:
-        assert forward.T == vanilla.T
-        return KGreek(vanilla.N * self._k_greek(forward, vanilla.strike(), params))
-
-    def k_greeks(
-        self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams
-    ) -> KGreeks:
-        assert forward.T == vanillas.T
-        Ks = vanillas.Ks
-        n = len(Ks)
-        k_greeks = np.zeros_like(Ks)
-        for i in range(n):
-            k_greeks[i] = self._k_greek(forward, Strike(Ks[i]), params)
-
-        return KGreeks(vanillas.Ns * k_greeks)
-
     def _a_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> nb.float64:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_da = self._jacobian_vol_svi_raw(
             F, forward.T, np.array([strike.K]), params.array()
         )[0][0]
@@ -657,7 +623,7 @@ class SVICalc:
     def _b_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> nb.float64:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_db = self._jacobian_vol_svi_raw(
             F, forward.T, np.array([strike.K]), params.array()
         )[1][0]
@@ -684,7 +650,7 @@ class SVICalc:
     ) -> nb.float64:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_drho = self._jacobian_vol_svi_raw(
             F, forward.T, np.array([strike.K]), params.array()
         )[2][0]
@@ -710,7 +676,7 @@ class SVICalc:
     def _m_greek(self, forward: Forward, strike: Strike, params: SVIRawParams) -> nb.float64:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_dm = self._jacobian_vol_svi_raw(
             F, forward.T, np.array([strike.K]), params.array()
         )[3][0]
@@ -739,7 +705,7 @@ class SVICalc:
     ) -> nb.float64:
         F = forward.forward_rate().fv
         sigma = self.implied_vol(forward, strike, params)
-        vega_bsm = self.bs_calc.vega(forward, strike, sigma).pv
+        vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         dsigma_dsigma = self._jacobian_vol_svi_raw(
             F, forward.T, np.array([strike.K]), params.array()
         )[4][0]
@@ -764,7 +730,70 @@ class SVICalc:
 
     # ================ Blip Greeks ================
 
+    def blip_vega(self, forward: Forward, vanilla: Vanilla, params: SVIRawParams) -> Vega:
+        premium = self.premium(forward, vanilla, params).pv
+        delta_space = self.delta_space(forward, params)
 
+        blipped_chain = delta_space.blip_ATM().to_chain_space()
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_premium = self.premium(forward, vanilla, blipped_params).pv
+
+        return Vega((blipped_premium - premium) / delta_space.atm_blip)
+   
+    
+    def blip_vegas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams) -> Vegas:
+        premiums = self.premiums(forward, vanillas, params).data
+        delta_space = self.delta_space(forward, params)
+  
+        blipped_chain = delta_space.blip_ATM().to_chain_space()
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
+    
+        return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
+    
+    
+    def blip_rega(self, forward: Forward, vanilla: Vanilla, params: SVIRawParams) -> Rega:
+        premium = self.premium(forward, vanilla, params).pv
+        delta_space = self.delta_space(forward, params)
+
+        blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_premium = self.premium(forward, vanilla, blipped_params).pv
+
+        return Rega((blipped_premium - premium) / delta_space.rr25_blip)
+     
+    
+    def blip_regas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams) -> Regas:
+        premiums = self.premiums(forward, vanillas, params).data
+        delta_space = self.delta_space(forward, params)
+
+        blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
+
+        return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
+
+    
+    def blip_sega(self, forward: Forward, vanilla: Vanilla, params: SVIRawParams) -> Sega:
+        premium = self.premium(forward, vanilla, params).pv
+        delta_space = self.delta_space(forward, params)
+
+        blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_premium = self.premium(forward, vanilla, blipped_params).pv
+
+        return Sega((blipped_premium - premium) / delta_space.bf25_blip)     
+    
+
+    def blip_segas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams) -> Segas:
+        premiums = self.premiums(forward,  vanillas, params).data
+        delta_space = self.delta_space(forward, params)
+        blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
+
+        return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
+    
 
     def _total_implied_var_svi(
         self,
