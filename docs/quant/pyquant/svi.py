@@ -397,149 +397,147 @@ class SVICalc:
             res[i] = self.bs_calc._premium(forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i]))
         return Premiums(vanillas.Ns * res)
 
-    def vanilla_premium(
-        self,
-        spot: Spot,
-        forward_yield: ForwardYield,
-        vanilla: Vanilla,
-        params: SVIRawParams,
-    ) -> Premium:
-        forward = Forward(spot, forward_yield, vanilla.time_to_maturity())
-        return Premium(
-            vanilla.N
-            * self.premium(forward, vanilla.strike(), vanilla.option_type(), params).pv
-        )
+    def strike_from_delta(
+        self, forward: Forward, delta: Delta, params: SVIRawParams
+    ) -> Strike:
+        F = forward.forward_rate().fv
+        K_l = self.strike_lower * F
+        K_r = self.strike_upper * F
+        T = forward.T
+        option_type = OptionType(delta.pv >= 0.0)
 
-    def vanillas_premiums(
-        self,
-        spot: Spot,
-        forward_yield: ForwardYield,
-        vanillas: SingleMaturityVanillas,
-        params: SVIRawParams,
-    ) -> Premiums:
-        forward = Forward(spot, forward_yield, vanillas.time_to_maturity())
-        f = forward.forward_rate().fv
-        Ks = vanillas.Ks
-        sigmas = self._vol_svi(f, forward.T, Ks, params.array(), params.beta)
-        Ns = vanillas.Ns
-        res = np.zeros_like(sigmas)
-        n = len(sigmas)
-        for i in range(n):
-            K = Ks[i]
-            N = Ns[i]
-            is_call = vanillas.is_call[i]
-            res[i] = (
-                N
-                * self.bs_calc.premium(
-                    forward, Strike(K), OptionType(is_call), ImpliedVol(sigmas[i])
-                ).pv
+        def g(K):
+            iv = self.implied_vol(forward, Strike(K), params)
+            return self.bs_calc._delta(forward, Strike(K), option_type, iv) - delta.pv
+
+        def g_prime(K):
+            iv = self.implied_vol(forward, Strike(K), params)
+            dsigma_dk = self._dsigma_dK(F, T, K, params)
+            d1 = self.bs_calc._d1(forward, Strike(K), iv)
+            sigma = iv.sigma
+            return (
+                np.exp(-(d1**2) / 2)
+                / np.sqrt(T)
+                * (
+                    -1 / (K * sigma)
+                    - dsigma_dk * np.log(F / K) / sigma**2
+                    - forward.r * T * dsigma_dk / sigma**2
+                    + T * dsigma_dk
+                )
             )
-        return Premiums(res)
 
-    def _total_implied_var_svi(
-        self,
-        F: nb.float64,
-        Ks: nb.float64[:],
-        params: nb.float64[:],
-    ) -> nb.float64[:]:
-        a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
-        k = np.log(Ks / F)
-        w = a + b * (rho * (k - m) + np.sqrt((k - m) ** 2 + sigma**2))
-        return w
+        if g(K_l) * g(K_r) > 0.0:
+            raise ValueError("No solution within strikes interval")
 
-    def _vol_svi(
-        self,
-        F: nb.float64,
-        T: nb.float64,
-        Ks: nb.float64[:],
-        params: nb.float64[:],
-    ) -> nb.float64[:]:
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
-        iv = np.sqrt(w / T)
-        return iv
+        K = (K_l + K_r) / 2
+        epsilon = g(K)
+        grad = g_prime(K)
+        ii = 0
+        while abs(epsilon) > self.delta_tol and ii < self.delta_num_iter:
+            ii = ii + 1
+            if abs(grad) > self.delta_grad_eps:
+                K -= epsilon / grad
+                if K > K_r or K < K_l:
+                    K = (K_l + K_r) / 2
+                    if g(K_l) * g(K) > 0:
+                        K_l = K
+                    else:
+                        K_r = K
+                    K = (K_l + K_r) / 2
+            else:
+                if g(K_l) * epsilon > 0:
+                    K_l = K
+                else:
+                    K_r = K
+                K = (K_l + K_r) / 2
 
-    def _jacobian_total_implied_var_svi_raw(
-        self,
-        F: nb.float64,
-        Ks: nb.float64[:],
-        params: nb.float64[:],
-    ) -> tuple[nb.float64[:]]:
-        a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
-        n = len(Ks)
-        k = np.log(Ks / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        dda = np.ones(n, dtype=np.float64)
-        ddb = rho * (k - m) + sqrt
-        ddrho = b * (k - m)
-        ddm = b * (-rho + (m - k) / sqrt)
-        ddsigma = b * sigma / sqrt
-        return dda, ddb, ddrho, ddm, ddsigma
+            epsilon = g(K)
+            grad = g_prime(K)
 
-    def _jacobian_vol_svi_raw(
-        self,
-        F: nb.float64,
-        T: nb.float64,
-        Ks: nb.float64[:],
-        params: nb.float64[:],
-    ) -> tuple[nb.float64[:]]:
-        # iv = sqrt(w/T)
-        # div/da = (dw/da)/(2*sqrt(T*w))
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
-        dda, ddb, ddrho, ddm, ddsigma = self._jacobian_total_implied_var_svi_raw(
-            F=F, Ks=Ks, params=params
+        return Strike(K)
+
+    def delta_space(self, forward: Forward, params: SVIRawParams) -> VolSmileDeltaSpace:
+        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
+
+        call25_K = self.strike_from_delta(forward, Delta(0.25), params)
+        call25 = self.implied_vol(forward, call25_K, params).sigma
+
+        put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
+        put25 = self.implied_vol(forward, put25_K, params).sigma
+
+        call10_K = self.strike_from_delta(forward, Delta(0.1), params)
+        call10 = self.implied_vol(forward, call10_K, params).sigma
+
+        put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
+        put10 = self.implied_vol(forward, put10_K, params).sigma
+
+        return VolSmileDeltaSpace(
+            forward,
+            Straddle(ImpliedVol(atm), TimeToMaturity(forward.T)),
+            RiskReversal(
+                Delta(0.25), VolatilityQuote(call25 - put25), TimeToMaturity(forward.T)
+            ),
+            Butterfly(
+                Delta(0.25),
+                VolatilityQuote(0.5 * (call25 + put25) - atm),
+                TimeToMaturity(forward.T),
+            ),
+            RiskReversal(
+                Delta(0.1), VolatilityQuote(call10 - put10), TimeToMaturity(forward.T)
+            ),
+            Butterfly(
+                Delta(0.1),
+                VolatilityQuote(0.5 * (call10 + put10) - atm),
+                TimeToMaturity(forward.T),
+            ),
         )
-        denominator = 2 * np.sqrt(T * w)
-        return (
-            dda / denominator,
-            ddb / denominator,
-            ddrho / denominator,
-            ddm / denominator,
-            ddsigma / denominator,
+
+    def smile_to_delta_space(self, chain: VolSmileChainSpace) -> VolSmileDeltaSpace:
+        params,_ = self.calibrate(chain, CalibrationWeights(np.ones_like(chain.Ks)))
+        return self.delta_space(chain.forward(), params)
+
+    def surface_to_delta_space(self, surface_chain: VolSurfaceChainSpace) -> VolSurfaceDeltaSpace:
+        times_to_maturities = surface_chain.times_to_maturities()
+        Ts = times_to_maturities.data
+
+        atm = np.zeros_like(Ts)
+        rr25 = np.zeros_like(Ts)
+        bf25 = np.zeros_like(Ts)
+        rr10 = np.zeros_like(Ts)
+        bf10 = np.zeros_like(Ts)
+
+        for i in nb.prange(len(Ts)):
+            T = Ts[i]
+            smile_chain = surface_chain.get_vol_smile(TimeToMaturity(T))
+            smile_delta = self.smile_to_delta_space(smile_chain)
+            atm[i] = smile_delta.ATM
+            rr25[i] = smile_delta.RR25
+            bf25[i] = smile_delta.BF25
+            rr10[i] = smile_delta.RR10
+            bf10[i] = smile_delta.BF10
+
+        return VolSurfaceDeltaSpace(
+            surface_chain.forward_curve(),
+            Straddles(ImpliedVols(atm), times_to_maturities),
+            RiskReversals(Delta(0.25), VolatilityQuotes(rr25), times_to_maturities),
+            Butterflies(Delta(0.25), VolatilityQuotes(bf25), times_to_maturities),
+            RiskReversals(Delta(0.1), VolatilityQuotes(rr10), times_to_maturities),
+            Butterflies(Delta(0.1), VolatilityQuotes(bf10), times_to_maturities)
         )
 
-    # ================ Derivatives of implied vol by raw params a, b, rho, m, sigma ================
-    def _dsigma_df(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        ddf = b * (-rho / F - (k - m) / (F * sqrt))
-        return ddf / denominator
+    def surface_grid_ivs(self, surface: VolSurfaceDeltaSpace, strikes: Strikes, times_to_maturity: TimesToMaturity) -> ImpliedVols:
+        Ks = strikes.data
+        Ts = times_to_maturity.data
+        n = len(Ts)
+        m = len(Ks)
+        ivs = np.zeros(n*m)
+        
+        for i in nb.prange(n):
+            smile = surface.get_vol_smile(TimeToMaturity(Ts[i]))
+            smile_params,_ = self.calibrate(smile.to_chain_space(), CalibrationWeights(np.ones(5)))
+            ivs[i*m: (i+1)*m] = self.implied_vols(smile.forward(), strikes, smile_params).data
 
-    def _dsigma_dK(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        # by strike to compute BBs, RRs
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        ddk = b * (rho / K + (k - m) / (K * sqrt))
-        return (ddk / denominator)[0]
-
-    def _d2_sigma_df2(
-        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
-    ) -> nb.float64:
-        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
-        Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
-        denominator = 2 * np.sqrt(T * w)
-        k = np.log(K / F)
-        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
-        dddff = (
-            rho / F**2
-            - (k - m) ** 2 / (F**2 * sqrt**3)
-            + (k - m) / (F**2 * sqrt)
-            + 1 / (F**2 * sqrt)
-        )
-        dddff = dddff * b
-        return dddff / denominator
+        return ImpliedVols(ivs)
 
     # ================ Greeks by ray and f, f^2(delta, gamma) ================
     def delta(
@@ -729,97 +727,109 @@ class SVICalc:
 
     # ================ Blip Greeks ================
 
-    def strike_from_delta(
-        self, forward: Forward, delta: Delta, params: SVIRawParams
-    ) -> Strike:
-        F = forward.forward_rate().fv
-        K_l = self.strike_lower * F
-        K_r = self.strike_upper * F
-        T = forward.T
-        option_type = OptionType(delta.pv >= 0.0)
 
-        def g(K):
-            iv = self.implied_vol(forward, Strike(K), params)
-            return self.bs_calc._delta(forward, Strike(K), option_type, iv) - delta.pv
 
-        def g_prime(K):
-            iv = self.implied_vol(forward, Strike(K), params)
-            dsigma_dk = self._dsigma_dK(F, T, K, params)
-            d1 = self.bs_calc._d1(forward, Strike(K), iv)
-            sigma = iv.sigma
-            return (
-                np.exp(-(d1**2) / 2)
-                / np.sqrt(T)
-                * (
-                    -1 / (K * sigma)
-                    - dsigma_dk * np.log(F / K) / sigma**2
-                    - forward.r * T * dsigma_dk / sigma**2
-                    + T * dsigma_dk
-                )
-            )
+    def _total_implied_var_svi(
+        self,
+        F: nb.float64,
+        Ks: nb.float64[:],
+        params: nb.float64[:],
+    ) -> nb.float64[:]:
+        a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
+        k = np.log(Ks / F)
+        w = a + b * (rho * (k - m) + np.sqrt((k - m) ** 2 + sigma**2))
+        return w
 
-        if g(K_l) * g(K_r) > 0.0:
-            raise ValueError("No solution within strikes interval")
+    def _vol_svi(
+        self,
+        F: nb.float64,
+        T: nb.float64,
+        Ks: nb.float64[:],
+        params: nb.float64[:],
+    ) -> nb.float64[:]:
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
+        iv = np.sqrt(w / T)
+        return iv
 
-        K = (K_l + K_r) / 2
-        epsilon = g(K)
-        grad = g_prime(K)
-        ii = 0
-        while abs(epsilon) > self.delta_tol and ii < self.delta_num_iter:
-            ii = ii + 1
-            if abs(grad) > self.delta_grad_eps:
-                K -= epsilon / grad
-                if K > K_r or K < K_l:
-                    K = (K_l + K_r) / 2
-                    if g(K_l) * g(K) > 0:
-                        K_l = K
-                    else:
-                        K_r = K
-                    K = (K_l + K_r) / 2
-            else:
-                if g(K_l) * epsilon > 0:
-                    K_l = K
-                else:
-                    K_r = K
-                K = (K_l + K_r) / 2
+    def _jacobian_total_implied_var_svi_raw(
+        self,
+        F: nb.float64,
+        Ks: nb.float64[:],
+        params: nb.float64[:],
+    ) -> tuple[nb.float64[:]]:
+        a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
+        n = len(Ks)
+        k = np.log(Ks / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        dda = np.ones(n, dtype=np.float64)
+        ddb = rho * (k - m) + sqrt
+        ddrho = b * (k - m)
+        ddm = b * (-rho + (m - k) / sqrt)
+        ddsigma = b * sigma / sqrt
+        return dda, ddb, ddrho, ddm, ddsigma
 
-            epsilon = g(K)
-            grad = g_prime(K)
-
-        return Strike(K)
-
-    def delta_space(self, forward: Forward, params: SVIRawParams) -> VolSmileDeltaSpace:
-        atm = self.implied_vol(forward, Strike(forward.forward_rate().fv), params).sigma
-
-        call25_K = self.strike_from_delta(forward, Delta(0.25), params)
-        call25 = self.implied_vol(forward, call25_K, params).sigma
-
-        put25_K = self.strike_from_delta(forward, Delta(-0.25), params)
-        put25 = self.implied_vol(forward, put25_K, params).sigma
-
-        call10_K = self.strike_from_delta(forward, Delta(0.1), params)
-        call10 = self.implied_vol(forward, call10_K, params).sigma
-
-        put10_K = self.strike_from_delta(forward, Delta(-0.1), params)
-        put10 = self.implied_vol(forward, put10_K, params).sigma
-
-        return VolSmileDeltaSpace(
-            forward,
-            Straddle(ImpliedVol(atm), TimeToMaturity(forward.T)),
-            RiskReversal(
-                Delta(0.25), VolatilityQuote(call25 - put25), TimeToMaturity(forward.T)
-            ),
-            Butterfly(
-                Delta(0.25),
-                VolatilityQuote(0.5 * (call25 + put25) - atm),
-                TimeToMaturity(forward.T),
-            ),
-            RiskReversal(
-                Delta(0.1), VolatilityQuote(call10 - put10), TimeToMaturity(forward.T)
-            ),
-            Butterfly(
-                Delta(0.1),
-                VolatilityQuote(0.5 * (call10 + put10) - atm),
-                TimeToMaturity(forward.T),
-            ),
+    def _jacobian_vol_svi_raw(
+        self,
+        F: nb.float64,
+        T: nb.float64,
+        Ks: nb.float64[:],
+        params: nb.float64[:],
+    ) -> tuple[nb.float64[:]]:
+        # iv = sqrt(w/T)
+        # div/da = (dw/da)/(2*sqrt(T*w))
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
+        dda, ddb, ddrho, ddm, ddsigma = self._jacobian_total_implied_var_svi_raw(
+            F=F, Ks=Ks, params=params
         )
+        denominator = 2 * np.sqrt(T * w)
+        return (
+            dda / denominator,
+            ddb / denominator,
+            ddrho / denominator,
+            ddm / denominator,
+            ddsigma / denominator,
+        )
+
+    # ================ Derivatives of implied vol by raw params a, b, rho, m, sigma ================
+    def _dsigma_df(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        ddf = b * (-rho / F - (k - m) / (F * sqrt))
+        return ddf / denominator
+
+    def _dsigma_dK(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        # by strike to compute BBs, RRs
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        ddk = b * (rho / K + (k - m) / (K * sqrt))
+        return (ddk / denominator)[0]
+
+    def _d2_sigma_df2(
+        self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
+    ) -> nb.float64:
+        a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
+        Ks = np.array([K])
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        denominator = 2 * np.sqrt(T * w)
+        k = np.log(K / F)
+        sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
+        dddff = (
+            rho / F**2
+            - (k - m) ** 2 / (F**2 * sqrt**3)
+            + (k - m) / (F**2 * sqrt)
+            + 1 / (F**2 * sqrt)
+        )
+        dddff = dddff * b
+        return dddff / denominator
