@@ -794,7 +794,7 @@ class SVICalc:
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
     
-
+    # TODO: better to have function with single strike and loop for several strikes
     def _total_implied_var_svi(
         self,
         F: nb.float64,
@@ -862,7 +862,7 @@ class SVICalc:
     ) -> nb.float64:
         a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
         Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())[0] #TODO: remove this
         denominator = 2 * np.sqrt(T * w)
         k = np.log(K / F)
         sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
@@ -875,19 +875,19 @@ class SVICalc:
         # by strike to compute BBs, RRs
         a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
         Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())[0] #TODO: remove this
         denominator = 2 * np.sqrt(T * w)
         k = np.log(K / F)
         sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
         ddk = b * (rho / K + (k - m) / (K * sqrt))
-        return (ddk / denominator)[0]
+        return (ddk / denominator)
 
     def _d2_sigma_df2(
         self, F: nb.float64, T: nb.float64, K: nb.float64, params: SVIRawParams
     ) -> nb.float64:
         a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
         Ks = np.array([K])
-        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())
+        w = self._total_implied_var_svi(F=F, Ks=Ks, params=params.array())[0] #TODO: remove this
         denominator = 2 * np.sqrt(T * w)
         k = np.log(K / F)
         sqrt = np.sqrt(sigma**2 + (k - m) ** 2)
