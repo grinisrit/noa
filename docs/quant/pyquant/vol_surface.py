@@ -437,6 +437,8 @@ class VolSurfaceChainSpace:
             raise ValueError('Inconsistent data shape between times to maturity, strikes, premiums and option types')
         if not np.all(premiums.data > 0):
             raise ValueError('Invalid premiums data')
+        if not is_sorted(times_to_maturity.data):
+            raise ValueError('Invalid TTM data')
         
         self.bs_calc = BSCalc()
         

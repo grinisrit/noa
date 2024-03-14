@@ -210,17 +210,19 @@ class ForwardYieldCurve:
     
         self._spline = CubicSpline1D(
            XAxis(np.append(np.array([0.]), times_to_maturity.data)),
-           YAxis(np.append(np.array([0.]), forward_yields.data)) 
+           YAxis(np.append(np.array([0.]), times_to_maturity.data*forward_yields.data)) 
         )
     
     def forward_yield(self, time_to_maturity: TimeToMaturity) -> ForwardYield:
-        return ForwardYield(self._spline.apply(time_to_maturity.T))
+        assert time_to_maturity.T > 0.
+        return ForwardYield(self._spline.apply(time_to_maturity.T) / time_to_maturity.T)
     
     def forward_yields(self, times_to_maturity: TimeToMaturity) -> ForwardYields:
         Ts = times_to_maturity.data
         res = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            res[i] = self._spline.apply(Ts[i])
+            assert Ts[i] > 0.
+            res[i] = self._spline.apply(Ts[i]) / Ts[i]
         return ForwardYields(res)
 
 
