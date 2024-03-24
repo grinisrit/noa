@@ -302,27 +302,27 @@ class VolSurfaceDeltaSpace:
 
         self.ATM = CubicSpline1D(
             XAxis(straddles.T),
-            YAxis(straddles.sigma)
+            YAxis(straddles.T*straddles.sigma)
         )
 
         self.RR25 = CubicSpline1D(
             XAxis(risk_reversals_25.T),
-            YAxis(risk_reversals_25.sigma)
+            YAxis(straddles.T*risk_reversals_25.sigma)
         )
 
         self.BF25 = CubicSpline1D(
             XAxis(butterflies_25.T),
-            YAxis(butterflies_25.sigma)
+            YAxis(straddles.T*butterflies_25.sigma)
         )
 
         self.RR10 = CubicSpline1D(
             XAxis(risk_reversals_10.T),
-            YAxis(risk_reversals_10.sigma)
+            YAxis(straddles.T*risk_reversals_10.sigma)
         )
 
         self.BF10 = CubicSpline1D(
             XAxis(butterflies_10.T),
-            YAxis(butterflies_10.sigma)
+            YAxis(straddles.T*butterflies_10.sigma)
         )
 
         self.max_T = np.min(np.array([ 
@@ -341,6 +341,7 @@ class VolSurfaceDeltaSpace:
             butterflies_10.T[0]
         ]))
         assert self.max_T > self.min_T
+        assert self.min_T > 0
         
     def get_vol_smile(self, time_to_maturity: TimeToMaturity) -> VolSmileDeltaSpace:
         T = time_to_maturity.T
@@ -350,27 +351,27 @@ class VolSurfaceDeltaSpace:
         return VolSmileDeltaSpace(
             self.FWD.forward(time_to_maturity),
             Straddle(
-                ImpliedVol(self.ATM.apply(T)),
+                ImpliedVol(self.ATM.apply(T) / T),
                 time_to_maturity
             ),
             RiskReversal(
                 Delta(.25),
-                VolatilityQuote(self.RR25.apply(T)),
+                VolatilityQuote(self.RR25.apply(T) / T),
                 time_to_maturity
             ),
             Butterfly(
                 Delta(.25),
-                VolatilityQuote(self.BF25.apply(T)),
+                VolatilityQuote(self.BF25.apply(T) / T),
                 time_to_maturity
             ),
             RiskReversal(
                 Delta(.1),
-                VolatilityQuote(self.RR10.apply(T)),
+                VolatilityQuote(self.RR10.apply(T) / T),
                 time_to_maturity
             ),
             Butterfly(
                 Delta(.1),
-                VolatilityQuote(self.BF10.apply(T)),
+                VolatilityQuote(self.BF10.apply(T) / T),
                 time_to_maturity
             )
         )
@@ -382,35 +383,35 @@ class VolSurfaceDeltaSpace:
         Ts = times_to_maturity.data
         atm = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            atm[i] = self.ATM.apply(Ts[i])
+            atm[i] = self.ATM.apply(Ts[i]) / Ts[i]
         return ImpliedVols(atm)
     
     def rr25_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
         Ts = times_to_maturity.data
         rr = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            rr[i] = self.RR25.apply(Ts[i])
+            rr[i] = self.RR25.apply(Ts[i]) / Ts[i]
         return VolatilityQuotes(rr)
     
     def bf25_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
         Ts = times_to_maturity.data
         bf = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            bf[i] = self.BF25.apply(Ts[i])
+            bf[i] = self.BF25.apply(Ts[i]) / Ts[i]
         return VolatilityQuotes(bf)
     
     def rr10_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
         Ts = times_to_maturity.data
         rr = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            rr[i] = self.RR10.apply(Ts[i])
+            rr[i] = self.RR10.apply(Ts[i]) / Ts[i]
         return VolatilityQuotes(rr)
 
     def bf10_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
         Ts = times_to_maturity.data
         bf = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            bf[i] = self.BF10.apply(Ts[i])
+            bf[i] = self.BF10.apply(Ts[i]) / Ts[i]
         return VolatilityQuotes(bf)
 
 
