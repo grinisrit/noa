@@ -204,7 +204,7 @@ class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.raw_cached_params = np.array([70.0, 1.0, 0.0, 1.0, 1.0])
+        self.raw_cached_params = np.array([10.0, 1.0, 0.0, 1.0, 1.0])
         self.jump_wing_cached_params = self.raw_cached_params
         self.num_iter = 500
         self.tol = 1e-8
@@ -242,8 +242,7 @@ class SVICalc:
 
         weights = w / w.sum()
         forward = chain.f
-        time_to_maturity = chain.T
-        implied_vols = chain.sigmas
+        tot_vars = chain.T * (chain.sigmas ** 2)
 
         def clip_params(params):
             eps = 1e-4
@@ -257,20 +256,18 @@ class SVICalc:
 
         def get_residuals(params):
             J = np.stack(
-                self._jacobian_vol_svi_raw(
+                self._jacobian_total_implied_var_svi_raw(
                     forward,
-                    time_to_maturity,
                     strikes,
                     params,
                 )
             )
-            iv = self._vol_svi(
+            svi_w = self._total_implied_var_svi(
                 forward,
-                time_to_maturity,
                 strikes,
                 params,
             )
-            res = iv - implied_vols
+            res = svi_w - tot_vars
             return res * weights, J @ np.diag(weights)
 
         def levenberg_marquardt(f, proj, x0):
@@ -297,14 +294,13 @@ class SVICalc:
                 F_ = res_.T @ res_
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
-                    mu /= nu1
+                    mu = max(1e-8, mu/nu1)
                     result_error = F / n_points
                 else:
                     i -= 1
-                    mu *= nu2
+                    mu = min(1e4, mu*nu2)
                     continue
                 result_x = x
-
             return result_x, result_error
 
         calc_params, calibration_error = levenberg_marquardt(
@@ -319,15 +315,12 @@ class SVICalc:
             Sigma(calc_params[4]),
         )
 
-        # self.jump_wing_cached_params = self._get_jump_wing_params(
-        #     calc_params, time_to_maturity
-        # ).array()
-
         return raw_params, CalibrationError(calibration_error)
 
-    def _get_jump_wing_params(
-        self, params: SVIRawParams, T: nb.float64
+    def get_jump_wing_params(
+        self, params: SVIRawParams, time_to_maturity: TimeToMaturity
     ) -> SVIJumpWingParams:
+        T = time_to_maturity.T
         a, b, rho, m, sigma = params.a, params.b, params.rho, params.m, params.sigma
         v = (a + b * (-rho * m + np.sqrt(m**2 + sigma**2))) / T
         w = v * T
@@ -687,7 +680,6 @@ class SVICalc:
         assert forward.T == vanilla.T
         return MGreek(vanilla.N * self._m_greek(forward, vanilla.strike(), params))   
 
-
     def m_greeks(
         self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams
     ) -> MGreeks:
@@ -716,7 +708,6 @@ class SVICalc:
         assert forward.T == vanilla.T
         return SigmaGreek(vanilla.N * self._sigma_greek(forward, vanilla.strike(), params))  
     
-
     def sigma_greeks(
         self, forward: Forward, vanillas: SingleMaturityVanillas, params: SVIRawParams
     ) -> SigmaGreeks:
@@ -803,7 +794,7 @@ class SVICalc:
     ) -> nb.float64[:]:
         a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
         k = np.log(Ks / F)
-        w = a + b * (rho * (k - m) + np.sqrt((k - m) ** 2 + sigma**2))
+        w = a + b * ( rho * (k - m) + np.sqrt((k - m)**2 + sigma**2) )
         return w
 
     def _vol_svi(
@@ -814,7 +805,7 @@ class SVICalc:
         params: nb.float64[:],
     ) -> nb.float64[:]:
         w = self._total_implied_var_svi(F=F, Ks=Ks, params=params)
-        iv = np.sqrt(w / T)
+        iv = np.sqrt(np.abs(w) / T)
         return iv
 
     def _jacobian_total_implied_var_svi_raw(
@@ -823,7 +814,7 @@ class SVICalc:
         Ks: nb.float64[:],
         params: nb.float64[:],
     ) -> tuple[nb.float64[:]]:
-        a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
+        b, rho, m, sigma = params[1], params[2], params[3], params[4]
         n = len(Ks)
         k = np.log(Ks / F)
         sqrt = np.sqrt(sigma**2 + (k - m) ** 2)

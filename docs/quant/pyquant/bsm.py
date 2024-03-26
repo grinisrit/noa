@@ -46,17 +46,22 @@ def _g_func(tau, x, k):
     g_vector = np.exp(tau * (k + 1)**2 / 4) * np.maximum(0, np.exp((k - 1)*x/2) - np.exp((k + 1)*x/2))
     return g_vector
 
+@nb.njit()
+def _get_crank_symtridiag_matrix(n_points, lambda_):
+    Bu = np.empty(n_points-1, dtype=np.float64)
+    Bu.fill(lambda_ / 2)
+    Bd = np.empty(n_points, dtype=np.float64) 
+    Bd.fill(1 - lambda_)
+    return Bu, Bd
 
 @nb.njit()
-def _get_crank_B_matrix(n_points, lambda_):
-    B = np.zeros((n_points, n_points))
-    for i in range(n_points - 1):
-        B[i][i] = 1 - lambda_
-        B[i][i + 1] = lambda_ / 2
-        B[i + 1][i] = lambda_ / 2
-    B[n_points - 1][n_points - 1] = 1 - lambda_
-    return B
-
+def _dot_symtridiag_matvec(Bu, Bd, w):
+    v = np.zeros_like(Bd)
+    v[0] = Bd[0]*w[0] + Bu[0]*w[1]
+    v[-1] = Bu[-1]*w[-2] + Bd[-1]*w[-1]
+    for i in range(1, len(w) - 1):
+        v[i] = Bu[i]*w[i-1] + Bd[i]*w[i] + Bu[i]*w[i+1]
+    return v
 
 @nb.njit()
 def _transform(w_matrix, x_array, tau_array, K, T, r, sigma):
@@ -73,7 +78,7 @@ def _transform(w_matrix, x_array, tau_array, K, T, r, sigma):
 
 
 @nb.njit()
-def price_american_put_bs(
+def price_american_put_bsm(
         K: float,
         T: float,
         r: float,
@@ -116,7 +121,8 @@ def price_american_put_bs(
     tau_array = np.linspace(0, tau_max, npoints_t)
     w_matrix = np.zeros((npoints_S, npoints_t))
     alpha, beta, gamma = _get_A_diags(npoints_S - 1, lambda_)
-    B = _get_crank_B_matrix(npoints_S, lambda_)
+    Bu, Bd = _get_crank_symtridiag_matrix(npoints_S, lambda_)
+    
 
     # setting initial and boundary conditions
     w_matrix[:, 0] = _g_func(0, x, k)
@@ -127,7 +133,7 @@ def price_american_put_bs(
         d = np.zeros_like(w)
         d[0] = lambda_ / 2 * (_g_func(tau_array[nu], x_min, k) + _g_func(tau_array[nu + 1], x_min, k))
         # explicit step
-        f = np.dot(B, w) + d
+        f = _dot_symtridiag_matvec(Bu, Bd, w) + d
         # implicit step
         w_ = _brennan_schwartz(alpha, beta, gamma, f, _g_func(tau_array[nu + 1], x, k))
         w_matrix[:, nu + 1] = w_
