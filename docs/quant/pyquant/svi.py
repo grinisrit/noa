@@ -194,6 +194,8 @@ class SigmaGreeks:
     ("jump_wing_cached_params", nb.float64[:]),
     ("num_iter", nb.int64),
     ("delta_num_iter", nb.int64),
+    ("max_mu", nb.float64),
+    ("min_mu", nb.float64),
     ("tol", nb.float64),
     ("strike_lower", nb.float64),
     ("strike_upper", nb.float64),
@@ -206,8 +208,10 @@ class SVICalc:
     def __init__(self):
         self.raw_cached_params = np.array([10.0, 1.0, 0.0, 1.0, 1.0])
         self.jump_wing_cached_params = self.raw_cached_params
-        self.num_iter = 500
-        self.tol = 1e-8
+        self.num_iter = 10000
+        self.max_mu = 1e4
+        self.min_mu = 1e-6
+        self.tol = 1e-12
         self.strike_lower = 0.1
         self.strike_upper = 10.0
         self.delta_tol = 1e-8
@@ -294,11 +298,11 @@ class SVICalc:
                 F_ = res_.T @ res_
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
-                    mu = max(1e-8, mu/nu1)
+                    mu = max(self.min_mu, mu/nu1)
                     result_error = F / n_points
                 else:
                     i -= 1
-                    mu = min(1e4, mu*nu2)
+                    mu = min(self.max_mu, mu*nu2)
                     continue
                 result_x = x
             return result_x, result_error
