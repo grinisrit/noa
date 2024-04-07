@@ -115,7 +115,6 @@ def price_american_put_bsm(
     delta_x = (x_max - x_min) / (npoints_S - 1)
     lambda_ = delta_tau / (delta_x ** 2)
     k = 2 * r / sigma ** 2
-    print('delta_tau / delta_x**2 =', lambda_)
 
     x = np.linspace(x_min, x_max, npoints_S)
     tau_array = np.linspace(0, tau_max, npoints_t)
