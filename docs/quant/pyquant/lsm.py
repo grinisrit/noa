@@ -165,8 +165,7 @@ def _lsm_regression_step(
         tau[itm_mask] = torch.where(stop_now_mask, j, tau[itm_mask])
 
     C_hat = torch.mean(torch.exp(-rate * tau * dt) * cashflow)
-    S0 = torch.mean(paths[:, 0])
-    payoff_now = torch.maximum(strike - S0, torch.tensor(0.0))
+    payoff_now = torch.maximum(strike - paths[0, 0], torch.tensor(0.0))
     option_price = torch.maximum(payoff_now, C_hat)
 
     result = LSMResult(option_price, reg_poly_coefs, C_hat)
@@ -189,14 +188,13 @@ def _lsm_pricing_step(
     payoff = torch.zeros(n_paths)
     stopped_mask = torch.zeros(n_paths, dtype=torch.bool)
 
-    S0 = torch.mean(paths[:, 0])
-    payoff_now = torch.maximum(strike - S0, torch.tensor(0.0))
+    payoff_now = torch.maximum(strike - paths[0, 0], torch.tensor(0.0))
     if torch.all(payoff_now > result_reg_step.initial_cont_value):
         option_price = payoff_now
     else:
         for j in range(1, n_steps - 1):
-            itm_mask = paths[:, j] < strike
-            if torch.sum(itm_mask) == 0:
+            itm_mask = (paths[:, j] < strike) & (~stopped_mask)
+            if itm_mask.numel() == 0:
                 continue
             paths_itm = paths[:, j][itm_mask]
 
@@ -206,7 +204,7 @@ def _lsm_pricing_step(
             payoff_itm_now = strike - paths_itm
             stop_now_mask = (payoff_itm_now >= cont_value)
             payoff[itm_mask] = torch.where(
-                stop_now_mask & (~stopped_mask[itm_mask]),
+                stop_now_mask,
                 payoff_itm_now * torch.exp(-rate * j * dt),
                 payoff[itm_mask]
             )
