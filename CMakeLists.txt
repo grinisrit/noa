@@ -35,6 +35,7 @@ set(MCXX_CUDA "--expt-relaxed-constexpr;--expt-extended-lambda")
 
 # Cache path to root directory
 set(NOA_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NOA_3RD_PARTY ${PROJECT_SOURCE_DIR}/src/noa/3rdparty)
 
 # Add custom modules
 include(GNUInstallDirs)
