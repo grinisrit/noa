@@ -249,11 +249,12 @@ class SVICalc:
         tot_vars = chain.T * (chain.sigmas ** 2)
 
         def clip_params(params):
-            eps = 1e-4
+            eps = 1e-3
             a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
-            b = np_clip(b, eps, 1000000.0)
+            a = np_clip(a, -2, -eps)
+            b = np_clip(b, eps, 10.0)
             rho = np_clip(rho, -1.0 + eps, 1.0 - eps)
-            sigma = np_clip(sigma, eps, 1000000.0)
+            sigma = np_clip(sigma, 0.15, 10.0)
             # TODO: a + b*sigma*sqrt(1 - rho^2) >= 0
             svi_params = np.array([a, b, rho, m, sigma])
             return svi_params
