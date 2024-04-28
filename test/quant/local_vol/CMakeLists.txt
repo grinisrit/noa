@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_C_COMPILER /opt/homebrew/Cellar/llvm/17.0.6_1/bin/clang)
-set(CMAKE_CXX_COMPILER /opt/homebrew/Cellar/llvm/17.0.6_1/bin/clang++)
+#export PATH="/opt/homebrew/Cellar/llvm/18.1.4/bin${PATH:+:${PATH}}"
+
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
 
 project(enzy)
 
