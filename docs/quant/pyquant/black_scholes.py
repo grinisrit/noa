@@ -213,10 +213,10 @@ class BSCalc:
         ivs = implied_vols.data
         Ks = vanillas.Ks
         assert ivs.shape == Ks.shape
-        res_gammas = np.zeros_like(ivs)
+        res_vegas = np.zeros_like(ivs)
         for i in range(len(ivs)):
-            res_gammas[i] = self._gamma(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
-        return Gammas(vanillas.Ns * res_gammas)
+            res_vegas[i] = self._vega(forward, Strike(Ks[i]), ImpliedVol(ivs[i]))
+        return Vegas(vanillas.Ns * res_vegas)
     
     
     def _vanna(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
