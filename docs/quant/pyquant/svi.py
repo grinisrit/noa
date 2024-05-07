@@ -318,6 +318,8 @@ class SVICalc:
             M(calc_params[3]),
             Sigma(calc_params[4]),
         )
+        
+        self.raw_cached_params = calc_params
 
         return raw_params, CalibrationError(calibration_error)
 
