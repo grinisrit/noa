@@ -206,7 +206,7 @@ class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.raw_cached_params = np.array([10.0, 1.0, 0.0, 1.0, 1.0])
+        self.raw_cached_params = np.array([0.0, 0.1, 0.0, 1.0, 0.1])
         self.jump_wing_cached_params = self.raw_cached_params
         self.num_iter = 10000
         self.max_mu = 1e4
@@ -226,7 +226,8 @@ class SVICalc:
         self.jump_wing_cached_params = params.array()
 
     def calibrate(
-        self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights
+        self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights, 
+        update_cached_params: bool = False
     ) -> Tuple[SVIRawParams, CalibrationError]:
         strikes = chain.Ks
         w = calibration_weights.w
@@ -249,12 +250,11 @@ class SVICalc:
         tot_vars = chain.T * (chain.sigmas ** 2)
 
         def clip_params(params):
-            eps = 1e-3
+            eps = 1e-4
             a, b, rho, m, sigma = params[0], params[1], params[2], params[3], params[4]
-            a = np_clip(a, -2, -eps)
-            b = np_clip(b, eps, 10.0)
+            b = np_clip(b, eps, 1000000.0)
             rho = np_clip(rho, -1.0 + eps, 1.0 - eps)
-            sigma = np_clip(sigma, 0.15, 10.0)
+            sigma = np_clip(sigma, eps, 1000000.0)
             # TODO: a + b*sigma*sqrt(1 - rho^2) >= 0
             svi_params = np.array([a, b, rho, m, sigma])
             return svi_params
@@ -319,6 +319,8 @@ class SVICalc:
             M(calc_params[3]),
             Sigma(calc_params[4]),
         )
+        if update_cached_params:
+            self.raw_cached_params = calc_params
 
         return raw_params, CalibrationError(calibration_error)
 
