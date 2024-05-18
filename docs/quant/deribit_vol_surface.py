@@ -17,7 +17,7 @@ def get_vol_surface(test_file):
     
     Fs = df['futures'].values.squeeze()
     Fidx = np.nonzero(Fs)
-    fwd_curve = ForwardCurve.from_forward_rates(spot, ForwardRates(Fs[Fidx]), TimesToMaturity(Ts[Fidx]))
+    fwd_curve = forward_curve_from_forward_rates(spot, ForwardRates(Fs[Fidx]), TimesToMaturity(Ts[Fidx]))
     
     n_T = len(Ts) - 1
     buf_T = Ts[1:].repeat(len(Ks))
