@@ -44,4 +44,4 @@ def price_barrier_option(
         condition = torch.min(paths, dim=1).values <= barrier
     else:  # down-out
         condition = torch.min(paths, dim=1).values > barrier
-    return torch.exp(-rate*maturity) * torch.mean(payoff * condition)
+    return torch.exp(torch.tensor(-rate*maturity)) * torch.mean(payoff * condition)
