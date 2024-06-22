@@ -1,14 +1,43 @@
 import torch
 
 
+def barrier_option_payoff(
+    paths: torch.Tensor,
+    strike: torch.Tensor,
+    barrier: torch.Tensor,
+    barrier_type: str,
+    call: bool
+) -> torch.Tensor:
+    if barrier_type not in ('up-in', 'up-out', 'down-in', 'down-out'):
+        raise ValueError("`barrier_type` must be one of: 'up-in', 'up-out', 'down-in', 'down-out'.")
+    pass
+
+    if call:
+        payoff = torch.maximum(paths[:, -1] - strike, torch.zeros_like(paths[:, -1]))
+    else:
+        payoff = torch.maximum(strike - paths[:, -1], torch.zeros_like(paths[:, -1]))
+
+    if barrier_type == 'up-in':
+        condition = torch.max(paths, dim=1).values >= barrier
+    elif barrier_type == 'up-out':
+        condition = torch.max(paths, dim=1).values < barrier
+    elif barrier_type == 'down-in':
+        condition = torch.min(paths, dim=1).values <= barrier
+    else:  # down-out
+        condition = torch.min(paths, dim=1).values > barrier
+
+    payoff *= condition
+    return payoff
+
+
 def price_barrier_option(
-        paths: torch.Tensor,
-        strike: torch.Tensor,
-        maturity: torch.Tensor,
-        rate: torch.Tensor,
-        barrier: torch.Tensor,
-        barrier_type: str,
-        call: bool
+    paths: torch.Tensor,
+    strike: torch.Tensor,
+    maturity: torch.Tensor,
+    rate: torch.Tensor,
+    barrier: torch.Tensor,
+    barrier_type: str,
+    call: bool
 ) -> torch.Tensor:
     """Compute the price of a barrier option.
 
@@ -32,16 +61,5 @@ def price_barrier_option(
     if barrier_type not in ('up-in', 'up-out', 'down-in', 'down-out'):
         raise ValueError("`barrier_type` must be one of: 'up-in', 'up-out', 'down-in', 'down-out'.")
 
-    if call:
-        payoff = torch.maximum(paths[:, -1] - strike, torch.zeros_like(paths[:, -1]))
-    else:
-        payoff = torch.maximum(strike - paths[:, -1], torch.zeros_like(paths[:, -1]))
-    if barrier_type == 'up-in':
-        condition = torch.max(paths, dim=1).values >= barrier
-    elif barrier_type == 'up-out':
-        condition = torch.max(paths, dim=1).values < barrier
-    elif barrier_type == 'down-in':
-        condition = torch.min(paths, dim=1).values <= barrier
-    else:  # down-out
-        condition = torch.min(paths, dim=1).values > barrier
-    return torch.exp(torch.tensor(-rate*maturity)) * torch.mean(payoff * condition)
+    payoff = barrier_option_payoff(paths, strike, barrier, barrier_type, call)
+    return torch.exp(torch.tensor(-rate*maturity)) * torch.mean(payoff)
