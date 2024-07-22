@@ -4,6 +4,7 @@ import numpy as np
 from .black_scholes import *
 from .common import *
 from .vol_surface import *
+from .sabr import SABRCalc, Backbone
 
 
 @nb.experimental.jitclass([("a", nb.float64)])
@@ -227,8 +228,42 @@ class SVICalc:
 
     def calibrate(
         self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights, 
-        update_cached_params: bool = False
+        update_cached_params: bool = False, for_delta_space: bool = False
     ) -> Tuple[SVIRawParams, CalibrationError]:
+        
+        if for_delta_space:
+            # not enough data to calibrate for delta-space
+            # generate more out of the money quotes via SABR
+            sabr_calc = SABRCalc()
+            sabr_calibrated_params, _ = sabr_calc.calibrate(chain, Backbone(0.99), CalibrationWeights(np.ones_like(chain.Ks)))
+            print("SABR params: ", sabr_calibrated_params.array())
+            # now find strikes for out of the money quotes
+            forward = chain.forward()
+            call_01K = sabr_calc.strike_from_delta(forward, Delta(0.01), sabr_calibrated_params).K
+            call_05K = sabr_calc.strike_from_delta(forward, Delta(0.05), sabr_calibrated_params).K
+            put_01K = sabr_calc.strike_from_delta(forward, Delta(-0.01), sabr_calibrated_params).K
+            put_05K = sabr_calc.strike_from_delta(forward, Delta(-0.05), sabr_calibrated_params).K
+            print("Strikes from SABR on |0.05|, |0.01| deltas: ", put_01K, put_05K, call_05K, call_01K)
+            # now update our chain with new quotes
+
+            # NOTE: if we add values to old delta space chain
+            # new_strikes = np.array([put_01K, put_05K, call_05K, call_01K])
+            # out_of_the_money_sabr_quotes = sabr_calc.implied_vols(forward, Strikes(new_strikes), sabr_calibrated_params).data
+            # new_strikes = Strikes(np.concatenate((new_strikes[:2], chain.Ks, new_strikes[2:])))
+            # new_implied_vols = ImpliedVols(np.concatenate((out_of_the_money_sabr_quotes[:2], chain.sigmas, out_of_the_money_sabr_quotes[2:])))
+
+            # NOTE: if we take totally new delta-space and count iv for all strikes(from old ds and new ones)
+            new_strikes = Strikes(np.concatenate((np.array([put_01K, put_05K]), chain.Ks, np.array([call_05K, call_01K]))))
+            new_implied_vols = sabr_calc.implied_vols(forward, new_strikes, sabr_calibrated_params)
+
+            print("New delta space strikes:", new_strikes.data)
+            print("New delta space implied vols:", new_implied_vols.data)
+            new_delta_space_chain = VolSmileChainSpace(forward, new_strikes, new_implied_vols)
+            # change old chain for new
+            chain = new_delta_space_chain
+            # make weights bigger to the ATM
+            calibration_weights = CalibrationWeights(np.array([0.5, 0.7, 1.0, 1.1, 1.5, 1.1, 1.0, 0.7, 0.5]))
+
         strikes = chain.Ks
         w = calibration_weights.w
 
@@ -307,6 +342,7 @@ class SVICalc:
                     continue
                 result_x = x
             return result_x, result_error
+        
 
         calc_params, calibration_error = levenberg_marquardt(
             get_residuals, clip_params, self.raw_cached_params
