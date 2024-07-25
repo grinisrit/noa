@@ -190,12 +190,18 @@ class Forward:
     
     def numeraire(self) -> Numeraire:
         return Numeraire(np.exp(-self.r * self.T))
-    
-    @staticmethod
-    def from_forward_rate(spot: Spot, forward_rate: ForwardRate, time_to_maturity: TimeToMaturity):
-        return Forward(
-            spot, ForwardYield(- np.log(spot.S / forward_rate.fv)/ time_to_maturity.T), time_to_maturity
-            )
+
+
+@nb.njit
+def forward_from_forward_rate(
+    spot: Spot,
+    forward_rate: ForwardRate,
+    time_to_maturity: TimeToMaturity
+) -> Forward:
+    return Forward(
+        spot, ForwardYield(- np.log(spot.S / forward_rate.fv)/ time_to_maturity.T), time_to_maturity
+        )
+
 
 
 @nb.experimental.jitclass()
@@ -253,15 +259,20 @@ class ForwardCurve:
     
     def forward_yields(self, times_to_maturity: TimesToMaturity) -> ForwardYields:
         return self._curve.forward_yields(times_to_maturity)
-               
-    @staticmethod
-    def from_forward_rates(spot: Spot, forward_rates: ForwardRates, times_to_maturity: TimesToMaturity):
-        return ForwardCurve(
-            spot, ForwardYieldCurve( 
-                    ForwardYields(- np.log(spot.S / forward_rates.data) / times_to_maturity.data),
-                    times_to_maturity
-                )   
-            )
+
+
+@nb.njit
+def forward_curve_from_forward_rates(
+    spot: Spot,
+    forward_rates: ForwardRates,
+    times_to_maturity: TimesToMaturity
+) -> ForwardCurve:
+    return ForwardCurve(
+        spot, ForwardYieldCurve( 
+                ForwardYields(- np.log(spot.S / forward_rates.data) / times_to_maturity.data),
+                times_to_maturity
+            )   
+        )
 
 
 @nb.experimental.jitclass([

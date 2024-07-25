@@ -1,0 +1,12 @@
+numpy
+pandas
+numba
+torch
+scipy
+tables
+tqdm
+nbformat
+ipykernel
+matplotlib
+plotly
+kaleido

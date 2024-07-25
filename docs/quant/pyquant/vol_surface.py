@@ -420,7 +420,8 @@ class VolSurfaceDeltaSpace:
     ("Ts", nb.float64[:]),
     ("Ks", nb.float64[:]),
     ("pvs", nb.float64[:]),
-    ("sigmas", nb.float64[:])
+    ("sigmas", nb.float64[:]),
+    ("compute_implied_vol", nb.boolean)
 ])
 class VolSurfaceChainSpace:
     bs_calc: BSCalc
@@ -432,7 +433,8 @@ class VolSurfaceChainSpace:
         times_to_maturity: TimesToMaturity,
         strikes: Strikes,
         option_types: OptionTypes,
-        premiums: Premiums
+        premiums: Premiums,
+        compute_implied_vol: bool = True
     ):
         if not times_to_maturity.data.shape == strikes.data.shape == premiums.data.shape == option_types.data.shape:
             raise ValueError('Inconsistent data shape between times to maturity, strikes, premiums and option types')
@@ -446,6 +448,7 @@ class VolSurfaceChainSpace:
         self.S = forward_curve.S
         self.FWD = forward_curve
 
+        self.compute_implied_vol = compute_implied_vol
         self._process(times_to_maturity.data.flatten(), strikes.data.flatten(), option_types.data.flatten(), premiums.data.flatten())
 
     def _process(self, Ts: nb.float64[:], Ks: nb.float64[:], Cs: nb.float64[:], PVs: nb.float64[:]):
@@ -476,7 +479,10 @@ class VolSurfaceChainSpace:
                 continue
             else:
                 pv = PVs[i]
-                iv = self.bs_calc.implied_vol(F, Strike(K), Premium(pv)).sigma
+                if self.compute_implied_vol:
+                    iv = self.bs_calc.implied_vol(F, Strike(K), Premium(pv)).sigma
+                else:
+                    iv = -1
 
                 lTs.append(T)
                 lKs.append(K)
