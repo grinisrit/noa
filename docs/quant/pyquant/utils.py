@@ -1,9 +1,23 @@
 import numpy as np
 import numba as nb
-
+from enum import Enum
 
 # One year in nanoseconds (365 * 24 * 3600 * 1_000_000_000)
 YEAR_NANOS: int = 31536000000000000
+
+
+class InstrumentId(Enum):
+    BTC = 0
+    ETH = 1
+
+class InstrumentType(Enum):
+    FUTURE = 1
+    OPTION = 2
+    FUTURE_COMBO = 3
+    OPTION_COMBO = 4
+    CALL_OPTION = 5
+    PUT_OPTION = 6
+    ASSET = 7
 
 
 @nb.njit(nb.float64(nb.float64))
