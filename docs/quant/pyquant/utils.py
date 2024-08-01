@@ -17,7 +17,7 @@ class InstrumentType(Enum):
     OPTION_COMBO = 4
     CALL_OPTION = 5
     PUT_OPTION = 6
-    ASSET = 7
+    SWAP = 7
 
 
 @nb.njit(nb.float64(nb.float64))

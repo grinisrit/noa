@@ -235,15 +235,17 @@ class SVICalc:
             # not enough data to calibrate for delta-space
             # generate more out of the money quotes via SABR
             sabr_calc = SABRCalc()
+            sabr_calc.strike_lower = self.strike_lower
+            sabr_calc.strike_upper = self.strike_upper
             sabr_calibrated_params, _ = sabr_calc.calibrate(chain, Backbone(0.99), CalibrationWeights(np.ones_like(chain.Ks)))
-            print("SABR params: ", sabr_calibrated_params.array())
+            #print("SABR params: ", sabr_calibrated_params.array())
             # now find strikes for out of the money quotes
             forward = chain.forward()
             call_01K = sabr_calc.strike_from_delta(forward, Delta(0.01), sabr_calibrated_params).K
             call_05K = sabr_calc.strike_from_delta(forward, Delta(0.05), sabr_calibrated_params).K
             put_01K = sabr_calc.strike_from_delta(forward, Delta(-0.01), sabr_calibrated_params).K
             put_05K = sabr_calc.strike_from_delta(forward, Delta(-0.05), sabr_calibrated_params).K
-            print("Strikes from SABR on |0.05|, |0.01| deltas: ", put_01K, put_05K, call_05K, call_01K)
+            #print("Strikes from SABR on |0.05|, |0.01| deltas: ", put_01K, put_05K, call_05K, call_01K)
             # now update our chain with new quotes
 
             # NOTE: if we add values to old delta space chain
@@ -256,8 +258,8 @@ class SVICalc:
             new_strikes = Strikes(np.concatenate((np.array([put_01K, put_05K]), chain.Ks, np.array([call_05K, call_01K]))))
             new_implied_vols = sabr_calc.implied_vols(forward, new_strikes, sabr_calibrated_params)
 
-            print("New delta space strikes:", new_strikes.data)
-            print("New delta space implied vols:", new_implied_vols.data)
+            #print("New delta space strikes:", new_strikes.data)
+            #print("New delta space implied vols:", new_implied_vols.data)
             new_delta_space_chain = VolSmileChainSpace(forward, new_strikes, new_implied_vols)
             # change old chain for new
             chain = new_delta_space_chain
@@ -276,7 +278,7 @@ class SVICalc:
             )
 
         n_points = len(strikes)
-        PARAMS_TO_CALIBRATE = 5
+        
         if not n_points >= 0:
             raise ValueError('Need at least 5 points to calibrate SVI model')
 
@@ -539,8 +541,6 @@ class SVICalc:
             rr10[i] = smile_delta.RR10
             bf10[i] = smile_delta.BF10
 
-        print(atm)
-
         return VolSurfaceDeltaSpace(
             surface_chain.forward_curve(),
             Straddles(ImpliedVols(atm), times_to_maturities),
@@ -559,7 +559,8 @@ class SVICalc:
 
         for i in range(n):
             smile = surface.get_vol_smile(TimeToMaturity(Ts[i]))
-            smile_params, err = self.calibrate(smile.to_chain_space(), CalibrationWeights(np.ones(5)))
+            smile_chain = smile.to_chain_space()
+            smile_params, err = self.calibrate(smile.to_chain_space(), CalibrationWeights(np.ones(5)), False, True)
             ivs[i*m: (i+1)*m] = self.implied_vols(smile.forward(), strikes, smile_params).data
 
         return ImpliedVols(ivs)
@@ -769,7 +770,7 @@ class SVICalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)), False, True)
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Vega((blipped_premium - premium) / delta_space.atm_blip)
@@ -780,7 +781,7 @@ class SVICalc:
         delta_space = self.delta_space(forward, params)
   
         blipped_chain = delta_space.blip_ATM().to_chain_space()
-        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)), False, True)
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
     
         return Vegas((blipped_premiums - premiums) / delta_space.atm_blip)
@@ -791,7 +792,7 @@ class SVICalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)), False, True)
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Rega((blipped_premium - premium) / delta_space.rr25_blip)
@@ -802,7 +803,7 @@ class SVICalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25RR().blip_10RR().to_chain_space()
-        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)), False, True)
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Regas((blipped_premiums - premiums) / delta_space.rr25_blip) 
@@ -813,7 +814,7 @@ class SVICalc:
         delta_space = self.delta_space(forward, params)
 
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)), False, True)
         blipped_premium = self.premium(forward, vanilla, blipped_params).pv
 
         return Sega((blipped_premium - premium) / delta_space.bf25_blip)     
@@ -823,7 +824,7 @@ class SVICalc:
         premiums = self.premiums(forward,  vanillas, params).data
         delta_space = self.delta_space(forward, params)
         blipped_chain = delta_space.blip_25BF().blip_10BF().to_chain_space()
-        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)))
+        blipped_params,_ = self.calibrate(blipped_chain, CalibrationWeights(np.ones(5)), False, True)
         blipped_premiums = self.premiums(forward, vanillas, blipped_params).data
 
         return Segas((blipped_premiums - premiums) / delta_space.bf25_blip) 
