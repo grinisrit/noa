@@ -4,6 +4,7 @@
 
 message(STATUS "Building tests required")
 
+add_subdirectory(enzyme)
 
 # Functional tests
 add_subdirectory(ghmc)

@@ -22,3 +22,5 @@ target_compile_options(heston_sim PRIVATE ${W_FLAGS} -O0 ${OpenMP_CXX_FLAGS})
 
 target_link_libraries(lsm PRIVATE ${PROJECT_NAME} gflags ${OpenMP_CXX_LIBRARIES})
 target_compile_options(lsm PRIVATE ${W_FLAGS} -O0 ${OpenMP_CXX_FLAGS})
+
+add_subdirectory(local_vol)

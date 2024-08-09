@@ -21,8 +21,10 @@ option(BUILD_NOA_CUDA "Build CUDA support" OFF)
 option(BUILD_JNOA "Build JNI bindings" OFF)
 option(BUILD_DOCS "Build documentation with doxygen" OFF)
 
-# Require C++17
-set(CMAKE_CXX_STANDARD 17)
+# Require C++20
+set( CMAKE_CXX_STANDARD          20  )
+set( CMAKE_CXX_STANDARD_REQUIRED ON  )
+set( CMAKE_CXX_EXTENSIONS        OFF )
 
 # Warning flags
 set(W_FLAGS "") #"-Wall;-Wextra;-Wpedantic")
