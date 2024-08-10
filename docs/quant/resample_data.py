@@ -23,6 +23,7 @@ def resample_data(input_dir, output_dir, freq):
         data_path = os.path.join(input_dir, data_file)
         log.info(f'Reading {data_path} ...')
         books = pd.read_hdf(os.path.join(input_dir, data_file))
+        log.info(f'Processing {data_path} ...')
         books = books[(books.bid_amount_total > 0.) & (books.ask_amount_total > 0.)]
         books['dt'] = pd.to_datetime(books.timestamp, unit='ms')
         books = books.drop(columns='timestamp')
