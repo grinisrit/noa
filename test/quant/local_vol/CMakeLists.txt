@@ -1,7 +1,6 @@
-find_package(Enzyme REQUIRED)
-message(STATUS "Found EnzymeAD: ${Enzyme_DIR}")
+add_subdirectory(enzyme)
 
-add_executable(enzyme_test main.cc)
-target_link_libraries(enzyme_test PUBLIC ClangEnzymeFlags) 
-target_compile_options(enzyme_test PUBLIC -O3)
-target_compile_features(enzyme_test PRIVATE cxx_std_20)
+add_executable(local_vol_test main.cc)
+target_link_libraries(local_vol_test PUBLIC ClangEnzymeFlags) 
+target_compile_options(local_vol_test PUBLIC -O3)
+target_compile_features(local_vol_test PRIVATE cxx_std_20)
