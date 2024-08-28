@@ -62,4 +62,4 @@ def price_barrier_option(
         raise ValueError("`barrier_type` must be one of: 'up-in', 'up-out', 'down-in', 'down-out'.")
 
     payoff = barrier_option_payoff(paths, strike, barrier, barrier_type, call)
-    return torch.exp(torch.tensor(-rate*maturity)) * torch.mean(payoff)
+    return torch.exp(-rate*maturity) * torch.mean(payoff)

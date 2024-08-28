@@ -108,8 +108,8 @@ def generate_heston(
         n_paths: int,
         n_steps: int,
         dt: float,
-        init_state_price: torch.Tensor,
-        init_state_var: torch.Tensor,
+        init_price: torch.Tensor,
+        init_var: torch.Tensor,
         kappa: torch.Tensor,
         theta: torch.Tensor,
         eps: torch.Tensor,
@@ -130,8 +130,8 @@ def generate_heston(
         n_paths: Number of simulated paths.
         n_steps: Number of time steps.
         dt: Time step.
-        init_state_price: Initial states of the price paths, i.e. S(0). Shape: (n_paths,).
-        init_state_var: Initial states of the variance paths, i.e. v(0). Shape: (n_paths,).
+        init_price: Initial states of the price paths, i.e. S(0). 
+        init_var: Initial states of the variance paths, i.e. v(0). 
         kappa: Parameter κ - the rate at which v(t) reverts to θ.
         theta: Parameter θ - long-run average variance.
         eps: Parameter ε - volatility of variance.
@@ -146,6 +146,10 @@ def generate_heston(
         Two tensors: 1) simulated paths for price, 2) simulated paths for variance.
         Both tensors have the shape (n_paths, n_steps + 1).
     """
+
+    init_state_price = init_price * torch.ones(n_paths)
+    init_state_var = init_var * torch.ones(n_paths)
+
     if init_state_price.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state_price` must be (n_paths,)')
     if init_state_var.shape != torch.Size((n_paths,)):
