@@ -1,4 +1,8 @@
-This project can be built independently:
+## Differentiable Dupire Local Volatility Model
+
+This project is based on [EnzymeAD](https://github.com/EnzymeAD/Enzyme) and requires `clang` and the `LLVM` toolchain to build.
+
+The target can be built independently from main `NOA` library:
 
 ```
 $ makdir -p build 
