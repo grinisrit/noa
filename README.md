@@ -124,9 +124,6 @@ When referring to this library in scientific work please cite
 * [Sabina Abdiganieva](https://github.com/abdiganieva) researched various DFT implementations 
 for QC.
 
-* [Sergey Barsegyan](https://github.com/scaevolabars) works on asymptotic implied 
-volatility formulas for QUANT. 
-
 * [Dmitry Bazanov](https://github.com/zugzvangg) developed the Heston volatility surface calibration
 routines in QUANT and works on its applications to real market data. 
 
