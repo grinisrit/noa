@@ -4,9 +4,6 @@ import numpy as np
 from .common import *
 from .vol_surface import *
 
-# from noa.docs.quant.pyquant.common import *
-# from noa.docs.quant.pyquant.vol_surface import *
-
 
 @nb.experimental.jitclass([("R", nb.float64[:, ::1])])
 class R:
@@ -80,3 +77,73 @@ class WASC:
                 - 5 / 4 * np.trace(R @ Q @ sigma) ** 2 / sigma_trace
             )
         )
+
+    def _jacobian_implied_var_wasc(
+        self,
+        F: nb.float64,
+        Ks: nb.float64,
+        params: WASCParams,
+    ):
+        R, Q, sigma = params.R, params.Q, params.sigma
+        mf = np.log(Ks / F)
+        sigma_trace = np.trace(sigma)
+        tr_RQ_sigma = np.trace(R @ Q @ sigma)
+        tr_QTQ_sigma = np.trace(Q.T @ Q @ sigma)
+
+        # ============ for Q ==============
+        term2 = (mf / sigma_trace) * R.T @ sigma
+
+        term3 = (mf**2 / (3 * sigma_trace**2)) * (Q @ sigma + sigma @ Q)
+
+        part1 = R.T @ sigma @ R @ Q.T + R.T @ sigma @ Q @ R
+        part2 = R.T @ sigma.T @ Q @ R + R.T @ Q.T @ sigma @ R
+        term4 = (mf**2 / (3 * sigma_trace**2)) * (part1 + part2)
+
+        term5 = (-5 * mf**2 / (2 * sigma_trace**3)) * tr_RQ_sigma * R.T @ sigma
+
+        Q_diff = term2 + term3 + term4 + term5
+
+        # ============ for R ==============
+
+        term2 = (mf / sigma_trace) * sigma.T @ Q.T
+
+        part1 = sigma.T @ R @ Q @ Q.T + sigma.T @ Q @ Q.T @ R
+        part2 = sigma @ Q.T @ R @ Q + sigma @ Q @ Q.T @ R
+        term3 = (mf**2 / (3 * sigma_trace**2)) * (part1 + part2)
+
+        term4 = (-5 * mf**2 / (2 * sigma_trace**3)) * tr_RQ_sigma * sigma.T @ Q.T
+
+        R_diff = term2 + term3 + term4
+
+        # ============ for sigma ==============
+
+        term1 = np.eye(sigma.shape[0])
+
+        term2_part1 = (mf / sigma_trace) * (R @ Q)
+        term2_part2 = -(mf * tr_RQ_sigma / sigma_trace**2) * np.eye(sigma.shape[0])
+        term2 = term2_part1 + term2_part2
+
+        term3_part1 = (mf**2 / (3 * sigma_trace**2)) * (Q.T @ Q)
+        term3_part2 = -(2 * mf**2 * tr_QTQ_sigma / (3 * sigma_trace**3)) * np.eye(
+            sigma.shape[0]
+        )
+        term3 = term3_part1 + term3_part2
+
+        complex_term = R @ Q @ (Q.T @ R.T + R @ Q)
+        term4_part1 = (mf**2 / (3 * sigma_trace**2)) * complex_term
+        term4_part2 = -(
+            2 * mf**2 * np.trace(complex_term) / (3 * sigma_trace**3)
+        ) * np.eye(sigma.shape[0])
+        term4 = term4_part1 + term4_part2
+
+        term5_part1 = (-5 * mf**2 * tr_RQ_sigma / (2 * sigma_trace**3)) * (R @ Q)
+        term5_part2 = (
+            15 * mf**2 * tr_RQ_sigma**2 / (4 * sigma_trace**4)
+        ) * np.eye(sigma.shape[0])
+        term5 = term5_part1 + term5_part2
+
+        sigma_diff = term1 + term2 + term3 + term4 + term5
+
+        w = self._vol_wasc(F, Ks, params)
+        denominator = 2 * np.sqrt(w)
+        return Q_diff / denominator, R_diff / denominator, sigma_diff / denominator
