@@ -50,12 +50,34 @@ class WASCParams:
         )
 
 
+def array_to_wasc_matrixes(array: nb.float64[:]) -> WASCParams:
+    num_elements = len(array)
+    if num_elements % 3 != 0:
+        raise ValueError(
+            "Array size must be divisible by 3 to form three equal square matrices."
+        )
+    elements_per_matrix = num_elements // 3
+    matrix_size = int(np.sqrt(elements_per_matrix))
+    # Check if elements_per_matrix is a perfect square
+    if matrix_size * matrix_size != elements_per_matrix:
+        raise ValueError(
+            "Each part of the array must be a perfect square to form square matrices."
+        )
+
+    # Reshape the array into three square matrices
+    matrices = np.split(array.reshape(3, matrix_size, matrix_size), 3)
+    return WASCParams(R(matrices[0][0]), Q(matrices[1][0]), Sigma(matrices[2][0]))
+
+
 class WASC:
-    def __init__(self):
+    def __init__(self, params_dim: float = 2):
         self.num_iter = 10000
         self.max_mu = 1e4
         self.min_mu = 1e-6
         self.tol = 1e-12
+        self.params_dim = params_dim
+        # Create param flatten array of 3 params and each matrix of params_dim*params_dim size
+        self.raw_cached_params = np.zeros(3 * params_dim**2)
 
     def _vol_wasc(
         self,
@@ -78,14 +100,14 @@ class WASC:
             )
         )
 
-    def _jacobian_implied_var_wasc(
+    def _jacobian_implied_vol_single_strike_wasc(
         self,
         F: nb.float64,
-        Ks: nb.float64,
+        K: nb.float64,
         params: WASCParams,
-    ):
+    ) -> nb.float64[:]:
         R, Q, sigma = params.R, params.Q, params.sigma
-        mf = np.log(Ks / F)
+        mf = np.log(K / F)
         sigma_trace = np.trace(sigma)
         tr_RQ_sigma = np.trace(R @ Q @ sigma)
         tr_QTQ_sigma = np.trace(Q.T @ Q @ sigma)
@@ -144,6 +166,113 @@ class WASC:
 
         sigma_diff = term1 + term2 + term3 + term4 + term5
 
-        w = self._vol_wasc(F, Ks, params)
+        w = self._vol_wasc(F, K, params)
         denominator = 2 * np.sqrt(w)
-        return Q_diff / denominator, R_diff / denominator, sigma_diff / denominator
+
+        return np.concatenate(
+            (
+                (Q_diff / denominator).flatten(),
+                (R_diff / denominator).flatten(),
+                (sigma_diff / denominator).flatten(),
+            ),
+            axis=0,
+        )
+
+    def _jacobian_implied_vol_wasc(
+        self,
+        F: nb.float64,
+        Ks: nb.float64[:],
+        params: WASCParams,
+    ) -> nb.float64[:]:
+        jacs = []
+        for K in Ks:
+            jac = self._jacobian_implied_vol_single_strike_wasc(F, K, params)
+            jacs.append(jac)
+        return np.vstack(jacs)
+
+    def calibrate(
+        self,
+        chain: VolSmileChainSpace,
+        calibration_weights: CalibrationWeights,
+        update_cached_params: bool = True,
+    ) -> Tuple[WASCParams, CalibrationError]:
+        strikes = chain.Ks
+        w = calibration_weights.w
+
+        if not strikes.shape == w.shape:
+            raise ValueError(
+                "Inconsistent data between strikes and calibration weights"
+            )
+
+        if not strikes.shape == w.shape:
+            raise ValueError(
+                "Inconsistent data between strikes and calibration weights"
+            )
+
+        n_points = len(strikes)
+
+        weights = w / w.sum()
+        forward = chain.f
+        vars = chain.sigmas
+
+        def clip_params(params):
+            return params
+
+        def get_residuals(params):
+            J = np.stack(
+                self._jacobian_implied_vol_wasc(
+                    forward,
+                    strikes,
+                    params,
+                )
+            )
+            wasc_w = self._vol_wasc(
+                forward,
+                strikes,
+                params,
+            )
+            res = wasc_w - vars
+            return res * weights, J @ np.diag(weights)
+
+        def levenberg_marquardt(f, proj, x0):
+            x = x0.copy()
+
+            mu = 1e-2
+            nu1 = 2.0
+            nu2 = 2.0
+
+            res, J = f(array_to_wasc_matrixes(x))
+            F = res.T @ res
+
+            result_x = x
+            result_error = F / n_points
+
+            for i in range(self.num_iter):
+                if result_error < self.tol:
+                    break
+                multipl = J @ J.T
+                I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
+                dx = np.linalg.solve(mu * I + multipl, J @ res)
+                x_ = proj(x - dx)
+                res_, J_ = f(x_)
+                F_ = res_.T @ res_
+                if F_ < F:
+                    x, F, res, J = x_, F_, res_, J_
+                    mu = max(self.min_mu, mu / nu1)
+                    result_error = F / n_points
+                else:
+                    i -= 1
+                    mu = min(self.max_mu, mu * nu2)
+                    continue
+                result_x = x
+            return result_x, result_error
+
+        calc_params, calibration_error = levenberg_marquardt(
+            get_residuals, clip_params, self.raw_cached_params
+        )
+        wasc_params: WASCParams = array_to_wasc_matrixes(calc_params)
+
+        if update_cached_params:
+            self.raw_cached_params = wasc_params
+
+        return wasc_params, CalibrationError(calibration_error)
