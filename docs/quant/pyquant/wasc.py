@@ -74,10 +74,13 @@ class WASC:
         self.num_iter = 10000
         self.max_mu = 1e4
         self.min_mu = 1e-6
-        self.tol = 1e-12
+        self.tol = 1e-4
         self.params_dim = params_dim
         # Create param flatten array of 3 params and each matrix of params_dim*params_dim size
-        self.raw_cached_params = np.zeros(3 * params_dim**2)
+        # self.raw_cached_params = np.ones(3 * params_dim**2)
+        self.raw_cached_params = np.random.normal(
+            loc=1, scale=0.05, size=3 * params_dim**2
+        )
 
     def _vol_wasc(
         self,
@@ -88,7 +91,8 @@ class WASC:
         R, Q, sigma = params.R, params.Q, params.sigma
         mf = np.log(Ks / F)
         sigma_trace = np.trace(sigma)
-        return np.sqrt(
+        # return np.sqrt(
+        return (
             sigma_trace
             + np.trace(R @ Q @ sigma) / sigma_trace * mf
             + mf**2
@@ -167,13 +171,21 @@ class WASC:
         sigma_diff = term1 + term2 + term3 + term4 + term5
 
         w = self._vol_wasc(F, K, params)
-        denominator = 2 * np.sqrt(w)
+        # denominator = 2 * np.sqrt(w)
 
+        # return np.concatenate(
+        #     (
+        #         (Q_diff / denominator).flatten(),
+        #         (R_diff / denominator).flatten(),
+        #         (sigma_diff / denominator).flatten(),
+        #     ),
+        #     axis=0,
+        # )
         return np.concatenate(
             (
-                (Q_diff / denominator).flatten(),
-                (R_diff / denominator).flatten(),
-                (sigma_diff / denominator).flatten(),
+                (2 * w * Q_diff).flatten(),
+                (2 * w * R_diff).flatten(),
+                (2 * w * sigma_diff).flatten(),
             ),
             axis=0,
         )
@@ -188,7 +200,7 @@ class WASC:
         for K in Ks:
             jac = self._jacobian_implied_vol_single_strike_wasc(F, K, params)
             jacs.append(jac)
-        return np.vstack(jacs)
+        return np.vstack(jacs).T
 
     def calibrate(
         self,
@@ -198,11 +210,6 @@ class WASC:
     ) -> Tuple[WASCParams, CalibrationError]:
         strikes = chain.Ks
         w = calibration_weights.w
-
-        if not strikes.shape == w.shape:
-            raise ValueError(
-                "Inconsistent data between strikes and calibration weights"
-            )
 
         if not strikes.shape == w.shape:
             raise ValueError(
@@ -219,13 +226,12 @@ class WASC:
             return params
 
         def get_residuals(params):
-            J = np.stack(
-                self._jacobian_implied_vol_wasc(
-                    forward,
-                    strikes,
-                    params,
-                )
+            J = self._jacobian_implied_vol_wasc(
+                forward,
+                strikes,
+                params,
             )
+
             wasc_w = self._vol_wasc(
                 forward,
                 strikes,
@@ -254,7 +260,7 @@ class WASC:
                 I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
                 dx = np.linalg.solve(mu * I + multipl, J @ res)
                 x_ = proj(x - dx)
-                res_, J_ = f(x_)
+                res_, J_ = f(array_to_wasc_matrixes(x_))
                 F_ = res_.T @ res_
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
@@ -265,6 +271,7 @@ class WASC:
                     mu = min(self.max_mu, mu * nu2)
                     continue
                 result_x = x
+                print(result_x, result_error)
             return result_x, result_error
 
         calc_params, calibration_error = levenberg_marquardt(
