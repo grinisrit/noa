@@ -63,6 +63,8 @@ const char *TyToString(ArgType ty) {
     return "diag";
   case ArgType::side:
     return "side";
+  case ArgType::info:
+    return "info";
   default:
     return "unknown";
   }
@@ -116,7 +118,7 @@ bool isArgUsed(Rule *rule, StringRef toFind, const DagInit *toSearch,
   }
 
   for (size_t i = 0; i < toSearch->getNumArgs(); i++) {
-    if (DagInit *arg = dyn_cast<DagInit>(toSearch->getArg(i))) {
+    if (auto arg = dyn_cast<DagInit>(toSearch->getArg(i))) {
       // os << " Recursing. Magic!\n";
       if (isArgUsed(rule, toFind, arg, nameVec, argTypesFull))
         return true;
@@ -186,8 +188,9 @@ bool isArgUsed(Rule *rule, StringRef toFind, const DagInit *toSearch,
   return false;
 }
 
-Rule::Rule(TGPattern *pattern, ArrayRef<std::string> nameVec, DagInit *dag,
-           size_t activeArgIdx, const StringMap<size_t> &patternArgs,
+Rule::Rule(TGPattern *pattern, ArrayRef<std::string> nameVec,
+           const DagInit *dag, size_t activeArgIdx,
+           const StringMap<size_t> &patternArgs,
            const DenseMap<size_t, ArgType> &patternTypes,
            const DenseSet<size_t> &patternMutables)
     : pattern(pattern), rewriteRule(dag), activeArg(activeArgIdx),
@@ -241,7 +244,7 @@ ArrayRef<SMLoc> Rule::getLoc() const { return getPattern()->getLoc(); }
 
 bool Rule::isBLASLevel2or3() const { return BLASLevel2or3; }
 
-DagInit *Rule::getRuleDag() const { return rewriteRule; }
+const DagInit *Rule::getRuleDag() const { return rewriteRule; }
 
 size_t Rule::getHandledArgIdx() const { return activeArg; }
 
@@ -313,6 +316,8 @@ void fillArgTypes(const Record *pattern, DenseMap<size_t, ArgType> &argTypes) {
       auto name = val->getName();
       if (name == "len") {
         argTypes.insert(std::make_pair(pos, ArgType::len));
+      } else if (name == "info") {
+        argTypes.insert(std::make_pair(pos, ArgType::info));
       } else if (name == "fp") {
         argTypes.insert(std::make_pair(pos, ArgType::fp));
       } else if (name == "cblas_layout") {
@@ -337,7 +342,7 @@ void fillArgTypes(const Record *pattern, DenseMap<size_t, ArgType> &argTypes) {
 
 void fillArgs(const Record *r, SmallVectorImpl<std::string> &args,
               StringMap<size_t> &argNameToPos) {
-  DagInit *argOps = r->getValueAsDag("PatternToMatch");
+  auto argOps = r->getValueAsDag("PatternToMatch");
   size_t numArgs = argOps->getNumArgs();
   args.reserve(numArgs);
   for (size_t i = 0; i < numArgs; i++) {
@@ -393,7 +398,7 @@ void fillRelatedLenghts(
         assert(argTypes.lookup(lengths[1]) == ArgType::len);
       } else {
         assert(argTypes.lookup(lengths[0]) == ArgType::trans ||
-               argTypes.lookup(lengths[0]) == ArgType::diag ||
+               argTypes.lookup(lengths[0]) == ArgType::uplo ||
                argTypes.lookup(lengths[0]) == ArgType::side);
         assert(argTypes.lookup(lengths[1]) == ArgType::len);
         assert(argTypes.lookup(lengths[2]) == ArgType::len);
@@ -425,7 +430,7 @@ void fillArgUserMap(ArrayRef<Rule> rules, ArrayRef<std::string> nameVec,
 
 ArrayRef<SMLoc> TGPattern::getLoc() const { return record->getLoc(); }
 
-TGPattern::TGPattern(Record *r)
+TGPattern::TGPattern(const Record *r)
     : record(r), blasName(r->getNameInitAsString()) {
   fillArgs(r, args, argNameToPos);
   fillArgTypes(r, argTypes);
@@ -442,9 +447,9 @@ TGPattern::TGPattern(Record *r)
 
   // Now create the rules for this pattern
   {
-    ListInit *derivOps = r->getValueAsListInit("ArgDerivatives");
+    auto derivOps = r->getValueAsListInit("ArgDerivatives");
     for (auto &&derivOp : enumerate(*derivOps)) {
-      DagInit *derivRule = cast<DagInit>(derivOp.value());
+      auto derivRule = cast<DagInit>(derivOp.value());
       size_t actIdx = posActArgs[derivOp.index()];
       rules.push_back(Rule(this, args, derivRule, actIdx, argNameToPos,
                            argTypes, mutables));
@@ -454,7 +459,8 @@ TGPattern::TGPattern(Record *r)
   fillArgUserMap(rules, args, posActArgs, argUsers);
 }
 
-SmallVector<size_t, 3> TGPattern::getRelatedLengthArgs(size_t arg) const {
+SmallVector<size_t, 3> TGPattern::getRelatedLengthArgs(size_t arg,
+                                                       bool hideuplo) const {
   // other args are unrelated to length args
   assert(argTypes.lookup(arg) == ArgType::vincData ||
          argTypes.lookup(arg) == ArgType::mldData ||
@@ -465,9 +471,10 @@ SmallVector<size_t, 3> TGPattern::getRelatedLengthArgs(size_t arg) const {
 
   if (related.size() == 3) {
     auto argTy = argTypes.lookup(related[0]);
-    assert(argTy == ArgType::trans || argTy == ArgType::diag ||
+    assert(argTy == ArgType::trans || argTy == ArgType::uplo ||
            argTy == ArgType::side);
-    (void)argTy;
+    if (hideuplo && argTy == ArgType::uplo)
+      related.erase(related.begin());
   }
 
   return related;
@@ -509,6 +516,6 @@ ArgType TGPattern::getTypeOfArg(StringRef argName) const {
   return found->second;
 }
 
-DagInit *TGPattern::getDuals() const {
+const DagInit *TGPattern::getDuals() const {
   return record->getValueAsDag("ArgDuals");
 }

@@ -133,4 +133,51 @@ def ActivityOpInterface
   ];
 }
 
+def ADDataFlowOpInterface
+    : OpInterface<"ADDataFlowOpInterface"> {
+  let cppNamespace = "::mlir::enzyme";
+  
+  let methods = [
+    InterfaceMethod<
+    /*desc=*/[{
+    }],
+    /*retTy=*/"SmallVector<Value>",
+    /*methodName=*/"getPotentialIncomingValuesRes",
+    /*args=*/(ins "::mlir::OpResult":$v)
+    >,
+    InterfaceMethod<
+    /*desc=*/[{
+    }],
+    /*retTy=*/"SmallVector<Value>",
+    /*methodName=*/"getPotentialIncomingValuesArg",
+    /*args=*/(ins "::mlir::BlockArgument":$v)
+    >,
+    InterfaceMethod<
+    /*desc=*/[{
+    }],
+    /*retTy=*/"SmallVector<Value>",
+    /*methodName=*/"getPotentialTerminatorUsers",
+    /*args=*/(ins "::mlir::Operation*":$terminator, "::mlir::Value":$val)
+    >
+  ];
+}
+
+def BatchOpInterface : OpInterface<"BatchOpInterface"> {
+  let description = [{
+    A batchable MLIR operation.
+  }];
+  let cppNamespace = "::mlir::enzyme";
+
+  let methods = [
+    InterfaceMethod<
+    /*desc=*/[{
+      Emits a batched version of a given operation.
+    }],
+    /*retTy=*/"::mlir::Operation*",
+    /*methodName=*/"createBatch",
+    /*args=*/(ins "::mlir::IRMapping &":$mapper, "::mlir::Operation::CloneOptions":$options, "::std::map<mlir::Operation*, mlir::Operation*>&":$opMap,  "::llvm::ArrayRef<int64_t>":$batchSizes)
+    >
+  ];
+}
+
 #endif // ENZYME_MLIR_INTERFACES_AUTODIFFOPINTERFACES

@@ -72,12 +72,20 @@ public:
     if (auto G = dyn_cast<ComplexType>(ET)) {
       if (auto F = dyn_cast<FloatType>(G.getElementType())) {
         APFloat apvalue(F.getFloatSemantics(), 0);
-        std::complex c(apvalue, apvalue);
+        std::complex<APFloat> c(apvalue, apvalue);
         auto attr = DenseElementsAttr::get(tenType, c);
         return builder.create<arith::ConstantOp>(loc, tenType, attr);
       }
     }
+    if (auto IT = dyn_cast<IntegerType>(ET)) {
+      APInt apvalue(IT.getWidth(), 0);
+      auto attr = DenseElementsAttr::get(tenType, apvalue);
+      return builder.create<arith::ConstantOp>(loc, tenType, attr);
+    }
+    llvm::errs() << " cannot create null value of tensor type: " << tenType
+                 << "\n";
     assert(0);
+    return nullptr;
   }
 
   Value createAddOp(Type self, OpBuilder &builder, Location loc, Value a,

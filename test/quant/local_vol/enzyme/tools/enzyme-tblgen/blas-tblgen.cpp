@@ -36,8 +36,8 @@ std::string get_blas_ret_ty(StringRef dfnc_name) {
     return "Builder2.getVoidTy()";
 }
 
-bool hasDiffeRet(Init *resultTree) {
-  if (DagInit *resultRoot = dyn_cast<DagInit>(resultTree)) {
+bool hasDiffeRet(const Init *resultTree) {
+  if (auto resultRoot = dyn_cast<DagInit>(resultTree)) {
     auto opName = resultRoot->getOperator()->getAsString();
     auto Def = cast<DefInit>(resultRoot->getOperator())->getDef();
     if (opName == "DiffeRetIndex" || Def->isSubClassOf("DiffeRetIndex")) {
@@ -48,7 +48,7 @@ bool hasDiffeRet(Init *resultTree) {
         return true;
     }
   }
-  if (DefInit *DefArg = dyn_cast<DefInit>(resultTree)) {
+  if (auto DefArg = dyn_cast<DefInit>(resultTree)) {
     auto Def = DefArg->getDef();
     if (Def->isSubClassOf("DiffeRetIndex")) {
       return true;
@@ -57,8 +57,9 @@ bool hasDiffeRet(Init *resultTree) {
   return false;
 }
 
-bool hasAdjoint(TGPattern &pattern, Init *resultTree, StringRef argName) {
-  if (DagInit *resultRoot = dyn_cast<DagInit>(resultTree)) {
+bool hasAdjoint(const TGPattern &pattern, const Init *resultTree,
+                StringRef argName) {
+  if (auto resultRoot = dyn_cast<DagInit>(resultTree)) {
     auto opName = resultRoot->getOperator()->getAsString();
     auto Def = cast<DefInit>(resultRoot->getOperator())->getDef();
     if (opName == "Shadow" || Def->isSubClassOf("Shadow")) {
@@ -80,12 +81,12 @@ bool hasAdjoint(TGPattern &pattern, Init *resultTree, StringRef argName) {
 }
 
 static void checkBlasCallsInDag(const RecordKeeper &RK,
-                                ArrayRef<Record *> blasPatterns,
+                                ArrayRef<const Record *> blasPatterns,
                                 StringRef blasName, const DagInit *toSearch) {
 
   // For nested FAdd, ... rules which don't directly call a blass fnc
   for (size_t i = 0; i < toSearch->getNumArgs(); i++) {
-    if (DagInit *arg = dyn_cast<DagInit>(toSearch->getArg(i))) {
+    if (auto arg = dyn_cast<DagInit>(toSearch->getArg(i))) {
       checkBlasCallsInDag(RK, blasPatterns, blasName, arg);
     }
   }
@@ -95,12 +96,12 @@ static void checkBlasCallsInDag(const RecordKeeper &RK,
 /// blas function will use the correct amount of args
 /// Later we might check for "types" too.
 static void checkBlasCalls(const RecordKeeper &RK,
-                           ArrayRef<Record *> blasPatterns) {
+                           ArrayRef<const Record *> blasPatterns) {
   for (auto &&pattern : blasPatterns) {
-    ListInit *argOps = pattern->getValueAsListInit("ArgDerivatives");
+    auto argOps = pattern->getValueAsListInit("ArgDerivatives");
     // for each possibly active parameter
     for (auto argOp : *argOps) {
-      DagInit *resultRoot = cast<DagInit>(argOp);
+      auto resultRoot = cast<DagInit>(argOp);
       checkBlasCallsInDag(RK, blasPatterns, pattern->getName(), resultRoot);
     }
   }
@@ -113,14 +114,7 @@ void emit_handleBLAS(ArrayRef<TGPattern> blasPatterns, raw_ostream &os) {
      << "  using llvm::Type;                                                \n"
      << "  bool result = true;                                              \n"
      << "  if (!gutils->isConstantInstruction(&call)) {                     \n"
-     << "    Type *fpType;                                                  \n"
-     << "    if (blas.floatType == \"d\" || blas.floatType == \"D\") {      \n"
-     << "      fpType = Type::getDoubleTy(call.getContext());               \n"
-     << "    } else if (blas.floatType == \"s\" || blas.floatType == \"S\"){\n"
-     << "      fpType = Type::getFloatTy(call.getContext());                \n"
-     << "    } else {                                                       \n"
-     << "      assert(false && \"Unreachable\");                            \n"
-     << "    }                                                              \n";
+     << "    Type *fpType = blas.fpType(call.getContext());                 \n";
   bool first = true;
   for (auto &&pattern : blasPatterns) {
     bool hasActive = false;
@@ -255,17 +249,22 @@ void emit_free_and_ending(const TGPattern &pattern, raw_ostream &os) {
         "Constant::getNullValue(call.getType()));\n"
      << "  }\n";
 
+  os << "  bool shouldErase = true;\n";
   os << "  if (gutils->knownRecomputeHeuristic.find(&call) !=\n"
      << "    gutils->knownRecomputeHeuristic.end()) {\n"
      << "    if (!gutils->knownRecomputeHeuristic[&call]) {\n"
      << "     auto cv = gutils->cacheForReverse(BuilderZ, newCall,\n"
      << "     getIndex(&call, CacheType::Self, BuilderZ));\n"
+     << "     shouldErase = false;\n"
      << "    }\n"
-     << "  } else if (Mode == DerivativeMode::ReverseModeGradient) {        \n"
-     << "    eraseIfUnused(call, /*erase*/ true, /*check*/ false);          \n"
-     << "  } else {                                                         \n"
-     << "    eraseIfUnused(call);                                           \n"
-     << "  }                                                                \n"
+     << "  }\n"
+     << "  if (shouldErase) {\n"
+     << "    if (Mode == DerivativeMode::ReverseModeGradient) {        \n"
+     << "      eraseIfUnused(call, /*erase*/ true, /*check*/ false);        \n"
+     << "    } else {                                                       \n"
+     << "      eraseIfUnused(call);                                         \n"
+     << "    }                                                              \n"
+     << "  }\n"
      << "  return true;\n"
      << "#ifdef __clang__\n"
      << "#pragma clang diagnostic pop\n"
@@ -320,13 +319,16 @@ void emit_helper(const TGPattern &pattern, raw_ostream &os) {
     os << "// Next ones shall only be called in the cblas case,\n"
        << "// they have incorrect meaning otherwise\n"
        << "  const int pos_" << name << " = 0;\n"
-       << "  const auto orig_" << name << " = call.getArgOperand(pos_" << name
-       << ");\n"
-       << "  auto arg_" << name << " = gutils->getNewFromOriginal(orig_" << name
-       << ");\n"
-       << "  const auto type_" << name << " = arg_" << name << "->getType();\n"
+       << "  Value *const orig_" << name << " = cblas ? call.getArgOperand(pos_"
+       << name << ") : nullptr;\n"
+       << "  Value * arg_" << name
+       << " = cblas ? gutils->getNewFromOriginal(orig_" << name
+       << ") : nullptr;\n"
+       << "  const auto type_" << name << " = cblas ? arg_" << name
+       << "->getType() : nullptr;\n"
        << "  const bool overwritten_" << name
-       << " = (cacheMode ? overwritten_args[pos_" << name << "] : false);\n\n";
+       << " = ((cacheMode && cblas) ? overwritten_args[pos_" << name
+       << "] : false);\n\n";
   }
 
   auto actArgs = pattern.getActiveArgs();
@@ -339,8 +341,11 @@ void emit_helper(const TGPattern &pattern, raw_ostream &os) {
        << "  auto arg_" << name << " = gutils->getNewFromOriginal(orig_" << name
        << ");\n"
        << "  const auto type_" << name << " = arg_" << name << "->getType();\n"
-       << "  const bool overwritten_" << name
-       << " = (cacheMode ? overwritten_args[pos_" << name << "] : false);\n";
+       << "  const bool overwritten_" << name;
+    // if (pattern.getMutableArgs().count(i))
+    //  os << " = (cacheMode ? true : false);\n";
+    // else
+    os << " = (cacheMode ? overwritten_args[pos_" << name << "] : false);\n";
     if (std::count(actArgs.begin(), actArgs.end(), i)) {
       os << "  bool active_" << name << " = !gutils->isConstantValue(orig_"
          << name << ");\n"
@@ -366,7 +371,7 @@ void emit_helper(const TGPattern &pattern, raw_ostream &os) {
      << "  // returns true, or if runtimeActivity is on and the\n"
      << "  // shadow points to the primal arg.\n";
 
-  os << "  if(EnzymeRuntimeActivityCheck && cacheMode) {\n";
+  os << "  if(gutils->runtimeActivity && cacheMode) {\n";
   for (size_t i = 0; i < actArgs.size(); i++) {
     auto name = nameVec[actArgs[i]];
 
@@ -448,7 +453,7 @@ void emit_helper(const TGPattern &pattern, raw_ostream &os) {
   for (auto name : enumerate(nameVec)) {
     assert(argTypeMap.count(name.index()) == 1);
     auto ty = argTypeMap.lookup(name.index());
-    if (ty == ArgType::trans) {
+    if (ty == ArgType::trans || ty == ArgType::side || ty == ArgType::uplo) {
       os << "  Type *cublasEnumType = nullptr;\n";
       os << "  if (cublas) cublasEnumType = type_" << name.value() << ";\n";
       break;
@@ -508,15 +513,7 @@ void emit_scalar_types(const TGPattern &pattern, raw_ostream &os) {
   assert(foundInt && "no int type found in blas call");
 
   os << "  // fpType already given by blas type (s, d, c, z) \n"
-     << "  IntegerType *intType = dyn_cast<IntegerType>(type_" << name << ");\n"
-     << "  // TODO: add Fortran testcases for Fortran ABI\n"
-     << "  if (!intType) {\n"
-     << "    const auto PT = cast<PointerType>(type_" << name << ");\n"
-     << "    if (blas.is64)\n"
-     << "      intType = IntegerType::get(PT->getContext(), 64);\n"
-     << "    else\n"
-     << "      intType = IntegerType::get(PT->getContext(), 32);\n"
-     << "  }\n\n"
+     << "  IntegerType *intType = blas.intType(call.getContext());\n"
      << "  IntegerType *charType = IntegerType::get(intType->getContext(), "
         "8);\n\n";
   os << "  IntegerType *julia_decl_type = nullptr;\n"
@@ -528,7 +525,7 @@ void emit_scalar_types(const TGPattern &pattern, raw_ostream &os) {
   for (auto name : enumerate(nameVec)) {
     assert(argTypeMap.count(name.index()) == 1);
     auto ty = argTypeMap.lookup(name.index());
-    if (ty == ArgType::trans) {
+    if (ty == ArgType::trans || ty == ArgType::side || ty == ArgType::uplo) {
       hasTrans = true;
       break;
     }
@@ -536,27 +533,42 @@ void emit_scalar_types(const TGPattern &pattern, raw_ostream &os) {
   if (hasTrans) {
     os << "  Value *valueN = nullptr;\n"
        << "  Value *valueT = nullptr;\n"
+       << "  Value *valueC = nullptr;\n"
        << "  Value *valueG = nullptr;\n"
        << "  Value *valuer = nullptr;\n"
        << "  Value *valuel = nullptr;\n"
+       << "  Value *valueR = nullptr;\n"
+       << "  Value *valueL = nullptr;\n"
+       << "  Value *valueU = nullptr;\n"
        << "  if (cublas) {\n"
        << "    valueN = ConstantInt::get(cublasEnumType, "
           "cublasOperation_t::CUBLAS_OP_N);\n"
        << "    valueT = ConstantInt::get(cublasEnumType, "
           "cublasOperation_t::CUBLAS_OP_T);\n"
+       << "    valueC = ConstantInt::get(cublasEnumType, "
+          "cublasOperation_t::CUBLAS_OP_C);\n"
        << "    valuel = ConstantInt::get(cublasEnumType, "
           "cublasSideMode_t::CUBLAS_SIDE_LEFT);\n"
        << "    valuer = ConstantInt::get(cublasEnumType, "
           "cublasSideMode_t::CUBLAS_SIDE_RIGHT);\n"
-       << "    // TODO lascl not available in cublas, nor op G\n"
+       << "    valueL = ConstantInt::get(cublasEnumType, "
+          "cublasSideMode_t::CUBLAS_SIDE_LEFT);\n"
+       << "    valueR = ConstantInt::get(cublasEnumType, "
+          "cublasSideMode_t::CUBLAS_SIDE_RIGHT);\n"
+       << "    valueU = ConstantInt::get(cublasEnumType, "
+          "cublasFillMode_t::CUBLAS_FILL_MODE_UPPER);\n"
        << "    valueG = ConstantInt::get(cublasEnumType, "
-          "'G');\n"
+          "cublasFillMode_t::CUBLAS_FILL_MODE_FULL);\n"
        << "  } else {\n"
        << "    valueN = ConstantInt::get(charType, 'N');\n"
        << "    valueT = ConstantInt::get(charType, 'T');\n"
+       << "    valueC = ConstantInt::get(charType, 'C');\n"
        << "    valueG = ConstantInt::get(charType, 'G');\n"
        << "    valuer = ConstantInt::get(charType, 'r');\n"
        << "    valuel = ConstantInt::get(charType, 'l');\n"
+       << "    valueR = ConstantInt::get(charType, 'R');\n"
+       << "    valueL = ConstantInt::get(charType, 'L');\n"
+       << "    valueU = ConstantInt::get(charType, 'U');\n"
        << "  }\n\n";
   }
 }
@@ -728,12 +740,14 @@ void emit_extract_calls(const TGPattern &pattern, raw_ostream &os) {
 }
 
 // Will be used by Julia
-SmallString<80> ValueType_helper(const TGPattern &pattern, ssize_t actPos) {
+SmallString<80> ValueType_helper(const TGPattern &pattern, ssize_t actPos,
+                                 const DagInit *ruleDag) {
   const auto nameVec = pattern.getArgNames();
   const auto typeMap = pattern.getArgTypeMap();
   SmallString<80> valueTypes{};
 
   // start with 1 since layout is only used for cblas (!byRef)
+
   for (size_t pos = 1; pos < nameVec.size();) {
     auto name = nameVec[pos];
     auto ty = typeMap.lookup(pos);
@@ -743,7 +757,7 @@ SmallString<80> ValueType_helper(const TGPattern &pattern, ssize_t actPos) {
     }
 
     if (ty == ArgType::len) {
-      valueTypes.append("ValueType::Both");
+      valueTypes.append("ValueType::Primal");
     } else if (ty == ArgType::fp) {
       auto floatName = nameVec[pos];
       if (pos == actPos || actPos == -1) {
@@ -757,21 +771,30 @@ SmallString<80> ValueType_helper(const TGPattern &pattern, ssize_t actPos) {
       const auto nextName = nameVec[pos + 1];
       // Check that the next should be an increment
       assert(typeMap.lookup(pos + 1) == ArgType::vincInc);
+      auto shadowRes =
+          (!ruleDag || hasAdjoint(pattern, ruleDag, name) || actPos == pos)
+              ? "ValueType::Both"
+              : "ValueType::Primal";
       const auto vecName = nameVec[pos];
       if (pos == actPos || actPos == -1) {
-        valueTypes.append("ValueType::Both, ValueType::Both");
+        valueTypes.append(shadowRes);
+        valueTypes.append(", ValueType::Primal");
       } else {
-        valueTypes.append(
-            (Twine("cache_") + vecName +
-             " ? ValueType::Both : ValueType::Both, ValueType::Both")
-                .str());
+        valueTypes.append("cache_");
+        valueTypes.append(vecName);
+        valueTypes.append(" ? ");
+        valueTypes.append(shadowRes);
+        valueTypes.append(" : ");
+        valueTypes.append(shadowRes);
       }
       pos++; // extra inc, since vector cover two args (vincInc+vincData)
     } else {
       // TODO
-      valueTypes.append("ValueType::Both");
-      // llvm::errs() << "type: " << ty << "\n";
-      // PrintFatalError("Unhandled type!");
+      if (!ruleDag || hasAdjoint(pattern, ruleDag, name) || actPos == pos) {
+        valueTypes.append("ValueType::Both");
+      } else {
+        valueTypes.append("ValueType::Primal");
+      }
     }
     pos++;
   }
@@ -780,37 +803,54 @@ SmallString<80> ValueType_helper(const TGPattern &pattern, ssize_t actPos) {
 
 // todo: update rt_active_<X> to use actual dag requirements,
 // possibly by or-ing them
-void emit_runtime_condition(DagInit *ruleDag, StringRef name, StringRef tab,
-                            StringRef B, bool isFP, raw_ostream &os) {
+void emit_runtime_condition(const DagInit *ruleDag, StringRef name,
+                            StringRef tab, StringRef B, bool isFP,
+                            raw_ostream &os) {
   os << tab << "BasicBlock *nextBlock_" << name << " = nullptr;\n"
-     << tab << "if (EnzymeRuntimeActivityCheck && cacheMode"
+     << tab << "if (gutils->runtimeActivity && cacheMode"
      << (isFP ? " && byRefFloat" : "") << ") {\n"
      << tab << "  BasicBlock *current = Builder2.GetInsertBlock();\n"
      << tab << "  auto activeBlock = gutils->addReverseBlock(current,"
      << "bb_name + \"." << name << ".active\");\n"
      << tab << "  nextBlock_" << name << " = gutils->addReverseBlock("
-     << "activeBlock, bb_name + \"." << name << ".done\");\n"
+     << "activeBlock, bb_name + \"." << name
+     << ".done\", /*fork*/true, /*push*/false);\n"
      << tab << "  " << B << ".CreateCondBr(rt_inactive_" << name
      << ", nextBlock_" << name << ", activeBlock);\n"
      << tab << "  " << B << ".SetInsertPoint(activeBlock);\n"
      << tab << "}\n";
 }
 
-void emit_runtime_continue(DagInit *ruleDag, StringRef name, StringRef tab,
-                           StringRef B, bool isFP, raw_ostream &os) {
+void emit_runtime_continue(const DagInit *ruleDag, StringRef name,
+                           StringRef tab, StringRef B, bool isFP,
+                           raw_ostream &os) {
   os << tab << "if (nextBlock_" << name << (isFP ? " && byRefFloat" : "")
      << ") {\n"
      << tab << "  " << B << ".CreateBr(nextBlock_" << name << ");\n"
      << tab << "  " << B << ".SetInsertPoint(nextBlock_" << name << ");\n"
+     << "      {\n"
+     << "        auto found = gutils->reverseBlockToPrimal.find(nextBlock_"
+     << name << ");\n"
+     << "        assert(found != gutils->reverseBlockToPrimal.end());\n"
+     << "        SmallVector<BasicBlock *, 4> &vec =\n"
+     << "          gutils->reverseBlocks[found->second];\n"
+     << "        assert(vec.size());\n"
+     << "        vec.push_back(nextBlock_" << name << ");\n"
+     << "      }\n"
      << tab << "}\n";
 }
+
+void rev_call_args(bool forward, Twine argName, const TGPattern &pattern,
+                   const DagInit *ruleDag, raw_ostream &os, StringRef func,
+                   ArgType ty, const StringMap<Twine> &vars);
 
 // Emit the corresponding code rom (ruleDag arg # pos), given
 // that the arg being differentiated is argAct.
 // The map offsetToBaseNames takes vinc, ld, and maps them to
 // the arg name of the original vector/matrix
-void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
-                  size_t pos, raw_ostream &os, const StringMap<Twine> &vars) {
+void rev_call_arg(bool forward, const DagInit *ruleDag,
+                  const TGPattern &pattern, size_t pos, raw_ostream &os,
+                  const StringMap<Twine> &vars) {
   const auto nameMap = pattern.getArgNameMap();
   const auto typeMap = pattern.getArgTypeMap();
   auto arg = ruleDag->getArg(pos);
@@ -848,7 +888,8 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
         }
         os << "byRef, cublas)";
         if (Dag->getNumArgs() == 1)
-          os << "[0], byRef, cublas, nullptr, allocationBuilder, \"\")}; vals";
+          os << "[0], byRef, cublas, julia_decl_type, allocationBuilder, "
+                "\"\")}; vals";
         os << ";})";
         return;
       }
@@ -886,6 +927,34 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
         rev_call_arg(forward, Dag, pattern, 1, os, vars);
         os << ", arg_" << ldName << ", arg_" << dim1Name << ", arg_" << dim2Name
            << ", cache_" << matName << ", byRef, cublas)}";
+        return;
+      }
+      if (Def->getName() == "is_left") {
+        if (Dag->getNumArgs() != 1)
+          PrintFatalError(pattern.getLoc(), "only 1-arg ld operands supported");
+        const auto sideName = Dag->getArgNameStr(0);
+        os << "{to_blas_callconv(Builder2, is_left(Builder2, arg_" << sideName
+           << ", byRef, cublas), byRef, cublas, julia_decl_type, "
+              "allocationBuilder, \"isleft\")}";
+        return;
+      }
+      if (Def->getName() == "is_lower") {
+        if (Dag->getNumArgs() != 1)
+          PrintFatalError(pattern.getLoc(), "only 1-arg ld operands supported");
+        const auto uploName = Dag->getArgNameStr(0);
+        os << "{to_blas_callconv(Builder2, is_lower(Builder2, arg_" << uploName
+           << ", byRef, cublas), byRef, cublas, julia_decl_type, "
+              "allocationBuilder, \"isleft\")}";
+        return;
+      }
+      if (Def->getName() == "is_nonunit") {
+        if (Dag->getNumArgs() != 1)
+          PrintFatalError(pattern.getLoc(), "only 1-arg ld operands supported");
+        const auto uploName = Dag->getArgNameStr(0);
+        os << "{to_blas_callconv(Builder2, is_nonunit(Builder2, arg_"
+           << uploName
+           << ", byRef, cublas), byRef, cublas, julia_decl_type, "
+              "allocationBuilder, \"isnonunit\")}";
         return;
       }
     } else if (Def->getName() == "Shadow" || Def->isSubClassOf("Shadow")) {
@@ -927,15 +996,8 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
               "\"\\n\";\n";
         os << "            ss << \"cannot handle blas argument within "
            << pattern.getName() << " of \" << call;\n";
-        os << "            if (CustomErrorHandler) {\n";
-        os << "              CustomErrorHandler(ss.str().c_str(), wrap(&call), "
-              "ErrorType::NoDerivative,\n";
-        os << "                                 gutils, nullptr, "
-              "wrap(&Builder2));\n";
-        os << "            } else {\n";
-        os << "              EmitFailure(\"NoDerivative\", call.getDebugLoc(), "
-              "&call, ss.str());\n";
-        os << "            }\n";
+        os << "            EmitNoDerivativeError(ss.str(), call, gutils, "
+              "Builder2);\n";
         os << "            ArrayRef<Value*>(); })";
       }
       return;
@@ -980,7 +1042,23 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
       }
       os << "SmallVector<Value*, 1> vals;\n";
       os << "for(size_t i=0; i<marg_" << (Dag->getNumArgs() - 1)
-         << ".size(); i++) vals.push_back(";
+         << ".size(); i++) {\n";
+
+      const auto tys = Def->getValueAsListOfStrings("tys");
+      for (size_t i = 0; i < Dag->getNumArgs(); i++) {
+        os << "  auto subarg_" << i << " = ";
+        if (op != "Select" || i == 0)
+          os << "load_if_ref(Builder2, " << tys[i] << ", marg_" << i << "[marg_"
+             << i << ".size() == 1 ? 0 : i], byRef)";
+        else if (op == "Select" && i == 2)
+          os << "Builder2.CreateBitCast(marg_2[marg_2.size() == 1 ? 0 : i], "
+                "marg_1[marg_1.size() == 1 ? 0 : i]->getType())";
+        else
+          os << "marg_" << i << "[marg_" << i << ".size() == 1 ? 0 : i]";
+        os << ";\n";
+      }
+
+      os << "  vals.push_back(";
       if (op != "Select")
         os << "to_blas_callconv(Builder2, ";
       if (op == "Select")
@@ -988,15 +1066,10 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
       else
         os << "Builder2.Create" << op << "(";
 
-      const auto tys = Def->getValueAsListOfStrings("tys");
       for (size_t i = 0; i < Dag->getNumArgs(); i++) {
         if (i != 0)
           os << ", ";
-        if (op != "Select" || i == 0)
-          os << "load_if_ref(Builder2, " << tys[i] << ", marg_" << i << "[marg_"
-             << i << ".size() == 1 ? 0 : i], byRef)";
-        else
-          os << "marg_" << i << "[marg_" << i << ".size() == 1 ? 0 : i]";
+        os << "subarg_" << i;
       }
       if (op != "Select")
         os << "), byRef, cublas, julia_decl_type, "
@@ -1004,7 +1077,90 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
            << Def->getValueAsString("s") << "\" )";
       else
         os << ")";
+      os << ");\n }\n vals; })";
+      return;
+    }
+    if (Def->isSubClassOf("BIntrinsic")) {
+      auto op = Def->getValueAsString("s");
+      os << "({";
+      for (size_t i = 0; i < Dag->getNumArgs(); i++) {
+        os << "SmallVector<Value*, 1> marg_" << i << ";\n";
+        os << " for (auto tmp : ";
+        rev_call_arg(forward, Dag, pattern, i, os, vars);
+        os << " ) marg_" << i << ".push_back(tmp);\n";
+      }
+      os << "SmallVector<Value*, 1> vals;\n";
+      os << "for(size_t i=0; i<marg_" << (Dag->getNumArgs() - 1)
+         << ".size(); i++) {\n";
+      os << "   SmallVector<Type*, 1> types;\n";
+      const auto types = Def->getValueAsListOfInts("types");
+      for (auto idx : types) {
+        os << "  types.push_back(marg_" << idx << "[0].getType());\n";
+      }
+      os << "   Value* args[] = {";
+      const auto tys = Def->getValueAsListOfStrings("tys");
+      for (size_t i = 0; i < Dag->getNumArgs(); i++) {
+        if (i != 0)
+          os << ", ";
+        os << "load_if_ref(Builder2, " << tys[i] << ", marg_" << i << "[marg_"
+           << i << ".size() == 1 ? 0 : i], byRef)";
+      }
+      os << "\n";
+
+      os << " vals.push_back(";
+      os << "to_blas_callconv(Builder2, ";
+      os << "Builder2.CreateIntrinsic(Intrinsic::" << op << ", types, args)";
+      os << ", byRef, cublas, julia_decl_type, "
+            "allocationBuilder, \""
+         << Def->getValueAsString("s") << "\" )";
       os << ");\n vals; })";
+      return;
+    }
+    if (Def->isSubClassOf("BlasCall")) {
+      const auto dfnc_name = Def->getValueAsString("s");
+      assert(get_blas_ret_ty(dfnc_name) == "fpType");
+      os << "({";
+      os << "      // BlasCall " << dfnc_name << " (Arg)\n";
+
+      rev_call_args(forward, "marg", pattern, Dag, os, dfnc_name, ArgType::fp,
+                    vars);
+
+      os << "        const auto Defs = gutils->getInvertedBundles(&call, {"
+         << ValueType_helper(pattern, /*actArg*/ 10000, Dag)
+         << "}, Builder2, /* lookup */ " << (!forward) << ");\n";
+      os << "    SmallVector<Type*, 1> tys; for (auto arg : marg) "
+            "tys.push_back(arg->getType());\n";
+
+      std::string dfnc_ret_ty = get_blas_ret_ty(dfnc_name);
+      os << "    llvm::FunctionType *FT" << dfnc_name << " = FunctionType::get("
+         << "cublasv2 ? Type::getVoidTy(fpType->getContext()) : " << dfnc_ret_ty
+         << ", tys, false);\n";
+
+      os << "    auto derivcall_" << dfnc_name
+         << " = gutils->oldFunc->getParent()->getOrInsertFunction(\n"
+         << "  blas.prefix + blas.floatType + \"" << dfnc_name;
+
+      if (dfnc_name == "copy")
+        os << "\" + cublasv2 ? \"\" : blas.suffix, FT" << dfnc_name << ");\n";
+      else
+        os << "\" + blas.suffix, FT" << dfnc_name << ");\n";
+
+      os << "    if (auto F = dyn_cast<Function>(derivcall_" << dfnc_name
+         << ".getCallee()))\n"
+         << "    {\n"
+         << "      auto newF = attribute_" << dfnc_name << "(blas, F);\n"
+         << "      derivcall_" << dfnc_name << " = FunctionCallee(derivcall_"
+         << dfnc_name << ".getFunctionType(), newF);\n"
+         << "    }\n\n";
+      os << "    auto cubcall = cast<CallInst>(Builder2.CreateCall(derivcall_"
+         << dfnc_name << ", marg, Defs));\n";
+      os << "         SmallVector<Value*, 1> resvec(1, cublasv2 ? "
+         << " (Value*)Builder2.CreateLoad(fpType, marg[marg.size()-1]) : "
+            "(Value*)cubcall);\n"
+         << "         resvec[0] = to_blas_fp_callconv(Builder2, resvec[0], "
+            "byRefFloat, blasFPType, allocationBuilder, \"blascall\");\n"
+         << "         resvec;\n";
+      os << " })\n";
       return;
     }
     if (Def->getName() == "FirstUse" || Def->isSubClassOf("FirstUse")) {
@@ -1046,41 +1202,39 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
       }
       os << " Value *ptr = larg_1[0];\n";
 
-      os << "    if (ptr->getType()->isIntegerTy()) ptr = "
-            "Builder2.CreateIntToPtr(ptr, PointerType::getUnqual(fpType));\n";
-
-      os << "#if LLVM_VERSION_MAJOR < 17\n";
-      os << "#if LLVM_VERSION_MAJOR >= 15\n";
-      os << "  if (ptr->getContext().supportsTypedPointers()) {\n";
-      os << "#endif\n";
-      os << "    if (fpType != ptr->getType()->getPointerElementType()) {\n";
-      os << "      ptr = Builder2.CreatePointerCast(ptr, "
-            "PointerType::get(fpType, "
-            "cast<PointerType>(ptr->getType())->getAddressSpace()));\n";
-      os << "    }\n";
-      os << "#if LLVM_VERSION_MAJOR >= 15\n";
-      os << "  }\n";
-      os << "#endif\n";
-      os << "#endif\n";
       os << " Value *ld_lookup = load_if_ref(Builder2, intType, larg_1[1], "
             "byRef);\n";
+
+      auto SDI = dyn_cast<DagInit>(Dag->getArg(1));
+      auto SDI2 =
+          SDI ? dyn_cast<DefInit>(SDI->getOperator())->getDef() : nullptr;
+      auto SDI3 = (SDI2 && SDI2->getName() == "Concat")
+                      ? dyn_cast<DefInit>(SDI->getArg(0))
+                      : nullptr;
+      bool constint = SDI3 && SDI3->getDef()->isSubClassOf("ConstantInt");
+
       if (Dag->getNumArgs() == 4) {
-        os << " Value *layoutptr = load_if_ref(Builder2, charType, larg_0[0], "
-              "byRef);\n";
-        os << " Value* is_row_maj = Builder2.CreateICmpEQ(layoutptr, "
-              "ConstantInt::get(layoutptr->getType(), 101));\n";
-        os << " Value* offset = Builder2.CreateMul(load_if_ref(Builder2, "
-              "intType, larg_2[0], byRef), CreateSelect(Builder2, is_row_maj, "
-              "ld_lookup, ConstantInt::get(intType, 1)));\n";
-        os << " offset = Builder2.CreateAdd(offset, "
-              "Builder2.CreateMul(load_if_ref(Builder2, "
-              "intType, larg_3[0], byRef), CreateSelect(Builder2, is_row_maj, "
-              "ConstantInt::get(intType, 1), ld_lookup)));\n";
+        os << " Value *layoutptr = cblas ? load_if_ref(Builder2, charType, "
+              "larg_0[0], "
+              "byRef) : nullptr;\n";
       } else {
-        os << " Value* offset = Builder2.CreateMul(load_if_ref(Builder2, "
-              "intType, larg_2[0], byRef), ld_lookup);\n";
+        os << " Value *layoutptr = nullptr;\n";
       }
-      os << "  ptr = Builder2.CreateGEP(fpType, ptr, offset);\n";
+      os << " Value *row = load_if_ref(Builder2, "
+            "intType, larg_2[0], byRef);\n";
+      if (Dag->getNumArgs() == 4) {
+        os << " Value *col = load_if_ref(Builder2, "
+              "intType, larg_3[0], byRef);\n";
+      } else {
+        os << " Value *col = nullptr;\n";
+      }
+      if (constint)
+        os << " ptr = nullptr;\n";
+      os << " ptr = lookup_with_layout(Builder2, fpType, layoutptr, ptr, "
+            "ld_lookup, row, col);\n";
+      if (constint)
+        os << " ptr = to_blas_callconv(Builder2, ptr, byRef, cublas, nullptr, "
+              "allocationBuilder, \"offset\");\n";
       if (Def->getName() == "LoadLookup") {
         os << "  if (!byRefFloat) ptr = Builder2.CreateLoad(fpType, ptr);\n";
         os << "  SmallVector<Value*, 1> vals = { ptr };\n";
@@ -1095,7 +1249,7 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
     errs() << *Def << "\n";
     errs() << Def->getName() << "\n";
     PrintFatalError(Def->getLoc(), "Dag/Def that isn't a DiffeRet!!");
-  } else if (DefInit *DefArg = dyn_cast<DefInit>(arg)) {
+  } else if (auto DefArg = dyn_cast<DefInit>(arg)) {
     auto Def = DefArg->getDef();
     if (Def->isSubClassOf("DiffeRetIndex")) {
       os << "{dif}";
@@ -1147,10 +1301,24 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
       } else if (val == "l") {
         os << "{to_blas_callconv(Builder2, valuel, byRef, cublas, nullptr, "
               "allocationBuilder, \"constant.char.l\")}";
+      } else if (val == "R") {
+        os << "{to_blas_callconv(Builder2, valueR, byRef, cublas, nullptr, "
+              "allocationBuilder, \"constant.char.R\")}";
+      } else if (val == "L") {
+        os << "{to_blas_callconv(Builder2, valueL, byRef, cublas, nullptr, "
+              "allocationBuilder, \"constant.char.L\")}";
+      } else if (val == "U") {
+        os << "{to_blas_callconv(Builder2, valueU, byRef, cublas, nullptr, "
+              "allocationBuilder, \"constant.char.U\")}";
+      } else if (val == "C") {
+        os << "{to_blas_callconv(Builder2, (blas.floatType == \"z\" || "
+              "blas.floatType == \"c\") ? valueC : valueT, byRef, cublas, "
+              "nullptr, "
+              "allocationBuilder, \"constant.char.C\")}";
         // C is not supported yet
         //} else if (val == "C") {
       } else {
-        errs() << "unknown char: " << val << "\n";
+        errs() << "unknown char: '" << val << "'\n";
         PrintFatalError(Def->getLoc(), "unknown char");
       }
     } else if (Def->isSubClassOf("Alloca")) {
@@ -1161,13 +1329,14 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
     } else if (Def->isSubClassOf("ConstantInt")) {
       auto val = Def->getValueAsInt("value");
       os << "{to_blas_callconv(Builder2, ConstantInt::get(intType, " << val
-         << "), byRef, cublas, intType, allocationBuilder, \"constant.int."
+         << "), byRef, cublas, julia_decl_type, allocationBuilder, "
+            "\"constant.int."
          << val << "\")}";
     } else if (Def->isSubClassOf("transpose")) {
       auto name = Def->getValueAsString("name");
       os << "{(arg_transposed_" << name << " = arg_transposed_" << name
          << " ? arg_transposed_" << name << " : "
-         << "transpose(Builder2, arg_" << name
+         << "transpose(blas.floatType, Builder2, arg_" << name
          << ", byRef, cublas, charType, allocationBuilder, \"" << name
          << "\"))}";
     } else {
@@ -1177,6 +1346,7 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
   } else {
     auto name = ruleDag->getArgNameStr(pos);
     if (name == "") {
+      llvm::errs() << "ruleDag: " << *ruleDag << "\n";
       PrintFatalError(pattern.getLoc(),
                       "arg has no name!" + std::to_string(pos));
       assert(name != "");
@@ -1235,7 +1405,7 @@ void rev_call_arg(bool forward, DagInit *ruleDag, const TGPattern &pattern,
 
 // fill the result string and return the number of added args
 void rev_call_args(bool forward, Twine argName, const TGPattern &pattern,
-                   DagInit *ruleDag, raw_ostream &os, StringRef func,
+                   const DagInit *ruleDag, raw_ostream &os, StringRef func,
                    ArgType ty, const StringMap<Twine> &vars) {
   const auto nameMap = pattern.getArgNameMap();
   size_t numArgs = ruleDag->getNumArgs();
@@ -1258,17 +1428,32 @@ void rev_call_args(bool forward, Twine argName, const TGPattern &pattern,
   }
   os << "        if (byRef) {\n";
   int n = 0;
-  if (func == "gemv" || func == "lascl")
+  if (func == "gemv" || func == "lascl" || func == "potrs" || func == "potrf" ||
+      func == "lacpy" || func == "spmv" || func == "spr2" || func == "symv")
     n = 1;
-  if (func == "gemm" || func == "syrk")
+  if (func == "gemm" || func == "syrk" || func == "syr2k" || func == "symm")
     n = 2;
-  if (func == "trmv")
+  if (func == "trmv" || func == "trtrs")
     n = 3;
-  if (func == "trmm")
+  if (func == "trmm" || func == "trsm")
     n = 4;
-  for (int i = 0; i < n; i++)
-    os << "           " << argName
-       << ".push_back(ConstantInt::get(intType, 1));\n";
+  if (n != 0) {
+    os << "    auto tmpF_" << func
+       << " = gutils->oldFunc->getParent()->getFunction(\n"
+       << "  blas.prefix + blas.floatType + \"" << func;
+
+    if (func == "copy")
+      os << "\" + (cublasv2 ? \"\" : blas.suffix));\n";
+    else
+      os << "\" + blas.suffix);\n";
+
+    for (int i = 0; i < n; i++)
+      os << "           " << argName << ".push_back(ConstantInt::get((tmpF_"
+         << func << " && tmpF_" << func
+         << "->getFunctionType()->getNumParams() > " << argName
+         << ".size() ) ? tmpF_" << func << "->getFunctionType()->getParamType("
+         << argName << ".size()) : intType, 1));\n";
+  }
   os << "        }\n";
   if (ty == ArgType::fp) {
     os << "           if (cublasv2) " << argName
@@ -1276,7 +1461,7 @@ void rev_call_args(bool forward, Twine argName, const TGPattern &pattern,
   }
 }
 
-void emit_tmp_free(Record *Def, raw_ostream &os, StringRef builder) {
+void emit_tmp_free(const Record *Def, raw_ostream &os, StringRef builder) {
   const auto args = Def->getValueAsListOfStrings("args");
   // allocating tmp variables is optional, return if not required
   if (args.size() == 0)
@@ -1286,7 +1471,7 @@ void emit_tmp_free(Record *Def, raw_ostream &os, StringRef builder) {
   os << "    CreateDealloc(" << builder << ", true_" << allocName << ");\n";
 }
 
-void emit_tmp_creation(Record *Def, raw_ostream &os, StringRef builder) {
+void emit_tmp_creation(const Record *Def, raw_ostream &os, StringRef builder) {
   const auto args = Def->getValueAsListOfStrings("args");
   // allocating tmp variables is optional, return if not required
   if (args.size() == 0)
@@ -1296,7 +1481,8 @@ void emit_tmp_creation(Record *Def, raw_ostream &os, StringRef builder) {
   assert(args.size() >= 2);
   auto action = args[1];
   assert(action == "product" || action == "is_normal" ||
-         action == "triangular");
+         action == "triangular" || action == "vector" ||
+         action == "zerotriangular" || action == "is_left");
   if (action == "product") {
     const auto matName = args[0];
     const auto dim1 = "arg_" + args[2];
@@ -1320,7 +1506,27 @@ void emit_tmp_creation(Record *Def, raw_ostream &os, StringRef builder) {
     os << "    Value *size_" << vecName << " = " << builder
        << ".CreateSelect(is_normal(" << builder << ", " << trans
        << ", byRef, cublas), len1, len2);\n";
-  } else if (action == "triangular") {
+  } else if (action == "is_left") {
+    assert(args.size() == 5);
+    const auto vecName = args[0];
+    const auto trans = "arg_" + args[2];
+    const auto dim1 = "arg_" + args[3];
+    const auto dim2 = "arg_" + args[4];
+    os << "    Value *len1 = load_if_ref(" << builder << ", intType," << dim1
+       << ", byRef);\n"
+       << "    Value *len2 = load_if_ref(" << builder << ", intType," << dim2
+       << ", byRef);\n";
+    os << "    Value *size_" << vecName << " = " << builder
+       << ".CreateSelect(is_left(" << builder << ", " << trans
+       << ", byRef, cublas), len1, len2);\n";
+  } else if (action == "vector") {
+    assert(args.size() == 3);
+    const auto vecName = args[0];
+    const auto dim1 = "arg_" + args[2];
+    os << "    Value *len1 = load_if_ref(" << builder << ", intType," << dim1
+       << ", byRef);\n";
+    os << "    Value *size_" << vecName << " = len1;\n";
+  } else if (action == "triangular" || action == "zerotriangular") {
     assert(args.size() == 3);
     const auto vecName = args[0];
     const auto dim1 = "arg_" + args[2];
@@ -1329,19 +1535,56 @@ void emit_tmp_creation(Record *Def, raw_ostream &os, StringRef builder) {
     //  Size has to be (at least)
     //  ( ( n*( n + 1 ) )/2 )
     os << "    Value *size_" << vecName << " = " << builder
-       << ".CreateMul(len, " << builder
-       << ".CreateAdd(len, "
-          "ConstantInt::get(intType, 1)), \"square_mat_size_"
-       << vecName << "\");\n"
-       << "    size_" << vecName << " = " << builder << ".CreateUDiv(size_"
-       << vecName << ", ConstantInt::get(intType, 2), \"size_" << vecName
-       << "\");\n";
+       << ".CreateMul(len, len);\n";
   }
   const auto matName = args[0];
   const auto allocName = "mat_" + matName;
+  if (action == "zerotriangular")
+    os << "    CallInst * malloccall = nullptr;\n";
   os << "    Value * true_" << allocName << " = CreateAllocation(" << builder
-     << ", fpType, size_" << matName << ", \"" << allocName << "\");\n"
-     << "    Value * " << allocName << " = true_" << allocName << ";\n"
+     << ", fpType, size_" << matName << ", \"" << allocName << "\"";
+  if (action == "zerotriangular")
+    os << ", &malloccall";
+  os << ");\n";
+  if (action == "zerotriangular") {
+    os << "    {\n";
+    os << "    auto &M = *" << builder
+       << ".GetInsertBlock()->getParent()->getParent();\n";
+    os << "    auto AlignI = M.getDataLayout().getTypeAllocSizeInBits(fpType) "
+          "/ 8;\n";
+    os << "    auto Align = ConstantInt::get(intType, AlignI);\n";
+    os << "    auto PT = cast<PointerType>(malloccall->getType());\n";
+    os << "    Value *tozero = malloccall;\n";
+    os << "\n";
+    os << "    bool needsCast = false;\n";
+    os << "#if LLVM_VERSION_MAJOR < 17\n";
+    os << "#if LLVM_VERSION_MAJOR >= 15\n";
+    os << "    if (PT->getContext().supportsTypedPointers()) {\n";
+    os << "#endif\n";
+    os << "      needsCast = !PT->getPointerElementType()->isIntegerTy(8);\n";
+    os << "#if LLVM_VERSION_MAJOR >= 15\n";
+    os << "    }\n";
+    os << "#endif\n";
+    os << "#endif\n";
+    os << "    if (needsCast)\n";
+    os << "      tozero = " << builder << ".CreatePointerCast(\n";
+    os << "          tozero, "
+          "PointerType::get(Type::getInt8Ty(PT->getContext()),\n";
+    os << "                                   PT->getAddressSpace()));\n";
+    os << "    Value *args[] = {\n";
+    os << "        tozero, "
+          "ConstantInt::get(Type::getInt8Ty(malloccall->getContext()), 0),\n";
+    os << "        " << builder << ".CreateMul(Align, size_" << args[0]
+       << ", \"\", true, true),\n";
+    os << "        ConstantInt::getFalse(malloccall->getContext())};\n";
+    os << "    Type *tys[] = {args[0]->getType(), args[2]->getType()};\n";
+    os << "\n";
+    os << "    " << builder << ".CreateCall(\n";
+    os << "        getIntrinsicDeclaration(&M, Intrinsic::memset, tys), "
+          "args);\n";
+    os << "    }\n";
+  }
+  os << "    Value * " << allocName << " = true_" << allocName << ";\n"
      << "    if (type_vec_like->isIntegerTy()) {\n"
      << "      " << allocName << " = " << builder << ".CreatePtrToInt("
      << allocName << ", type_vec_like);\n"
@@ -1351,7 +1594,7 @@ void emit_tmp_creation(Record *Def, raw_ostream &os, StringRef builder) {
      << "    }\n";
 }
 
-void if_rule_condition_inner(const TGPattern &pattern, DagInit *ruleDag,
+void if_rule_condition_inner(const TGPattern &pattern, const DagInit *ruleDag,
                              StringRef name, StringRef tab, raw_ostream &os,
                              llvm::StringSet<> &seen) {
   auto opName = ruleDag->getOperator()->getAsString();
@@ -1367,7 +1610,7 @@ void if_rule_condition_inner(const TGPattern &pattern, DagInit *ruleDag,
     seen.insert(name);
   }
   for (size_t pos = 0; pos < ruleDag->getNumArgs();) {
-    Init *arg = ruleDag->getArg(pos);
+    auto arg = ruleDag->getArg(pos);
     if (auto sub_Dag = dyn_cast<DagInit>(arg)) {
       if_rule_condition_inner(pattern, sub_Dag, name, tab, os, seen);
     }
@@ -1377,7 +1620,7 @@ void if_rule_condition_inner(const TGPattern &pattern, DagInit *ruleDag,
 
 // primal arguments are always available,
 // shadow arguments (d_<X>) might not, so check if they are active
-void emit_if_rule_condition(const TGPattern &pattern, DagInit *ruleDag,
+void emit_if_rule_condition(const TGPattern &pattern, const DagInit *ruleDag,
                             StringRef name, StringRef tab, raw_ostream &os) {
   llvm::StringSet<> seen = llvm::StringSet<>();
 
@@ -1399,7 +1642,7 @@ void emit_if_rule_condition(const TGPattern &pattern, DagInit *ruleDag,
   os << ") {\n";
 }
 
-void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
+void emit_dag(bool forward, Twine resultVarName, const DagInit *ruleDag,
               Twine argPrefix, raw_ostream &os, StringRef argName,
               ssize_t actArg, const TGPattern &pattern, bool runtimeChecked,
               StringMap<Twine> &vars) {
@@ -1417,15 +1660,8 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
       os << "            ss << \"in Mode: \" << to_string(Mode) << \"\\n\";\n";
       os << "            ss << \"cannot handle blas argument " << argName
          << " within " << pattern.getName() << " of \" << call;\n";
-      os << "            if (CustomErrorHandler) {\n";
-      os << "              CustomErrorHandler(ss.str().c_str(), wrap(&call), "
-            "ErrorType::NoDerivative,\n";
-      os << "                                 gutils, nullptr, "
-            "wrap(&Builder2));\n";
-      os << "            } else {\n";
-      os << "              EmitFailure(\"NoDerivative\", call.getDebugLoc(), "
-            "&call, ss.str());\n";
-      os << "            }\n";
+      os << "            EmitNoDerivativeError(ss.str(), call, gutils, "
+            "Builder2);\n";
     }
     return;
   }
@@ -1443,8 +1679,8 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
     rev_call_args(forward, argPrefix, pattern, ruleDag, os, dfnc_name, ty,
                   vars);
     os << "        const auto Defs = gutils->getInvertedBundles(&call, {"
-       << ValueType_helper(pattern, actArg) << "}, Builder2, /* lookup */ "
-       << (!forward) << ");\n";
+       << ValueType_helper(pattern, actArg, ruleDag)
+       << "}, Builder2, /* lookup */ " << (!forward) << ");\n";
     os << "    SmallVector<Type*, 1> tys; for (auto arg : " << argPrefix
        << ") "
           "tys.push_back(arg->getType());\n";
@@ -1456,13 +1692,19 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
 
     os << "    auto derivcall_" << dfnc_name
        << " = gutils->oldFunc->getParent()->getOrInsertFunction(\n"
-       << "  blas.prefix + blas.floatType + \"" << dfnc_name
-       << "\" + blas.suffix, FT" << dfnc_name << ");\n";
+       << "  blas.prefix + blas.floatType + \"" << dfnc_name;
+
+    if (dfnc_name == "copy")
+      os << "\" + (cublasv2 ? \"\" : blas.suffix), FT" << dfnc_name << ");\n";
+    else
+      os << "\" + blas.suffix, FT" << dfnc_name << ");\n";
 
     os << "    if (auto F = dyn_cast<Function>(derivcall_" << dfnc_name
        << ".getCallee()))\n"
        << "    {\n"
-       << "      attribute_" << dfnc_name << "(blas, F);\n"
+       << "      auto newF = attribute_" << dfnc_name << "(blas, F);\n"
+       << "      derivcall_" << dfnc_name << " = FunctionCallee(derivcall_"
+       << dfnc_name << ".getFunctionType(), newF);\n"
        << "    }\n\n";
     os << "    auto cubcall = cast<CallInst>(Builder2.CreateCall(derivcall_"
        << dfnc_name << ", " << argPrefix << ", Defs));\n";
@@ -1494,8 +1736,8 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
     rev_call_args(forward, argPrefix, pattern, ruleDag, os, "", ty, vars);
 
     os << "        const auto Defs = gutils->getInvertedBundles(&call, {"
-       << ValueType_helper(pattern, actArg) << "}, Builder2, /* lookup */ "
-       << (!forward) << ");\n";
+       << ValueType_helper(pattern, actArg, ruleDag)
+       << "}, Builder2, /* lookup */ " << (!forward) << ");\n";
     // Now that we have the defs, we can create the call
     assert(ty == ArgType::ap);
     os << "callSPMVDiagUpdate(Builder2, *gutils->oldFunc->getParent(), blas, "
@@ -1524,8 +1766,8 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
     rev_call_args(forward, argPrefix, pattern, ruleDag, os, "", ty, vars);
 
     os << "        const auto Defs = gutils->getInvertedBundles(&call, {"
-       << ValueType_helper(pattern, actArg) << "}, Builder2, /* lookup */ "
-       << (!forward) << ");\n";
+       << ValueType_helper(pattern, actArg, ruleDag)
+       << "}, Builder2, /* lookup */ " << (!forward) << ");\n";
 
     os << "    auto derivcall_inner_prod = \n"
           "      getorInsertInnerProd(Builder2, "
@@ -1566,8 +1808,8 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
 
     // handle seq rules
     for (size_t i = 0; i < ruleDag->getNumArgs(); i++) {
-      Init *subArg = ruleDag->getArg(i);
-      DagInit *sub_Dag = cast<DagInit>(subArg);
+      auto subArg = ruleDag->getArg(i);
+      auto sub_Dag = cast<DagInit>(subArg);
       emit_dag(forward,
                i == ruleDag->getNumArgs() - 1 ? resultVarName : llvm::Twine(),
                sub_Dag, argName + "_" + std::to_string(i), os, argName, actArg,
@@ -1577,6 +1819,40 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
 
     if (!forward && !runtimeChecked)
       emit_runtime_continue(ruleDag, argName, "        ", "Builder2", true, os);
+    os << "        }\n";
+    return;
+  }
+  if (Def->isSubClassOf("CopyLowerToUpper")) {
+    if (ruleDag->getNumArgs() != 4)
+      PrintFatalError(pattern.getLoc(),
+                      "only 4-arg copy lower to upper operands supported");
+
+    os << "        {\n";
+    os << "        // LowerToUpper\n";
+    // handle seq rules
+    for (size_t i = 0; i < ruleDag->getNumArgs(); i++) {
+      if (i != 2)
+        os << "        Value *arg_" << i << "[] = ";
+      else
+        os << "        SmallVector<Value*, 2> arg_" << i
+           << ";\n  for (auto v : ";
+      rev_call_arg(forward, ruleDag, pattern, i, os, vars);
+      if (i == 2)
+        os << ") arg_" << i << ".push_back(v)";
+      os << ";\n";
+    }
+
+    os << " copy_lower_to_upper(Builder2, fpType, blas, byRef, \n";
+    os << "                     arg_0[0] ? load_if_ref(Builder2, charType, "
+          "arg_0[0], byRef) : nullptr,\n";
+    os << "                     is_lower(Builder2, arg_1[0], byRef, cublas),\n";
+    os << "                     arg_2[0],\n";
+    os << "                     load_if_ref(Builder2, intType, arg_2[1], "
+          "byRef),\n";
+    os << "                     load_if_ref(Builder2, intType, arg_3[0], "
+          "byRef)\n";
+    os << "                     );\n";
+
     os << "        }\n";
     return;
   }
@@ -1601,11 +1877,10 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
     os << "      // FAdd\n";
 
     for (size_t i = 0; i < ruleDag->getNumArgs(); i++) {
-      Init *subArg = ruleDag->getArg(i);
-      DagInit *sub_Dag = cast<DagInit>(subArg);
+      auto subArg = ruleDag->getArg(i);
+      auto sub_Dag = cast<DagInit>(subArg);
       os << "      Value *sub_" << i << " = nullptr;\n";
-      auto resultVarName2 = llvm::Twine("sub_") + std::to_string(i);
-      emit_dag(forward, resultVarName2, sub_Dag,
+      emit_dag(forward, llvm::Twine("sub_") + std::to_string(i), sub_Dag,
                argName + "_" + std::to_string(i), os, argName, actArg, pattern,
                /*runtimeChecked*/ false, vars);
       os << "       if(sub_" << i << " && " << resultVarName << ") "
@@ -1617,6 +1892,71 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
     os << "         if (!" << resultVarName << ") " << resultVarName
        << " = ConstantFP::get(fpType, 0.0);\n";
     os << "        }\n";
+    return;
+  }
+  if (Def->isSubClassOf("BFDiv") || Def->getName() == "BFDiv") {
+    assert(forward);
+    os << "        {\n";
+    os << "      // BFDiv\n";
+    auto subNum = ruleDag->getArg(0);
+    auto sub_Num = cast<DagInit>(subNum);
+    os << "      Value *subnum = nullptr;\n";
+    os << "      Value *subdenom = nullptr;\n";
+    emit_dag(forward, "subnum", sub_Num, argName + "_" + std::to_string(0), os,
+             argName, actArg, pattern, runtimeChecked, vars);
+    os << "       if(subnum) {\n";
+    os << "        SmallVector<Value*, 1> subdenomar;";
+    os << "        for (auto item : ";
+
+    rev_call_arg(forward, ruleDag, pattern, 1, os, vars);
+    os << ") subdenomar.push_back(item);\n";
+    os << "           assert(subdenomar.size() == 1);\n";
+    os << "           subdenom = subdenomar[0];\n";
+    os << "           subdenom = load_if_ref(Builder2, fpType, subdenom, "
+          "byRefFloat);\n";
+    os << "           assert(subnum);\n";
+    os << "           assert(subdenom);\n";
+    os << resultVarName << " = Builder2.CreateFDiv(subnum, subdenom);\n";
+    os << "         } else " << resultVarName
+       << " = ConstantFP::get(fpType, 0.0);\n";
+    os << "        }\n";
+    return;
+  }
+  if (Def->isSubClassOf("BIntrinsic")) {
+    auto op = Def->getValueAsString("s");
+    assert(forward);
+    os << "        {\n";
+    os << "      // BIntrinsic " << op << "\n";
+
+    for (size_t i = 0; i < ruleDag->getNumArgs(); i++) {
+      auto subArg = ruleDag->getArg(i);
+      auto sub_Dag = cast<DagInit>(subArg);
+      os << "      Value *sub_" << i << " = nullptr;\n";
+      emit_dag(forward, llvm::Twine("sub_") + std::to_string(i), sub_Dag,
+               argName + "_" + std::to_string(i), os, argName, actArg, pattern,
+               runtimeChecked, vars);
+    }
+    os << "      Value* args[] = {";
+    for (size_t i = 0; i < ruleDag->getNumArgs(); i++) {
+      if (i != 0)
+        os << ", ";
+      os << "sub_" << i;
+    }
+    os << "};\n";
+    os << "   Type* types[] = {";
+    const auto types = Def->getValueAsListOfInts("types");
+    bool seentype = false;
+    for (auto idx : types) {
+      if (seentype)
+        os << ", ";
+      seentype = true;
+      os << "sub_" << idx << "->getType()";
+    }
+    os << "};\n";
+    os << "    " << resultVarName
+       << " = Builder2.CreateIntrinsic(Intrinsic::" << op
+       << ", types, args);\n";
+    os << "  }";
     return;
   }
   if (Def->isSubClassOf("For") || Def->getName() == "For") {
@@ -1653,7 +1993,7 @@ void emit_dag(bool forward, Twine resultVarName, DagInit *ruleDag,
        << idx;
     if (Def->getValueAsBit("offset"))
       os << "_inc";
-    os << ", byRef, cublas, intType, allocationBuilder, \"for." << idx
+    os << ", byRef, cublas, julia_decl_type, allocationBuilder, \"for." << idx
        << "\");\n";
 
     os << "      Value *for_res = nullptr;\n";
@@ -1695,31 +2035,22 @@ void emit_fwd_rewrite_rules(const TGPattern &pattern, raw_ostream &os) {
      << "                                                    \n"
      << "    auto callval = call.getCalledOperand();       \n\n";
 
-  os << "  if (EnzymeRuntimeActivityCheck) {\n"
+  os << "  if (gutils->runtimeActivity) {\n"
      << "    std::string s;\n"
      << "    llvm::raw_string_ostream ss(s);\n"
      << "    ss << \"" << pattern.getName() << "\" << \"\\n\";\n"
-     << "    ss << call.getDebugLoc() << \"\\n\";\n"
-     << "    ss << \"Runtime Activity not supported for BLAS calls\" << "
+     << "    ss << call << \"\\n\";\n"
+     << "    ss << \"Runtime Activity not yet implemented for Forward-Mode "
+        "BLAS calls\" << "
         "\"\\n\";\n"
-     << "    if (CustomErrorHandler) {\n"
-     << "      IRBuilder<> Builder2(&call);\n"
-     << "      getForwardBuilder(BuilderZ);\n"
-     << "      CustomErrorHandler(ss.str().c_str(), wrap(&call), "
-        "ErrorType::NoDerivative,\n"
-     << "                         gutils, nullptr, wrap(&BuilderZ));\n"
-     << "      return false;\n"
-     << "    } else {\n"
-     << "      EmitFailure(\"Unsupported Mode\", call.getDebugLoc(), &call, "
-        "ss.str());\n"
-     << "      return false;\n"
-     << "    }\n"
+     << "    EmitNoDerivativeError(ss.str(), call, gutils, BuilderZ);\n"
+     << "    return false;\n"
      << "  }\n";
 
   // just make this const one available now to have less variable name repition
   os << "Value * const_one = to_blas_callconv(Builder2, "
         "ConstantInt::get(intType, 1), "
-     << "byRef, cublas, intType, allocationBuilder, \"int.one\");\n";
+     << "byRef, cublas, julia_decl_type, allocationBuilder, \"int.one\");\n";
 
   const auto nameVec = pattern.getArgNames();
   const auto inputTypes = pattern.getArgTypeMap();
@@ -1745,6 +2076,16 @@ void emit_fwd_rewrite_rules(const TGPattern &pattern, raw_ostream &os) {
     }
   }
 
+  auto duals = pattern.getDuals();
+  const auto Def = cast<DefInit>(duals->getOperator())->getDef();
+
+  if (Def->isSubClassOf("Seq")) {
+    if (!Def->getValueAsBit("start")) {
+      os << "Builder2.SetInsertPoint(gutils->getNewFromOriginal(&call)->"
+            "getNextNode());\n";
+    }
+  }
+
   os << "    Value *dres = applyChainRule(\n"
      << "        call.getType(), Builder2,\n"
      << "        [&](";
@@ -1758,7 +2099,7 @@ void emit_fwd_rewrite_rules(const TGPattern &pattern, raw_ostream &os) {
      << "      Value *dres = nullptr;\n";
 
   StringMap<Twine> vars;
-  emit_dag(/*forward*/ true, "dres", pattern.getDuals(), "args", os, "",
+  emit_dag(/*forward*/ true, "dres", duals, "args", os, "",
            /*actArg*/ -1, pattern, /*runtimeChecked*/ false, vars);
 
   os << "      if (!dres && !call.getType()->isVoidTy()) dres = "
@@ -1799,8 +2140,20 @@ void emit_rev_rewrite_rules(const StringMap<TGPattern> &patternMap,
 
   os << "  /* rev-rewrite */                                 \n"
      << "  if (Mode == DerivativeMode::ReverseModeCombined ||\n"
-     << "      Mode == DerivativeMode::ReverseModeGradient) {\n"
-     << "    Value *alloc = nullptr;\n"
+     << "      Mode == DerivativeMode::ReverseModeGradient) {\n";
+
+  os << "    if (blas.floatType == \"c\" || blas.floatType == \"C\" || "
+        "blas.floatType == \"z\" || blas.floatType == \"Z\") {\n"
+     << "      std::string s;\n"
+     << "      llvm::raw_string_ostream ss(s);\n"
+     << "      ss << \"" << pattern.getName() << "\" << \"\\n\";\n"
+     << "      ss << \"Complex inputs not yet supported in reverse mode for "
+        "BLAS calls\" << "
+        "\"\\n\";\n"
+     << "      EmitNoDerivativeError(ss.str(), call, gutils, Builder2);\n"
+     << "    }\n";
+
+  os << "    Value *alloc = nullptr;\n"
      << "    if (byRef && !cublas) {\n"
      << "      alloc = allocationBuilder.CreateAlloca(fpType, nullptr, "
         "\"ret\");\n"
@@ -1845,7 +2198,7 @@ void emit_rev_rewrite_rules(const StringMap<TGPattern> &patternMap,
     }
   }
 
-  os << "  if(EnzymeRuntimeActivityCheck && cacheMode) {\n";
+  os << "  if(gutils->runtimeActivity && cacheMode) {\n";
   for (size_t i = 0; i < activeArgs.size(); i++) {
     auto name = nameVec[activeArgs[i]];
 
@@ -1898,10 +2251,13 @@ void emit_rev_rewrite_rules(const StringMap<TGPattern> &patternMap,
   // just make this const one available now to have less variable name repition
   os << "Value * const_one = to_blas_callconv(Builder2, "
         "ConstantInt::get(intType, 1), "
-     << "byRef, cublas, intType, allocationBuilder, \"int.one\");\n";
+     << "byRef, cublas, julia_decl_type, allocationBuilder, \"int.one\");\n";
 
   os << "      auto bb_name = Builder2.GetInsertBlock()->getName();\n";
-  for (size_t i = 0; i < activeArgs.size(); i++) {
+  for (size_t iteri = 0; iteri < activeArgs.size(); iteri++) {
+    // trtrs does in reversed arg order.
+    size_t i = (pattern.getName() != "trtrs") ? iteri
+                                              : (activeArgs.size() - 1 - iteri);
     auto rule = rules[i];
     const size_t actArg = activeArgs[i];
     const auto ruleDag = rule.getRuleDag();
@@ -2022,6 +2378,11 @@ void emitBlasDerivatives(const RecordKeeper &RK, raw_ostream &os) {
   os << "enum cublasSideMode_t {\n"
      << "  CUBLAS_SIDE_LEFT = 0,\n"
      << "  CUBLAS_SIDE_RIGHT = 1,\n"
+     << "};\n";
+  os << "enum cublasFillMode_t {\n"
+     << "  CUBLAS_FILL_MODE_LOWER = 0,\n"
+     << "  CUBLAS_FILL_MODE_UPPER = 1,\n"
+     << "  CUBLAS_FILL_MODE_FULL = 2,\n"
      << "};\n";
 
   for (auto &&newPattern : newBlasPatterns) {

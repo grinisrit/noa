@@ -118,9 +118,15 @@ const llvm::StringMap<llvm::Intrinsic::ID> LIBM_FUNCTIONS = {
     {"atan", Intrinsic::not_intrinsic},
     {"atan2", Intrinsic::not_intrinsic},
     {"__nv_atan2", Intrinsic::not_intrinsic},
+#if LLVM_VERSION_MAJOR >= 19
+    {"cosh", Intrinsic::cosh},
+    {"sinh", Intrinsic::sinh},
+    {"tanh", Intrinsic::tanh},
+#else
     {"cosh", Intrinsic::not_intrinsic},
     {"sinh", Intrinsic::not_intrinsic},
     {"tanh", Intrinsic::not_intrinsic},
+#endif
     {"acosh", Intrinsic::not_intrinsic},
     {"asinh", Intrinsic::not_intrinsic},
     {"atanh", Intrinsic::not_intrinsic},
@@ -1003,10 +1009,18 @@ void TypeAnalyzer::updateAnalysis(Value *Val, TypeTree Data, Value *Origin) {
     return;
   }
 
+  if (auto GV = dyn_cast<GlobalVariable>(Val)) {
+    if (hasMetadata(GV, "enzyme_ta_norecur"))
+      return;
+  }
+
   if (auto CE = dyn_cast<ConstantExpr>(Val)) {
     if (CE->isCast() && isa<ConstantInt>(CE->getOperand(0))) {
       return;
     }
+    if (CE->getOpcode() == Instruction::GetElementPtr &&
+        isa<ConstantPointerNull>(CE->getOperand(0)))
+      return;
   }
 
   if (auto I = dyn_cast<Instruction>(Val)) {
@@ -1332,10 +1346,19 @@ void TypeAnalyzer::considerTBAA() {
           updateAnalysis(call->getOperand(0), TT.Only(-1, call), call);
         }
         if (F) {
-          StringSet<> JuliaKnownTypes = {
-              "julia.gc_alloc_obj", "jl_alloc_array_1d",  "jl_alloc_array_2d",
-              "jl_alloc_array_3d",  "ijl_alloc_array_1d", "ijl_alloc_array_2d",
-              "ijl_alloc_array_3d", "jl_gc_alloc_typed",  "ijl_gc_alloc_typed"};
+          StringSet<> JuliaKnownTypes = {"julia.gc_alloc_obj",
+                                         "jl_alloc_array_1d",
+                                         "jl_alloc_array_2d",
+                                         "jl_alloc_array_3d",
+                                         "ijl_alloc_array_1d",
+                                         "ijl_alloc_array_2d",
+                                         "ijl_alloc_array_3d",
+                                         "jl_gc_alloc_typed",
+                                         "ijl_gc_alloc_typed",
+                                         "jl_alloc_genericmemory",
+                                         "ijl_alloc_genericmemory",
+                                         "jl_new_array",
+                                         "ijl_new_array"};
           if (JuliaKnownTypes.count(F->getName())) {
             visitCallBase(*call);
             continue;
@@ -1414,8 +1437,8 @@ void TypeAnalyzer::considerTBAA() {
         } else if (call->getType()->isPointerTy()) {
           updateAnalysis(call, vdptr.Only(-1, call), call);
         } else {
-          llvm::errs() << " inst: " << I << " vdptr: " << vdptr.str() << "\n";
-          assert(0 && "unknown tbaa call instruction user");
+          llvm::errs() << " unknown tbaa call instruction user inst: " << I
+                       << " vdptr: " << vdptr.str() << "\n";
         }
       } else if (auto SI = dyn_cast<StoreInst>(&I)) {
         auto StoreSize =
@@ -1908,7 +1931,11 @@ void TypeAnalyzer::visitGEPOperator(GEPOperator &gep) {
 
   APInt constOffset(BitWidth, 0);
 
+#if LLVM_VERSION_MAJOR >= 20
+  SmallMapVector<Value *, APInt, 4> VariableOffsets;
+#else
   MapVector<Value *, APInt> VariableOffsets;
+#endif
   bool legalOffset =
       collectOffset(&gep, DL, BitWidth, VariableOffsets, constOffset);
   (void)legalOffset;
@@ -3841,6 +3868,11 @@ void TypeAnalyzer::visitIntrinsicInst(llvm::IntrinsicInst &I) {
   case Intrinsic::exp2:
   case Intrinsic::sin:
   case Intrinsic::cos:
+#if LLVM_VERSION_MAJOR >= 19
+  case Intrinsic::sinh:
+  case Intrinsic::cosh:
+  case Intrinsic::tanh:
+#endif
   case Intrinsic::floor:
   case Intrinsic::ceil:
   case Intrinsic::trunc:
@@ -4425,6 +4457,23 @@ void TypeAnalyzer::visitCallBase(CallBase &call) {
 #include "BlasTA.inc"
     }
 
+    // clang-format off
+    const char* NoTARecurStartsWith[] = {
+      "std::__u::basic_ostream<wchar_t, std::__u::char_traits<wchar_t>>& std::__u::operator<<",
+    };
+    // clang-format on
+    {
+      std::string demangledName = llvm::demangle(funcName.str());
+      // replace all '> >' with '>>'
+      size_t start = 0;
+      while ((start = demangledName.find("> >", start)) != std::string::npos) {
+        demangledName.replace(start, 3, ">>");
+      }
+      for (auto Name : NoTARecurStartsWith)
+        if (startsWith(demangledName, Name))
+          return;
+    }
+
     // Manual TT specification is non-interprocedural and already handled once
     // at the start.
 
@@ -4729,6 +4778,20 @@ void TypeAnalyzer::visitCallBase(CallBase &call) {
     if (funcName == "jl_get_binding_or_error" ||
         funcName == "ijl_get_binding_or_error") {
       updateAnalysis(&call, TypeTree(BaseType::Pointer).Only(-1, &call), &call);
+      return;
+    }
+    if (funcName == "julia.gc_loaded") {
+      if (direction & UP)
+        updateAnalysis(call.getArgOperand(1), getAnalysis(&call), &call);
+      if (direction & DOWN)
+        updateAnalysis(&call, getAnalysis(call.getArgOperand(1)), &call);
+      return;
+    }
+    if (funcName == "julia.pointer_from_objref") {
+      if (direction & UP)
+        updateAnalysis(call.getArgOperand(0), getAnalysis(&call), &call);
+      if (direction & DOWN)
+        updateAnalysis(&call, getAnalysis(call.getArgOperand(0)), &call);
       return;
     }
     if (funcName == "_ZNSt6chrono3_V212steady_clock3nowEv") {
@@ -5086,6 +5149,22 @@ void TypeAnalyzer::visitCallBase(CallBase &call) {
         ptr |= getAnalysis(&call).Lookup(LoadSize, DL);
       }
       updateAnalysis(&call, ptr.Only(-1, &call), &call);
+      updateAnalysis(call.getOperand(0),
+                     TypeTree(BaseType::Integer).Only(-1, &call), &call);
+      return;
+    }
+    if (funcName == "__size_returning_new_experiment") {
+      auto ptr = TypeTree(BaseType::Pointer);
+      auto &DL = call.getParent()->getParent()->getParent()->getDataLayout();
+      if (auto CI = dyn_cast<ConstantInt>(call.getOperand(0))) {
+        auto LoadSize = CI->getZExtValue();
+        // Only propagate mappings in range that aren't "Anything" into the
+        // pointer
+        ptr |= getAnalysis(&call).Lookup(LoadSize, DL);
+      }
+      ptr = ptr.Only(0, &call);
+      ptr |= TypeTree(BaseType::Integer).Only(DL.getPointerSize(), &call);
+      updateAnalysis(&call, ptr.Only(0, &call), &call);
       updateAnalysis(call.getOperand(0),
                      TypeTree(BaseType::Integer).Only(-1, &call), &call);
       return;
@@ -5541,7 +5620,8 @@ void TypeAnalyzer::visitCallBase(CallBase &call) {
     }
 
     if (funcName == "__cxa_guard_acquire" || funcName == "printf" ||
-        funcName == "vprintf" || funcName == "puts" || funcName == "fprintf") {
+        funcName == "vprintf" || funcName == "puts" || funcName == "fputc" ||
+        funcName == "fprintf") {
       updateAnalysis(&call, TypeTree(BaseType::Integer).Only(-1, &call), &call);
     }
 
@@ -6193,6 +6273,36 @@ TypeTree defaultTypeTreeForLLVM(llvm::Type *ET, llvm::Instruction *I,
 
     TypeTree Out;
     for (size_t i = 0; i < AT->getNumElements(); i++) {
+      Value *vec[2] = {
+          ConstantInt::get(Type::getInt64Ty(I->getContext()), 0),
+          ConstantInt::get(Type::getInt32Ty(I->getContext()), i),
+      };
+      auto g2 = GetElementPtrInst::Create(
+          AT, UndefValue::get(PointerType::getUnqual(AT)), vec);
+      APInt ai(DL.getIndexSizeInBits(g2->getPointerAddressSpace()), 0);
+      g2->accumulateConstantOffset(DL, ai);
+      // Using destructor rather than eraseFromParent
+      //   as g2 has no parent
+      delete g2;
+
+      int Off = (int)ai.getLimitedValue();
+      auto size = (DL.getTypeSizeInBits(AT->getElementType()) + 7) / 8;
+      Out |= SubT.ShiftIndices(DL, 0, size, Off);
+    }
+    return Out;
+  }
+  if (auto AT = dyn_cast<VectorType>(ET)) {
+#if LLVM_VERSION_MAJOR >= 12
+    assert(!AT->getElementCount().isScalable());
+    size_t numElems = AT->getElementCount().getKnownMinValue();
+#else
+    size_t numElems = AT->getNumElements();
+#endif
+    auto SubT = defaultTypeTreeForLLVM(AT->getElementType(), I, intIsPointer);
+    auto &DL = I->getParent()->getParent()->getParent()->getDataLayout();
+
+    TypeTree Out;
+    for (size_t i = 0; i < numElems; i++) {
       Value *vec[2] = {
           ConstantInt::get(Type::getInt64Ty(I->getContext()), 0),
           ConstantInt::get(Type::getInt32Ty(I->getContext()), i),
