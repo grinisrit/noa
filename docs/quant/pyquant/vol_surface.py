@@ -302,7 +302,7 @@ class VolSurfaceDeltaSpace:
 
         self.ATM = CubicSpline1D(
             XAxis(straddles.T),
-            YAxis(straddles.T*straddles.sigma)
+            YAxis(straddles.T*straddles.sigma*straddles.sigma)
         )
 
         self.RR25 = CubicSpline1D(
@@ -351,7 +351,7 @@ class VolSurfaceDeltaSpace:
         return VolSmileDeltaSpace(
             self.FWD.forward(time_to_maturity),
             Straddle(
-                ImpliedVol(self.ATM.apply(T) / T),
+                ImpliedVol( np.sqrt(self.ATM.apply(T) / T) ),
                 time_to_maturity
             ),
             RiskReversal(
