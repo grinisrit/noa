@@ -50,4 +50,4 @@ Finally, for `GPU` development install `CUDA` 11.2 or higher:
 ```python
 !sudo apt-get update && sudo apt-get install cuda-nvcc-11-2 -y
 ```
-(c) 2022 GrinisRIT ltd. 
+(c) 2024 GrinisRIT ltd. 

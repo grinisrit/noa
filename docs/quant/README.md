@@ -15,8 +15,6 @@ pipelines, as well as portfolio and margin optimisation platforms.
 
 ## Usage
 
-:warning: This component is under active development.
-
 Hands-on tutorials:
 
 * [Introduction: Arbitrage and Risk-Neutral Pricing](introduction.ipynb) - a great place to start 
@@ -29,6 +27,8 @@ providing even newcomers with the necessary option pricing background.
 * American Monte-Carlo with AAD with the [LSM algorithm](lsm.ipynb)
 
 * Monte-Carlo pricing with the [Heston model](heston_model.ipynb)
+
+* Machine Learning applications with [Deep Hedging](deep_hedging.ipynb)
  
 
-(c) 2023 GrinisRIT ltd.
+(c) 2024 GrinisRIT ltd.
