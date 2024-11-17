@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -46,18 +46,17 @@ GetSize( MPI_Comm communicator = MPI_COMM_WORLD )
  * \brief An RAII wrapper for custom MPI communicators.
  *
  * This is an RAII wrapper for custom MPI communicators created by calls to
- * \ref MPI_Comm_create, \ref MPI_Comm_split, or similar functions. It is based
- * on \ref std::shared_ptr so copy-constructible and copy-assignable, copies of
+ * `MPI_Comm_create`, `MPI_Comm_split`, or similar functions. It is based on
+ * \ref std::shared_ptr so copy-constructible and copy-assignable, copies of
  * the object represent the same communicator that is deallocated only when the
  * internal reference counter drops to zero.
  *
- * Note that predefined communicators (i.e. \ref MPI_COMM_WORLD,
- * \ref MPI_COMM_NULL and \ref MPI_COMM_SELF) can be used to initialize this
- * class, but other handles of the \ref MPI_Comm type _cannot_ be used to
- * initialize this class.
+ * Note that predefined communicators (i.e. `MPI_COMM_WORLD`, `MPI_COMM_NULL`
+ * and `MPI_COMM_SELF`) can be used to initialize this class, but other handles
+ * of the `MPI_Comm` type _cannot_ be used to initialize this class.
  *
  * This class follows the factory pattern, i.e. it provides static methods such
- * as \ref Comm::create or \ref Comm::split that return an instance of a new
+ * as \ref Comm::duplicate or \ref Comm::split that return an instance of a new
  * communicator.
  */
 class Comm
@@ -96,13 +95,13 @@ public:
    //! \brief Constructs an empty communicator with a null handle (`MPI_COMM_NULL`).
    Comm() = default;
 
-   //! \brief Deleted copy-constructor.
+   //! \brief Default copy-constructor.
    Comm( const Comm& other ) = default;
 
    //! \brief Default move-constructor.
    Comm( Comm&& other ) = default;
 
-   //! \brief Deleted copy-assignment operator.
+   //! \brief Default copy-assignment operator.
    Comm&
    operator=( const Comm& other ) = default;
 
@@ -113,9 +112,9 @@ public:
    /**
     * \brief Constructs a communicator initialized by given predefined communicator.
     *
-    * Note that only predefined communicators (i.e. \ref MPI_COMM_WORLD,
-    * \ref MPI_COMM_NULL and \ref MPI_COMM_SELF) can be used to initialize this
-    * class. Other handles of the \ref MPI_Comm type _cannot_ be used to
+    * Note that only predefined communicators (i.e. `MPI_COMM_WORLD`,
+    * `MPI_COMM_NULL` and `MPI_COMM_SELF`) can be used to initialize this
+    * class. Other handles of the `MPI_Comm` type _cannot_ be used to
     * initialize this class.
     *
     * \throws std::logic_error when the \e comm handle is not a predefined
@@ -131,7 +130,7 @@ public:
       wrapper = std::make_shared< Wrapper >( comm );
    }
 
-   //! \brief Factory method – wrapper for \ref MPI_Comm_dup
+   //! \brief Factory method – wrapper for `MPI_Comm_dup`
    static Comm
    duplicate( MPI_Comm comm )
    {
@@ -144,14 +143,14 @@ public:
 #endif
    }
 
-   //! \brief Non-static factory method – wrapper for \ref MPI_Comm_dup
+   //! \brief Non-static factory method – wrapper for `MPI_Comm_dup`
    Comm
    duplicate() const
    {
       return duplicate( *this );
    }
 
-   //! \brief Factory method – wrapper for \ref MPI_Comm_split
+   //! \brief Factory method – wrapper for `MPI_Comm_split`
    static Comm
    split( MPI_Comm comm, int color, int key )
    {
@@ -164,14 +163,14 @@ public:
 #endif
    }
 
-   //! \brief Non-static factory method – wrapper for \ref MPI_Comm_split
+   //! \brief Non-static factory method – wrapper for `MPI_Comm_split`
    Comm
    split( int color, int key ) const
    {
       return split( *this, color, key );
    }
 
-   //! \brief Factory method – wrapper for \ref MPI_Comm_split_type
+   //! \brief Factory method – wrapper for `MPI_Comm_split_type`
    static Comm
    split_type( MPI_Comm comm, int split_type, int key, MPI_Info info )
    {
@@ -184,7 +183,7 @@ public:
 #endif
    }
 
-   //! \brief Non-static factory method – wrapper for \ref MPI_Comm_split_type
+   //! \brief Non-static factory method – wrapper for `MPI_Comm_split_type`
    Comm
    split_type( int split_type, int key, MPI_Info info ) const
    {
@@ -195,12 +194,12 @@ public:
     * \brief Access the MPI communicator associated with this object.
     *
     * This routine permits the implicit conversion from \ref Comm to
-    * \ref MPI_Comm.
+    * `MPI_Comm`.
     *
-    * \b Warning: The obtained \ref MPI_Comm handle becomes invalid when the
+    * \warning The obtained `MPI_Comm` handle becomes invalid when the
     * originating \ref Comm object is destroyed. For example, the following
     * code is invalid, because the \ref Comm object managing the lifetime of
-    * the communicator is destroyed as soon as it is cast to \ref MPI_Comm:
+    * the communicator is destroyed as soon as it is cast to `MPI_Comm`:
     *
     * \code{.cpp}
     * const MPI_Comm comm = MPI::Comm::duplicate( MPI_COMM_WORLD );
@@ -226,7 +225,7 @@ public:
       return GetSize( *this );
    }
 
-   //! \brief Compares two communicators – wrapper for \ref MPI_Comm_compare.
+   //! \brief Compares two communicators – wrapper for `MPI_Comm_compare`.
    int
    compare( MPI_Comm comm2 ) const
    {
@@ -244,7 +243,7 @@ public:
     *
     * This routine is a collective operation that blocks each process until all
     * processes have entered it, then releases all of the processes
-    * "simultaneously". It is equivalent to calling \ref MPI_Barrier with the
+    * "simultaneously". It is equivalent to calling `MPI_Barrier` with the
     * MPI communicator associated with this object.
     */
    void

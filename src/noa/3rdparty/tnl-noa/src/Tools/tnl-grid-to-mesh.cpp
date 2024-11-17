@@ -75,9 +75,8 @@ struct MeshCreator< Meshes::Grid< 1, Real, Device, Index > >
       for( Index i = 0; i < numberOfCells; i++ ) {
          auto cell = grid.template getEntity< typename GridType::Cell >( i );
          cell.refresh();
-         const auto neighbors = cell.template getNeighborEntities< 0 >();
-         meshBuilder.getCellSeed( i ).setCornerId( 0, neighbors.template getEntityIndex< -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 1, neighbors.template getEntityIndex<  1 >() );
+         meshBuilder.getCellSeed( i ).setCornerId( 0, cell.template getNeighbourEntity< 0 >( { 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 1, cell.template getNeighbourEntity< 0 >( { 1 } ).getIndex() );
       }
 
       return meshBuilder.build( mesh );
@@ -111,11 +110,10 @@ struct MeshCreator< Meshes::Grid< 2, Real, Device, Index > >
 
       for( Index i = 0; i < numberOfCells; i++ ) {
          const auto cell = grid.template getEntity< typename GridType::Cell >( i );
-         const auto neighbors = cell.template getNeighborEntities< 0 >();
-         meshBuilder.getCellSeed( i ).setCornerId( 0, neighbors.template getEntityIndex< -1, -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 1, neighbors.template getEntityIndex<  1, -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 2, neighbors.template getEntityIndex<  1,  1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 3, neighbors.template getEntityIndex< -1,  1 >() );
+         meshBuilder.getCellSeed( i ).setCornerId( 0, cell.template getNeighbourEntity< 0 >( { 0, 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 1, cell.template getNeighbourEntity< 0 >( { 1, 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 2, cell.template getNeighbourEntity< 0 >( { 1, 1 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 3, cell.template getNeighbourEntity< 0 >( { 0, 1 } ).getIndex() );
       }
 
       return meshBuilder.build( mesh );
@@ -149,15 +147,14 @@ struct MeshCreator< Meshes::Grid< 3, Real, Device, Index > >
 
       for( Index i = 0; i < numberOfCells; i++ ) {
          const auto cell = grid.template getEntity< typename GridType::Cell >( i );
-         const auto neighbors = cell.template getNeighborEntities< 0 >();
-         meshBuilder.getCellSeed( i ).setCornerId( 0, neighbors.template getEntityIndex< -1, -1, -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 1, neighbors.template getEntityIndex<  1, -1, -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 2, neighbors.template getEntityIndex<  1,  1, -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 3, neighbors.template getEntityIndex< -1,  1, -1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 4, neighbors.template getEntityIndex< -1, -1,  1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 5, neighbors.template getEntityIndex<  1, -1,  1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 6, neighbors.template getEntityIndex<  1,  1,  1 >() );
-         meshBuilder.getCellSeed( i ).setCornerId( 7, neighbors.template getEntityIndex< -1,  1,  1 >() );
+         meshBuilder.getCellSeed( i ).setCornerId( 0, cell.template getNeighbourEntity< 0 >( { 0, 0, 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 1, cell.template getNeighbourEntity< 0 >( { 1, 0, 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 2, cell.template getNeighbourEntity< 0 >( { 1, 1, 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 3, cell.template getNeighbourEntity< 0 >( { 0, 1, 0 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 4, cell.template getNeighbourEntity< 0 >( { 0, 0, 1 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 5, cell.template getNeighbourEntity< 0 >( { 1, 0, 1 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 6, cell.template getNeighbourEntity< 0 >( { 1, 1, 1 } ).getIndex() );
+         meshBuilder.getCellSeed( i ).setCornerId( 7, cell.template getNeighbourEntity< 0 >( { 0, 1, 1 } ).getIndex() );
       }
 
       return meshBuilder.build( mesh );
@@ -178,8 +175,8 @@ bool convertGrid( Grid& grid, const std::string& outputFileName, const std::stri
 
    std::string format = outputFormat;
    if( outputFormat == "auto" ) {
-      namespace fs = std::experimental::filesystem;
-      format = fs::path( outputFileName ).extension();
+      namespace fs = std::filesystem;
+      format = fs::path( outputFileName ).extension().string();
       if( format.length() > 0 )
          // remove dot from the extension
          format = format.substr(1);

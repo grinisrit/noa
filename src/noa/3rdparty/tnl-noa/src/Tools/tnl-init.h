@@ -6,8 +6,6 @@
 #include <TNL/Meshes/DistributedMeshes/DistributedMesh.h>
 #include <TNL/Meshes/Readers/VTIReader.h>
 #include <TNL/Meshes/Readers/PVTIReader.h>
-#include <TNL/Meshes/Writers/VTIWriter.h>
-#include <TNL/Meshes/Writers/PVTIWriter.h>
 #include <TNL/Functions/TestFunction.h>
 #include <TNL/Operators/FiniteDifferences.h>
 #include <TNL/FileName.h>

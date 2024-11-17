@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -65,9 +65,9 @@ public:
    using ValueType = Value;
 
    /**
-    * \brief Device where the array is allocated.
+    * \brief Device used to run operations on the array.
     *
-    * See \ref Devices::Host or \ref Devices::Cuda.
+    * See \ref TNL::Devices for the available options.
     */
    using DeviceType = Device;
 
@@ -87,7 +87,9 @@ public:
    using ConstViewType = ArrayView< std::add_const_t< Value >, Device, Index >;
 
    /**
-    * \brief A template which allows to quickly obtain an \ref ArrayView type with changed template parameters.
+    * \brief A template which allows to quickly obtain an
+    * \ref TNL::Containers::ArrayView "ArrayView" type with changed template
+    * parameters.
     */
    template< typename _Value, typename _Device = Device, typename _Index = Index >
    using Self = ArrayView< _Value, _Device, _Index >;
@@ -231,7 +233,7 @@ public:
              typename...,
              typename = std::enable_if_t< std::is_convertible< T, ValueType >::value || IsArrayType< T >::value > >
    ArrayView&
-   operator=( const T& array );
+   operator=( const T& data );
 
    /**
     * \brief Swaps this array view with another.
@@ -402,8 +404,8 @@ public:
     *         container, e.g. \ref Array, \ref ArrayView, \ref Vector,
     *         \ref VectorView, etc.
     * \param array Reference to the array-like container.
-    * \return \ref True if the array view is element-wise equal to the
-    *         array-like container and \ref false otherwise.
+    * \return true if the array view is element-wise equal to the
+    *         array-like container and false otherwise.
     */
    template< typename ArrayT >
    bool
@@ -592,7 +594,7 @@ protected:
  * \param str is a output stream.
  * \param view is the array view to be printed.
  *
- * \return a reference on the output stream \ref std::ostream&.
+ * \return a reference to the output stream \ref std::ostream.
  */
 template< typename Value, typename Device, typename Index >
 std::ostream&

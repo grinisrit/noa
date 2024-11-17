@@ -78,5 +78,6 @@ int main( int argc, char* argv[] )
       using MeshType = std::decay_t< decltype(mesh) >;
       return resolveRealType< MeshType >( parameters );
    };
-   return ! Meshes::resolveMeshType< TnlInitConfigTag, Devices::Host >( wrapper, meshFileName, meshFileFormat );
+   const bool status = Meshes::resolveMeshType< TnlInitConfigTag, Devices::Host >( wrapper, meshFileName, meshFileFormat );
+   return static_cast< int >( ! status );
 }

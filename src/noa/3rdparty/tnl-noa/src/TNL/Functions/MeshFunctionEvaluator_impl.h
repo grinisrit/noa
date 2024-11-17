@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -7,7 +7,8 @@
 #pragma once
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Functions/MeshFunctionEvaluator.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Traverser.h>
+//#include <noa/3rdparty/tnl-noa/src/TNL/Meshes/Traverser.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Exceptions/NotImplementedError.h>
 
 namespace noa::TNL {
 namespace Functions {
@@ -106,6 +107,8 @@ MeshFunctionEvaluator< OutMeshFunction, InFunction >::evaluateEntities( OutMeshF
                                                                         const RealType& inFunctionMultiplicator,
                                                                         EntitiesType entitiesType )
 {
+   throw Exceptions::NotImplementedError( "MeshFunctionEvaluator is not implemented with the current Grid implementation" );
+   /*
    static_assert(
       std::is_same< typename std::decay< typename OutMeshFunctionPointer::ObjectType >::type, OutMeshFunction >::value,
       "expected a smart pointer" );
@@ -148,7 +151,7 @@ MeshFunctionEvaluator< OutMeshFunction, InFunction >::evaluateEntities( OutMeshF
             meshTraverser.template processBoundaryEntities< AssignmentEntitiesProcessor >( meshFunction->getMeshPointer(),
                                                                                            userData );
          break;
-   }
+   }*/
 }
 
 }  // namespace Functions

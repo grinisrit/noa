@@ -1,14 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
 
 #pragma once
 
@@ -111,7 +105,7 @@ protected:
 
    explicit SubentityStorageLayer( const SubentityStorageLayer& other ) = default;
 
-   SubentityStorageLayer( SubentityStorageLayer&& other ) = default;
+   SubentityStorageLayer( SubentityStorageLayer&& other ) noexcept = default;
 
    template< typename Device_ >
    SubentityStorageLayer( const SubentityStorageLayer< MeshConfig, Device_, EntityTopology, SubdimensionTag >& other )
@@ -123,7 +117,7 @@ protected:
    operator=( const SubentityStorageLayer& other ) = default;
 
    SubentityStorageLayer&
-   operator=( SubentityStorageLayer&& other ) = default;
+   operator=( SubentityStorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    SubentityStorageLayer&
@@ -149,7 +143,6 @@ protected:
       return ( BaseType::operator==( layer ) && matrix == layer.matrix );
    }
 
-protected:
    using BaseType::setSubentitiesCounts;
    void
    setSubentitiesCounts( SubdimensionTag, const typename MeshTraitsType::NeighborCountsArray& counts )
@@ -219,7 +212,7 @@ protected:
 
    explicit SubentityStorageLayer( const SubentityStorageLayer& other ) = default;
 
-   SubentityStorageLayer( SubentityStorageLayer&& other ) = default;
+   SubentityStorageLayer( SubentityStorageLayer&& other ) noexcept = default;
 
    template< typename Device_ >
    SubentityStorageLayer( const SubentityStorageLayer< MeshConfig, Device_, EntityTopology, SubdimensionTag >& other )
@@ -231,7 +224,7 @@ protected:
    operator=( const SubentityStorageLayer& other ) = default;
 
    SubentityStorageLayer&
-   operator=( SubentityStorageLayer&& other ) = default;
+   operator=( SubentityStorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    SubentityStorageLayer&
@@ -273,7 +266,6 @@ protected:
       return ( BaseType::operator==( layer ) && subentitiesCounts == layer.subentitiesCounts && matrix == layer.matrix );
    }
 
-protected:
    using BaseType::setSubentitiesCounts;
    void
    setSubentitiesCounts( SubdimensionTag, const NeighborCountsArray& counts )
@@ -349,7 +341,7 @@ protected:
 
    explicit SubentityStorageLayer( const SubentityStorageLayer& other ) = default;
 
-   SubentityStorageLayer( SubentityStorageLayer&& other ) = default;
+   SubentityStorageLayer( SubentityStorageLayer&& other ) noexcept = default;
 
    template< typename Device_ >
    SubentityStorageLayer( const SubentityStorageLayer< MeshConfig, Device_, EntityTopology, SubdimensionTag >& other )
@@ -361,7 +353,7 @@ protected:
    operator=( const SubentityStorageLayer& other ) = default;
 
    SubentityStorageLayer&
-   operator=( SubentityStorageLayer&& other ) = default;
+   operator=( SubentityStorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    SubentityStorageLayer&
@@ -388,7 +380,6 @@ protected:
       return ( BaseType::operator==( layer ) && subentitiesCounts == layer.subentitiesCounts && matrix == layer.matrix );
    }
 
-protected:
    using BaseType::setSubentitiesCounts;
    void
    setSubentitiesCounts( SubdimensionTag, const NeighborCountsArray& counts )
@@ -472,7 +463,7 @@ protected:
 
    explicit SubentityStorageLayer( const SubentityStorageLayer& other ) = default;
 
-   SubentityStorageLayer( SubentityStorageLayer&& other ) = default;
+   SubentityStorageLayer( SubentityStorageLayer&& other ) noexcept = default;
 
    template< typename Device_ >
    SubentityStorageLayer( const SubentityStorageLayer< MeshConfig, Device_, EntityTopology, SubdimensionTag >& other )
@@ -484,7 +475,7 @@ protected:
    operator=( const SubentityStorageLayer& other ) = default;
 
    SubentityStorageLayer&
-   operator=( SubentityStorageLayer&& other ) = default;
+   operator=( SubentityStorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    SubentityStorageLayer&
@@ -510,7 +501,6 @@ protected:
       return ( BaseType::operator==( layer ) && matrix == layer.matrix );
    }
 
-protected:
    using BaseType::setSubentitiesCounts;
    void
    setSubentitiesCounts( SubdimensionTag, const NeighborCountsArray& counts )
@@ -586,14 +576,14 @@ protected:
 
    SubentityStorageLayer() = default;
    explicit SubentityStorageLayer( const SubentityStorageLayer& other ) = default;
-   SubentityStorageLayer( SubentityStorageLayer&& other ) = default;
+   SubentityStorageLayer( SubentityStorageLayer&& other ) noexcept = default;
    template< typename Device_ >
    SubentityStorageLayer( const SubentityStorageLayer< MeshConfig, Device_, EntityTopology, SubdimensionTag >& other )
    {}
    SubentityStorageLayer&
    operator=( const SubentityStorageLayer& other ) = default;
    SubentityStorageLayer&
-   operator=( SubentityStorageLayer&& other ) = default;
+   operator=( SubentityStorageLayer&& other ) noexcept = default;
    template< typename Device_ >
    SubentityStorageLayer&
    operator=( const SubentityStorageLayer< MeshConfig, Device_, EntityTopology, SubdimensionTag >& other )

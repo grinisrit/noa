@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -101,7 +101,7 @@ public:
    write( const MeshFunction& function, std::ostream& str )
    {
       const MeshType& grid = function.getMesh();
-      EntityType entity( grid );
+      EntityType entity( grid, { 0, 0 } );
       auto& c = entity.getCoordinates();
       for( c.y() = 0; c.y() < grid.getDimensions().y(); c.y()++ ) {
          for( c.x() = 0; c.x() < grid.getDimensions().x(); c.x()++ ) {
@@ -131,7 +131,7 @@ public:
    write( const MeshFunction& function, std::ostream& str )
    {
       const MeshType& grid = function.getMesh();
-      EntityType entity( grid );
+      EntityType entity( grid, { 0, 0 } );
       auto& c = entity.getCoordinates();
       for( c.z() = 0; c.z() < grid.getDimensions().z(); c.z()++ )
          for( c.y() = 0; c.y() < grid.getDimensions().y(); c.y()++ ) {

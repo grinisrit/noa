@@ -26,6 +26,8 @@ providing even newcomers with the necessary option pricing background.
 
 * Calibrating the volatility smile & surface with [stochastic volatility models](vol_calibration.ipynb)
 
+* American Monte-Carlo with AAD with the [LSM algorithm](lsm.ipynb)
+
 * Monte-Carlo pricing with the [Heston model](heston_model.ipynb)
  
 

@@ -20,6 +20,19 @@ option(BUILD_NOA_BENCHMARKS "Build and run benchmarks " OFF)
 option(BUILD_NOA_CUDA "Build CUDA support" OFF)
 option(BUILD_JNOA "Build JNI bindings" OFF)
 option(BUILD_DOCS "Build documentation with doxygen" OFF)
+option(NO_OMP "Disables OpenMP libraries from being used in some parts the build. This is a temporal thing, as it appears that using OMP affects stability of some solvers" OFF)
+
+# Add OpenMP to target
+function(target_add_openmp target_name)
+	if( NO_OMP )
+		message( STATUS "NO_OMP is defined, skipping adding OpenMP for target ${target_name}" )
+		return()
+	endif()
+	find_package(OpenMP QUIET)
+	target_include_directories( ${target_name} AFTER PRIVATE ${OpenMP_CXX_INCLUDE_DIRS} )
+	target_link_libraries( ${target_name} PRIVATE ${OpenMP_CXX_LIBRARIES} )
+	target_compile_options( ${target_name} BEFORE PRIVATE -DHAVE_OPENMP $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}> )
+endfunction()
 
 # Require C++20
 set( CMAKE_CXX_STANDARD          20  )

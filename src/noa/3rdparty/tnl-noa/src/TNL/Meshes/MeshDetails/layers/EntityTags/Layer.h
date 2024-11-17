@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -36,6 +36,8 @@ public:
 
    explicit Layer( const Layer& other ) = default;
 
+   Layer( Layer&& other ) noexcept = default;
+
    template< typename Device_ >
    Layer( const Layer< MeshConfig, Device_, DimensionTag >& other )
    {
@@ -46,7 +48,7 @@ public:
    operator=( const Layer& other ) = default;
 
    Layer&
-   operator=( Layer&& other ) = default;
+   operator=( Layer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    Layer&
@@ -137,7 +139,7 @@ public:
       boundaryIndices.setSize( boundaryEntities );
       ghostsOffset = tags.getSize() - ghostEntities;
 
-      if( ! std::is_same< Device, Devices::Cuda >::value ) {
+      if constexpr( ! std::is_same< Device, Devices::Cuda >::value ) {
          GlobalIndexType i = 0;
          GlobalIndexType b = 0;
          for( GlobalIndexType e = 0; e < tags.getSize(); e++ ) {
@@ -262,14 +264,14 @@ protected:
 
    Layer() = default;
    explicit Layer( const Layer& other ) = default;
-   Layer( Layer&& other ) = default;
+   Layer( Layer&& other ) noexcept = default;
    template< typename Device_ >
    Layer( const Layer< MeshConfig, Device_, DimensionTag >& other )
    {}
    Layer&
    operator=( const Layer& other ) = default;
    Layer&
-   operator=( Layer&& other ) = default;
+   operator=( Layer&& other ) noexcept = default;
    template< typename Device_ >
    Layer&
    operator=( const Layer< MeshConfig, Device_, DimensionTag >& other )

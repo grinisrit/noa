@@ -103,7 +103,8 @@ bool runGameOfLife( const Mesh& mesh )
    const Index cellsCount = localMesh.template getEntitiesCount< Mesh::getMeshDimension() >();
 
    using VectorType = Containers::Vector< std::uint8_t, typename LocalMesh::DeviceType, Index >;
-   VectorType f_in( cellsCount ), f_out( cellsCount );
+   VectorType f_in( cellsCount );
+   VectorType f_out( cellsCount );
    f_in.setValue( 0 );
 
 /*
@@ -272,7 +273,7 @@ bool runGameOfLife( const Mesh& mesh )
       const bool done = max( f_in ) == 0 || iteration > max_iter || f_in == f_out;
       TNL::MPI::Allreduce( &done, &all_done, 1, MPI_LAND, mesh.getCommunicator() );
    }
-   while( all_done == false );
+   while( ! all_done );
 
    return true;
 }
@@ -309,5 +310,6 @@ int main( int argc, char* argv[] )
       using MeshType = std::decay_t< decltype(mesh) >;
       return runGameOfLife( std::forward<MeshType>(mesh) );
    };
-   return ! Meshes::resolveAndLoadDistributedMesh< MyConfigTag, Devices::Host >( wrapper, inputFileName, inputFileFormat );
+   const bool status = Meshes::resolveAndLoadDistributedMesh< MyConfigTag, Devices::Host >( wrapper, inputFileName, inputFileFormat );
+   return static_cast< int >( ! status );
 }

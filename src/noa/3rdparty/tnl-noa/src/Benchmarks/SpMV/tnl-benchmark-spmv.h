@@ -20,7 +20,7 @@ using namespace TNL::Matrices;
 
 #include <exception>
 #include <ctime> // Used for file naming, so logs don't get overwritten.
-#include <experimental/filesystem> // check file existence
+#include <filesystem> // check file existence
 
 using namespace TNL;
 using namespace TNL::Benchmarks;
@@ -61,6 +61,7 @@ setupConfig( Config::ConfigDescription & config )
    config.addRequiredEntry< String >( "input-file", "Input file name." );
    config.addEntry< bool >( "with-symmetric-matrices", "Perform benchmark even for symmetric matrix formats.", true );
    config.addEntry< bool >( "with-legacy-matrices", "Perform benchmark even for legacy TNL matrix formats.", true );
+   config.addEntry< bool >( "with-ellpack-formats", "Perform benchmark for Ellpack based matrix formats.", true );
    config.addEntry< bool >( "with-all-cpu-tests", "All matrix formats are tested on both CPU and GPU. ", false );
    config.addEntry< String >( "log-file", "Log file name.", "tnl-benchmark-spmv::" + getCurrDateTime() + ".log");
    config.addEntry< String >( "output-mode", "Mode for opening the log file.", "append" );
@@ -121,7 +122,7 @@ main( int argc, char* argv[] )
       std::cerr << "ERROR: Input file name is required." << std::endl;
       return EXIT_FAILURE;
    }
-   if( std::experimental::filesystem::exists(logFileName.getString()) )
+   if( std::filesystem::exists(logFileName.getString()) )
    {
       std::cout << "Log file " << logFileName << " exists and ";
       if( outputMode == "append" )

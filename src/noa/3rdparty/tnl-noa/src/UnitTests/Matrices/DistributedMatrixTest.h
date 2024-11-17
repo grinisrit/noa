@@ -92,7 +92,7 @@ protected:
 // types for which DistributedMatrixTest is instantiated
 using DistributedMatrixTypes = ::testing::Types<
    Matrices::DistributedMatrix< Matrices::SparseMatrix< double, Devices::Host, int > >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,
    Matrices::DistributedMatrix< Matrices::SparseMatrix< double, Devices::Cuda, int > >
 #endif

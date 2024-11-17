@@ -48,7 +48,7 @@ benchmarkODESolvers( Benchmark<>& benchmark,
    {
       HostVectorPointer host_u( dofs );
       *host_u = 0.0;
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
       CudaVectorPointer cuda_u( dofs );
       *cuda_u = 0.0;
 #endif
@@ -59,7 +59,7 @@ benchmarkODESolvers( Benchmark<>& benchmark,
          using HostSolverNonET = Benchmarks::Euler< HostProblem, SolverMonitorType >;
          benchmark.setOperation("Euler non-ET");
          benchmarkSolver< HostSolverNonET >( benchmark, parameters, host_u );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
          using CudaSolver = Solvers::ODE::Euler< CudaProblem, SolverMonitorType >;
          benchmark.setOperation( "Euler" );
          benchmarkSolver< CudaSolver >( benchmark, parameters, cuda_u );
@@ -76,7 +76,7 @@ benchmarkODESolvers( Benchmark<>& benchmark,
          using HostSolverNonET = Benchmarks::Merson< HostProblem, SolverMonitorType >;
          benchmark.setOperation("Merson non-ET");
          benchmarkSolver< HostSolverNonET >( benchmark, parameters, host_u );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
          using CudaSolver = Solvers::ODE::Merson< CudaProblem, SolverMonitorType >;
          benchmark.setOperation("Merson");
          benchmarkSolver< CudaSolver >( benchmark, parameters, cuda_u );

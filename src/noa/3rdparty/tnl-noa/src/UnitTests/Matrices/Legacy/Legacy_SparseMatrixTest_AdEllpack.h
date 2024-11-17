@@ -25,7 +25,7 @@ using AdEllpackMatrixTypes = ::testing::Types
     TNL::Matrices::Legacy::AdEllpack< long,   TNL::Devices::Host, long >,
     TNL::Matrices::Legacy::AdEllpack< float,  TNL::Devices::Host, long >,
     TNL::Matrices::Legacy::AdEllpack< double, TNL::Devices::Host, long >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,TNL::Matrices::Legacy::AdEllpack< int,    TNL::Devices::Cuda, int >,
     TNL::Matrices::Legacy::AdEllpack< long,   TNL::Devices::Cuda, int >,
     TNL::Matrices::Legacy::AdEllpack< float,  TNL::Devices::Cuda, int >,

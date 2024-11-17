@@ -1,6 +1,0 @@
-numpy
-pandas
-numba
-torch
-scipy
-tqdm

@@ -1,14 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
 
 #pragma once
 
@@ -102,7 +96,7 @@ protected:
 
    explicit SuperentityStorageLayer( const SuperentityStorageLayer& other ) = default;
 
-   SuperentityStorageLayer( SuperentityStorageLayer&& other ) = default;
+   SuperentityStorageLayer( SuperentityStorageLayer&& other ) noexcept = default;
 
    template< typename Device_ >
    SuperentityStorageLayer( const SuperentityStorageLayer< MeshConfig, Device_, EntityDimensionTag, SuperdimensionTag >& other )
@@ -114,7 +108,7 @@ protected:
    operator=( const SuperentityStorageLayer& other ) = default;
 
    SuperentityStorageLayer&
-   operator=( SuperentityStorageLayer&& other ) = default;
+   operator=( SuperentityStorageLayer&& other ) noexcept( false ) = default;
 
    template< typename Device_ >
    SuperentityStorageLayer&
@@ -141,7 +135,6 @@ protected:
       return ( BaseType::operator==( layer ) && superentitiesCounts == layer.superentitiesCounts && matrix == layer.matrix );
    }
 
-protected:
    using BaseType::getSuperentitiesCountsArray;
    __cuda_callable__
    NeighborCountsArray&
@@ -203,14 +196,14 @@ class SuperentityStorageLayer< MeshConfig, Device, EntityDimensionTag, EntityDim
 protected:
    SuperentityStorageLayer() = default;
    explicit SuperentityStorageLayer( const SuperentityStorageLayer& other ) = default;
-   SuperentityStorageLayer( SuperentityStorageLayer&& other ) = default;
+   SuperentityStorageLayer( SuperentityStorageLayer&& other ) noexcept = default;
    template< typename Device_ >
    SuperentityStorageLayer( const SuperentityStorageLayer< MeshConfig, Device_, EntityDimensionTag, SuperdimensionTag >& other )
    {}
    SuperentityStorageLayer&
    operator=( const SuperentityStorageLayer& other ) = default;
    SuperentityStorageLayer&
-   operator=( SuperentityStorageLayer&& other ) = default;
+   operator=( SuperentityStorageLayer&& other ) noexcept( false ) = default;
    template< typename Device_ >
    SuperentityStorageLayer&
    operator=( const SuperentityStorageLayer< MeshConfig, Device_, EntityDimensionTag, SuperdimensionTag >& other )

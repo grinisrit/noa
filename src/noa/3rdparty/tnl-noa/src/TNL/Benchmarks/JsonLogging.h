@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -25,7 +25,7 @@ public:
    writeHeader( const HeaderElements& headerElements, const WidthHints& widths )
    {
       TNL_ASSERT_EQ( headerElements.size(), widths.size(), "elements must have equal sizes" );
-      if( verbose > 0 && header_changed ) {
+      if( verbose > 0 && ( header_changed || headerElements != lastHeaderElements ) ) {
          for( const auto& lg : metadataColumns ) {
             const int width = ( metadataWidths.count( lg.first ) > 0 ) ? metadataWidths[ lg.first ] : 14;
             std::cout << std::setw( width ) << lg.first;
@@ -34,6 +34,7 @@ public:
             std::cout << std::setw( widths[ i ] ) << headerElements[ i ];
          std::cout << std::endl;
          header_changed = false;
+         lastHeaderElements = headerElements;
       }
    }
 
@@ -162,6 +163,9 @@ protected:
       }
       return o.str();
    }
+
+   // for tracking changes of the header elements written to the terminal
+   HeaderElements lastHeaderElements;
 };
 
 }  // namespace Benchmarks

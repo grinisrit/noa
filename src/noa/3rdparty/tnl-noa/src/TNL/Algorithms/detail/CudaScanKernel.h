@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -17,7 +17,7 @@ namespace noa::TNL {
 namespace Algorithms {
 namespace detail {
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 /* Template for cooperative scan across the CUDA block of threads.
  * It is a *cooperative* operation - all threads must call the operation,
  * otherwise it will deadlock!
@@ -654,7 +654,6 @@ struct CudaScanKernelLauncher
                                                             typename OutputArray::ViewType,
                                                             Reduction >;
             Cuda::launchKernelSync( kernel,
-                                    0,
                                     Cuda::LaunchConfiguration( 1, blockSize ),
                                     input.getConstView(),
                                     output.getView(),
@@ -674,7 +673,6 @@ struct CudaScanKernelLauncher
                                                             typename OutputArray::ViewType,
                                                             Reduction >;
             Cuda::launchKernelSync( kernel,
-                                    0,
                                     Cuda::LaunchConfiguration( 1, blockSize ),
                                     input.getConstView(),
                                     output.getView(),
@@ -694,7 +692,6 @@ struct CudaScanKernelLauncher
                                                             typename OutputArray::ViewType,
                                                             Reduction >;
             Cuda::launchKernelSync( kernel,
-                                    0,
                                     Cuda::LaunchConfiguration( 1, blockSize ),
                                     input.getConstView(),
                                     output.getView(),
@@ -714,7 +711,6 @@ struct CudaScanKernelLauncher
                                                             typename OutputArray::ViewType,
                                                             Reduction >;
             Cuda::launchKernelSync( kernel,
-                                    0,
                                     Cuda::LaunchConfiguration( 1, blockSize ),
                                     input.getConstView(),
                                     output.getView(),
@@ -766,7 +762,6 @@ struct CudaScanKernelLauncher
                                                                      typename OutputArray::ViewType,
                                                                      Reduction >;
                      Cuda::launchKernelAsync( kernel,
-                                              0,
                                               launch_config,
                                               input.getConstView(),
                                               output.getView(),
@@ -787,7 +782,6 @@ struct CudaScanKernelLauncher
                                                                     Reduction,
                                                                     typename OutputArray::ValueType >;
                      Cuda::launchKernelAsync( kernel,
-                                              0,
                                               launch_config,
                                               input.getConstView(),
                                               begin + gridOffset,
@@ -858,7 +852,6 @@ struct CudaScanKernelLauncher
          constexpr auto kernel =
             CudaScanKernelUniformShift< blockSize, valuesPerThread, typename OutputArray::ViewType, Reduction >;
          Cuda::launchKernelSync( kernel,
-                                 0,
                                  Cuda::LaunchConfiguration( 1, blockSize ),
                                  output.getView(),
                                  outputBegin,
@@ -891,7 +884,6 @@ struct CudaScanKernelLauncher
                      constexpr auto kernel =
                         CudaScanKernelUniformShift< blockSize, valuesPerThread, typename OutputArray::ViewType, Reduction >;
                      Cuda::launchKernelAsync( kernel,
-                                              0,
                                               launch_config,
                                               output.getView(),
                                               outputBegin + gridOffset,
@@ -911,7 +903,6 @@ struct CudaScanKernelLauncher
                                                                       typename OutputArray::ViewType,
                                                                       Reduction >;
                      Cuda::launchKernelAsync( kernel,
-                                              0,
                                               launch_config,
                                               input.getConstView(),
                                               output.getView(),
@@ -935,17 +926,17 @@ struct CudaScanKernelLauncher
 
    // The following serves for setting smaller maxGridSize so that we can force
    // the scan in CUDA to run with more than one grid in unit tests.
-   static int&
+   static std::size_t&
    maxGridSize()
    {
-      static int maxGridSize = Cuda::getMaxGridSize();
+      static std::size_t maxGridSize = Cuda::getMaxGridXSize();
       return maxGridSize;
    }
 
    static void
    resetMaxGridSize()
    {
-      maxGridSize() = Cuda::getMaxGridSize();
+      maxGridSize() = Cuda::getMaxGridXSize();
       gridsCount() = -1;
    }
 

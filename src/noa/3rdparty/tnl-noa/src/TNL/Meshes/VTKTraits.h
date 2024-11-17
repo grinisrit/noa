@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -217,51 +217,44 @@ public:
 };
 
 // type names used in the VTK library (for the XML formats)
-inline std::string
-getTypeName( std::int8_t )
+// NOTE: C++ has fixed-width integer types (std::int8_t etc.) but also minimum-width types (int, long int, long long int, etc.)
+// which makes it impossible to cover all possibilities with function overloading, because some types may be aliases for others
+template< typename T >
+std::enable_if_t< std::is_integral_v< T > && std::is_signed_v< T >, std::string >
+getTypeName( T )
 {
-   return "Int8";
+   static_assert( sizeof( T ) == 1 || sizeof( T ) == 2 || sizeof( T ) == 4 || sizeof( T ) == 8 );
+   if constexpr( sizeof( T ) == 1 )
+      return "Int8";
+   if constexpr( sizeof( T ) == 2 )
+      return "Int16";
+   if constexpr( sizeof( T ) == 4 )
+      return "Int32";
+   if constexpr( sizeof( T ) == 8 )
+      return "Int64";
 }
-inline std::string
-getTypeName( std::uint8_t )
+
+template< typename T >
+std::enable_if_t< std::is_integral_v< T > && std::is_unsigned_v< T >, std::string >
+getTypeName( T )
 {
-   return "UInt8";
+   static_assert( sizeof( T ) == 1 || sizeof( T ) == 2 || sizeof( T ) == 4 || sizeof( T ) == 8 );
+   if constexpr( sizeof( T ) == 1 )
+      return "UInt8";
+   if constexpr( sizeof( T ) == 2 )
+      return "UInt16";
+   if constexpr( sizeof( T ) == 4 )
+      return "UInt32";
+   if constexpr( sizeof( T ) == 8 )
+      return "UInt64";
 }
-inline std::string
-getTypeName( std::int16_t )
-{
-   return "Int16";
-}
-inline std::string
-getTypeName( std::uint16_t )
-{
-   return "UInt16";
-}
-inline std::string
-getTypeName( std::int32_t )
-{
-   return "Int32";
-}
-inline std::string
-getTypeName( std::uint32_t )
-{
-   return "UInt32";
-}
-inline std::string
-getTypeName( std::int64_t )
-{
-   return "Int64";
-}
-inline std::string
-getTypeName( std::uint64_t )
-{
-   return "UInt64";
-}
+
 inline std::string
 getTypeName( float )
 {
    return "Float32";
 }
+
 inline std::string
 getTypeName( double )
 {

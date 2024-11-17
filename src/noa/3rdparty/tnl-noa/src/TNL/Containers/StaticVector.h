@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -35,27 +35,27 @@ public:
    /**
     * \brief Default constructor.
     */
+   // NOTE: without __cuda_callable__, nvcc 11.8 would complain that it is __host__ only, even though it is constexpr
    __cuda_callable__
-   StaticVector() = default;
+   constexpr StaticVector() = default;
 
    /**
     * \brief Default copy constructor.
     */
+   // NOTE: without __cuda_callable__, nvcc 11.8 would complain that it is __host__ only, even though it is constexpr
    __cuda_callable__
-   StaticVector( const StaticVector& ) = default;
+   constexpr StaticVector( const StaticVector& ) = default;
 
    /**
     * \brief Default copy-assignment operator.
     */
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator=( const StaticVector& ) = default;
 
    /**
     * \brief Default move-assignment operator.
     */
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator=( StaticVector&& ) noexcept = default;
 
    //! Constructors and assignment operators are inherited from the class \ref StaticArray.
@@ -70,8 +70,7 @@ public:
     * \param expr is binary expression.
     */
    template< typename T1, typename T2, typename Operation >
-   __cuda_callable__
-   StaticVector( const Expressions::StaticBinaryExpressionTemplate< T1, T2, Operation >& expr );
+   constexpr StaticVector( const Expressions::StaticBinaryExpressionTemplate< T1, T2, Operation >& expr );
 
    /**
     * \brief Constructor from unary expression.
@@ -79,8 +78,7 @@ public:
     * \param expr is unary expression
     */
    template< typename T, typename Operation >
-   __cuda_callable__
-   StaticVector( const Expressions::StaticUnaryExpressionTemplate< T, Operation >& expr );
+   constexpr StaticVector( const Expressions::StaticUnaryExpressionTemplate< T, Operation >& expr );
 
    /**
     * \brief Assignment operator with a vector expression.
@@ -91,8 +89,7 @@ public:
     * \return reference to this vector
     */
    template< typename VectorExpression >
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator=( const VectorExpression& expression );
 
    /**
@@ -104,8 +101,7 @@ public:
     * \return reference to this vector
     */
    template< typename VectorExpression >
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator+=( const VectorExpression& expression );
 
    /**
@@ -117,8 +113,7 @@ public:
     * \return reference to this vector
     */
    template< typename VectorExpression >
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator-=( const VectorExpression& expression );
 
    /**
@@ -130,8 +125,7 @@ public:
     * \return reference to this vector
     */
    template< typename VectorExpression >
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator*=( const VectorExpression& expression );
 
    /**
@@ -143,8 +137,7 @@ public:
     * \return reference to this vector
     */
    template< typename VectorExpression >
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator/=( const VectorExpression& expression );
 
    /**
@@ -156,8 +149,7 @@ public:
     * \return reference to this vector
     */
    template< typename VectorExpression >
-   __cuda_callable__
-   StaticVector&
+   constexpr StaticVector&
    operator%=( const VectorExpression& expression );
 
    /**
@@ -172,8 +164,9 @@ public:
     * \return instance of StaticVector< Size, OtherValue >
     */
    template< typename OtherReal >
+   // NOTE: without __cuda_callable__, nvcc 11.8 would complain that it is __host__ only, even though it is constexpr
    __cuda_callable__
-   operator StaticVector< Size, OtherReal >() const;
+   constexpr operator StaticVector< Size, OtherReal >() const;
 };
 
 // Enable expression templates for StaticVector

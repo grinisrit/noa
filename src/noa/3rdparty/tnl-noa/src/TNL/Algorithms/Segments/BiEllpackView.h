@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -27,7 +27,7 @@ class BiEllpackView
 public:
    using DeviceType = Device;
    using IndexType = std::remove_const_t< Index >;
-   using OffsetsView = typename Containers::VectorView< Index, DeviceType, IndexType >;
+   using OffsetsView = Containers::VectorView< Index, DeviceType, IndexType >;
    using ConstOffsetsView = typename OffsetsView::ConstViewType;
    using ViewType = BiEllpackView;
    template< typename Device_, typename Index_ >
@@ -39,7 +39,7 @@ public:
    havePadding()
    {
       return true;
-   };
+   }
 
    __cuda_callable__
    BiEllpackView() = default;
@@ -75,7 +75,7 @@ public:
    getView();
 
    __cuda_callable__
-   const ConstViewType
+   ConstViewType
    getConstView() const;
 
    /**
@@ -173,13 +173,13 @@ protected:
    getWarpSize()
    {
       return WarpSize;
-   };
+   }
 
    static constexpr int
    getLogWarpSize()
    {
       return std::log2( WarpSize );
-   };
+   }
 
    IndexType size = 0, storageSize = 0;
 
@@ -189,7 +189,9 @@ protected:
 
    OffsetsView groupPointers;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
+   // these methods must be public so they can be called from the __global__ function
+public:
    template< typename Fetch, typename Reduction, typename ResultKeeper, typename Real, int BlockDim >
    __device__
    void
@@ -211,27 +213,6 @@ protected:
                          Reduction reduction,
                          ResultKeeper keeper,
                          Real_ zero ) const;
-
-   template< typename View_,
-             typename Index_,
-             typename Fetch_,
-             typename Reduction_,
-             typename ResultKeeper_,
-             typename Real_,
-             int BlockDim >
-   friend __global__
-   void
-   BiEllpackreduceSegmentsKernel( View_ chunkedEllpack,
-                                  Index_ gridIdx,
-                                  Index_ first,
-                                  Index_ last,
-                                  Fetch_ fetch,
-                                  Reduction_ reduction,
-                                  ResultKeeper_ keeper,
-                                  Real_ zero );
-
-   template< typename Index_, typename Fetch_, int BlockDim_, int WarpSize_, bool B_ >
-   friend struct detail::BiEllpackreduceSegmentsDispatcher;
 #endif
 };
 

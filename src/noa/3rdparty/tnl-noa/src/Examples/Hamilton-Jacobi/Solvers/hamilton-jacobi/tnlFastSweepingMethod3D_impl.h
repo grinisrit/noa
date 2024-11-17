@@ -250,7 +250,7 @@ solve( const Meshes::DistributedMeshes::DistributedMesh< MeshType >& distributed
       }
       if( std::is_same< DeviceType, Devices::Cuda >::value && calculateMPIAgain )
       {
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
         // cudaBlockSize is a size of blocks. It's the number raised to the 3 power.
         // the number should be less than 10^3 (num of threads in one grid is maximally 1024)
         // IF YOU CHANGE THIS, YOU NEED TO CHANGE THE TEMPLATE PARAMETER IN CudaUpdateCellCaller (The Number + 2)

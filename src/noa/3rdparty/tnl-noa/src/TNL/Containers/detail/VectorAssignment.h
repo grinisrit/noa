@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -45,8 +45,7 @@ struct VectorAssignment< Vector, T, true >
       v.setSize( t.getSize() );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    assignStatic( Vector& v, const T& t )
    {
       TNL_ASSERT_EQ( v.getSize(), t.getSize(), "The sizes of the vectors must be equal." );
@@ -83,8 +82,7 @@ struct VectorAssignment< Vector, T, false >
    resize( Vector& v, const T& t )
    {}
 
-   __cuda_callable__
-   static void
+   static constexpr void
    assignStatic( Vector& v, const T& t )
    {
       for( decltype( v.getSize() ) i = 0; i < v.getSize(); i++ )
@@ -149,8 +147,7 @@ struct VectorAssignmentWithOperation< Vector, T, true, true >
 template< typename Vector, typename T >
 struct VectorAssignmentWithOperation< Vector, T, true, false >
 {
-   __cuda_callable__
-   static void
+   static constexpr void
    additionStatic( Vector& v, const T& t )
    {
       TNL_ASSERT_EQ( v.getSize(), t.getSize(), "The sizes of the vectors must be equal." );
@@ -176,8 +173,7 @@ struct VectorAssignmentWithOperation< Vector, T, true, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), add );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    subtractionStatic( Vector& v, const T& t )
    {
       TNL_ASSERT_EQ( v.getSize(), t.getSize(), "The sizes of the vectors must be equal." );
@@ -203,8 +199,7 @@ struct VectorAssignmentWithOperation< Vector, T, true, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), subtract );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    multiplicationStatic( Vector& v, const T& t )
    {
       TNL_ASSERT_EQ( v.getSize(), t.getSize(), "The sizes of the vectors must be equal." );
@@ -230,8 +225,7 @@ struct VectorAssignmentWithOperation< Vector, T, true, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), multiply );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    divisionStatic( Vector& v, const T& t )
    {
       TNL_ASSERT_EQ( v.getSize(), t.getSize(), "The sizes of the vectors must be equal." );
@@ -257,8 +251,7 @@ struct VectorAssignmentWithOperation< Vector, T, true, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), divide );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    moduloStatic( Vector& v, const T& t )
    {
       TNL_ASSERT_EQ( v.getSize(), t.getSize(), "The sizes of the vectors must be equal." );
@@ -292,8 +285,7 @@ struct VectorAssignmentWithOperation< Vector, T, true, false >
 template< typename Vector, typename T >
 struct VectorAssignmentWithOperation< Vector, T, false, false >
 {
-   __cuda_callable__
-   static void
+   static constexpr void
    additionStatic( Vector& v, const T& t )
    {
       for( decltype( v.getSize() ) i = 0; i < v.getSize(); i++ )
@@ -315,8 +307,7 @@ struct VectorAssignmentWithOperation< Vector, T, false, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), add );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    subtractionStatic( Vector& v, const T& t )
    {
       for( decltype( v.getSize() ) i = 0; i < v.getSize(); i++ )
@@ -338,8 +329,7 @@ struct VectorAssignmentWithOperation< Vector, T, false, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), subtract );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    multiplicationStatic( Vector& v, const T& t )
    {
       for( decltype( v.getSize() ) i = 0; i < v.getSize(); i++ )
@@ -361,8 +351,7 @@ struct VectorAssignmentWithOperation< Vector, T, false, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), multiply );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    divisionStatic( Vector& v, const T& t )
    {
       for( decltype( v.getSize() ) i = 0; i < v.getSize(); i++ )
@@ -384,8 +373,7 @@ struct VectorAssignmentWithOperation< Vector, T, false, false >
       Algorithms::ParallelFor< DeviceType >::exec( (IndexType) 0, v.getSize(), divide );
    }
 
-   __cuda_callable__
-   static void
+   static constexpr void
    moduloStatic( Vector& v, const T& t )
    {
       for( decltype( v.getSize() ) i = 0; i < v.getSize(); i++ )

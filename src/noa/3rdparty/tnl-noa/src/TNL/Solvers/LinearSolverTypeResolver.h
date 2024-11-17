@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -19,6 +19,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/BICGStabL.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/GMRES.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/TFQMR.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/IDRs.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/UmfpackWrapper.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/Preconditioners/Diagonal.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Solvers/Linear/Preconditioners/ILU0.h>
@@ -41,7 +42,8 @@ getLinearSolverOptions()
             "bicgstab",
             "bicgstabl",
             "gmres",
-            "tfqmr"
+            "tfqmr",
+            "idrs"
 #ifdef HAVE_UMFPACK
             ,
             "umfpack"
@@ -65,13 +67,14 @@ getPreconditionerOptions()
  *
  * \tparam MatrixType is a type of matrix defining the system of linear equations.
  * \param name of the linear solver. The name can be one of the following:
- *    1. `jacobi`    - for the Jacobi solver - \ref TNL::Solvers::Linear::Jacobi.
- *    2. `sor`       - for SOR solver        - \ref TNL::Solvers::Linear::SOR.
- *    3. `cg`        - for CG solver         - \ref TNL::Solvers::Linear::CG.
- *    4. `bicgstab`  - for BICGStab solver   - \ref TNL::Solvers::Linear::BICGStab.
- *    5. `bicgstabl` - for BICGStabL solver  - \ref TNL::Solvers::Linear::BICGStabL.
- *    6. `gmres`     - for GMRES solver      - \ref TNL::Solvers::Linear::GMRES.
- *    7. `tfqmr`     - for TFQMR solver      - \ref TNL::Solvers::Linear::TFQMR.
+ *    1. `jacobi`    - for the Jacobi solver   - \ref TNL::Solvers::Linear::Jacobi.
+ *    2. `sor`       - for SOR solver          - \ref TNL::Solvers::Linear::SOR.
+ *    3. `cg`        - for CG solver           - \ref TNL::Solvers::Linear::CG.
+ *    4. `bicgstab`  - for BICGStab solver     - \ref TNL::Solvers::Linear::BICGStab.
+ *    5. `bicgstabl` - for BICGStab(l) solver  - \ref TNL::Solvers::Linear::BICGStabL.
+ *    6. `gmres`     - for GMRES solver        - \ref TNL::Solvers::Linear::GMRES.
+ *    7. `tfqmr`     - for TFQMR solver        - \ref TNL::Solvers::Linear::TFQMR.
+ *    8. `idrs`      - for IDR(s) solver       - \ref TNL::Solvers::Linear::IDRs.
  * \return shared pointer with given linear solver.
  *
  * The following example shows how to use this function:
@@ -100,6 +103,8 @@ getLinearSolver( std::string name )
       return std::make_shared< Linear::GMRES< MatrixType > >();
    if( name == "tfqmr" )
       return std::make_shared< Linear::TFQMR< MatrixType > >();
+   if( name == "idrs" )
+      return std::make_shared< Linear::IDRs< MatrixType > >();
 #ifdef HAVE_UMFPACK
    if( discreteSolver == "umfpack" )
       return std::make_shared< Linear::UmfpackWrapper< MatrixType > >();

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -21,6 +21,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Math.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/DeviceInfo.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/SharedMemory.h>
+#include <noa/3rdparty/tnl-noa/src/TNL/Containers/Vector.h>
 
 namespace noa::TNL {
 namespace Matrices {
@@ -226,8 +227,6 @@ public:
 };
 
 // CUDA kernels
-#ifdef HAVE_CUDA
-
 template< typename RealType, typename IndexType >
 __global__
 void
@@ -240,6 +239,7 @@ GemvCudaKernel( const IndexType m,
                 const RealType beta,
                 RealType* y )
 {
+#ifdef __CUDACC__
    IndexType elementIdx = blockIdx.x * blockDim.x + threadIdx.x;
    const IndexType gridSize = blockDim.x * gridDim.x;
 
@@ -268,6 +268,7 @@ GemvCudaKernel( const IndexType m,
          elementIdx += gridSize;
       }
    }
+#endif
 }
 
 template< typename RealType, typename IndexType >
@@ -284,6 +285,7 @@ GeamCudaKernel( const IndexType m,
                 RealType* C,
                 const IndexType ldc )
 {
+#ifdef __CUDACC__
    IndexType x = blockIdx.x * blockDim.x + threadIdx.x;
    const IndexType gridSizeX = blockDim.x * gridDim.x;
    const IndexType y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -296,8 +298,8 @@ GeamCudaKernel( const IndexType m,
          C[ x + offset_C ] = alpha * A[ x + offset_A ] + beta * B[ x + offset_B ];
          x += gridSizeX;
       }
-}
 #endif
+}
 
 // specialization for CUDA
 template<>
@@ -331,7 +333,6 @@ public:
       TNL_ASSERT( n <= 256,
                   std::cerr << "The gemv kernel is optimized only for small 'n' and assumes that n <= 256." << std::endl; );
 
-#ifdef HAVE_CUDA
       // TODO: use static storage, e.g. from the CudaReductionBuffer, to avoid frequent reallocations
       Containers::Vector< RealType, Devices::Cuda, IndexType > xDevice;
       xDevice.setSize( n );
@@ -340,16 +341,13 @@ public:
 
       // desGridSize = blocksPerMultiprocessor * numberOfMultiprocessors
       const int desGridSize = 32 * Cuda::DeviceInfo::getCudaMultiprocessors( Cuda::DeviceInfo::getActiveDevice() );
-      dim3 blockSize, gridSize;
-      blockSize.x = 256;
-      gridSize.x = min( desGridSize, Cuda::getNumberOfBlocks( m, blockSize.x ) );
+      Cuda::LaunchConfiguration launch_config;
+      launch_config.blockSize.x = 256;
+      launch_config.gridSize.x = min( desGridSize, Cuda::getNumberOfBlocks( m, launch_config.blockSize.x ) );
+      launch_config.dynamicSharedMemorySize = n * sizeof( RealType );
 
-      GemvCudaKernel<<< gridSize, blockSize,
-         n * sizeof( RealType ) >>>( m, n, alpha, A, lda, xDevice.getData(), beta, y );
-      TNL_CHECK_CUDA_DEVICE;
-#else
-      throw Exceptions::CudaSupportMissing();
-#endif
+      constexpr auto kernel = GemvCudaKernel< RealType, IndexType >;
+      Cuda::launchKernelSync( kernel, launch_config, m, n, alpha, A, lda, xDevice.getData(), beta, y );
    }
 
    /*
@@ -382,26 +380,22 @@ public:
       TNL_ASSERT_GE( ldb, m, "lda must be at least m" );
       TNL_ASSERT_GE( ldc, m, "lda must be at least m" );
 
-#ifdef HAVE_CUDA
-      dim3 blockSize, gridSize;
+      Cuda::LaunchConfiguration launch_config;
 
       // max 16 columns of threads
-      blockSize.y = min( n, 16 );
+      launch_config.blockSize.y = min( n, 16 );
       // max 256 threads per block, power of 2
-      blockSize.x = 256;
-      while( blockSize.x * blockSize.y > 256 )
-         blockSize.x /= 2;
+      launch_config.blockSize.x = 256;
+      while( launch_config.blockSize.x * launch_config.blockSize.y > 256 )
+         launch_config.blockSize.x /= 2;
 
       // desGridSize = blocksPerMultiprocessor * numberOfMultiprocessors
       const int desGridSize = 32 * Cuda::DeviceInfo::getCudaMultiprocessors( Cuda::DeviceInfo::getActiveDevice() );
-      gridSize.x = min( desGridSize, Cuda::getNumberOfBlocks( m, blockSize.x ) );
-      gridSize.y = Cuda::getNumberOfBlocks( n, blockSize.y );
+      launch_config.gridSize.x = min( desGridSize, Cuda::getNumberOfBlocks( m, launch_config.blockSize.x ) );
+      launch_config.gridSize.y = Cuda::getNumberOfBlocks( n, launch_config.blockSize.y );
 
-      GeamCudaKernel<<< gridSize, blockSize >>>( m, n, alpha, A, lda, beta, B, ldb, C, ldc );
-      TNL_CHECK_CUDA_DEVICE;
-#else
-      throw Exceptions::CudaSupportMissing();
-#endif
+      constexpr auto kernel = GeamCudaKernel< RealType, IndexType >;
+      Cuda::launchKernelSync( kernel, launch_config, m, n, alpha, A, lda, beta, B, ldb, C, ldc );
    }
 };
 

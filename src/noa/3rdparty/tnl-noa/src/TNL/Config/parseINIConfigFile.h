@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -14,7 +14,7 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Config/ParameterContainer.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Config/parseCommandLine.h>  // for addDefaultValues and checkEnumValues
 
-#include <Leksys/iniparser.hpp>
+#include <noa/3rdparty/tnl-noa/src/TNL/3rdparty/Leksys/iniparser.hpp>
 
 namespace noa::TNL {
 namespace Config {

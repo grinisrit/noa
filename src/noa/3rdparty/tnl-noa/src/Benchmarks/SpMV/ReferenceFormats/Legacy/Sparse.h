@@ -1,7 +1,7 @@
 #pragma once
 
 #include <TNL/Matrices/Matrix.h>
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/SparseRow.h>
+#include "SparseRow.h"
 
 namespace TNL {
     namespace Benchmarks {
@@ -60,5 +60,5 @@ class Sparse : public TNL::Matrices::Matrix< Real, Device, Index >
     } //namespace Benchmarks
 } // namespace TNL
 
-#include <Benchmarks/SpMV/ReferenceFormats/Legacy/Sparse_impl.h>
+#include "Sparse_impl.h"
 #include <TNL/Matrices/SparseOperations.h>

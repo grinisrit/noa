@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -9,7 +9,6 @@
 #include <noa/3rdparty/tnl-noa/src/TNL/Matrices/Matrix.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Assert.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/LaunchHelpers.h>
-#include <noa/3rdparty/tnl-noa/src/TNL/Cuda/MemoryHelpers.h>
 #include <noa/3rdparty/tnl-noa/src/TNL/Cuda/SharedMemory.h>
 
 namespace noa::TNL {
@@ -148,45 +147,6 @@ template< typename Real, typename Device, typename Index, typename RealAllocator
 void
 Matrix< Real, Device, Index, RealAllocator >::print( std::ostream& str ) const
 {}
-
-/*
-template< typename Real,
-          typename Device,
-          typename Index,
-          typename RealAllocator >
-void
-Matrix< Real, Device, Index, RealAllocator >::
-computeColorsVector(Containers::Vector<Index, Device, Index> &colorsVector)
-{
-    for( IndexType i = this->getRows() - 1; i >= 0; i-- )
-    {
-        // init color array
-        Containers::Vector< Index, Device, Index > usedColors;
-        usedColors.setSize( this->numberOfColors );
-        for( IndexType j = 0; j < this->numberOfColors; j++ )
-            usedColors.setElement( j, 0 );
-
-        // find all colors used in given row
-        for( IndexType j = i + 1; j < this->getColumns(); j++ )
-             if( this->getElement( i, j ) != 0.0 )
-                 usedColors.setElement( colorsVector.getElement( j ), 1 );
-
-        // find unused color
-        bool found = false;
-        for( IndexType j = 0; j < this->numberOfColors; j++ )
-            if( usedColors.getElement( j ) == 0 )
-            {
-                colorsVector.setElement( i, j );
-                found = true;
-                break;
-            }
-        if( !found )
-        {
-            colorsVector.setElement( i, this->numberOfColors );
-            this->numberOfColors++;
-        }
-    }
-}*/
 
 }  // namespace Matrices
 }  // namespace noa::TNL

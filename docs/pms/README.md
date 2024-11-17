@@ -66,4 +66,4 @@ In the future, we plan to cover
 a wider range of particles.
 
 
-(c) 2022 GrinisRIT ltd. 
+(c) 2023 GrinisRIT ltd. and contributors

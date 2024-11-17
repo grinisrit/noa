@@ -239,7 +239,7 @@ solve( const Meshes::DistributedMeshes::DistributedMesh< MeshType >& distributed
       {
         calculateMPIAgain = 0;
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
         TNL_CHECK_CUDA_DEVICE;
         // Maximum cudaBlockSite is 32. Because of maximum num. of threads in kernel.
         // IF YOU CHANGE THIS, YOU NEED TO CHANGE THE TEMPLATE PARAMETER IN CudaUpdateCellCaller (The Number + 2)

@@ -29,7 +29,7 @@ protected:
 // types for which SegmentedScanTest is instantiated
 // TODO: Quad must be fixed
 using ArrayTypes = ::testing::Types<
-#ifndef HAVE_CUDA
+#ifndef __CUDACC__
    Array< int,            Devices::Sequential, short >,
    Array< long,           Devices::Sequential, short >,
    Array< float,          Devices::Sequential, short >,
@@ -69,7 +69,7 @@ using ArrayTypes = ::testing::Types<
    //Array< Quad< double >, Devices::Host, long >
 #endif
 // TODO: segmented scan for CUDA is not implemented yet
-//#ifdef HAVE_CUDA
+//#ifdef __CUDACC__
 //   Array< int,            Devices::Cuda, short >,
 //   Array< long,           Devices::Cuda, short >,
 //   Array< float,          Devices::Cuda, short >,

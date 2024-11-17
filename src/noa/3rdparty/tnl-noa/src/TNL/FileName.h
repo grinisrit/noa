@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -150,7 +150,7 @@ getFileExtension( const String& fileName );
 /**
  * \brief Cuts off the file extension.
  *
- * @param file_name Input file name.
+ * @param fileName Input file name.
  * @return String with the file name without extension.
  */
 String

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -23,9 +23,7 @@ permuteMatrixRows( Matrix& matrix, const PermutationArray& perm )
    using DeviceType = typename Matrix::DeviceType;
    TNL_ASSERT_EQ( matrix.getRows(), perm.getSize(), "permutation size does not match the matrix size" );
 
-   // FIXME: getConstView does not work
-   //   const auto matrix_view = matrix.getConstView();
-   const auto matrix_view = matrix.getView();
+   const auto matrix_view = matrix.getConstView();
    const auto perm_view = perm.getConstView();
 
    // create temporary matrix for the permuted data

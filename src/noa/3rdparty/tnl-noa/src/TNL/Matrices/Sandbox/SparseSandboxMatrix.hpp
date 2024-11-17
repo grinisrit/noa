@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -95,24 +95,20 @@ SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAlloca
 
 template< typename Real, typename Device, typename Index, typename MatrixType, typename RealAllocator, typename IndexAllocator >
 auto
-SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::getView() const -> ViewType
+SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::getView() -> ViewType
 {
-   return ViewType( this->getRows(),
-                    this->getColumns(),
-                    const_cast< SparseSandboxMatrix* >( this )->getValues().getView(),  // TODO: remove const_cast
-                    const_cast< SparseSandboxMatrix* >( this )->columnIndexes.getView(),
-                    const_cast< SparseSandboxMatrix* >( this )->rowPointers.getView() );
+   return { this->getRows(), this->getColumns(), this->getValues().getView(), columnIndexes.getView(), rowPointers.getView() };
 }
 
 template< typename Real, typename Device, typename Index, typename MatrixType, typename RealAllocator, typename IndexAllocator >
 auto
 SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::getConstView() const -> ConstViewType
 {
-   return ConstViewType( this->getRows(),
-                         this->getColumns(),
-                         this->getValues().getConstView(),
-                         this->columnIndexes.getConstView(),
-                         this->segments.getConstView() );
+   return { this->getRows(),
+            this->getColumns(),
+            this->getValues().getConstView(),
+            columnIndexes.getConstView(),
+            rowPointers.getConstView() };
 }
 
 template< typename Real, typename Device, typename Index, typename MatrixType, typename RealAllocator, typename IndexAllocator >
@@ -299,7 +295,7 @@ template< typename Real, typename Device, typename Index, typename MatrixType, t
 __cuda_callable__
 auto
 SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::getRow( const IndexType& rowIdx ) const
-   -> const ConstRowView
+   -> ConstRowView
 {
    return this->view.getRow( rowIdx );
 }
@@ -479,7 +475,7 @@ template< typename Function >
 void
 SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::forAllRows( Function&& function ) const
 {
-   this->getConsView().forAllRows( function );
+   this->getConstView().forAllRows( function );
 }
 
 template< typename Real, typename Device, typename Index, typename MatrixType, typename RealAllocator, typename IndexAllocator >
@@ -521,7 +517,8 @@ SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAlloca
    this->sequentialForRows( 0, this->getRows(), function );
 }
 
-/*template< typename Real,
+/*
+template< typename Real,
           template< typename, typename, typename > class Segments,
           typename Device,
           typename Index,
@@ -532,34 +529,66 @@ IndexAllocator2 > void SparseSandboxMatrix< Real, Device, Index, MatrixType, Rea
 SparseSandboxMatrix< Real2, Segments2, Device, Index2, RealAllocator2, IndexAllocator2 >& matrix, const RealType&
 matrixMultiplicator, const RealType& thisMatrixMultiplicator )
 {
-
 }
-
-template< typename Real,
-          template< typename, typename, typename > class Segments,
-          typename Device,
-          typename Index,
-          typename RealAllocator,
-          typename IndexAllocator >
-template< typename Real2, typename Index2 >
-void
-SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::
-getTransposition( const SparseSandboxMatrix< Real2, Device, Index2 >& matrix,
-                  const RealType& matrixMultiplicator )
-{
-
-}*/
+*/
 
 template< typename Real, typename Device, typename Index, typename MatrixType, typename RealAllocator, typename IndexAllocator >
-template< typename Vector1, typename Vector2 >
-bool
-SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::performSORIteration(
-   const Vector1& b,
-   const IndexType row,
-   Vector2& x,
-   const RealType& omega ) const
+template< typename Real2, typename Index2 >
+void
+SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAllocator >::getTransposition(
+   const SparseSandboxMatrix< Real2, Device, Index2, MatrixType >& matrix,
+   const RealType& matrixMultiplicator )
 {
-   return false;
+   // set transposed dimensions
+   setDimensions( matrix.getColumns(), matrix.getRows() );
+
+   // stage 1: compute row capacities for the transposition
+   RowsCapacitiesType capacities;
+   capacities.resize( this->getRows(), 0 );
+   auto capacities_view = capacities.getView();
+   using MatrixRowView = typename SparseSandboxMatrix< Real2, Device, Index2, MatrixType >::ConstRowView;
+   matrix.forAllRows(
+      [ = ] __cuda_callable__( const MatrixRowView& row ) mutable
+      {
+         for( IndexType c = 0; c < row.getSize(); c++ ) {
+            // row index of the transpose = column index of the input
+            const IndexType& transRowIdx = row.getColumnIndex( c );
+            if( transRowIdx < 0 )
+               continue;
+            // increment the capacity for the row in the transpose
+            Algorithms::AtomicOperations< DeviceType >::add( capacities_view[ row.getColumnIndex( c ) ], IndexType( 1 ) );
+         }
+      } );
+
+   // set the row capacities
+   setRowCapacities( capacities );
+   capacities.reset();
+
+   // index of the first unwritten element per row
+   RowsCapacitiesType offsets;
+   offsets.resize( this->getRows(), 0 );
+   auto offsets_view = offsets.getView();
+
+   // stage 2: copy and transpose the data
+   auto trans_view = getView();
+   matrix.forAllRows(
+      [ = ] __cuda_callable__( const MatrixRowView& row ) mutable
+      {
+         // row index of the input = column index of the transpose
+         const IndexType& rowIdx = row.getRowIndex();
+         for( IndexType c = 0; c < row.getSize(); c++ ) {
+            // row index of the transpose = column index of the input
+            const IndexType& transRowIdx = row.getColumnIndex( c );
+            if( transRowIdx < 0 )
+               continue;
+            // local index in the row of the transpose
+            const IndexType transLocalIdx =
+               Algorithms::AtomicOperations< DeviceType >::add( offsets_view[ transRowIdx ], IndexType( 1 ) );
+            // get the row in the transposed matrix and set the value
+            auto transRow = trans_view.getRow( transRowIdx );
+            transRow.setElement( transLocalIdx, rowIdx, row.getValue( c ) * matrixMultiplicator );
+         }
+      } );
 }
 
 // copy assignment
@@ -609,8 +638,6 @@ SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAlloca
    Containers::Vector< IndexType, DeviceType, IndexType > rowLocalIndexes( matrix.getRows() );
    rowLocalIndexes = 0;
 
-   // TODO: use getConstView when it works
-   const auto matrixView = const_cast< RHSMatrix& >( matrix ).getView();
    const IndexType paddingIndex = this->getPaddingIndex();
    auto columns_view = this->columnIndexes.getView();
    auto values_view = this->values.getView();
@@ -710,8 +737,6 @@ SparseSandboxMatrix< Real, Device, Index, MatrixType, RealAllocator, IndexAlloca
    Containers::Vector< IndexType, DeviceType, IndexType > rowLocalIndexes( matrix.getRows() );
    rowLocalIndexes = 0;
 
-   // TODO: use getConstView when it works
-   const auto matrixView = const_cast< RHSMatrix& >( matrix ).getView();
    const IndexType paddingIndex = this->getPaddingIndex();
    auto columns_view = this->columnIndexes.getView();
    auto values_view = this->values.getView();

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -31,6 +31,7 @@ class SharedPointer< Object, Devices::Host > : public SmartPointer
 private:
    /**
     * \typedef Enabler
+    *
     * Convenient template alias for controlling the selection of copy- and
     * move-constructors and assignment operators using SFINAE.
     * The type Object_ is "enabled" iff Object_ and Object are not the same,
@@ -46,13 +47,12 @@ private:
 
 public:
    /**
-    * \typedef ObjectType is the type of object owned by the pointer.
+    * \brief Type of the object owned by the pointer.
     */
    using ObjectType = Object;
 
    /**
-    * \typedef DeviceType is the type of device where the object is to be
-    * mirrored.
+    * \brief Type of the device where the object is to be mirrored.
     */
    using DeviceType = Devices::Host;
 
@@ -122,8 +122,6 @@ public:
     *
     * This is specialization for compatible object types.
     *
-    * See \ref Enabler.
-    *
     * \param pointer is the source shared pointer.
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
@@ -148,8 +146,6 @@ public:
     * \brief Move constructor.
     *
     * This is specialization for compatible object types.
-    *
-    * See \ref Enabler.
     *
     * \param pointer is the source shared pointer.
     */
@@ -303,10 +299,10 @@ public:
    /**
     * \brief Assignment operator.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    const SharedPointer&
    operator=( const SharedPointer& ptr )  // this is needed only to avoid the default compiler-generated operator
@@ -321,12 +317,10 @@ public:
    /**
     * \brief Assignment operator for compatible object types.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
-    *
-    * See \ref Enabler.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
    const SharedPointer&
@@ -342,10 +336,10 @@ public:
    /**
     * \brief Move operator.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    const SharedPointer&
    operator=( SharedPointer&& ptr ) noexcept  // this is needed only to avoid the default compiler-generated operator
@@ -359,12 +353,10 @@ public:
    /**
     * \brief Move operator.
     *
-    * It assigns object owned by the pointer \ref ptr to \ref this pointer.
-    *
-    * See \ref Enabler.
+    * It assigns object owned by the pointer \e ptr to \e this pointer.
     *
     * \param ptr input pointer
-    * \return constant reference to \ref this
+    * \return constant reference to \e this
     */
    template< typename Object_, typename = typename Enabler< Object_ >::type >
    const SharedPointer&
@@ -440,10 +432,25 @@ protected:
    free()
    {
       if( this->pd ) {
+         // As far as we know, GCC 12.0.0 and 12.1.0 issue a false-positive use-after-free warning
+         // These bug reports may be related:
+         // - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105327
+         // - https://bugzilla.redhat.com/show_bug.cgi?id=2047715
+#if defined( __GNUC__ ) && ! defined( __clang__ ) && ! defined( __NVCC__ )
+   #if __GNUC__ >= 12
+      #pragma GCC diagnostic push
+      #pragma GCC diagnostic ignored "-Wuse-after-free"
+   #endif
+#endif
          if( ! --this->pd->counter ) {
             delete this->pd;
             this->pd = nullptr;
          }
+#if defined( __GNUC__ ) && ! defined( __clang__ ) && ! defined( __NVCC__ )
+   #if __GNUC__ >= 12
+      #pragma GCC diagnostic pop
+   #endif
+#endif
       }
    }
 

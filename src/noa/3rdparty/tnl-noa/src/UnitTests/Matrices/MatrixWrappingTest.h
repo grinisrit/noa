@@ -41,7 +41,7 @@ using MatrixTypes = ::testing::Types
     TNL::Matrices::DenseMatrix< long,   TNL::Devices::Host, long >,
     TNL::Matrices::DenseMatrix< float,  TNL::Devices::Host, long >,
     TNL::Matrices::DenseMatrix< double, TNL::Devices::Host, long >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
     ,TNL::Matrices::DenseMatrix< int,    TNL::Devices::Cuda, short >,
     TNL::Matrices::DenseMatrix< long,   TNL::Devices::Cuda, short >,
     TNL::Matrices::DenseMatrix< float,  TNL::Devices::Cuda, short >,

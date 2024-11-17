@@ -392,7 +392,6 @@ void tridiagonalMatrixAssignment()
    using IndexType = typename Matrix::IndexType;
 
    using TridiagonalHost = TNL::Matrices::TridiagonalMatrix< RealType, TNL::Devices::Host, IndexType >;
-   using TridiagonalCuda = TNL::Matrices::TridiagonalMatrix< RealType, TNL::Devices::Cuda, IndexType >;
 
    const IndexType rows( 10 ), columns( 10 );
    TridiagonalHost hostMatrix( rows, columns );
@@ -416,7 +415,8 @@ void tridiagonalMatrixAssignment()
             EXPECT_EQ( matrix.getElement( i, j ), i + j );
       }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
+   using TridiagonalCuda = TNL::Matrices::TridiagonalMatrix< RealType, TNL::Devices::Cuda, IndexType >;
    TridiagonalCuda cudaMatrix( rows, columns );
    cudaMatrix = hostMatrix;
    matrix = cudaMatrix;
@@ -441,7 +441,6 @@ void multidiagonalMatrixAssignment()
    using IndexType = typename Matrix::IndexType;
 
    using MultidiagonalHost = TNL::Matrices::MultidiagonalMatrix< RealType, TNL::Devices::Host, IndexType >;
-   using MultidiagonalCuda = TNL::Matrices::MultidiagonalMatrix< RealType, TNL::Devices::Cuda, IndexType >;
    using DiagonalsOffsetsType = typename MultidiagonalHost::DiagonalsOffsetsType;
    DiagonalsOffsetsType diagonals{ -4, -2, 0, 1, 3, 5 };
 
@@ -468,7 +467,8 @@ void multidiagonalMatrixAssignment()
             EXPECT_EQ( matrix.getElement( i, j ), 0.0 );
       }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
+   using MultidiagonalCuda = TNL::Matrices::MultidiagonalMatrix< RealType, TNL::Devices::Cuda, IndexType >;
    MultidiagonalCuda cudaMatrix( rows, columns, diagonals );
    cudaMatrix = hostMatrix;
    matrix = cudaMatrix;
@@ -493,7 +493,6 @@ void denseMatrixAssignment()
    using IndexType = typename Matrix::IndexType;
 
    using DenseHost = TNL::Matrices::DenseMatrix< RealType, TNL::Devices::Host, IndexType >;
-   using DenseCuda = TNL::Matrices::DenseMatrix< RealType, TNL::Devices::Cuda, IndexType >;
 
    const IndexType rows( 10 ), columns( 10 );
    DenseHost hostMatrix( rows, columns );
@@ -517,7 +516,8 @@ void denseMatrixAssignment()
             EXPECT_EQ( matrix.getElement( i, j ), i + j );
       }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
+   using DenseCuda = TNL::Matrices::DenseMatrix< RealType, TNL::Devices::Cuda, IndexType >;
    DenseCuda cudaMatrix( rows, columns );
    cudaMatrix = hostMatrix;
    matrix = cudaMatrix;
@@ -542,7 +542,7 @@ TEST( DenseMatrixCopyTest, Dense_HostToDense_Host )
    testCopyAssignment< Dense_host_RowMajorOrder, Dense_host_RowMajorOrder >();
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( DenseMatrixCopyTest, Dense_HostToDense_Cuda )
 {
    testCopyAssignment< Dense_host,               Dense_cuda >();
@@ -566,7 +566,7 @@ TEST( DenseMatrixCopyTest, Dense_CudaToDense_Cuda )
    testCopyAssignment< Dense_cuda,               Dense_cuda_RowMajorOrder >();
    testCopyAssignment< Dense_cuda_RowMajorOrder, Dense_cuda_RowMajorOrder >();
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 
 
 TEST( DenseMatrixCopyTest, CSR_HostToDense_Host )
@@ -575,7 +575,7 @@ TEST( DenseMatrixCopyTest, CSR_HostToDense_Host )
    testCopyAssignment< CSR_host, Dense_host_RowMajorOrder >();
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( DenseMatrixCopyTest, CSR_HostToDense_cuda )
 {
    testCopyAssignment< CSR_host, Dense_cuda >();
@@ -603,13 +603,13 @@ TEST( DenseMatrixCopyTest, TridiagonalMatrixAssignment_to_Dense_host )
    tridiagonalMatrixAssignment< Dense_host_RowMajorOrder >();
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( DenseMatrixCopyTest, TridiagonalMatrixAssignment_to_Dense_cuda )
 {
    tridiagonalMatrixAssignment< Dense_cuda >();
    tridiagonalMatrixAssignment< Dense_cuda_RowMajorOrder >();
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 
 ////
 // Multidiagonal matrix assignment test
@@ -619,13 +619,13 @@ TEST( DenseMatrixCopyTest, MultidiagonalMatrixAssignment_to_Dense_host )
    multidiagonalMatrixAssignment< Dense_host_RowMajorOrder >();
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( DenseMatrixCopyTest, MultidiagonalMatrixAssignment_to_Dense_cuda )
 {
    multidiagonalMatrixAssignment< Dense_cuda >();
    multidiagonalMatrixAssignment< Dense_cuda_RowMajorOrder >();
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 
 ////
 // Dense matrix assignment test
@@ -635,13 +635,13 @@ TEST( DenseMatrixCopyTest, DenseMatrixAssignment_to_Dense_host )
    denseMatrixAssignment< Dense_host_RowMajorOrder >();
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 TEST( DenseMatrixCopyTest, DenseMatrixAssignment_to_Dense_cuda )
 {
    denseMatrixAssignment< Dense_cuda >();
    denseMatrixAssignment< Dense_cuda_RowMajorOrder >();
 }
-#endif // HAVE_CUDA
+#endif // __CUDACC__
 
 #endif //HAVE_GTEST
 

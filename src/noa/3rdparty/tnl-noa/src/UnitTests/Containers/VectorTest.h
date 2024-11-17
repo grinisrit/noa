@@ -72,7 +72,7 @@ TYPED_TEST( VectorTest, constructors )
 
 TEST( VectorSpecialCasesTest, defaultConstructors )
 {
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    using DeviceType = TNL::Devices::Cuda;
    #else
    using DeviceType = TNL::Devices::Host;
@@ -94,7 +94,7 @@ TEST( VectorSpecialCasesTest, defaultConstructors )
 
 TEST( VectorSpecialCasesTest, assignmentThroughView )
 {
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    using DeviceType = TNL::Devices::Cuda;
    #else
    using DeviceType = TNL::Devices::Host;
@@ -127,7 +127,7 @@ TEST( VectorSpecialCasesTest, assignmentThroughView )
 
 TEST( VectorSpecialCasesTest, initializationOfVectorViewByArrayView )
 {
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    using DeviceType = TNL::Devices::Cuda;
    #else
    using DeviceType = TNL::Devices::Host;
@@ -147,7 +147,7 @@ TEST( VectorSpecialCasesTest, initializationOfVectorViewByArrayView )
 
 TEST( VectorSpecialCasesTest, sumOfBoolVector )
 {
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    using DeviceType = TNL::Devices::Cuda;
    #else
    using DeviceType = TNL::Devices::Host;
@@ -205,7 +205,7 @@ TEST( VectorSpecialCasesTest, sumOfBoolVector )
 
 TEST( VectorSpecialCasesTest, reductionOfEmptyVector )
 {
-   #ifdef HAVE_CUDA
+   #ifdef __CUDACC__
    using DeviceType = TNL::Devices::Cuda;
    #else
    using DeviceType = TNL::Devices::Host;

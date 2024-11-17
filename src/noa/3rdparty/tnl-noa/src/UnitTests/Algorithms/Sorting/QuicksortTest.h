@@ -9,9 +9,12 @@
 #include <TNL/Algorithms/sort.h>
 #include <TNL/Algorithms/Sorting/Quicksort.h>
 
-#if defined HAVE_CUDA && defined HAVE_GTEST
+#if defined __CUDACC__ && defined HAVE_GTEST
+// FIXME: clang 14 fails due to compile errors in thrust or cub
+#if defined(__CUDA__) && !defined(__clang__)
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
+#endif
 
 #include <gtest/gtest.h>
 
@@ -122,9 +125,12 @@ TEST(noLostElement, bigSizedArray)
    auto view = cudaArr.getView();
    Quicksort::sort( view );
 
+// FIXME: clang 14 fails due to compile errors in thrust or cub
+#if defined(__CUDA__) && !defined(__clang__)
    TNL::Containers::Array<int, TNL::Devices::Cuda> cudaArr2(arr);
    thrust::sort(thrust::device, cudaArr2.getData(), cudaArr2.getData() + cudaArr2.getSize());
    EXPECT_TRUE(view == cudaArr2.getView());
+#endif
 }
 
 TEST(types, type_double)
@@ -141,9 +147,12 @@ TEST(types, type_double)
    auto view = cudaArr.getView();
    Quicksort::sort( view );
 
+// FIXME: clang 14 fails due to compile errors in thrust or cub
+#if defined(__CUDA__) && !defined(__clang__)
    TNL::Containers::Array<double, TNL::Devices::Cuda> cudaArr2(arr);
    thrust::sort(thrust::device, cudaArr2.getData(), cudaArr2.getData() + cudaArr2.getSize());
    EXPECT_TRUE(view == cudaArr2.getView());
+#endif
 }
 
 struct TMPSTRUCT_xyz{

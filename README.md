@@ -119,18 +119,53 @@ When referring to this library in scientific work please cite
 }
 ```
 
-We welcome contributions to the project 
-and would love to hear about any feature requests.
+### Contributors
 
-The JNI wrapper is being developed in collaboration with 
+* [Sabina Abdiganieva](https://github.com/abdiganieva) researched various DFT implementations 
+for QC.
+
+* [Dmitry Bazanov](https://github.com/zugzvangg) developed the Heston volatility surface calibration
+routines in QUANT and works on its applications to real market data. 
+
+* [Gregory Dushkin](https://github.com/GregTheMadMonk) is the main developer for CFD, implementing 
+differentiable programming algorithms for MHFEM schemes and integrating TNL into the library. 
+He also works on muon simulations in PMS and intergrated pumas.
+He helped to implement the adjoint sensitivity algorithm for Kohn-Sham equations in QC.
+
+* [Anastasia Golovina](https://github.com/a-tass) wrapped LibTorch's optimizers
+into KMath.
+
+* [Eugen Kadilenko](https://github.com/ruthenium96) developed the adjoint sensitivity
+model for Kohn-Sham equations in QC.
+
+* [Andrey Lipsky](https://github.com/Molozey) works on applications to real
+market data for QUANT.
+
+* [Oleg Mosyagin](https://github.com/F5DXWsqPme) implemented the XPU ray-tracing
+algorithm in PMS.
+
+* [Ivan Novikov](https://github.com/mrFendel) contributes to the documentation
+in QUANT, implemented the PDE methods for the Black-Scholes 
+model and works on margin models.
+
+* [Danila Ryazanov](https://github.com/DanilaSR) developed the XPU DCS 
+computations for muons in PMS.
+
+* [Maksim Sosnin](https://github.com/mmssss) implemented the almost exact simulation
+scheme for the Heston Model in QUANT and works on integration with Deep Hedging.
+
+* The JNI wrapper is being developed in collaboration with 
 [KMath contributors](https://github.com/mipt-npm/kmath/graphs/contributors).
+
+We welcome contributions to the project 
+and would love to hear about any feature requests
 
 ## License
 
 NOA is licensed under the terms and conditions of the GNU General
 Public License (GPL) version 3 or - at your option - any later
 version. The GPL can be read [online](https://www.gnu.org/licenses/gpl-3.0.en.html), 
-or see the full [LICENSE](LICENSE)
+or see the full [LICENSE](LICENSE).
 
 Please note that NOA license does NOT feature a
 template exception to the GNU General Public License. This means that
@@ -142,4 +177,4 @@ for a commercial license.
 For support or consultancy services 
 contact [GrinisRIT](https://www.grinisrit.com).
 
-(c) 2022 GrinisRIT ltd. 
+(c) 2023 GrinisRIT ltd. and contributors

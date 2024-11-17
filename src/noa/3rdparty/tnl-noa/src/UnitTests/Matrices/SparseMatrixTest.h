@@ -99,10 +99,17 @@ TYPED_TEST( MatrixTest, reduceRows )
     test_reduceRows< MatrixType >();
 }
 
-TYPED_TEST( MatrixTest, saveAndLoadTest )
+TYPED_TEST( MatrixTest, saveAndLoad )
 {
     using MatrixType = typename TestFixture::MatrixType;
 
     test_SaveAndLoad< MatrixType >( saveAndLoadFileName );
+}
+
+TYPED_TEST( MatrixTest, getTransposition )
+{
+    using MatrixType = typename TestFixture::MatrixType;
+
+    test_getTransposition< MatrixType >();
 }
 #endif

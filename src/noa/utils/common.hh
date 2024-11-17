@@ -18,6 +18,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
  *****************************************************************************/
 /**
+ * \file common.hh
  * Implemented by: Roland Grinis
  */
 
@@ -32,8 +33,10 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
+/// NOA utility namespace
 namespace noa::utils {
 
+    /// Path type
     using Path = std::filesystem::path;
     using Status = bool;
     using Line = std::string;
@@ -53,12 +56,51 @@ namespace noa::utils {
 
     inline const auto num_pattern = std::regex{"[0-9.E\\+-]+"};
 
-    inline Status check_path_exists(const Path &path) {
+    [[nodiscard]] inline Status check_path_exists(const Path &path) {
         if (!std::filesystem::exists(path)) {
             std::cerr << "Cannot find " << path << std::endl;
             return false;
         }
         return true;
+    }
+
+    /// Return type for \ref check_directory()
+    enum class DirectoryStatus {
+            /// Nothing at the specified path
+            NOT_FOUND,
+            /// Path points to a file that is not a directory
+            NOT_A_DIR,
+            /// Path points to an existing directory, OK
+            EXISTS
+    };
+
+    /// Checks if specified path points to an existing directory in the filesystem
+    ///
+    /// \returns See DirectoryStatus
+    [[nodiscard]] inline DirectoryStatus check_directory(const Path &path) {
+            if (!check_path_exists(path)) return DirectoryStatus::NOT_FOUND;
+
+            if (!std::filesystem::is_directory(path)) {
+                    std::cerr << path << ": not a directory" << std::endl;
+                    return DirectoryStatus::NOT_A_DIR;
+            }
+
+            return DirectoryStatus::EXISTS;
+    }
+
+    /// Bitwise comparison of files
+    ///
+    /// \returns `true` if files are equal, `false` if differ
+    [[nodiscard]] inline Status compare_files(const Path& file1, const Path& file2) {
+        std::ifstream file1_stream(file1, std::ios::binary), file2_stream(file2, std::ios::binary);
+
+        if (file1_stream.fail() || file2_stream.fail()) return false;
+
+        char c1, c2;
+        while (bool(file1_stream.read(&c1, 1)) & bool(file2_stream.read(&c2, 1))) // & instead of && to ensure both sides get executed
+                if (c1 != c2) return false;
+
+        return file1_stream.eof() && file2_stream.eof(); // Check if reached EOF in both files
     }
 
     inline TensorOpt load_tensor(const Path &path) {

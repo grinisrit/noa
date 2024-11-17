@@ -100,7 +100,7 @@ template< typename MeshReal,
           typename Real,
           typename Index >
 template< typename Vector >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 __device__ __host__
 #endif
 Real parallelGodunovEikonalScheme< tnlGrid< 1, MeshReal, Device, MeshIndex >, Real, Index >:: getValue( const MeshType& mesh,

@@ -205,7 +205,7 @@ void testSynchronizer( const Mesh& mesh )
    testSynchronizerOnDevice< Devices::Host, typename Mesh::Cell >( mesh );
    if( mesh.template getGlobalIndices< 1 >().getSize() > 0 )
       testSynchronizerOnDevice< Devices::Host, typename Mesh::Face >( mesh );
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    testSynchronizerOnDevice< Devices::Cuda, typename Mesh::Vertex >( mesh );
    testSynchronizerOnDevice< Devices::Cuda, typename Mesh::Cell >( mesh );
    if( mesh.template getGlobalIndices< 1 >().getSize() > 0 )
@@ -380,7 +380,7 @@ bool testPropagationOverFaces( const Mesh& mesh, int max_iterations )
       const bool done = sum( f_K.getData() ) == prev_sum || iteration > max_iterations;
       TNL::MPI::Allreduce( &done, &all_done, 1, MPI_LAND, mesh.getCommunicator() );
    }
-   while( all_done == false );
+   while( ! all_done );
 
    return true;
 }
@@ -430,5 +430,6 @@ int main( int argc, char* argv[] )
       // test simple propagation algorithm
       return testPropagationOverFaces( std::forward<MeshType>(mesh), max_iterations );
    };
-   return ! Meshes::resolveAndLoadDistributedMesh< MyConfigTag, Devices::Host >( wrapper, inputFileName, inputFileFormat );
+   const bool status = Meshes::resolveAndLoadDistributedMesh< MyConfigTag, Devices::Host >( wrapper, inputFileName, inputFileFormat );
+   return static_cast< int >( ! status);
 }

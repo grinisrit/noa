@@ -22,4 +22,4 @@ hydro-thermo-mechanical-chemical data,
 but also muography, seismic surveys, 
 gravimetry or inSAR.
 
-(c) 2022 GrinisRIT ltd.
+(c) 2023 GrinisRIT ltd. and contributors

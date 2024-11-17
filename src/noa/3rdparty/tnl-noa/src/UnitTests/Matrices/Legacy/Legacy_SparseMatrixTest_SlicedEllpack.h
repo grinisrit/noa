@@ -32,7 +32,7 @@ using SlicedEllpackMatrixTypes = ::testing::Types
     SlicedEllpackType< long,    TNL::Devices::Host, long  >,
     SlicedEllpackType< float,   TNL::Devices::Host, long  >,
     SlicedEllpackType< double,  TNL::Devices::Host, long  >
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
    ,SlicedEllpackType< int,     TNL::Devices::Cuda, int   >,
     SlicedEllpackType< long,    TNL::Devices::Cuda, int   >,
     SlicedEllpackType< float,   TNL::Devices::Cuda, int   >,

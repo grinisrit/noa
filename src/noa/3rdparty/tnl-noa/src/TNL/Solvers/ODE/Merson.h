@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -134,12 +134,11 @@ public:
     * the current time \f$ t \f$.
     * \param u is a variable/static vector representing the solution of the ODE system at current time.
     * \param f is the lambda function representing the right-hand side of the ODE system.
-    * \param args are user define arguments which are passed to the lambda function `f`.
     * \return `true` if steady state solution has been reached, `false` otherwise.
     */
    template< typename RHSFunction >
    bool
-   solve( VectorType& u, RHSFunction&& rhs );
+   solve( VectorType& u, RHSFunction&& f );
 
    void
    writeGrids( const DofVectorType& u );

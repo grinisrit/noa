@@ -1,14 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-/***
- * Authors:
- * Oberhuber Tomas, tomas.oberhuber@fjfi.cvut.cz
- * Zabka Vitezslav, zabkav@gmail.com
- */
 
 #pragma once
 
@@ -46,12 +40,12 @@ public:
       this->pointsSet.setSize( points );
       pointsSet.setValue( false );
 
-      if( std::is_same< CellTopology, Topologies::Polyhedron >::value ) {
+      if constexpr( std::is_same< CellTopology, Topologies::Polyhedron >::value ) {
          this->faceSeeds.setDimensions( faces, points );
          this->cellSeeds.setDimensions( cells, faces );
       }
-      else  // Topologies other than polyhedrons don't use face seeds
-      {
+      else {
+         // Topologies other than polyhedrons don't use face seeds
          this->cellSeeds.setDimensions( cells, points );
       }
    }
@@ -125,7 +119,7 @@ public:
       std::iota( permutation.begin(), permutation.end(), (GlobalIndexType) 0 );
 
       // workaround for lexicographical sorting
-      // FIXME: https://mmg-gitlab.fjfi.cvut.cz/gitlab/tnl/tnl-dev/-/issues/79
+      // FIXME: https://gitlab.com/tnl-project/tnl/-/issues/79
       auto lexless = [ numericalThreshold, this ]( const GlobalIndexType& a, const GlobalIndexType& b ) -> bool
       {
          const PointType& left = this->points[ a ];
@@ -215,7 +209,7 @@ public:
       std::iota( permutation.begin(), permutation.end(), (GlobalIndexType) 0 );
 
       // workaround for lexicographical sorting
-      // FIXME: https://mmg-gitlab.fjfi.cvut.cz/gitlab/tnl/tnl-dev/-/issues/79
+      // FIXME: https://gitlab.com/tnl-project/tnl/-/issues/79
       auto lexless = [ this ]( const GlobalIndexType& a, const GlobalIndexType& b ) -> bool
       {
          const auto& left = this->faceSeeds.getSeed( a );

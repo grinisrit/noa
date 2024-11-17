@@ -1,10 +1,8 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
-
-// Implemented by: Jakub Klinkovský
 
 #pragma once
 
@@ -118,11 +116,11 @@ PVTUWriter< Mesh >::addPiece( const std::string& mainFileName, const unsigned su
 
    // write <Piece> tag
    const std::string subfile = "subdomain." + std::to_string( subdomainIndex ) + ".vtu";
-   const std::string source = basename / subfile;
+   const std::string source = ( basename / subfile ).string();
    str << "<Piece Source=\"" << source << "\"/>\n";
 
    // return subfile path
-   return subdirectory / subfile;
+   return ( subdirectory / subfile ).string();
 }
 
 template< typename Mesh >

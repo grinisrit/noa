@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -94,7 +94,6 @@ public:
    static typename MeshFunctionType::RealType
    getNorm( const MeshFunctionType& function, const typename MeshFunctionType::RealType& p )
    {
-      using RealType = typename MeshFunctionType::RealType;
       static constexpr int EntityDimension = MeshFunctionType::getEntitiesDimension();
       if( EntityDimension == Dimension ) {
          if( p == 1.0 )
@@ -104,8 +103,6 @@ public:
          return ::pow( function.getMesh().getCellMeasure(), 1.0 / p ) * function.getData().lpNorm( p );
       }
       if( EntityDimension > 0 ) {
-         using MeshType = typename MeshFunctionType::MeshType;
-         using EntityType = typename MeshType::Face;
          throw Exceptions::NotImplementedError( "Not implemented yet." );
       }
 

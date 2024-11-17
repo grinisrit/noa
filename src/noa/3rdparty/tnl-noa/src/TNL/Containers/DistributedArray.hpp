@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -133,7 +133,7 @@ void
 DistributedArray< Value, Device, Index, Allocator >::setSynchronizer( std::shared_ptr< SynchronizerType > synchronizer,
                                                                       int valuesPerElement )
 {
-   view.setSynchronizer( synchronizer, valuesPerElement );
+   view.setSynchronizer( std::move( synchronizer ), valuesPerElement );
 }
 
 template< typename Value, typename Device, typename Index, typename Allocator >
@@ -314,6 +314,20 @@ void
 DistributedArray< Value, Device, Index, Allocator >::forElements( IndexType begin, IndexType end, Function&& f ) const
 {
    view.forElements( begin, end, f );
+}
+
+template< typename Value, typename Device, typename Index, typename Allocator >
+void
+DistributedArray< Value, Device, Index, Allocator >::loadFromGlobalFile( const String& fileName, bool allowCasting )
+{
+   view.loadFromGlobalFile( fileName, allowCasting );
+}
+
+template< typename Value, typename Device, typename Index, typename Allocator >
+void
+DistributedArray< Value, Device, Index, Allocator >::loadFromGlobalFile( File& file, bool allowCasting )
+{
+   view.loadFromGlobalFile( file, allowCasting );
 }
 
 }  // namespace Containers

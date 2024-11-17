@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -29,28 +29,22 @@ public:
    static SubrangeType
    splitRange( Index globalSize, const MPI::Comm& communicator )
    {
-      if( communicator != MPI_COMM_NULL ) {
-         const int rank = communicator.rank();
-         const int partitions = communicator.size();
-         const Index begin = TNL::min( globalSize, rank * globalSize / partitions );
-         const Index end = TNL::min( globalSize, ( rank + 1 ) * globalSize / partitions );
-         return SubrangeType( begin, end );
-      }
-      else
-         return SubrangeType( 0, 0 );
-   }
+      if( communicator == MPI_COMM_NULL )
+         return { 0, 0 };
 
-   // Gets the owner of given global index.
-   __cuda_callable__
-   static int
-   getOwner( Index i, Index globalSize, int partitions )
-   {
-      int owner = i * partitions / globalSize;
-      if( owner < partitions - 1 && i >= getOffset( globalSize, owner + 1, partitions ) )
-         owner++;
-      TNL_ASSERT_GE( i, getOffset( globalSize, owner, partitions ), "BUG in getOwner" );
-      TNL_ASSERT_LT( i, getOffset( globalSize, owner + 1, partitions ), "BUG in getOwner" );
-      return owner;
+      const int rank = communicator.rank();
+      const int partitions = communicator.size();
+
+      const Index partSize = globalSize / partitions;
+      const int remainder = globalSize % partitions;
+      if( rank < remainder ) {
+         const Index begin = rank * ( partSize + 1 );
+         const Index end = begin + partSize + 1;
+         return { begin, end };
+      }
+      const Index begin = remainder * ( partSize + 1 ) + ( rank - remainder ) * partSize;
+      const Index end = begin + partSize;
+      return { begin, end };
    }
 
    // Gets the offset of data for given rank.
@@ -58,7 +52,11 @@ public:
    static Index
    getOffset( Index globalSize, int rank, int partitions )
    {
-      return rank * globalSize / partitions;
+      const Index partSize = globalSize / partitions;
+      const int remainder = globalSize % partitions;
+      if( rank < remainder )
+         return rank * ( partSize + 1 );
+      return remainder * ( partSize + 1 ) + ( rank - remainder ) * partSize;
    }
 
    // Gets the size of data assigned to given rank.
@@ -66,9 +64,11 @@ public:
    static Index
    getSizeForRank( Index globalSize, int rank, int partitions )
    {
-      const Index begin = min( globalSize, rank * globalSize / partitions );
-      const Index end = min( globalSize, ( rank + 1 ) * globalSize / partitions );
-      return end - begin;
+      const Index partSize = globalSize / partitions;
+      const int remainder = globalSize % partitions;
+      if( rank < remainder )
+         return partSize + 1;
+      return partSize;
    }
 
    template< typename Device >

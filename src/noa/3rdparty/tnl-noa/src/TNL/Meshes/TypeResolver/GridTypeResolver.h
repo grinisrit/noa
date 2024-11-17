@@ -1,12 +1,10 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
 // SPDX-License-Identifier: MIT
 
 #pragma once
-
-#include <type_traits>
 
 #include <noa/3rdparty/tnl-noa/src/TNL/Meshes/TypeResolver/BuildConfigTags.h>
 
@@ -32,63 +30,19 @@ protected:
       //       resolution for all subtypes is more flexible and also pretty
       //       good optimization of compilation times.
 
-      // Overload for disabled grid dimensions
-      template<
-         int MeshDimension,
-         typename = typename std::enable_if< ! BuildConfigTags::GridDimensionTag< ConfigTag, MeshDimension >::enabled >::type,
-         typename = void >
+      template< int MeshDimension >
       static bool
       resolveReal( Reader& reader, Functor&& functor );
 
-      // Overload for enabled grid dimensions
-      template<
-         int MeshDimension,
-         typename = typename std::enable_if< BuildConfigTags::GridDimensionTag< ConfigTag, MeshDimension >::enabled >::type >
-      static bool
-      resolveReal( Reader& reader, Functor&& functor );
-
-      // Overload for disabled real types
-      template< int MeshDimension,
-                typename Real,
-                typename = typename std::enable_if< ! BuildConfigTags::GridRealTag< ConfigTag, Real >::enabled >::type,
-                typename = void >
+      template< int MeshDimension, typename Real >
       static bool
       resolveIndex( Reader& reader, Functor&& functor );
 
-      // Overload for enabled real types
-      template< int MeshDimension,
-                typename Real,
-                typename = typename std::enable_if< BuildConfigTags::GridRealTag< ConfigTag, Real >::enabled >::type >
-      static bool
-      resolveIndex( Reader& reader, Functor&& functor );
-
-      // Overload for disabled index types
-      template< int MeshDimension,
-                typename Real,
-                typename Index,
-                typename = typename std::enable_if< ! BuildConfigTags::GridIndexTag< ConfigTag, Index >::enabled >::type,
-                typename = void >
+      template< int MeshDimension, typename Real, typename Index >
       static bool
       resolveGridType( Reader& reader, Functor&& functor );
 
-      // Overload for enabled index types
-      template< int MeshDimension,
-                typename Real,
-                typename Index,
-                typename = typename std::enable_if< BuildConfigTags::GridIndexTag< ConfigTag, Index >::enabled >::type >
-      static bool
-      resolveGridType( Reader& reader, Functor&& functor );
-
-      // Overload for disabled grid types
-      template< typename GridType,
-                typename = typename std::enable_if< ! BuildConfigTags::GridTag< ConfigTag, GridType >::enabled >::type,
-                typename = void >
-      static bool
-      resolveTerminate( Reader& reader, Functor&& functor );
-
-      // Overload for enabled grid types
-      template< typename GridType,
-                typename = typename std::enable_if< BuildConfigTags::GridTag< ConfigTag, GridType >::enabled >::type >
+      template< typename GridType >
       static bool
       resolveTerminate( Reader& reader, Functor&& functor );
    };

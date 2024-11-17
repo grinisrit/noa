@@ -50,7 +50,7 @@ TEST( VTKReaderTest, mrizka_1 )
    EXPECT_EQ( cells, 242 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -68,7 +68,7 @@ TEST( VTKReaderTest, tetrahedrons )
    EXPECT_EQ( cells, 1312 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -86,7 +86,7 @@ TEST( VTKReaderTest, triangles_2x2x2_original_with_metadata_and_cell_data )
    EXPECT_EQ( cells, 8 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -104,7 +104,7 @@ TEST( VTKReaderTest, triangles_2x2x2_minimized_ascii )
    EXPECT_EQ( cells, 8 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -122,7 +122,7 @@ TEST( VTKReaderTest, triangles_2x2x2_minimized_binary )
    EXPECT_EQ( cells, 8 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -140,7 +140,7 @@ TEST( VTKReaderTest, triangles_2x2x2_ascii_51 )
    EXPECT_EQ( cells, 8 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -158,7 +158,7 @@ TEST( VTKReaderTest, triangles_2x2x2_binary_51 )
    EXPECT_EQ( cells, 8 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -177,7 +177,7 @@ TEST( VTKReaderTest, quadrangles )
    EXPECT_EQ( cells, 6 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -195,7 +195,7 @@ TEST( VTKReaderTest, hexahedrons )
    EXPECT_EQ( cells, 24 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -213,7 +213,7 @@ TEST( VTKReaderTest, polygons )
    EXPECT_EQ( cells, 90 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -233,7 +233,7 @@ TEST( VTKReaderTest, two_polyhedra )
    EXPECT_EQ( cells, 2 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }
@@ -248,12 +248,12 @@ TEST( VTKReaderTest, cube1m_1 )
    const auto vertices = mesh.template getEntitiesCount< 0 >();
    const auto faces = mesh.template getEntitiesCount< MeshType::getMeshDimension() - 1 >();
    const auto cells = mesh.template getEntitiesCount< MeshType::getMeshDimension() >();
-   EXPECT_EQ( vertices, 2358 );
-   EXPECT_EQ( faces, 2690 );
+   EXPECT_EQ( vertices, 2018 );
+   EXPECT_EQ( faces, 2410 );
    EXPECT_EQ( cells, 395 );
 
    test_reader< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME );
-   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "int" );  // force GlobalIndex to int (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
+   test_resolveAndLoadMesh< Writers::VTKWriter, MyConfigTag >( mesh, TEST_FILE_NAME, "std::int32_t" );  // force GlobalIndex to std::int32_t (VTK DataFormat 2.0 uses int32, but 5.1 uses int64)
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "PointData" );
    test_meshfunction< Readers::VTKReader, Writers::VTKWriter >( mesh, TEST_FILE_NAME, "CellData" );
 }

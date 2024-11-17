@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2022 Tomáš Oberhuber et al.
+// Copyright (c) 2004-2023 Tomáš Oberhuber et al.
 //
 // This file is part of TNL - Template Numerical Library (https://tnl-project.org/)
 //
@@ -46,7 +46,7 @@ public:
    havePadding()
    {
       return true;
-   };
+   }
 
    Ellpack() = default;
 
@@ -71,7 +71,7 @@ public:
    ViewType
    getView();
 
-   const ConstViewType
+   ConstViewType
    getConstView() const;
 
    /**
@@ -102,6 +102,11 @@ public:
    IndexType
    getSize() const;
 
+   /**
+    * \brief Returns number of elements that needs to be allocated by a container connected to this segments.
+    *
+    * \return size of container connected to this segments.
+    */
    __cuda_callable__
    IndexType
    getStorageSize() const;
@@ -148,6 +153,9 @@ public:
                    ResultKeeper& keeper,
                    const Real& zero ) const;
 
+   /**
+    * \brief Call \e reduceSegments for all segments.
+    */
    template< typename Fetch, typename Reduction, typename ResultKeeper, typename Real >
    void
    reduceAllSegments( Fetch& fetch, const Reduction& reduction, ResultKeeper& keeper, const Real& zero ) const;

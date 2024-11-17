@@ -126,8 +126,10 @@ benchmarkSolver( Benchmark<>& benchmark,
    // (iterations, preconditioned residue, true residue)
    struct MyBenchmarkResult : public BenchmarkResult
    {
-      using HeaderElements = BenchmarkResult::HeaderElements;
-      using RowElements = BenchmarkResult::RowElements;
+      using HeaderElements [[maybe_unused]] // FIXME: workaround for https://github.com/llvm/llvm-project/issues/59706
+         = BenchmarkResult::HeaderElements;
+      using RowElements [[maybe_unused]] // FIXME: workaround for https://github.com/llvm/llvm-project/issues/59706
+         = BenchmarkResult::RowElements;
 
       Solver< Matrix >& solver;
       const std::shared_ptr< Matrix >& matrix;
