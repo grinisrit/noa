@@ -170,22 +170,11 @@ class WASC:
 
         sigma_diff = term1 + term2 + term3 + term4 + term5
 
-        w = self._vol_wasc(F, K, params)
-        # denominator = 2 * np.sqrt(w)
-
-        # return np.concatenate(
-        #     (
-        #         (Q_diff / denominator).flatten(),
-        #         (R_diff / denominator).flatten(),
-        #         (sigma_diff / denominator).flatten(),
-        #     ),
-        #     axis=0,
-        # )
         return np.concatenate(
             (
-                (2 * w * Q_diff).flatten(),
-                (2 * w * R_diff).flatten(),
-                (2 * w * sigma_diff).flatten(),
+                R_diff.flatten(),
+                Q_diff.flatten(),
+                sigma_diff.flatten(),
             ),
             axis=0,
         )
