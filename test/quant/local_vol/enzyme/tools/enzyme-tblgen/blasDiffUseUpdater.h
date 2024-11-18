@@ -55,8 +55,13 @@ void emit_BLASDiffUse(TGPattern &pattern, llvm::raw_ostream &os) {
        << ";\n";
     os << "  auto arg_" << name << " = CI->getArgOperand(pos_" << name
        << ");\n";
-    os << "  const bool overwritten_" << name
-       << " = (cacheMode ? (overwritten_args_ptr ? (*overwritten_args_ptr)[pos_"
+    os << "  const bool overwritten_" << name;
+
+    // if (pattern.getMutableArgs().count(argPos))
+    //  os << " = (cacheMode ? true : false);\n\n";
+    // else
+    os << " = (cacheMode ? (overwritten_args_ptr ? "
+          "(*overwritten_args_ptr)[pos_"
        << name << "] : true ) : false);\n\n";
   }
 
@@ -65,7 +70,7 @@ void emit_BLASDiffUse(TGPattern &pattern, llvm::raw_ostream &os) {
     auto name = nameVec[arg];
     os << "  bool active_" << name << " = !gutils->isConstantValue(arg_" << name
        << ");\n";
-    os << "  if (!shadow && EnzymeRuntimeActivityCheck && active_" << name
+    os << "  if (!shadow && gutils->runtimeActivity && active_" << name
        << ") return true;\n";
   }
 
@@ -77,7 +82,7 @@ void emit_BLASDiffUse(TGPattern &pattern, llvm::raw_ostream &os) {
     os << "  {\n";
 
     os << "  SmallVector<ValueType, 1> valTys = {"
-       << ValueType_helper(pattern, argPos) << "}\n;";
+       << ValueType_helper(pattern, argPos, nullptr) << "}\n;";
     if (lv23) {
       // add extra cblas_arg for the !byRef case
       os << " valTys.insert(valTys.begin(), ValueType::Primal);\n";
@@ -122,8 +127,8 @@ void emit_BLASDiffUse(TGPattern &pattern, llvm::raw_ostream &os) {
         "CI->getArgOperand(" + std::to_string(ptrRetArg) + " + offset)";
     os << "  if (cublas) {\n";
     os << "    if (!gutils->isConstantValue(" << retarg << "))\n";
-    os << "      if ((shadow || EnzymeRuntimeActivityCheck) && val == "
-       << retarg << ") return true;\n";
+    os << "      if ((shadow || gutils->runtimeActivity) && val == " << retarg
+       << ") return true;\n";
     os << "    if (mode != DerivativeMode::ReverseModeGradient && !shadow && "
           "val == "
        << retarg << ") return true;\n";
