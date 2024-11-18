@@ -70,7 +70,7 @@ def array_to_wasc_matrixes(array: nb.float64[:]) -> WASCParams:
 
 
 class WASC:
-    def __init__(self, params_dim: float = 2):
+    def __init__(self, params_dim: float = 3, is_log: bool = False):
         self.num_iter = 10000
         self.max_mu = 1e4
         self.min_mu = 1e-6
@@ -81,6 +81,7 @@ class WASC:
         self.raw_cached_params = np.random.normal(
             loc=1, scale=0.05, size=3 * params_dim**2
         )
+        self.is_log = is_log
 
     def _vol_wasc(
         self,
@@ -260,7 +261,8 @@ class WASC:
                     mu = min(self.max_mu, mu * nu2)
                     continue
                 result_x = x
-                print(result_x, result_error)
+                if self.is_log:
+                    print(result_x, result_error)
             return result_x, result_error
 
         calc_params, calibration_error = levenberg_marquardt(
