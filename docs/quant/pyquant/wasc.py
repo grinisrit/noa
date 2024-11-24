@@ -70,18 +70,36 @@ def array_to_wasc_matrixes(array: nb.float64[:]) -> WASCParams:
 
 
 class WASC:
-    def __init__(self, params_dim: float = 3, is_log: bool = False):
+    def __init__(
+        self,
+        params_dim: float = 3,
+        is_log: bool = False,
+        params_init_type: str = "normal_diag",
+    ):
+        possible_params_init_type = ["normal_diag", "normal_all"]
+        assert (
+            params_init_type in possible_params_init_type
+        ), f"'params_init_type' should be one of {possible_params_init_type} "
         self.num_iter = 10000
         self.max_mu = 1e4
         self.min_mu = 1e-6
         self.tol = 1e-4
-        self.params_dim = params_dim
-        # Create param flatten array of 3 params and each matrix of params_dim*params_dim size
-        # self.raw_cached_params = np.ones(3 * params_dim**2)
-        self.raw_cached_params = np.random.normal(
-            loc=1, scale=0.05, size=3 * params_dim**2
-        )
         self.is_log = is_log
+        self.params_dim = params_dim
+        if params_init_type == "normal_diag":
+            # Create diag matrixes with zero elements on i!=j
+            R, Q, sigma = [
+                np.diag(np.random.normal(loc=0, scale=0.1, size=params_dim))
+                for _ in range(3)
+            ]
+            self.raw_cached_params = np.concatenate(
+                [R.flatten(), Q.flatten(), sigma.flatten()], axis=0
+            )
+        elif params_init_type == "normal_all":
+            # Create param flatten array of 3 params and each matrix of params_dim*params_dim size
+            self.raw_cached_params = np.random.normal(
+                loc=1, scale=0.1, size=3 * params_dim**2
+            )
 
     def _vol_wasc(
         self,
