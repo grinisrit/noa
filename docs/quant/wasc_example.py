@@ -34,9 +34,9 @@ vol_smile_chain = VolSmileChainSpace(
 
 weights = CalibrationWeights(np.ones_like(vol_smile_chain.Ks))
 
-for params_dim in [1, 3, 5, 7, 10]:
+for params_dim in [1, 2, 3, 4, 5, 6]:
     print(f"===== Calibration for matrix dim {params_dim} =====")
-    wasc = WASC(params_dim=params_dim, is_log=False)
+    wasc = WASC(params_dim=params_dim, is_log=False, params_init_type="normal_diag")
     clip_params, calib_error = wasc.calibrate(vol_smile_chain, weights)
     print("=== R matrix ===")
     print(clip_params.R)
