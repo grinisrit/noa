@@ -1,6 +1,5 @@
 import numpy as np
 import numba as nb
-from scipy.interpolate import CubicSpline
 from typing import Tuple
 
 from .common import *
