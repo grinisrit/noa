@@ -32,6 +32,8 @@ data/
 *.h5
 *.hdf5
 tmp*
+*.numbers
+*.xlsx
 
 # Notebooks temp data
 docs/cfd/stash/*

@@ -1,8 +1,8 @@
 import numpy as np
-from pyquant.black_scholes import *
-from pyquant.common import *
-from pyquant.vol_surface import *
-from pyquant.wasc import WASC
+from black_scholes import *
+from common import *
+from vol_surface import *
+from wasc import WASC
 
 strikes = np.array([1300.0, 1400, 1500, 1600, 1700, 1800.0, 1900, 2000, 2100, 2200])
 tau = 0.01

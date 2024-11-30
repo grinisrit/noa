@@ -28,6 +28,8 @@ providing even newcomers with the necessary option pricing background.
 
 * Monte-Carlo pricing with the [Heston model](heston_model.ipynb)
 
+* Modern Interest Rates [modelling](interest_rates_modelling.ipynb)
+
 * Machine Learning applications with [Deep Hedging](deep_hedging.ipynb)
  
 
