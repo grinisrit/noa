@@ -25,7 +25,7 @@ pvs = np.array(
 )
 
 vol_smile_chains = []
-for tau in [0.01, 0.1, 1]:
+for tau in [0.005, 0.01, 0.1, 1]:
     forward = Forward(Spot(F), ForwardYield(0.01), TimeToMaturity(tau))
     bs_calc = BSCalc()
     implied_vols = bs_calc.implied_vols(forward, Strikes(strikes), Premiums(pvs)).data
@@ -35,4 +35,6 @@ for tau in [0.01, 0.1, 1]:
     )
     vol_smile_chains.append(vol_smile_chain)
 
-print(SSVI(vol_smile_chains, is_log=True).delta_space_params_list)
+ssvi = SSVI(vol_smile_chains, is_log=True)
+print([x.array() for x in ssvi.delta_space_raw_params_list])
+print([x.array() for x in ssvi.delta_space_natural_params_list])
