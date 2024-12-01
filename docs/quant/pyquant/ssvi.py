@@ -64,3 +64,19 @@ class SSVI:
                 print(f"Delta-space market IV: {svi_test_iv_delta.data}")
 
             self.delta_space_params_list.append(svi_calibrated_params_delta.array())
+            if self.is_log:
+                print(
+                    f"Natural parametrizarion delt-space params: {self.raw_to_natural_parametrization(svi_calibrated_params_delta)}"
+                )
+
+    def raw_to_natural_parametrization(self, svi_raw_params: SVIRawParams):
+        a, b, rho, m, sigma = svi_raw_params.array()
+        sqrt = np.sqrt(1 - rho**2)
+        omega = 2 * b * rho / sqrt
+        xi = sqrt / sigma
+        mu = m + rho * sigma / sqrt
+        delta = a - omega / 2 * (1 - rho**2)
+        return [delta, mu, omega, xi]
+
+    def calibrate(self):
+        pass
