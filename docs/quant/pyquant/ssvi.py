@@ -143,5 +143,37 @@ class SSVI:
             DeltaParam(delta_param), Mu(mu), Rho(rho), Omega(omega), Zeta(zeta)
         )
 
+    def _total_implied_var_ssvi(
+        self,
+        F: nb.float64,
+        Ks: nb.float64[:],
+        params: nb.float64[:],
+    ):
+        delta_param, mu, rho, omega, zeta = (
+            params[0],
+            params[1],
+            params[2],
+            params[3],
+            params[4],
+        )
+        k = np.log(Ks / F)
+        w = delta_param + omega / 2 * (
+            1
+            + zeta * rho * (k - mu) * np.sqrt((zeta * (k - mu) + rho) ** 2 + 1 - rho**2)
+        )
+        return w
+
     def calibrate(self):
-        pass
+        # first get atm (K = F) implied total variances for all ttm's chains
+        atm_total_variances = []
+        for vol_slime_chain_space, delta_space_natural_params in zip(
+            self.vol_slime_chain_spaces, self.delta_space_natural_params_list
+        ):
+            F = vol_slime_chain_space.forward().spot().S
+
+            atm_total_variance = self._total_implied_var_ssvi(
+                F, F, delta_space_natural_params.array()
+            )
+            atm_total_variances.append(atm_total_variance)
+        print(atm_total_variances)
+        return
