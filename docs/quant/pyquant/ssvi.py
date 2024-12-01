@@ -16,8 +16,9 @@ class SSVI:
         self.vol_slime_chain_spaces = vol_slime_chain_spaces
         for vol_slime_chain_space in self.vol_slime_chain_spaces:
             if self.is_log:
+                print("\n")
                 print(
-                    f"===== Get natural params for tau = {vol_slime_chain_space.T} ===== "
+                    f"======== Get natural params for tau = {vol_slime_chain_space.T} ======== "
                 )
                 print(f"Market IV {vol_slime_chain_space.sigmas}")
             # for every time to maturity calibrate it's own SVI with raw params
@@ -60,6 +61,6 @@ class SSVI:
                     Strikes(vol_slime_chain_space.Ks),
                     svi_calibrated_params_delta,
                 )
-                print(f"Delta-space params market IV: {svi_test_iv_delta.data}")
+                print(f"Delta-space market IV: {svi_test_iv_delta.data}")
 
             self.delta_space_params_list.append(svi_calibrated_params_delta.array())
