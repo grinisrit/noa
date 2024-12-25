@@ -53,7 +53,7 @@ def noncentral_chisquare(
 def generate_cir(
         n_paths: int,
         n_steps: int,
-        dt: float,
+        dt: torch.Tensor,
         init_state: torch.Tensor,
         kappa: torch.Tensor,
         theta: torch.Tensor,
@@ -84,9 +84,6 @@ def generate_cir(
     Returns:
         Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
     """
-    if init_state.shape != torch.Size((n_paths,)):
-        raise ValueError('Shape of `init_state` must be (n_paths,)')
-
     paths = torch.empty((n_paths, n_steps + 1), dtype=init_state.dtype)
     paths[:, 0] = init_state
 
