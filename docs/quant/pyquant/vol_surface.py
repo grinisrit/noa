@@ -47,7 +47,8 @@ class Butterfly:
 @nb.experimental.jitclass([
     ("T", nb.float64),
     ("S", nb.float64),
-    ("r", nb.float64),
+    ("r", nb.float64),  
+    ("r_d", nb.float64),
     ("f", nb.float64),
     ("sigmas", nb.float64[:]),
     ("Ks", nb.float64[:]),
@@ -62,6 +63,7 @@ class VolSmileChainSpace:
         self.T = forward.T
         self.S = forward.S
         self.r = forward.r
+        self.r_d = forward.r_d
         self.f = forward.forward_rate().fv
 
         self.sigmas = implied_vols.data 
@@ -84,13 +86,14 @@ class VolSmileChainSpace:
             self.time_to_maturity())
     
     def forward(self) -> Forward:
-        return Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
+        return Forward(Spot(self.S), ForwardYield(self.r), DiscountYield(self.r_d), TimeToMaturity(self.T))
 
 
 @nb.experimental.jitclass([
     ("T", nb.float64),
     ("S", nb.float64),
     ("r", nb.float64),
+    ("r_d", nb.float64),
     ("f", nb.float64),
     ("ATM", nb.float64),
     ("RR25", nb.float64),
@@ -121,6 +124,7 @@ class VolSmileDeltaSpace:
         self.T = forward.T
         self.S = forward.S
         self.r = forward.r
+        self.r_d = forward.r_d
         self.f = forward.forward_rate().fv
 
         if not ATM.T == self.T:
@@ -173,7 +177,7 @@ class VolSmileDeltaSpace:
     
     def _get_strike(self, sigma: nb.float64, delta: nb.float64) -> nb.float64:
         return self.bs_calc.strike_from_delta(
-            Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T)), 
+            Forward(Spot(self.S), ForwardYield(self.r), DiscountYield(self.r_d), TimeToMaturity(self.T)), 
             Delta(delta), 
             ImpliedVol(sigma)
         ).K
@@ -193,13 +197,13 @@ class VolSmileDeltaSpace:
         strikes[4] = self._get_strike(ivs[4], 0.1)
         
         return VolSmileChainSpace(
-            Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T)),
+            Forward(Spot(self.S), ForwardYield(self.r), DiscountYield(self.r_d), TimeToMaturity(self.T)),
             Strikes(strikes),
             ImpliedVols(ivs)
         ) 
     
     def forward(self) -> Forward:
-        return Forward(Spot(self.S), ForwardYield(self.r), TimeToMaturity(self.T))
+        return Forward(Spot(self.S), ForwardYield(self.r), DiscountYield(self.r_d), TimeToMaturity(self.T))
     
     def blip_ATM(self):
         self.ATM += self.atm_blip

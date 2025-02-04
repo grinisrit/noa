@@ -7,7 +7,7 @@ from wasc import WASC
 strikes = np.array([1300.0, 1400, 1500, 1600, 1700, 1800.0, 1900, 2000, 2100, 2200])
 tau = 0.01
 F = 1723.75
-forward = Forward(Spot(F), ForwardYield(0.01), TimeToMaturity(tau))
+forward = Forward(Spot(F), ForwardYield(0.01), DiscountYield(0.01), TimeToMaturity(tau))
 
 pvs = np.array(
     [

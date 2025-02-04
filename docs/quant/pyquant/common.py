@@ -104,6 +104,22 @@ class Spot:
 
 
 @nb.experimental.jitclass([
+    ("r_d", nb.float64)
+])
+class DiscountYield:
+    def __init__(self, rate: nb.float64):
+        self.r_d = rate
+
+
+@nb.experimental.jitclass([
+    ("D", nb.float64)
+])
+class DiscountFactor:
+    def __init__(self, D: nb.float64):
+        self.D = D
+
+
+@nb.experimental.jitclass([
     ("r", nb.float64)
 ])
 class ForwardYield:
@@ -112,13 +128,26 @@ class ForwardYield:
 
 
 @nb.experimental.jitclass([
-    ("pv", nb.float64)
+    ("D", nb.float64)
 ])
-class Numeraire:
-    def __init__(self, numeraire: nb.float64):
-        if not numeraire > 0:
-            raise ValueError('Non-positive numeraire')
-        self.pv = numeraire
+class ForwardDiscount:
+    def __init__(self, d: nb.float64):
+        self.D = d
+
+
+@nb.experimental.jitclass([
+    ("D", nb.float64)
+])
+class DiscountRatio:
+    def __init__(self, d: nb.float64):
+        self.D = d
+
+@nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class DiscountYields:
+    def __init__(self, rates: nb.float64[:]):
+        self.data = rates
 
 
 @nb.experimental.jitclass([
@@ -166,14 +195,43 @@ class ForwardRates:
 
 
 @nb.experimental.jitclass([
+    ("data", nb.float64[:])
+])
+class DiscountFactors:
+    def __init__(self, data: nb.float64[:]):
+        self.data = data
+
+
+@nb.experimental.jitclass([
+    ("r_d", nb.float64),
+    ("T", nb.float64)
+])
+class Discount:
+    def __init__(self, rate: DiscountYield, time_to_maturity: TimesToMaturity):
+        self.r_d = rate.r_d
+        self.T = time_to_maturity.T
+
+    def discount_yield(self) -> DiscountYield:
+        return DiscountYield(self.r_d)
+    
+    def time_to_maturity(self) -> TimeToMaturity:
+        return TimeToMaturity(self.T)       
+    
+    def discount_factor(self) -> DiscountFactor:
+        return DiscountFactor(np.exp(-self.r_d * self.T))
+
+
+@nb.experimental.jitclass([
     ("S", nb.float64),
     ("r", nb.float64),
+    ("r_d", nb.float64),
     ("T", nb.float64)
 ])
 class Forward:
-    def __init__(self, spot: Spot, forward_yield: ForwardYield, time_to_maturity: TimeToMaturity):
+    def __init__(self, spot: Spot, forward_yield: ForwardYield, discount_yield: DiscountYield, time_to_maturity: TimeToMaturity):
         self.S = spot.S
         self.r = forward_yield.r
+        self.r_d = discount_yield.r_d
         self.T = time_to_maturity.T
         
     def spot(self) -> Spot:
@@ -182,14 +240,23 @@ class Forward:
     def forward_yield(self) -> ForwardYield:
         return ForwardYield(self.r)
     
+    def discount_yield(self) -> DiscountYield:
+        return DiscountYield(self.r_d)
+    
+    def discount_factor(self) -> DiscountFactor:
+        return DiscountFactor(np.exp(-self.r_d * self.T))
+    
     def time_to_maturity(self) -> TimeToMaturity:
         return TimeToMaturity(self.T)
         
     def forward_rate(self) -> ForwardRate:
         return ForwardRate(self.S * np.exp(self.r * self.T))
     
-    def numeraire(self) -> Numeraire:
-        return Numeraire(np.exp(-self.r * self.T))
+    def forward_discount(self) -> ForwardDiscount:
+        return ForwardDiscount(np.exp(-self.r * self.T))
+    
+    def discount_ratio(self) -> DiscountRatio:
+        return DiscountRatio(self.discount_factor().D / self.forward_discount().D)
 
 
 @nb.njit
@@ -198,8 +265,10 @@ def forward_from_forward_rate(
     forward_rate: ForwardRate,
     time_to_maturity: TimeToMaturity
 ) -> Forward:
+    # assumes discount and forward yield are the same
+    r = - np.log(spot.S / forward_rate.fv)/ time_to_maturity.T
     return Forward(
-        spot, ForwardYield(- np.log(spot.S / forward_rate.fv)/ time_to_maturity.T), time_to_maturity
+        spot, ForwardYield(r), DiscountYield(r), time_to_maturity
         )
 
 
@@ -230,6 +299,42 @@ class ForwardYieldCurve:
             assert Ts[i] > 0.
             res[i] = self._spline.apply(Ts[i]) / Ts[i]
         return ForwardYields(res)
+    
+
+@nb.experimental.jitclass()
+class DiscountCurve:
+    _spline: CubicSpline1D
+
+    def __init__(self, discount_yields: DiscountYields, times_to_maturity: TimesToMaturity):
+        if not discount_yields.data.shape == times_to_maturity.data.shape:
+            raise ValueError('Inconsistent data between discount yields and times to maturity')
+        if not is_sorted(times_to_maturity.data) and np.all(times_to_maturity.data > 0):
+            raise ValueError('Times to maturity are invalid')
+    
+        self._spline = CubicSpline1D(
+           XAxis(np.append(np.array([0.]), times_to_maturity.data)),
+           YAxis(np.append(np.array([0.]), times_to_maturity.data*discount_yields.data)) 
+        )
+    
+    def discount_yield(self, time_to_maturity: TimeToMaturity) -> DiscountYield:
+        assert time_to_maturity.T > 0.
+        return DiscountYield(self._spline.apply(time_to_maturity.T) / time_to_maturity.T)
+    
+    def discount_factor(self, time_to_maturity: TimeToMaturity) -> DiscountFactor:
+        return DiscountFactor(np.exp(-self.discount_yield(time_to_maturity).r_d * time_to_maturity.T))
+    
+    def discount_yields(self, times_to_maturity: TimeToMaturity) -> DiscountYields:
+        Ts = times_to_maturity.data
+        res = np.zeros_like(Ts)
+        for i in range(len(Ts)):
+            assert Ts[i] > 0.
+            res[i] = self._spline.apply(Ts[i]) / Ts[i]
+        return DiscountYields(res)
+    
+    def discount_factors(self, times_to_maturity: TimeToMaturity) -> DiscountFactors:
+        return DiscountFactors(
+            np.exp(-self.discount_yields(times_to_maturity).data * times_to_maturity.data)
+        )
 
 
 @nb.experimental.jitclass([
@@ -237,10 +342,12 @@ class ForwardYieldCurve:
 ])
 class ForwardCurve:
     _curve: ForwardYieldCurve
+    _curve_d: DiscountCurve
 
-    def __init__(self, spot: Spot, forward_yield_curve: ForwardYieldCurve):
+    def __init__(self, spot: Spot, forward_yield_curve: ForwardYieldCurve, discount_curve: DiscountCurve):
         self.S = spot.S
         self._curve = forward_yield_curve
+        self._curve_d = discount_curve
 
     def spot(self) -> Spot:
         return Spot(self.S)
@@ -249,6 +356,7 @@ class ForwardCurve:
         return Forward(
             Spot(self.S), 
             self._curve.forward_yield(time_to_maturity), 
+            self._curve_d.discount_yield(time_to_maturity),
             time_to_maturity
         )
     
@@ -259,6 +367,12 @@ class ForwardCurve:
     
     def forward_yields(self, times_to_maturity: TimesToMaturity) -> ForwardYields:
         return self._curve.forward_yields(times_to_maturity)
+    
+    def discount_yields(self, times_to_maturity: TimesToMaturity) -> DiscountYields:
+        return self._curve_d.discount_yields(times_to_maturity)
+    
+    def discount_factors(self, times_to_maturity: TimesToMaturity) -> DiscountFactors:
+        return self._curve_d.discount_factors(times_to_maturity)
 
 
 @nb.njit
@@ -267,12 +381,18 @@ def forward_curve_from_forward_rates(
     forward_rates: ForwardRates,
     times_to_maturity: TimesToMaturity
 ) -> ForwardCurve:
+    rs = - np.log(spot.S / forward_rates.data) / times_to_maturity.data
     return ForwardCurve(
-        spot, ForwardYieldCurve( 
-                ForwardYields(- np.log(spot.S / forward_rates.data) / times_to_maturity.data),
-                times_to_maturity
-            )   
-        )
+        spot,
+        ForwardYieldCurve( 
+            ForwardYields(rs),
+            times_to_maturity), 
+        DiscountCurve(
+            DiscountYields(rs),
+            times_to_maturity)
+    )   
+    
+
 
 
 @nb.experimental.jitclass([

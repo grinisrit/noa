@@ -158,9 +158,9 @@ class BSCalc:
     
     def _delta(self, forward: Forward, strike: Strike, option_type: OptionType, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol)
-        return normal_cdf(d1) if option_type.is_call else normal_cdf(d1) - 1.0
+        call_delta = forward.discount_ratio().D * normal_cdf(d1)
+        return call_delta if option_type.is_call else call_delta - 1.0
         
-    
     def delta(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Delta:
         assert forward.T == vanilla.T
         return Delta(vanilla.N*\
@@ -180,7 +180,7 @@ class BSCalc:
     
     def _gamma(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol) 
-        return normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
+        return forward.discount_ratio().D * normal_pdf(d1) / (forward.S * implied_vol.sigma * np.sqrt(forward.T))
     
     def gamma(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Gamma:
         assert forward.T == vanilla.T
@@ -199,7 +199,7 @@ class BSCalc:
         return Gammas(vanillas.Ns * res_gammas)
     
     def _vega(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
-        return forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
+        return forward.discount_ratio().D * forward.S * np.sqrt(forward.T) * normal_pdf(self._d1(forward, strike, implied_vol))
     
     
     def vega(self, forward: Forward, vanilla: Vanilla, implied_vol: ImpliedVol) -> Vega:
@@ -270,5 +270,6 @@ class BSCalc:
     
     def _dDelta_dK(self, forward: Forward, strike: Strike, implied_vol: ImpliedVol) -> nb.float64:
         d1 = self._d1(forward, strike, implied_vol)
-        return - normal_pdf(d1) / (strike.K * np.sqrt(forward.T) * implied_vol.sigma)
+        DoF = forward.discount_ratio().D
+        return - DoF * normal_pdf(d1) / (strike.K * np.sqrt(forward.T) * implied_vol.sigma)
     

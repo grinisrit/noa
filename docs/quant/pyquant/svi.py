@@ -426,6 +426,7 @@ class SVICalc:
         self, forward: Forward, delta: Delta, params: SVIRawParams
     ) -> Strike:
         F = forward.forward_rate().fv
+        DoF = forward.discount_ratio().D
         K_l = self.strike_lower * F
         K_r = self.strike_upper * F
         T = forward.T
@@ -441,12 +442,11 @@ class SVICalc:
             d1 = self.bs_calc._d1(forward, Strike(K), iv)
             sigma = iv.sigma
             return (
-                np.exp(-(d1**2) / 2)
+                DoF * np.exp(-(d1**2) / 2)
                 / np.sqrt(T)
                 * (
-                    -1 / (K * sigma)
+                    - 1 / (K * sigma)
                     - dsigma_dk * np.log(F / K) / sigma**2
-                    - forward.r * T * dsigma_dk / sigma**2
                     + T * dsigma_dk
                 )
             )
@@ -574,7 +574,7 @@ class SVICalc:
         params: SVIRawParams,
     ) -> nb.float64:
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         sigma = self.implied_vol(forward, strike, params)
         delta_bsm = self.bs_calc._delta(forward, strike, option_type, sigma)
         vega_bsm = self.bs_calc._vega(forward, strike, sigma)
@@ -608,7 +608,7 @@ class SVICalc:
 
     def _gamma(self, forward: Forward, strike: Strike, params: SVIRawParams) -> nb.float64:
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         sigma = self.implied_vol(forward, strike, params)
         vega_bsm = self.bs_calc._vega(forward, strike, sigma)
         vanna_bsm = self.bs_calc._vanna(forward, strike, sigma)

@@ -366,11 +366,12 @@ class HestonCalc:
     
         ivs = np.zeros_like(pvs)
         r = ForwardYield(params.r)
+        r_d = DiscountYield(params.r)
         S = grid.spot()
 
         for i in range(len(pvs)):
             T = TimeToMaturity(grid.Ts[i])
-            F = Forward(S,r,T)
+            F = Forward(S,r,r_d,T)
             ivs[i] = self.bs_calc.implied_vol(F, Strike(grid.Ks[i]), Premium(pvs[i])).sigma
     
         return ImpliedVols(ivs)

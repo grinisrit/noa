@@ -226,6 +226,7 @@ class SABRCalc:
         
     def strike_from_delta(self, forward: Forward, delta: Delta, params: SABRParams) -> Strike:
         F = forward.forward_rate().fv
+        DoF = forward.discount_ratio().D
         K_l = self.strike_lower*F
         K_r = self.strike_upper*F
         T = forward.T
@@ -240,8 +241,7 @@ class SABRCalc:
             dsigma_dk = self._dsigma_dK(F, T, K, params)
             d1 = self.bs_calc._d1(forward, Strike(K), iv)
             sigma = iv.sigma
-            return np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2\
-                                                   - forward.r*T*dsigma_dk/sigma**2 + T*dsigma_dk)
+            return DoF * np.exp(-d1**2 / 2)/np.sqrt(T)*(- 1/(K*sigma) - dsigma_dk*np.log(F/K)/sigma**2 + T*dsigma_dk)
         if g(K_l)*g(K_r) > 0.:
             raise ValueError('No solution within strikes interval')
         
@@ -352,7 +352,7 @@ class SABRCalc:
         assert forward.T == vanilla.T
         
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         strike = vanilla.strike()
        
         sigma = self.implied_vol(forward, strike, params)
@@ -373,7 +373,7 @@ class SABRCalc:
     def sticky_deltas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Delta:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         strikes = vanillas.strikes()
         Ks = strikes.data
         sigmas = self.implied_vols(forward, strikes, params).data
@@ -408,7 +408,7 @@ class SABRCalc:
         assert forward.T == vanilla.T
         
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
@@ -442,7 +442,7 @@ class SABRCalc:
     def sticky_gammas(self, forward: Forward, vanillas: SingleMaturityVanillas, params: SABRParams, sticky_strike: StickyStrike) -> Gammas:
         assert forward.T == vanillas.T
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         sigmas = self.implied_vols(forward, vanillas.strikes(), params).data
         Ks = vanillas.Ks
         n = len(sigmas)
@@ -706,7 +706,7 @@ class SABRCalc:
         assert forward.T == vanilla.T
         
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         strike = vanilla.strike()
         sigma = self.implied_vol(forward, strike, params)
 
@@ -744,7 +744,7 @@ class SABRCalc:
         assert forward.T == vanillas.T
         
         F = forward.forward_rate().fv
-        D = forward.numeraire().pv
+        D = forward.forward_discount().D
         strikes = vanillas.strikes()
         sigmas = self.implied_vols(forward, strikes, params).data
         Ks = vanillas.Ks
