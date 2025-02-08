@@ -119,7 +119,9 @@ class SSVI:
                 print(f"Delta-space market IV: {svi_test_iv_delta.data}")
 
             self.delta_space_raw_params_list.append(svi_calibrated_params_delta)
-            a, b, rho, m, sigma = svi_calibrated_params_delta.array()
+            # NOTE: raw SVI from delta or direct market calibration?
+            # a, b, rho, m, sigma = svi_calibrated_params_delta.array()
+            a, b, rho, m, sigma = svi_calibrated_params.array()
             natural_params = self.raw_to_natural_parametrization(
                 SVIRawParams(A(a), B(b), Rho(rho), M(m), Sigma(sigma))
             )
@@ -135,17 +137,17 @@ class SSVI:
 
         # 3. Now get atm (K = F) implied total variances for all ttm's chains
         atm_total_variances = []
-        for vol_smile_chain_space, delta_space_natural_params in zip(
+        for vol_smile_chain_space, delta_space_natural_params_ in zip(
             self.vol_smile_chain_spaces, self.delta_space_natural_params_list
         ):
             F = vol_smile_chain_space.forward().spot().S
 
             atm_total_variance = self._total_implied_var_ssvi(
-                F, F, delta_space_natural_params.array()
+                F, F + 1000, delta_space_natural_params_.array()
             )
             atm_total_variances.append(atm_total_variance)
-        print(atm_total_variances)
-        return
+        print("======== ATM total var ========== ", atm_total_variances)
+        return atm_total_variances
 
     def raw_to_natural_parametrization(
         self, svi_raw_params: SVIRawParams
@@ -163,9 +165,9 @@ class SSVI:
     def _total_implied_var_ssvi(
         self,
         F: nb.float64,
-        Ks: nb.float64[:],
+        K: nb.float64,
         params: nb.float64[:],
-    ):
+    ) -> nb.float64:
         delta_param, mu, rho, omega, zeta = (
             params[0],
             params[1],
@@ -173,7 +175,7 @@ class SSVI:
             params[3],
             params[4],
         )
-        k = np.log(Ks / F)
+        k = np.log(K / F)
         w = delta_param + omega / 2 * (
             1
             + zeta * rho * (k - mu) * np.sqrt((zeta * (k - mu) + rho) ** 2 + 1 - rho**2)

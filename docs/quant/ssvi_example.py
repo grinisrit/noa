@@ -37,7 +37,5 @@ for tau in [0.005, 0.01, 0.1, 1]:
 
 ssvi = SSVI(vol_smile_chains, is_log=True)
 ssvi.calibrate()
-print([x.array() for x in ssvi.delta_space_raw_params_list])
-print([x.array() for x in ssvi.delta_space_natural_params_list])
-
-
+print([x.array()  for x in ssvi.delta_space_raw_params_list])
+print([x.array()  for x in ssvi.delta_space_natural_params_list])
