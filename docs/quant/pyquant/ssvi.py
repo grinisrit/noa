@@ -4,14 +4,15 @@ import numpy as np
 from .black_scholes import *
 from .common import *
 from .svi import *
+from .svi import Rho
 from .vol_surface import *
 
 
 @nb.experimental.jitclass([("omega", nb.float64)])
 class Omega:
     def __init__(self, omega: nb.float64):
-        if not (omega > 0):
-            raise ValueError("Omega not > 0")
+        if not (omega >= 0):
+            raise ValueError("Omega not >= 0")
         self.omega = omega
 
 
@@ -60,24 +61,26 @@ class SVINaturalParams:
 
 class SSVI:
     def __init__(
-        self, vol_slime_chain_spaces: list[VolSmileChainSpace], is_log: bool = False
+        self, vol_smile_chain_spaces: list[VolSmileChainSpace], is_log: bool = False
     ) -> None:
         self.is_log = is_log
         self.delta_space_raw_params_list = []
         self.delta_space_natural_params_list = []
-        self.vol_slime_chain_spaces = vol_slime_chain_spaces
-        for vol_slime_chain_space in self.vol_slime_chain_spaces:
+        self.vol_smile_chain_spaces = vol_smile_chain_spaces
+
+    def calibrate(self) -> None:
+        for vol_smile_chain_space in self.vol_smile_chain_spaces:
             if self.is_log:
                 print("\n")
                 print(
-                    f"======== Get natural params for tau = {vol_slime_chain_space.T} ======== "
+                    f"======== Get natural params for tau = {vol_smile_chain_space.T} ======== "
                 )
-                print(f"Market IV {vol_slime_chain_space.sigmas}")
-            # for every time to maturity calibrate it's own SVI with raw params
+                print(f"Market IV {vol_smile_chain_space.sigmas}")
+            # 1. for every time to maturity calibrate it's own SVI with raw params
             svi_calc = SVICalc()
             svi_calibrated_params, svi_error = svi_calc.calibrate(
-                vol_slime_chain_space,
-                CalibrationWeights(np.ones(len(vol_slime_chain_space.Ks))),
+                vol_smile_chain_space,
+                CalibrationWeights(np.ones(len(vol_smile_chain_space.Ks))),
                 False,
                 False,
             )
@@ -87,30 +90,30 @@ class SSVI:
                 )
 
                 svi_test_iv = svi_calc.implied_vols(
-                    vol_slime_chain_space.forward(),
-                    Strikes(vol_slime_chain_space.Ks),
+                    vol_smile_chain_space.forward(),
+                    Strikes(vol_smile_chain_space.Ks),
                     svi_calibrated_params,
                 )
 
                 print(f"Calibrated IV {svi_test_iv.data}")
 
-            # Now get delta-space quotes
+            # 2. Now get delta-space quotes
             svi_delta_space_chain = svi_calc.delta_space(
-                vol_slime_chain_space.forward(),
+                vol_smile_chain_space.forward(),
                 svi_calibrated_params,
             ).to_chain_space()
             if self.is_log:
                 print(f"Delta-space strikes: {svi_delta_space_chain.strikes().data}")
 
-            # Calibrate to delta-space
+            # 2. Calibrate to delta-space
             svi_calibrated_params_delta, __ = svi_calc.calibrate(
                 svi_delta_space_chain, CalibrationWeights(np.ones(5)), False, True
             )
             if self.is_log:
                 print("Delta space params:", svi_calibrated_params_delta.array())
                 svi_test_iv_delta = svi_calc.implied_vols(
-                    vol_slime_chain_space.forward(),
-                    Strikes(vol_slime_chain_space.Ks),
+                    vol_smile_chain_space.forward(),
+                    Strikes(vol_smile_chain_space.Ks),
                     svi_calibrated_params_delta,
                 )
                 print(f"Delta-space market IV: {svi_test_iv_delta.data}")
@@ -129,6 +132,20 @@ class SSVI:
                 print(
                     f"Natural parametrizarion delta-space params: {natural_params.array()}"
                 )
+
+        # 3. Now get atm (K = F) implied total variances for all ttm's chains
+        atm_total_variances = []
+        for vol_smile_chain_space, delta_space_natural_params in zip(
+            self.vol_smile_chain_spaces, self.delta_space_natural_params_list
+        ):
+            F = vol_smile_chain_space.forward().spot().S
+
+            atm_total_variance = self._total_implied_var_ssvi(
+                F, F, delta_space_natural_params.array()
+            )
+            atm_total_variances.append(atm_total_variance)
+        print(atm_total_variances)
+        return
 
     def raw_to_natural_parametrization(
         self, svi_raw_params: SVIRawParams
@@ -162,18 +179,3 @@ class SSVI:
             + zeta * rho * (k - mu) * np.sqrt((zeta * (k - mu) + rho) ** 2 + 1 - rho**2)
         )
         return w
-
-    def calibrate(self):
-        # first get atm (K = F) implied total variances for all ttm's chains
-        atm_total_variances = []
-        for vol_slime_chain_space, delta_space_natural_params in zip(
-            self.vol_slime_chain_spaces, self.delta_space_natural_params_list
-        ):
-            F = vol_slime_chain_space.forward().spot().S
-
-            atm_total_variance = self._total_implied_var_ssvi(
-                F, F, delta_space_natural_params.array()
-            )
-            atm_total_variances.append(atm_total_variance)
-        print(atm_total_variances)
-        return
