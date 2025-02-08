@@ -26,7 +26,7 @@ pvs = np.array(
 
 vol_smile_chains = []
 for tau in [0.005, 0.01, 0.1, 1]:
-    forward = Forward(Spot(F), ForwardYield(0.01), TimeToMaturity(tau))
+    forward = Forward(Spot(F), ForwardYield(0.01), DiscountYield(0.0) ,TimeToMaturity(tau))
     bs_calc = BSCalc()
     implied_vols = bs_calc.implied_vols(forward, Strikes(strikes), Premiums(pvs)).data
 
