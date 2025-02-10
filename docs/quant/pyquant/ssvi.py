@@ -1,3 +1,5 @@
+from typing import Union
+
 import numba as nb
 import numpy as np
 
@@ -36,6 +38,42 @@ class Zeta:
         self.zeta = zeta
 
 
+@nb.experimental.jitclass([("lambda_", nb.float64)])
+class Lambda:
+    def __init__(self, lambda_: nb.float64):
+        if not (lambda_ >= 0):
+            raise ValueError("Lambda not >= 0")
+        self.lambda_ = lambda_
+
+
+@nb.experimental.jitclass([("nu", nb.float64)])
+class Nu:
+    def __init__(self, nu: nb.float64):
+        if not (nu >= 0):
+            raise ValueError("Nu not >= 0")
+        self.nu = nu
+
+
+@nb.experimental.jitclass([("beta", nb.float64)])
+class Beta:
+    def __init__(self, beta: nb.float64):
+        if not (beta >= 0):
+            raise ValueError("Beta not >= 0")
+        self.beta = beta
+
+
+@nb.experimental.jitclass([("alpha", nb.float64)])
+class Alpha:
+    def __init__(self, alpha: nb.float64):
+        self.alpha = alpha
+
+
+@nb.experimental.jitclass([("gamma_", nb.float64)])
+class Gamma_:
+    def __init__(self, gamma_: nb.float64):
+        self.gamma_ = gamma_
+
+
 @nb.experimental.jitclass(
     [
         ("delta_param", nb.float64),
@@ -43,6 +81,11 @@ class Zeta:
         ("rho", nb.float64),
         ("theta", nb.float64),
         ("zeta", nb.float64),
+        ("lambda_", nb.float64),
+        ("nu", nb.float64),
+        ("beta", nb.float64),
+        ("alpha", nb.float64),
+        ("gamma_", nb.float64),
     ]
 )
 class SVINaturalParams:
@@ -104,7 +147,7 @@ class SSVI:
                 print(f"Calibrated IV: {svi_log_iv.data}")
 
             a, b, rho, m, sigma = svi_calibrated_params.array()
-            natural_params = self.raw_to_natural_parametrization(
+            natural_params: SVINaturalParams = self.raw_to_natural_parametrization(
                 SVIRawParams(A(a), B(b), Rho(rho), M(m), Sigma(sigma))
             )
 
@@ -112,6 +155,18 @@ class SSVI:
 
             if self.is_log:
                 print(f"Natural parametrizarion params: {natural_params.array()}")
+
+        nu, lambda_ = self._interpolate_nu_lambda(
+            [x.zeta for x in self.natural_params_list],
+            [x.theta for x in self.natural_params_list],
+        )
+        alpha, beta, gamma_ = self._interpolate_alpha_beta(
+            [x.rho for x in self.natural_params_list],
+            [x.theta for x in self.natural_params_list],
+        )
+
+        print(nu, lambda_)
+        print(alpha, beta, gamma_)
 
     def raw_to_natural_parametrization(
         self, svi_raw_params: SVIRawParams
@@ -126,11 +181,16 @@ class SSVI:
             DeltaParam(delta_param), Mu(mu), Rho(rho), Theta(theta), Zeta(zeta)
         )
 
-    def __interpolate_nu_lambda(zetas: list[Zeta], thetas: list[Theta]):
-        pass
+    def _interpolate_nu_lambda(
+        self, zetas: list[Zeta], thetas: list[Theta]
+    ) -> Union[Nu, Lambda]:
 
-    def __interpolate_alpha_beta(rhos: list[Rho], thetas: list[Theta]):
-        pass
+        return 1, 2
+
+    def _interpolate_alpha_beta(
+        self, rhos: list[Rho], thetas: list[Theta]
+    ) -> Union[Alpha, Beta, Gamma_]:
+        return 1, 2, 3
 
     def _total_implied_var_ssvi(
         self,
