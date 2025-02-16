@@ -58,7 +58,9 @@ class VolSmileChainSpace:
         if not strikes.data.shape == implied_vols.data.shape:
             raise ValueError('Inconsistent data between strikes and implied vols')
         if not is_sorted(strikes.data):
-            raise ValueError('Strikes are not in order')
+            print(strikes.data)
+            raise ValueError(f'Strikes are not in order')
+
 
         self.T = forward.T
         self.S = forward.S
