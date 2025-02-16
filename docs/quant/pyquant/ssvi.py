@@ -2,6 +2,7 @@ from typing import Union
 
 import numba as nb
 import numpy as np
+from scipy.optimize import minimize
 
 from .black_scholes import *
 from .common import *
@@ -46,12 +47,12 @@ class Lambda:
         self.lambda_ = lambda_
 
 
-@nb.experimental.jitclass([("nu", nb.float64)])
-class Nu:
-    def __init__(self, nu: nb.float64):
-        if not (nu >= 0):
-            raise ValueError("Nu not >= 0")
-        self.nu = nu
+@nb.experimental.jitclass([("eta", nb.float64)])
+class Eta:
+    def __init__(self, eta: nb.float64):
+        if not (eta >= 0):
+            raise ValueError("Eta not >= 0")
+        self.eta = eta
 
 
 @nb.experimental.jitclass([("beta", nb.float64)])
@@ -82,7 +83,7 @@ class Gamma_:
         ("theta", nb.float64),
         ("zeta", nb.float64),
         ("lambda_", nb.float64),
-        ("nu", nb.float64),
+        ("eta", nb.float64),
         ("beta", nb.float64),
         ("alpha", nb.float64),
         ("gamma_", nb.float64),
@@ -156,7 +157,7 @@ class SSVI:
             if self.is_log:
                 print(f"Natural parametrizarion params: {natural_params.array()}")
 
-        nu, lambda_ = self._interpolate_nu_lambda(
+        eta, lambda_ = self._interpolate_eta_lambda(
             [x.zeta for x in self.natural_params_list],
             [x.theta for x in self.natural_params_list],
         )
@@ -165,7 +166,7 @@ class SSVI:
             [x.theta for x in self.natural_params_list],
         )
 
-        print(nu, lambda_)
+        print(eta, lambda_)
         print(alpha, beta, gamma_)
 
     def raw_to_natural_parametrization(
@@ -181,16 +182,40 @@ class SSVI:
             DeltaParam(delta_param), Mu(mu), Rho(rho), Theta(theta), Zeta(zeta)
         )
 
-    def _interpolate_nu_lambda(
+    def _interpolate_eta_lambda(
         self, zetas: list[Zeta], thetas: list[Theta]
-    ) -> Union[Nu, Lambda]:
+    ) -> Union[Eta, Lambda]:
 
-        return 1, 2
+        def model(params, thetas):
+            eta, lambda_ = params
+            return eta * thetas**lambda_
+
+        def loss_function(params):
+            predictions = model(params, thetas)
+            return np.sum((zetas - predictions) ** 2)
+
+        result = minimize(loss_function, [1, 1])
+        optimal_eta, optimal_lambda_ = result.x
+        # return (Eta(optimal_eta), Lambda(optimal_lambda_))
+
+        return optimal_eta, optimal_lambda_
 
     def _interpolate_alpha_beta(
         self, rhos: list[Rho], thetas: list[Theta]
     ) -> Union[Alpha, Beta, Gamma_]:
-        return 1, 2, 3
+
+        def model(params, thetas):
+            alpha, beta, omega = params
+            return alpha * np.exp(-beta * np.array(thetas)) + omega
+
+        def loss_function(params):
+            predictions = model(params, thetas)
+            return np.sum((rhos - predictions) ** 2)
+
+        result = minimize(loss_function, [1, 1, 1])
+        optimal_alpha, optimal_beta, optimal_omega = result.x
+        # return Alpha(optimal_alpha), Beta(optimal_beta), Gamma_(optimal_omega)
+        return optimal_alpha, optimal_beta, optimal_omega
 
     def _total_implied_var_ssvi(
         self,
