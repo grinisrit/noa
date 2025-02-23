@@ -26,7 +26,7 @@ spot = 1723.75
 ttms = np.array([0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1])
 
 forward_rates = np.array(
-    [1700.0, 1702.0, 1703.0, 1704.0, 1705.0, 1706.0, 1707.0, 1708.0, 1709.0, 1710.0]
+    [1700.0, 1702.0, 1703.0, 1704.0, 1705.0, 1736.0, 1737.0, 1738.0, 1739.0, 1740.0]
 )
 
 forward_curve: ForwardCurve = forward_curve_from_forward_rates(
@@ -38,13 +38,14 @@ vol_surface_chain_space = VolSurfaceChainSpace(
     forward_curve=forward_curve,
     times_to_maturity=TimesToMaturity(ttms),
     strikes=Strikes(strikes),
-    option_types=OptionTypes(np.array([True if x <= spot else False for x in strikes])),
+    option_types=OptionTypes(np.array([True if x > spot else False for x in strikes])),
     premiums=Premiums(premiums),
     compute_implied_vol=True,
 )
-print(vol_surface_chain_space)
-# преобразуем в delta-space
-# vol_surface_delta_space = SVICalc().surface_to_delta_space(vol_surface_chain_space)
+# convert to delta-space
+vol_surface_delta_space: VolSurfaceDeltaSpace = SVICalc().surface_to_delta_space(
+    vol_surface_chain_space
+)
 
-# ssvi = SSVICalc(is_log=True)
-# ssvi.calibrate(vol_surface_delta_space)
+ssvi = SSVICalc(is_log=True)
+ssvi.calibrate(vol_surface_delta_space)
