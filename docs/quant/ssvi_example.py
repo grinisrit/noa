@@ -1,7 +1,7 @@
 import numpy as np
 from pyquant.black_scholes import *
 from pyquant.common import *
-from pyquant.ssvi import SSVI
+from pyquant.ssvi import SSVICalc
 from pyquant.svi import SVICalc
 from pyquant.vol_surface import *
 

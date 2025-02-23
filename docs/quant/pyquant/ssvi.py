@@ -103,7 +103,7 @@ class SVINaturalParams:
         return np.array([self.delta_param, self.mu, self.rho, self.theta, self.zeta])
 
 
-class SSVI:
+class SSVICalc:
     def __init__(
         self,
         vol_smile_chain_spaces: list[VolSmileChainSpace],
