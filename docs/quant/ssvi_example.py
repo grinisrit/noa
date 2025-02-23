@@ -8,8 +8,7 @@ from pyquant.vol_surface import *
 strikes = np.array(
     [1300.0, 1400.0, 1500.0, 1600.0, 1700.0, 1800.0, 1900.0, 2000.0, 2100.0, 2200.0]
 )
-F = 1723.75
-pvs = np.array(
+premiums = np.array(
     [
         1.72375,
         1.72375,
@@ -23,21 +22,27 @@ pvs = np.array(
         0.861875,
     ]
 )
+spot = 1723.75
+ttms = np.array([0.03 for _ in range(len(strikes))])
+forward_rates = np.array([spot + 3 for _ in range(len(strikes))])
+# forward_yields = np.array([0.01 for _ in range(len(strikes))])
+# discount_yields = np.array([0.02 for _ in range(len(strikes))])
 
-vol_smile_chains = []
-for tau in [0.005, 0.01, 0.05, 0.1, 0.2, 1.0]:
-    forward = Forward(
-        Spot(F), ForwardYield(0.01), DiscountYield(0.0), TimeToMaturity(tau)
-    )
-    bs_calc = BSCalc()
-    implied_vols = bs_calc.implied_vols(forward, Strikes(strikes), Premiums(pvs)).data
+forward_curve: ForwardCurve = forward_curve_from_forward_rates(
+    Spot(spot), ForwardRates(forward_rates), TimesToMaturity(ttms)
+)
+print(forward_curve)
 
-    vol_smile_chain = VolSmileChainSpace(
-        forward, Strikes(strikes), ImpliedVols(implied_vols)
-    )
-    vol_smile_chains.append(vol_smile_chain)
+# vol_surface_chain_space = VolSurfaceChainSpace(
+#     forward_curve=forward_curve,
+#     times_to_maturity=TimesToMaturity(ttms),
+#     strikes=Strikes(strikes),
+#     option_types=OptionTypes(np.array([True if x <= spot else False for x in strikes])),
+#     premiums=Premiums(premiums),
+#     compute_implied_vol=True,
+# )
+# # преобразуем в delta-space
+# vol_surface_delta_space = SVICalc().surface_to_delta_space(vol_surface_chain_space)
 
-# ssvi = SSVI(vol_smile_chains, is_log=True)
-ssvi = SSVI(vol_smile_chains, is_log=False)
-ssvi.calibrate(for_delta_space=False)
-
+# ssvi = SSVICalc(is_log=True)
+# ssvi.calibrate(vol_surface_delta_space)

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Dict, Optional, Union
 
 import numba as nb
 import numpy as np
@@ -106,15 +106,16 @@ class SVINaturalParams:
 class SSVICalc:
     def __init__(
         self,
-        vol_smile_chain_spaces: list[VolSmileChainSpace],
         is_log: bool = False,
+        svi_kwagrs: Optional[Dict[str, Any]] = None,
     ) -> None:
+        self.svi = SVICalc(**svi_kwagrs) if svi_kwagrs else SVICalc(**{})
         self.is_log = is_log
-        self.raw_params_list = []
-        self.natural_params_list = []
-        self.vol_smile_chain_spaces = vol_smile_chain_spaces
 
-    def calibrate(
+    def calibrate(self, vol_surface_delta_space: VolSurfaceDeltaSpace):
+        print(vol_surface_delta_space)
+
+    def calibrate_old(
         self,
         for_delta_space: bool = False,
     ) -> None:
