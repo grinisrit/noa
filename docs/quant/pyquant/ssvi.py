@@ -114,61 +114,8 @@ class SSVICalc:
 
     def calibrate(self, vol_surface_delta_space: VolSurfaceDeltaSpace):
         print(vol_surface_delta_space)
-
-    def calibrate_old(
-        self,
-        for_delta_space: bool = False,
-    ) -> None:
-        for vol_smile_chain_space in self.vol_smile_chain_spaces:
-            if self.is_log:
-                print("\n")
-                print(
-                    f"======== Get natural params for tau = {vol_smile_chain_space.T} ======== "
-                )
-                print(f"Market IV {vol_smile_chain_space.sigmas}")
-            # 1. for every time to maturity calibrate it's own SVI with raw params
-            svi_calc = SVICalc()
-
-            svi_calibrated_params, svi_error = svi_calc.calibrate(
-                vol_smile_chain_space,
-                CalibrationWeights(np.ones(len(vol_smile_chain_space.Ks))),
-                False,
-                for_delta_space,
-            )
-            if self.is_log:
-                print(
-                    f"Calibrated tau = {vol_smile_chain_space.T} SVI to market. Error = {svi_error.v}. Raw params = {svi_calibrated_params.array()}"
-                )
-
-                svi_log_iv = svi_calc.implied_vols(
-                    vol_smile_chain_space.forward(),
-                    Strikes(vol_smile_chain_space.Ks),
-                    svi_calibrated_params,
-                )
-
-                print(f"Calibrated IV: {svi_log_iv.data}")
-
-            a, b, rho, m, sigma = svi_calibrated_params.array()
-            natural_params: SVINaturalParams = self.raw_to_natural_parametrization(
-                SVIRawParams(A(a), B(b), Rho(rho), M(m), Sigma(sigma))
-            )
-
-            self.natural_params_list.append(natural_params)
-
-            if self.is_log:
-                print(f"Natural parametrizarion params: {natural_params.array()}")
-
-        eta, lambda_ = self._interpolate_eta_lambda(
-            [x.zeta for x in self.natural_params_list],
-            [x.theta for x in self.natural_params_list],
-        )
-        alpha, beta, gamma_ = self._interpolate_alpha_beta(
-            [x.rho for x in self.natural_params_list],
-            [x.theta for x in self.natural_params_list],
-        )
-
-        print(eta, lambda_)
-        print(alpha, beta, gamma_)
+        vol_surface_delta_space.get_vol_smile()
+        print(1)
 
     def raw_to_natural_parametrization(
         self, svi_raw_params: SVIRawParams
