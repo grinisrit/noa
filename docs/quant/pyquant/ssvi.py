@@ -106,16 +106,44 @@ class SVINaturalParams:
 class SSVICalc:
     def __init__(
         self,
-        is_log: bool = False,
-        svi_kwagrs: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self.svi = SVICalc(**svi_kwagrs) if svi_kwagrs else SVICalc(**{})
-        self.is_log = is_log
+        self.svi = SVICalc()
 
-    def calibrate(self, vol_surface_delta_space: VolSurfaceDeltaSpace):
-        print(vol_surface_delta_space)
-        vol_surface_delta_space.get_vol_smile()
-        print(1)
+    def calibrate(
+        self,
+        vol_surface_delta_space: VolSurfaceDeltaSpace,
+        number_of_delta_space_dots: int = 20,
+    ):
+        zetas, rhos, thetas = [], [], []
+        # we calibrate SVI with a, m = 0 to the linspace of max and min tenors given in space
+        tenors_linspace = np.linspace(
+            vol_surface_delta_space.min_T,
+            vol_surface_delta_space.max_T,
+            number_of_delta_space_dots,
+        )
+        # calibrate tenor by tenor
+        for tenor in tenors_linspace:
+            vol_smile_chain_space: VolSmileDeltaSpace = (
+                vol_surface_delta_space.get_vol_smile(
+                    TimeToMaturity(tenor)
+                ).to_chain_space()
+            )
+            svi_raw_params, _ = self.svi.calibrate(
+                vol_smile_chain_space,
+                CalibrationWeights(np.ones_like(vol_smile_chain_space.Ks)),
+                False,
+                False,
+                True,
+            )
+            svi_natural_params_array: SVINaturalParams = (
+                self.raw_to_natural_parametrization(svi_raw_params)
+            )
+            zetas.append(svi_natural_params_array.zeta)
+            thetas.append(svi_natural_params_array.theta)
+            rhos.append(svi_natural_params_array.rho)
+        eta, lambda_ = self._interpolate_eta_lambda(zetas, thetas)
+        alpha, beta, gamma = self._interpolate_alpha_beta_gamma(rhos, thetas)
+        return eta, lambda_, alpha, beta, gamma
 
     def raw_to_natural_parametrization(
         self, svi_raw_params: SVIRawParams
@@ -144,26 +172,25 @@ class SSVICalc:
 
         result = minimize(loss_function, [1, 1])
         optimal_eta, optimal_lambda_ = result.x
-        # return (Eta(optimal_eta), Lambda(optimal_lambda_))
-
+        # return Eta(optimal_eta), Lambda(optimal_lambda_)
         return optimal_eta, optimal_lambda_
 
-    def _interpolate_alpha_beta(
+    def _interpolate_alpha_beta_gamma(
         self, rhos: list[Rho], thetas: list[Theta]
     ) -> Union[Alpha, Beta, Gamma_]:
 
         def model(params, thetas):
-            alpha, beta, omega = params
-            return alpha * np.exp(-beta * np.array(thetas)) + omega
+            alpha, beta, gamma = params
+            return alpha * np.exp(-beta * np.array(thetas)) + gamma
 
         def loss_function(params):
             predictions = model(params, thetas)
             return np.sum((rhos - predictions) ** 2)
 
         result = minimize(loss_function, [1, 1, 1])
-        optimal_alpha, optimal_beta, optimal_omega = result.x
-        # return Alpha(optimal_alpha), Beta(optimal_beta), Gamma_(optimal_omega)
-        return optimal_alpha, optimal_beta, optimal_omega
+        optimal_alpha, optimal_beta, optimal_gamma = result.x
+        # return Alpha(optimal_alpha), Beta(optimal_beta), Gamma_(optimal_gamma)
+        return optimal_alpha, optimal_beta, optimal_gamma
 
     def _total_implied_var_ssvi(
         self,

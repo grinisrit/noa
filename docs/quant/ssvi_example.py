@@ -47,5 +47,5 @@ vol_surface_delta_space: VolSurfaceDeltaSpace = SVICalc().surface_to_delta_space
     vol_surface_chain_space
 )
 
-ssvi = SSVICalc(is_log=True)
-ssvi.calibrate(vol_surface_delta_space)
+ssvi = SSVICalc()
+print(ssvi.calibrate(vol_surface_delta_space, 30))
