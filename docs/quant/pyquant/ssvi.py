@@ -123,7 +123,7 @@ class SSVICalc:
         )
         # calibrate tenor by tenor
         for tenor in tenors_linspace:
-            vol_smile_chain_space: VolSmileDeltaSpace = (
+            vol_smile_chain_space: VolSmileChainSpace = (
                 vol_surface_delta_space.get_vol_smile(
                     TimeToMaturity(tenor)
                 ).to_chain_space()
