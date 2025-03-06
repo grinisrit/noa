@@ -207,7 +207,7 @@ class SVICalc:
     bs_calc: BSCalc
 
     def __init__(self):
-        self.raw_cached_params = np.array([0.0, 0.1, 0.0, 1.0, 0.1])
+        self.raw_cached_params = np.array([0.0, 0.1, 0.0, 0.0, 0.1])
         self.jump_wing_cached_params = self.raw_cached_params
         self.num_iter = 10000
         self.max_mu = 1e4
@@ -227,8 +227,12 @@ class SVICalc:
         self.jump_wing_cached_params = params.array()
 
     def calibrate(
-        self, chain: VolSmileChainSpace, calibration_weights: CalibrationWeights, 
-        update_cached_params: bool = False, for_delta_space: bool = False
+        self, 
+        chain: VolSmileChainSpace, 
+        calibration_weights: CalibrationWeights, 
+        update_cached_params: bool = False, 
+        for_delta_space: bool = False,
+        a_mu_params_zeros: bool = False,
     ) -> Tuple[SVIRawParams, CalibrationError]:
         
         if for_delta_space:
@@ -293,6 +297,9 @@ class SVICalc:
             rho = np_clip(rho, -1.0 + eps, 1.0 - eps)
             sigma = np_clip(sigma, eps, 1000000.0)
             # TODO: a + b*sigma*sqrt(1 - rho^2) >= 0
+            if a_mu_params_zeros:
+                # it is enough the other weights to be calibrated correctly with zero weights
+                a, m = 0.0, 0.0
             svi_params = np.array([a, b, rho, m, sigma])
             return svi_params
 
