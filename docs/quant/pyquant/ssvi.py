@@ -142,6 +142,7 @@ class SSVICalc:
             thetas.append(svi_natural_params_array.theta)
             rhos.append(svi_natural_params_array.rho)
 
+        zetas, thetas, rhos = np.array(zetas), np.array(thetas), np.array(rhos)
         eta, lambda_ = self._interpolate_eta_lambda(zetas, thetas)
         alpha, beta, gamma = self._interpolate_alpha_beta_gamma(rhos, thetas)
         return eta, lambda_, alpha, beta, gamma
@@ -209,6 +210,7 @@ class SSVICalc:
         optimal_params, error = optimizer.optimize(
             f, proj, np.array([1.0, 1.0]), len(zetas)
         )
+        print("Eta, Lambda calibration error:", error)
 
         optimal_eta, optimal_lambda_ = optimal_params
         # return Eta(optimal_eta), Lambda(optimal_lambda_)
@@ -231,9 +233,9 @@ class SSVICalc:
             residuals = rhos - predictions
 
             alpha, beta, gamma = params
-            J_alpha = np.exp(-beta * thetas)
-            J_beta = -alpha * beta * np.exp(-beta * thetas)
-            J_gamma = np.ones_like(thetas)
+            J_alpha = -np.exp(-beta * thetas)
+            J_beta = alpha * thetas * np.exp(-beta * thetas)
+            J_gamma = -np.ones_like(thetas)
             J = np.stack((J_alpha, J_beta, J_gamma))
             return residuals * weights, J @ np.diag(weights)
 
@@ -245,6 +247,7 @@ class SSVICalc:
         optimal_params, error = optimizer.optimize(
             f, proj, np.array([1.0, 1.0, 1.0]), len(rhos)
         )
+        print("Alpha, Beta, Gamma calibration error:", error)
 
         optimal_alpha, optimal_beta, optimal_gamma = optimal_params
         # return Alpha(optimal_alpha), optimal_beta, optimal_gamma
