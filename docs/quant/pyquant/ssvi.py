@@ -141,56 +141,10 @@ class SSVICalc:
             zetas.append(svi_natural_params_array.zeta)
             thetas.append(svi_natural_params_array.theta)
             rhos.append(svi_natural_params_array.rho)
+
         eta, lambda_ = self._interpolate_eta_lambda(zetas, thetas)
         alpha, beta, gamma = self._interpolate_alpha_beta_gamma(rhos, thetas)
         return eta, lambda_, alpha, beta, gamma
-
-    def raw_to_natural_parametrization(
-        self, svi_raw_params: SVIRawParams
-    ) -> SVINaturalParams:
-        a, b, rho, m, sigma = svi_raw_params.array()
-        sqrt = np.sqrt(1 - rho**2)
-        theta = 2 * b * sigma / sqrt
-        zeta = sqrt / sigma
-        mu = m + rho * sigma / sqrt
-        delta_param = a - theta / 2 * (1 - rho**2)
-        return SVINaturalParams(
-            DeltaParam(delta_param), Mu(mu), Rho(rho), Theta(theta), Zeta(zeta)
-        )
-
-    def _interpolate_eta_lambda(
-        self, zetas: list[Zeta], thetas: list[Theta]
-    ) -> Union[Eta, Lambda]:
-
-        def model(params, thetas):
-            eta, lambda_ = params
-            return eta * thetas**lambda_
-
-        def loss_function(params):
-            predictions = model(params, thetas)
-            return np.sum((zetas - predictions) ** 2)
-
-        result = minimize(loss_function, [1, 1])
-        optimal_eta, optimal_lambda_ = result.x
-        # return Eta(optimal_eta), Lambda(optimal_lambda_)
-        return optimal_eta, optimal_lambda_
-
-    def _interpolate_alpha_beta_gamma(
-        self, rhos: list[Rho], thetas: list[Theta]
-    ) -> Union[Alpha, Beta, Gamma_]:
-
-        def model(params, thetas):
-            alpha, beta, gamma = params
-            return alpha * np.exp(-beta * np.array(thetas)) + gamma
-
-        def loss_function(params):
-            predictions = model(params, thetas)
-            return np.sum((rhos - predictions) ** 2)
-
-        result = minimize(loss_function, [1, 1, 1])
-        optimal_alpha, optimal_beta, optimal_gamma = result.x
-        # return Alpha(optimal_alpha), Beta(optimal_beta), Gamma_(optimal_gamma)
-        return optimal_alpha, optimal_beta, optimal_gamma
 
     def _total_implied_var_ssvi(
         self,
@@ -211,3 +165,144 @@ class SSVICalc:
             + zeta * rho * (k - mu) * np.sqrt((zeta * (k - mu) + rho) ** 2 + 1 - rho**2)
         )
         return w
+
+    def raw_to_natural_parametrization(
+        self, svi_raw_params: SVIRawParams
+    ) -> SVINaturalParams:
+        a, b, rho, m, sigma = svi_raw_params.array()
+        sqrt = np.sqrt(1 - rho**2)
+        theta = 2 * b * sigma / sqrt
+        zeta = sqrt / sigma
+        mu = m + rho * sigma / sqrt
+        delta_param = a - theta / 2 * (1 - rho**2)
+        return SVINaturalParams(
+            DeltaParam(delta_param), Mu(mu), Rho(rho), Theta(theta), Zeta(zeta)
+        )
+
+    def _interpolate_eta_lambda(
+        self, zetas: list[Zeta], thetas: list[Theta]
+    ) -> Union[Eta, Lambda]:
+
+        calibration_weights = CalibrationWeights(np.ones_like(thetas))
+        w = calibration_weights.w
+        weights = w / w.sum()
+
+        def model(params, thetas):
+            eta, lambda_ = params
+            return eta * thetas**lambda_
+
+        def f(params):
+            predictions = model(params, thetas)
+            residuals = zetas - predictions
+
+            eta, lambda_ = params
+            J_eta = -(thetas**lambda_)  # производная по eta
+            J_lambda = -eta * thetas**lambda_ * np.log(thetas)  # производная по lambda_
+            J = np.stack((J_eta, J_lambda))
+            return residuals * weights, J @ np.diag(weights)
+
+        def proj(params):
+            return params
+
+        optimizer = LevenbergMarquardtOptimizer()
+
+        optimal_params, error = optimizer.optimize(
+            f, proj, np.array([1.0, 1.0]), len(zetas)
+        )
+
+        optimal_eta, optimal_lambda_ = optimal_params
+        # return Eta(optimal_eta), Lambda(optimal_lambda_)
+        return optimal_eta, optimal_lambda_
+
+    def _interpolate_alpha_beta_gamma(
+        self, rhos: list[Rho], thetas: list[Theta]
+    ) -> Union[Alpha, Beta, Gamma_]:
+
+        calibration_weights = CalibrationWeights(np.ones_like(thetas))
+        w = calibration_weights.w
+        weights = w / w.sum()
+
+        def model(params, thetas):
+            alpha, beta, gamma = params
+            return alpha * np.exp(-beta * thetas) + gamma
+
+        def f(params):
+            predictions = model(params, thetas)
+            residuals = rhos - predictions
+
+            alpha, beta, gamma = params
+            J_alpha = np.exp(-beta * thetas)
+            J_beta = -alpha * beta * np.exp(-beta * thetas)
+            J_gamma = np.ones_like(thetas)
+            J = np.stack((J_alpha, J_beta, J_gamma))
+            return residuals * weights, J @ np.diag(weights)
+
+        def proj(params):
+            return params
+
+        optimizer = LevenbergMarquardtOptimizer()
+
+        optimal_params, error = optimizer.optimize(
+            f, proj, np.array([1.0, 1.0, 1.0]), len(rhos)
+        )
+
+        optimal_alpha, optimal_beta, optimal_gamma = optimal_params
+        # return Alpha(optimal_alpha), optimal_beta, optimal_gamma
+        return optimal_alpha, optimal_beta, optimal_gamma
+
+
+class LevenbergMarquardtOptimizer:
+    def __init__(self, num_iter=100, tol=1e-6, min_mu=1e-8, max_mu=1e8):
+        self.num_iter = num_iter
+        self.tol = tol
+        self.min_mu = min_mu
+        self.max_mu = max_mu
+
+    def optimize(self, f, proj, x0, n_points):
+        """
+        Parameters:
+        -----------
+        f: callable
+            Функция, возвращающая кортеж (остатки, матрицу Якоби)
+        proj: callable
+            Функция проекции параметров в допустимую область
+        x0: np.ndarray
+            Начальное приближение параметров
+        n_points: int
+            Количество точек для нормировки ошибки
+
+        Returns:
+        --------
+        tuple: (оптимальные параметры, значение ошибки)
+        """
+        x = x0.copy()
+
+        mu = 1e-2
+        nu1 = 2.0
+        nu2 = 2.0
+
+        res, J = f(x)
+        F = res.T @ res
+
+        result_x = x
+        result_error = F / n_points
+
+        for i in range(self.num_iter):
+            if result_error < self.tol:
+                break
+            multipl = J @ J.T
+            I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
+            dx = np.linalg.solve(mu * I + multipl, J @ res)
+            x_ = proj(x - dx)
+            res_, J_ = f(x_)
+            F_ = res_.T @ res_
+            if F_ < F:
+                x, F, res, J = x_, F_, res_, J_
+                mu = max(self.min_mu, mu / nu1)
+                result_error = F / n_points
+            else:
+                i -= 1
+                mu = min(self.max_mu, mu * nu2)
+                continue
+            result_x = x
+        return result_x, result_error
