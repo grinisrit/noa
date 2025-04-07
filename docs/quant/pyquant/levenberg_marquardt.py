@@ -2,6 +2,14 @@ import numba as nb
 import numpy as np
 
 
+@nb.experimental.jitclass(
+    [
+        ("num_iter", nb.int64),
+        ("tol", nb.float64),
+        ("min_mu", nb.float64),
+        ("max_mu", nb.float64),
+    ]
+)
 class LevenbergMarquardtOptimizer:
     def __init__(self, num_iter=100, tol=1e-6, min_mu=1e-8, max_mu=1e8):
         self.num_iter = num_iter
@@ -57,4 +65,5 @@ class LevenbergMarquardtOptimizer:
                 mu = min(self.max_mu, mu * nu2)
                 continue
             result_x = x
-        return result_x, result_error
+        print("Optimiztion error", result_error)
+        return result_x
