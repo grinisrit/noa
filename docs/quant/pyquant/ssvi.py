@@ -190,20 +190,24 @@ class SSVICalc:
 
         def model(params, thetas):
             eta, lambda_ = params
-            return eta * thetas**lambda_
+            return eta * thetas ** (-lambda_)
 
         def f(params):
             predictions = model(params, thetas)
             residuals = zetas - predictions
 
             eta, lambda_ = params
-            J_eta = -(thetas**lambda_)  # производная по eta
-            J_lambda = -eta * thetas**lambda_ * np.log(thetas)  # производная по lambda_
+            J_eta = -(thetas ** (-lambda_))
+            J_lambda = -eta * thetas ** (-lambda_) * np.log(thetas)
             J = np.stack((J_eta, J_lambda))
             return residuals * weights, J @ np.diag(weights)
 
         def proj(params):
-            return params
+            eps = 1e-4
+            eta, lambda_ = params[0], params[1]
+            lambda_ = np.clip(lambda_, eps, 1.0 - eps)
+            eta = np.clip(eta, eps, 1000000.0)
+            return np.array([eta, lambda_])
 
         optimizer = LevenbergMarquardtOptimizer()
 
@@ -213,8 +217,8 @@ class SSVICalc:
         print("Eta, Lambda calibration error:", error)
 
         optimal_eta, optimal_lambda_ = optimal_params
-        # return Eta(optimal_eta), Lambda(optimal_lambda_)
-        return optimal_eta, optimal_lambda_
+        return Eta(optimal_eta), Lambda(optimal_lambda_)
+        # return optimal_eta, optimal_lambda_
 
     def _interpolate_alpha_beta_gamma(
         self, rhos: list[Rho], thetas: list[Theta]
@@ -240,7 +244,10 @@ class SSVICalc:
             return residuals * weights, J @ np.diag(weights)
 
         def proj(params):
-            return params
+            eps = 1e-4
+            alpha, beta, gamma = params[0], params[1], params[2]
+            beta = np.clip(beta, eps, 1000000.0)
+            return np.array([alpha, beta, gamma])
 
         optimizer = LevenbergMarquardtOptimizer()
 
@@ -250,8 +257,8 @@ class SSVICalc:
         print("Alpha, Beta, Gamma calibration error:", error)
 
         optimal_alpha, optimal_beta, optimal_gamma = optimal_params
-        # return Alpha(optimal_alpha), optimal_beta, optimal_gamma
-        return optimal_alpha, optimal_beta, optimal_gamma
+        return Alpha(optimal_alpha), Beta(optimal_beta), Gamma_(optimal_gamma)
+        # return optimal_alpha, optimal_beta, optimal_gamma
 
 
 class LevenbergMarquardtOptimizer:
@@ -261,22 +268,23 @@ class LevenbergMarquardtOptimizer:
         self.min_mu = min_mu
         self.max_mu = max_mu
 
-    def optimize(self, f, proj, x0, n_points):
+    def optimize(self, f: callable, proj: callable, x0: np.array, n_points: int):
         """
         Parameters:
         -----------
         f: callable
-            Функция, возвращающая кортеж (остатки, матрицу Якоби)
+            Returns (residuals, jacobian) of the function we calibrate
         proj: callable
-            Функция проекции параметров в допустимую область
+            Clipping params to needed range
         x0: np.ndarray
-            Начальное приближение параметров
+            Zero dots
         n_points: int
-            Количество точек для нормировки ошибки
+            On
+
 
         Returns:
         --------
-        tuple: (оптимальные параметры, значение ошибки)
+            tuple: (optimal params, final error value)
         """
         x = x0.copy()
 

@@ -1,10 +1,16 @@
-from .black_scholes import *
-from .common import *
-from .ssvi import SSVICalc
-from .svi import SVICalc
-from .vol_surface import *
+from pyquant.black_scholes import *
+from pyquant.common import *
+from pyquant.ssvi import SSVICalc
+from pyquant.svi import SVICalc
+from pyquant.vol_surface import *
 
 import numpy as np
+
+# from .black_scholes import *
+# from .common import *
+# from .ssvi import SSVICalc
+# from .svi import SVICalc
+# from .vol_surface import *
 
 strikes = np.array(
     [1300.0, 1400.0, 1500.0, 1600.0, 1700.0, 1800.0, 1900.0, 2000.0, 2100.0, 2200.0]
@@ -49,4 +55,4 @@ vol_surface_delta_space: VolSurfaceDeltaSpace = SVICalc().surface_to_delta_space
 )
 
 ssvi = SSVICalc()
-print(ssvi.calibrate(vol_surface_delta_space, 30))
+print(ssvi.calibrate(vol_surface_delta_space, 100))
