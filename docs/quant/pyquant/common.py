@@ -417,6 +417,16 @@ class Strikes:
 class OptionType:
     def __init__(self, is_call: nb.boolean):
         self.is_call = is_call
+
+
+@nb.njit()
+def call_option(): 
+    return OptionType(True)
+
+
+@nb.njit()
+def put_option(): 
+    return OptionType(False)
         
         
 @nb.experimental.jitclass([
