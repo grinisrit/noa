@@ -52,8 +52,7 @@ def noncentral_chisquare(
 
 def generate_cir(
         n_paths: int,
-        n_steps: int,
-        dt: torch.Tensor,
+        timeline: torch.Tensor,
         init_state: torch.Tensor,
         kappa: torch.Tensor,
         theta: torch.Tensor,
@@ -71,8 +70,7 @@ def generate_cir(
 
     Args:
         n_paths: Number of paths to simulate.
-        n_steps: Number of time steps.
-        dt: Time step.
+        timeline: Time steps
         init_state: Initial states of the paths, i.e. v(0). Shape: (n_paths,).
         kappa: Parameter κ.
         theta: Parameter θ.
@@ -84,13 +82,16 @@ def generate_cir(
     Returns:
         Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
     """
+    dt_steps = timeline.diff()
+    n_steps = dt_steps.shape[0]
     paths = torch.empty((n_paths, n_steps + 1), dtype=init_state.dtype)
     paths[:, 0] = init_state
 
-    delta = 4 * kappa * theta / (eps * eps) * torch.ones_like(init_state)
-    exp = torch.exp(-kappa*dt)
-    c_bar = 1 / (4*kappa) * eps * eps * (1 - exp)
+    delta = 4 * kappa * theta / (eps * eps) 
     for i in range(0, n_steps):
+        dt = dt_steps[i]
+        exp = torch.exp(-kappa*dt)
+        c_bar = 1 / (4*kappa) * eps * eps * (1 - exp)
         v_cur = paths[:, i]
         kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp))
         # [Grzelak2019, definition 8.1.1]
@@ -103,8 +104,7 @@ def generate_cir(
 
 def generate_heston(
         n_paths: int,
-        n_steps: int,
-        dt: float,
+        timeline: torch.Tensor,
         init_price: torch.Tensor,
         init_var: torch.Tensor,
         kappa: torch.Tensor,
@@ -125,8 +125,7 @@ def generate_heston(
 
     Args:
         n_paths: Number of simulated paths.
-        n_steps: Number of time steps.
-        dt: Time step.
+        timeline:: Time steps.
         init_price: Initial states of the price paths, i.e. S(0). 
         init_var: Initial states of the variance paths, i.e. v(0). 
         kappa: Parameter κ - the rate at which v(t) reverts to θ.
@@ -144,6 +143,9 @@ def generate_heston(
         Both tensors have the shape (n_paths, n_steps + 1).
     """
 
+    dt_steps = timeline.diff()
+    n_steps = dt_steps.shape[0]
+
     init_state_price = init_price * torch.ones(n_paths)
     init_state_var = init_var * torch.ones(n_paths)
 
@@ -152,31 +154,33 @@ def generate_heston(
     if init_state_var.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state_var` must be (n_paths,)')
 
-    gamma2 = 0.5
-    # regularity condition [Andersen 2007, section 4.3.2]
-    if rho > 0:  # always satisfied when rho <= 0
-        L = rho*dt*(kappa/eps - 0.5*rho)
-        R = 2*kappa/(eps*eps*(1 - torch.exp(-kappa*dt))) - rho/eps
-        if R<=0 or L==0 or (L<0 and R>=0):
-            # When (L<0 && R<=0), L/R is always < 0.5.
-            # (L>0 && R<=0) never happens.
-            # In other cases, regularity condition is always satisfied.
-            pass
-        elif L > 0:
-            gamma2 = min(0.5, R / L * 0.9)  # multiply by 0.9 to have some margin
-    gamma1 = 1.0 - gamma2
-
-    k0 = -rho * kappa * theta * dt / eps
-    k1 = gamma1 * dt * (kappa * rho / eps - 0.5) - rho / eps
-    k2 = gamma2 * dt * (kappa * rho / eps - 0.5) + rho / eps
-    k3 = gamma1 * dt * (1 - rho * rho)
-    k4 = gamma2 * dt * (1 - rho * rho)
-
-    var_paths = generate_cir(n_paths, n_steps, dt, init_state_var, kappa, theta, eps, minimum_var)
+    var_paths = generate_cir(n_paths, timeline, init_state_var, kappa, theta, eps, minimum_var)
     log_paths = torch.empty((n_paths, n_steps + 1), dtype=init_state_price.dtype)
     log_paths[:, 0] = init_state_price.log()
 
+    gamma2 = 0.5
+
     for i in range(0, n_steps):
+        dt = dt_steps[i]
+        # regularity condition [Andersen 2007, section 4.3.2]
+        if rho > 0:  # always satisfied when rho <= 0
+            L = rho*dt*(kappa/eps - 0.5*rho)
+            R = 2*kappa/(eps*eps*(1 - torch.exp(-kappa*dt))) - rho/eps
+            if R<=0 or L==0 or (L<0 and R>=0):
+                # When (L<0 && R<=0), L/R is always < 0.5.
+                # (L>0 && R<=0) never happens.
+                # In other cases, regularity condition is always satisfied.
+                pass
+            elif L > 0:
+                gamma2 = min(0.5, R / L * 0.9)  # multiply by 0.9 to have some margin
+        gamma1 = 1.0 - gamma2
+    
+        k0 = -rho * kappa * theta * dt / eps
+        k1 = gamma1 * dt * (kappa * rho / eps - 0.5) - rho / eps
+        k2 = gamma2 * dt * (kappa * rho / eps - 0.5) + rho / eps
+        k3 = gamma1 * dt * (1 - rho * rho)
+        k4 = gamma2 * dt * (1 - rho * rho)
+
         v_i = var_paths[:, i]
         v_next = var_paths[:, i+1]
         next_vals = drift*dt + log_paths[:, i] + k0 + k1*v_i + k2*v_next + \
