@@ -1,10 +1,9 @@
+import numpy as np
 from pyquant.black_scholes import *
 from pyquant.common import *
 from pyquant.ssvi import SSVICalc
 from pyquant.svi import SVICalc
 from pyquant.vol_surface import *
-
-import numpy as np
 
 # from .black_scholes import *
 # from .common import *
@@ -55,4 +54,4 @@ vol_surface_delta_space: VolSurfaceDeltaSpace = SVICalc().surface_to_delta_space
 )
 
 ssvi = SSVICalc()
-print(ssvi.calibrate(vol_surface_delta_space, 100))
+print(ssvi.calibrate(vol_surface_delta_space, 10))

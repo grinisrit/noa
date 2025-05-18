@@ -126,25 +126,23 @@ class SSVICalc:
         vol_surface_delta_space: VolSurfaceDeltaSpace,
         number_of_delta_space_dots: int = 20,
     ):
-        zetas, rhos, thetas = (
-            np.zeros(number_of_delta_space_dots),
-            np.zeros(number_of_delta_space_dots),
-            np.zeros(number_of_delta_space_dots),
-        )
-        # we calibrate SVI with a, m = 0 to the linspace of max and min tenors given in space
-        tenors_linspace = np.linspace(
+        thetas = np.zeros(number_of_delta_space_dots)
+        self.cached_params = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        # we calibrate SVI to the linspace of max and min tenors given in space with given amount of ttm dots
+        self.tenors_linspace = np.linspace(
             vol_surface_delta_space.min_T,
             vol_surface_delta_space.max_T,
             number_of_delta_space_dots,
         )
+        n_points = 4 * number_of_delta_space_dots
         # calibrate tenor by tenor
-        for idx, tenor in enumerate(tenors_linspace):
+        for idx, tenor in enumerate(self.tenors_linspace):
             vol_smile_chain_space: VolSmileChainSpace = (
                 vol_surface_delta_space.get_vol_smile(
                     TimeToMaturity(tenor)
                 ).to_chain_space()
             )
-            svi_raw_params, _ = self.svi.calibrate(
+            svi_raw_params, calibration_error = self.svi.calibrate(
                 vol_smile_chain_space,
                 CalibrationWeights(np.ones_like(vol_smile_chain_space.Ks)),
                 False,
@@ -154,122 +152,52 @@ class SSVICalc:
             svi_natural_params_array: SVINaturalParams = (
                 self.raw_to_natural_parametrization(svi_raw_params)
             )
-            zetas[idx] = svi_natural_params_array.zeta
             thetas[idx] = svi_natural_params_array.theta
-            rhos[idx] = svi_natural_params_array.rho
+            forward = vol_smile_chain_space.forward()
 
-        eta_lambda_, error = self._interpolate_eta_lambda(zetas, thetas)
-        print("Eta, Lambda calibration error", error)
+            call25_K = self.svi.strike_from_delta(forward, Delta(0.25), svi_raw_params)
+            call25 = self.svi.implied_vol(forward, call25_K, svi_raw_params).sigma
 
-        alpha_beta_gamma, error = self._interpolate_alpha_beta_gamma(rhos, thetas)
-        print("Alpha, Beta, Gamma calibration error", error)
+            put25_K = self.svi.strike_from_delta(forward, Delta(-0.25), svi_raw_params)
+            put25 = self.svi.implied_vol(forward, put25_K, svi_raw_params).sigma
 
-        return (
-            Eta(eta_lambda_[0]),
-            Lambda(eta_lambda_[1]),
-            Alpha(alpha_beta_gamma[0]),
-            Beta(alpha_beta_gamma[1]),
-            Gamma_(alpha_beta_gamma[2]),
-        )
+            call10_K = self.svi.strike_from_delta(forward, Delta(0.1), svi_raw_params)
+            call10 = self.svi.implied_vol(forward, call10_K, svi_raw_params).sigma
 
-    def _interpolate_eta_lambda(
-        self, zetas: nb.float64[:], thetas: nb.float64[:]
-    ) -> Union[nb.float64[:], nb.float64]:
+            put10_K = self.svi.strike_from_delta(forward, Delta(-0.1), svi_raw_params)
+            put10 = self.svi.implied_vol(forward, put10_K, svi_raw_params).sigma
 
-        calibration_weights = CalibrationWeights(np.ones_like(thetas))
-        w = calibration_weights.w
-        weights = w / w.sum()
-        n_points = len(thetas)
+        def clip_params(params: np.ndarray) -> np.ndarray:
+            eps = 1e-5
+            eta, lambda_, alpha, beta, omega = (
+                params[0],
+                params[1],
+                params[2],
+                params[3],
+                params[4],
+            )
+            eta = np_clip(eta, 0, 1000000.0)
+            beta = np_clip(beta, 0, 1000000.0)
+            lambda_ = np_clip(lambda_, eps, 1 - eps)
 
-        def model(params, thetas):
-            eta, lambda_ = params[0], params[1]
-            return eta * thetas ** (-lambda_)
+            ssvi_params = np.array([eta, lambda_, alpha, beta, omega])
+            return ssvi_params
 
-        def f(params):
-            predictions = model(params, thetas)
-            residuals = zetas - predictions
-
-            eta, lambda_ = params[0], params[1]
-            J_eta = -(thetas ** (-lambda_))
-            J_lambda = -eta * thetas ** (-lambda_) * np.log(thetas)
-            J = np.stack((J_eta, J_lambda))
-            return residuals * weights, J @ np.diag(weights)
-
-        def proj(params):
-            eps = 1e-4
-            eta, lambda_ = params[0], params[1]
-
-            lambda_ = np_clip(lambda_, eps, 1.0 - eps)
-            eta = np_clip(eta, eps, 1000000.0)
-            return np.array([eta, lambda_])
-
-        def levenberg_marquardt(f, proj, x0):
-            x = x0.copy()
-
-            mu = 1e-2
-            nu1 = 2.0
-            nu2 = 2.0
-
-            res, J = f(x)
-            F = res.T @ res
-
-            result_x = x
-            result_error = F / n_points
-
-            for i in range(self.num_iter):
-                if result_error < self.tol:
-                    break
-                multipl = J @ J.T
-                I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
-                dx = np.linalg.solve(mu * I + multipl, J @ res)
-                x_ = proj(x - dx)
-                res_, J_ = f(x_)
-                F_ = res_.T @ res_
-                if F_ < F:
-                    x, F, res, J = x_, F_, res_, J_
-                    mu = max(self.min_mu, mu / nu1)
-                    result_error = F / n_points
-                else:
-                    i -= 1
-                    mu = min(self.max_mu, mu * nu2)
-                    continue
-                result_x = x
-            return result_x, result_error
-
-        optimal_params, calibration_error = levenberg_marquardt(
-            f, proj, np.array([1.0, 1.0])
-        )
-        return optimal_params, calibration_error
-
-    def _interpolate_alpha_beta_gamma(
-        self, rhos: nb.float64[:], thetas: nb.float64[:]
-    ) -> Union[nb.float64[:], nb.float64]:
-
-        calibration_weights = CalibrationWeights(np.ones_like(thetas))
-        w = calibration_weights.w
-        weights = w / w.sum()
-        n_points = len(thetas)
-
-        def model(params, thetas):
-            alpha, beta, gamma = params
-            return alpha * np.exp(-beta * thetas) + gamma
-
-        def f(params):
-            predictions = model(params, thetas)
-            residuals = rhos - predictions
-
-            alpha, beta, gamma = params
-            J_alpha = -np.exp(-beta * thetas)
-            J_beta = alpha * thetas * np.exp(-beta * thetas)
-            J_gamma = -np.ones_like(thetas)
-            J = np.stack((J_alpha, J_beta, J_gamma))
-            return residuals * weights, J @ np.diag(weights)
-
-        def proj(params):
-            eps = 1e-4
-            alpha, beta, gamma = params[0], params[1], params[2]
-            beta = np_clip(beta, eps, 1000000.0)
-            return np.array([alpha, beta, gamma])
+        def get_residuals(params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+            J = np.stack(
+                self._jacobian_total_implied_var_svi_raw(
+                    forward,
+                    strikes,
+                    params,
+                )
+            )
+            svi_w = self._total_implied_var_svi(
+                forward,
+                strikes,
+                params,
+            )
+            res = svi_w - tot_vars
+            return res * weights, J @ np.diag(weights)
 
         def levenberg_marquardt(f, proj, x0):
             x = x0.copy()
@@ -295,27 +223,28 @@ class SSVICalc:
                 F_ = res_.T @ res_
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
-                    mu = max(self.min_mu, mu / nu1)
+                    mu /= nu1
                     result_error = F / n_points
                 else:
                     i -= 1
-                    mu = min(self.max_mu, mu * nu2)
+                    mu *= nu2
                     continue
                 result_x = x
+
             return result_x, result_error
 
-        optimal_params, calibration_error = levenberg_marquardt(
-            f, proj, np.array([1.0, 1.0, 1.0])
+        calc_params, calibration_error = levenberg_marquardt(
+            get_residuals, clip_params, self.cached_params
         )
-        return optimal_params, calibration_error
+
+        print(calc_params)
+        print(calibration_error)
 
     def _total_implied_var_ssvi(
-        self,
-        F: nb.float64,
-        K: nb.float64,
-        params: nb.float64[:],
+        self, F: nb.float64, K: nb.float64, params: nb.float64[:], theta_t: nb.float64
     ) -> nb.float64:
-        delta_param, mu, rho, theta, zeta = (
+
+        eta, lambda_, alpha, beta, omega = (
             params[0],
             params[1],
             params[2],
@@ -323,10 +252,18 @@ class SSVICalc:
             params[4],
         )
         k = np.log(K / F)
-        w = delta_param + theta / 2 * (
-            1
-            + zeta * rho * (k - mu) * np.sqrt((zeta * (k - mu) + rho) ** 2 + 1 - rho**2)
+        rho_t = alpha * np.exp ** (-beta * theta_t) + omega
+        zeta_t = eta * theta_t ** (-lambda_)
+        w = (
+            theta_t
+            / 2
+            * (
+                1
+                + rho_t * zeta_t * k
+                + np.sqrt((zeta_t * k + rho_t) ** 2 + 1 - rho_t**2)
+            )
         )
+
         return w
 
     def raw_to_natural_parametrization(
