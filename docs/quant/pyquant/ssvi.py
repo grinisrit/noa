@@ -124,6 +124,7 @@ class SSVIParams:
         ("min_mu", nb.float64),
         ("tol", nb.float64),
         ("svi", SVICalc.class_type.instance_type),
+        ("cached_params", nb.float64[:]),
     ]
 )
 class SSVICalc:
@@ -135,23 +136,30 @@ class SSVICalc:
         self.min_mu = 1e-6
         self.tol = 1e-12
         self.svi = SVICalc()
+        self.cached_params = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
 
     def calibrate(
         self,
         vol_surface_delta_space: VolSurfaceDeltaSpace,
         number_of_delta_space_dots: int = 20,
     ):
+        NUMBER_OF_DOTS_PER_SMILE = 4
         thetas = np.zeros(number_of_delta_space_dots)
-        self.cached_params = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        n_points = NUMBER_OF_DOTS_PER_SMILE * number_of_delta_space_dots
+        # write final IVs here to ehich we gonna calibrate
+        implied_vols = np.zeros(n_points)
+        # array for creating StrikesMaturitiesGrid
+        strikes = np.zeros(n_points)
+
         # we calibrate SVI to the linspace of max and min tenors given in space with given amount of ttm dots
-        self.tenors_linspace = np.linspace(
+        tenors_linspace = np.linspace(
             vol_surface_delta_space.min_T,
             vol_surface_delta_space.max_T,
             number_of_delta_space_dots,
         )
-        n_points = 4 * number_of_delta_space_dots
+
         # calibrate tenor by tenor
-        for idx, tenor in enumerate(self.tenors_linspace):
+        for idx, tenor in enumerate(tenors_linspace):
             vol_smile_chain_space: VolSmileChainSpace = (
                 vol_surface_delta_space.get_vol_smile(
                     TimeToMaturity(tenor)
@@ -168,21 +176,34 @@ class SSVICalc:
                 self.raw_to_natural_parametrization(svi_raw_params)
             )
             thetas[idx] = svi_natural_params_array.theta
-            forward = vol_smile_chain_space.forward()
 
-            call25_K = self.svi.strike_from_delta(forward, Delta(0.25), svi_raw_params)
-            call25 = self.svi.implied_vol(forward, call25_K, svi_raw_params).sigma
+            chain_space_from_delta_space: VolSmileChainSpace = self.svi.delta_space(
+                vol_smile_chain_space.forward(), svi_raw_params
+            ).to_chain_space()
+            # Do not take ATM, only 0.1 and 0.25 call/put deltas
+            strikes[idx : idx + NUMBER_OF_DOTS_PER_SMILE] = np.concatenate(
+                (
+                    chain_space_from_delta_space.Ks[:2],
+                    chain_space_from_delta_space.Ks[-2:],
+                )
+            )
+            implied_vols[idx : idx + NUMBER_OF_DOTS_PER_SMILE] = np.concatenate(
+                (
+                    chain_space_from_delta_space.sigmas[:2],
+                    chain_space_from_delta_space.sigmas[-2:],
+                )
+            )
+            # TODO: here the arbitrage can be tracked and fixed
 
-            put25_K = self.svi.strike_from_delta(forward, Delta(-0.25), svi_raw_params)
-            put25 = self.svi.implied_vol(forward, put25_K, svi_raw_params).sigma
+        # get all the strikes and maturities grid
+        strikes_to_maturities_grid: StrikesMaturitiesGrid = StrikesMaturitiesGrid(
+            chain_space_from_delta_space.forward().spot(),  # it is similar in every smile
+            TimesToMaturity(np.repeat(tenors_linspace, NUMBER_OF_DOTS_PER_SMILE)),
+            Strikes(strikes),
+        )
+        print(strikes_to_maturities_grid)
 
-            call10_K = self.svi.strike_from_delta(forward, Delta(0.1), svi_raw_params)
-            call10 = self.svi.implied_vol(forward, call10_K, svi_raw_params).sigma
-
-            put10_K = self.svi.strike_from_delta(forward, Delta(-0.1), svi_raw_params)
-            put10 = self.svi.implied_vol(forward, put10_K, svi_raw_params).sigma
-
-        def clip_params(params: np.ndarray) -> np.ndarray:
+        def clip_params(params: np.array) -> np.array:
             eps = 1e-5
             eta, lambda_, alpha, beta, gamma_ = (
                 params[0],
@@ -198,56 +219,56 @@ class SSVICalc:
             ssvi_params = np.array([eta, lambda_, alpha, beta, gamma_])
             return ssvi_params
 
-        def get_residuals(params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        # def get_residuals(params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
-            J = np.stack(
-                self._jacobian_total_implied_var_ssvi(
-                    forward,
-                    strikes,
-                    params,
-                )
-            )
-            svi_w = self._total_implied_var_ssvi(
-                forward,
-                strikes,
-                params,
-            )
-            res = svi_w - tot_vars
-            return res * weights, J @ np.diag(weights)
+        #     J = np.stack(
+        #         self._jacobian_total_implied_var_ssvi(
+        #             forward,
+        #             strikes,
+        #             params,
+        #         )
+        #     )
+        # svi_w = self._total_implied_var_ssvi(
+        #     forward,
+        #     strikes,
+        #     params,
+        # )
+        # res = svi_w - tot_vars
+        # return res * weights, J @ np.diag(weights)
 
-        def levenberg_marquardt(f, proj, x0):
-            x = x0.copy()
+        # def levenberg_marquardt(f, proj, x0):
+        #     x = x0.copy()
 
-            mu = 1e-2
-            nu1 = 2.0
-            nu2 = 2.0
+        #     mu = 1e-2
+        #     nu1 = 2.0
+        #     nu2 = 2.0
 
-            res, J = f(x)
-            F = res.T @ res
+        #     res, J = f(x)
+        #     F = res.T @ res
 
-            result_x = x
-            result_error = F / n_points
+        #     result_x = x
+        #     result_error = F / n_points
 
-            for i in range(self.num_iter):
-                if result_error < self.tol:
-                    break
-                multipl = J @ J.T
-                I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
-                dx = np.linalg.solve(mu * I + multipl, J @ res)
-                x_ = proj(x - dx)
-                res_, J_ = f(x_)
-                F_ = res_.T @ res_
-                if F_ < F:
-                    x, F, res, J = x_, F_, res_, J_
-                    mu /= nu1
-                    result_error = F / n_points
-                else:
-                    i -= 1
-                    mu *= nu2
-                    continue
-                result_x = x
+        # for i in range(self.num_iter):
+        #     if result_error < self.tol:
+        #         break
+        #     multipl = J @ J.T
+        #     I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
+        #     dx = np.linalg.solve(mu * I + multipl, J @ res)
+        #     x_ = proj(x - dx)
+        #     res_, J_ = f(x_)
+        #     F_ = res_.T @ res_
+        #     if F_ < F:
+        #         x, F, res, J = x_, F_, res_, J_
+        #         mu /= nu1
+        #         result_error = F / n_points
+        #     else:
+        #         i -= 1
+        #         mu *= nu2
+        #         continue
+        #     result_x = x
 
-            return result_x, result_error
+        # return result_x, result_error
 
         # calc_params, calibration_error = levenberg_marquardt(
         #     get_residuals, clip_params, self.cached_params
@@ -259,7 +280,17 @@ class SSVICalc:
     def _jacobian_total_implied_var_ssvi(
         self, ssvi_params: SSVIParams, grid: StrikesMaturitiesGrid
     ) -> nb.float64[:, :]:
-        pass
+        """Computes Jacobian w.r.t. SSVIParams."""
+        Ks = grid.Ks
+        Ts = grid.Ts
+        n = len(Ks)
+        deta, dlambda_, dalpha, dbeta, dgamma_ = (
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+            np.float64(0.0),
+        )
 
     def _total_implied_var_ssvi(
         self, F: nb.float64, K: nb.float64, params: nb.float64[:], theta_t: nb.float64
