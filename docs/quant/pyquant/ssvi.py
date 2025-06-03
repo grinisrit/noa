@@ -102,6 +102,21 @@ class SVINaturalParams:
         return np.array([self.delta_param, self.mu, self.rho, self.theta, self.zeta])
 
 
+class SSVIParams:
+
+    def __init__(
+        self, eta: Eta, lambda_: Lambda, alpha: Alpha, beta: Beta, gamma_: Gamma_
+    ):
+        self.eta = eta.eta
+        self.lambda_ = lambda_.lambda_
+        self.alpha = alpha.alpha
+        self.beta = beta.beta
+        self.gamma_ = gamma_.gamma_
+
+    def array(self) -> nb.float64[:]:
+        return np.array([self.eta, self.lambda_, self.alpha, self.beta, self.gamma_])
+
+
 @nb.experimental.jitclass(
     [
         ("num_iter", nb.int64),
@@ -169,7 +184,7 @@ class SSVICalc:
 
         def clip_params(params: np.ndarray) -> np.ndarray:
             eps = 1e-5
-            eta, lambda_, alpha, beta, omega = (
+            eta, lambda_, alpha, beta, gamma_ = (
                 params[0],
                 params[1],
                 params[2],
@@ -180,18 +195,19 @@ class SSVICalc:
             beta = np_clip(beta, 0, 1000000.0)
             lambda_ = np_clip(lambda_, eps, 1 - eps)
 
-            ssvi_params = np.array([eta, lambda_, alpha, beta, omega])
+            ssvi_params = np.array([eta, lambda_, alpha, beta, gamma_])
             return ssvi_params
 
         def get_residuals(params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+
             J = np.stack(
-                self._jacobian_total_implied_var_svi_raw(
+                self._jacobian_total_implied_var_ssvi(
                     forward,
                     strikes,
                     params,
                 )
             )
-            svi_w = self._total_implied_var_svi(
+            svi_w = self._total_implied_var_ssvi(
                 forward,
                 strikes,
                 params,
@@ -233,18 +249,23 @@ class SSVICalc:
 
             return result_x, result_error
 
-        calc_params, calibration_error = levenberg_marquardt(
-            get_residuals, clip_params, self.cached_params
-        )
+        # calc_params, calibration_error = levenberg_marquardt(
+        #     get_residuals, clip_params, self.cached_params
+        # )
 
-        print(calc_params)
-        print(calibration_error)
+        # print(calc_params)
+        # print(calibration_error)
+
+    def _jacobian_total_implied_var_ssvi(
+        self, ssvi_params: SSVIParams, grid: StrikesMaturitiesGrid
+    ) -> nb.float64[:, :]:
+        pass
 
     def _total_implied_var_ssvi(
         self, F: nb.float64, K: nb.float64, params: nb.float64[:], theta_t: nb.float64
     ) -> nb.float64:
 
-        eta, lambda_, alpha, beta, omega = (
+        eta, lambda_, alpha, beta, gamma_ = (
             params[0],
             params[1],
             params[2],
@@ -252,7 +273,7 @@ class SSVICalc:
             params[4],
         )
         k = np.log(K / F)
-        rho_t = alpha * np.exp ** (-beta * theta_t) + omega
+        rho_t = alpha * np.exp ** (-beta * theta_t) + gamma_
         zeta_t = eta * theta_t ** (-lambda_)
         w = (
             theta_t
