@@ -140,7 +140,8 @@ class SSVICalc:
         self.min_mu = 1e-6
         self.tol = 1e-12
         self.svi = SVICalc()
-        self.cached_params = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        self.cached_params = np.array([1.0, 1.0, 0.1, 1.0, 0.0])
+        # eta, lambda, alpha, beta, gamma
 
     def calibrate(
         self,
@@ -214,13 +215,6 @@ class SSVICalc:
         )
         # make the array of thetas of the same size
         thetas = np.repeat(thetas, NUMBER_OF_DOTS_PER_SMILE)
-        # print(
-        #     self._jacobian_total_implied_var_ssvi(
-        #         SSVIParams(Eta(4.0), Lambda(1.5), Alpha(1.1), Beta(2.0), Gamma_(0.3)),
-        #         strikes_to_maturities_grid,
-        #         thetas,
-        #     )
-        # )
 
         def clip_params(params: np.array) -> np.array:
             eps = 1e-5
@@ -253,7 +247,10 @@ class SSVICalc:
             residuals = (ivs - implied_variances) * weights
             jacobian = self._jacobian_total_implied_var_ssvi(
                 ssvi_params, strikes_to_maturities_grid, thetas
-            ) @ np.diag(weights)
+            )
+            print(jacobian)
+            print("==========")
+            jacobian = jacobian @ np.diag(weights)
             return residuals, jacobian
 
         def levenberg_marquardt(f, proj, x0):
@@ -322,10 +319,10 @@ class SSVICalc:
             T = Ts[l]
 
             theta_t = thetas[l]
-            print(theta_t, K, T)
             k = np.log(K / F)
             zeta_t = eta * theta_t ** (-lambda_)
             rho_t = alpha * np.exp(-beta * theta_t) + gamma_
+            assert -1 <= rho_t <= 1, "It should be abs(rho)<=1"
 
             deta = (
                 theta_t
@@ -415,6 +412,7 @@ class SSVICalc:
             k = np.log(K / F)
             zeta_t = eta * theta_t ** (-lambda_)
             rho_t = alpha * np.exp(-beta * theta_t) + gamma_
+            assert -1 <= rho_t <= 1, "It should be abs(rho)<=1"
             w[l] = (
                 theta_t
                 / 2
