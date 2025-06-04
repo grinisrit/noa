@@ -135,19 +135,20 @@ class SSVICalc:
     def __init__(
         self,
     ) -> None:
-        self.num_iter = 10000
+        # self.num_iter = 10000
+        self.num_iter = 100
         self.max_mu = 1e4
         self.min_mu = 1e-6
         self.tol = 1e-12
         self.svi = SVICalc()
-        self.cached_params = np.array([1.0, 1.0, 0.1, 1.0, 0.0])
+        self.cached_params = np.array([1.0, 0.2, 0.05, 0.0, 0.0])
         # eta, lambda, alpha, beta, gamma
 
     def calibrate(
         self,
         vol_surface_delta_space: VolSurfaceDeltaSpace,
         number_of_delta_space_dots: int = 20,
-    ):
+    ) -> Tuple[SSVIParams, CalibrationError]:
         NUMBER_OF_DOTS_PER_SMILE = 4
         thetas = np.zeros(number_of_delta_space_dots)
         n_points = NUMBER_OF_DOTS_PER_SMILE * number_of_delta_space_dots
@@ -210,8 +211,8 @@ class SSVICalc:
                 ** 2
             )
             # TODO: here the arbitrage can be tracked and fixed
-        print(implied_variances)
-        print(strikes)
+        print("Implied variances to calibrate to:", implied_variances)
+        print("Strikes from delta-space we calibrate to:", strikes)
 
         # get all the strikes and maturities grid
         strikes_to_maturities_grid: StrikesMaturitiesGrid = StrikesMaturitiesGrid(
@@ -221,6 +222,7 @@ class SSVICalc:
         )
         # make the array of thetas of the same size
         thetas = np.repeat(thetas, NUMBER_OF_DOTS_PER_SMILE)
+        print("Thetas by dots:", thetas)
 
         def clip_params(params: np.array) -> np.array:
             eps = 1e-5
@@ -232,6 +234,8 @@ class SSVICalc:
                 params[4],
             )
             eta = np_clip(eta, 0, 1000000.0)
+            # NOTE: need to clip or explodes
+            # alpha = np_clip(alpha, 0, 1.0)
             beta = np_clip(beta, 0, 1000000.0)
             lambda_ = np_clip(lambda_, eps, 1 - eps)
 
@@ -254,8 +258,6 @@ class SSVICalc:
             jacobian = self._jacobian_total_implied_var_ssvi(
                 ssvi_params, strikes_to_maturities_grid, thetas
             )
-            print(jacobian)
-            print("==========")
             jacobian = jacobian @ np.diag(weights)
             return residuals, jacobian
 
@@ -273,6 +275,7 @@ class SSVICalc:
             result_error = F / n_points
 
             for i in range(self.num_iter):
+                print("RESULT:", result_x, result_error)
                 if result_error < self.tol:
                     break
                 multipl = J @ J.T
@@ -296,9 +299,9 @@ class SSVICalc:
         calc_params, calibration_error = levenberg_marquardt(
             get_residuals, clip_params, self.cached_params
         )
-
         print(calc_params)
         print(calibration_error)
+        return calc_params, calibration_error
 
     def _jacobian_total_implied_var_ssvi(
         self,
@@ -328,7 +331,9 @@ class SSVICalc:
             k = np.log(K / F)
             zeta_t = eta * theta_t ** (-lambda_)
             rho_t = alpha * np.exp(-beta * theta_t) + gamma_
-            assert -1 <= rho_t <= 1, "It should be abs(rho)<=1"
+            assert -1 <= rho_t <= 1, f"It should be abs(rho)<=1. Now it is {rho_t}"
+
+            # NOTE: maybe we should assert but maybe clip
 
             deta = (
                 theta_t
@@ -418,7 +423,8 @@ class SSVICalc:
             k = np.log(K / F)
             zeta_t = eta * theta_t ** (-lambda_)
             rho_t = alpha * np.exp(-beta * theta_t) + gamma_
-            assert -1 <= rho_t <= 1, "It should be abs(rho)<=1"
+
+            assert -1 <= rho_t <= 1, f"It should be abs(rho)<=1. Now it is {rho_t}"
             w[l] = (
                 theta_t
                 / 2
