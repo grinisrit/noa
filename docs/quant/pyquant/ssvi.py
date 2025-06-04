@@ -188,14 +188,18 @@ class SSVICalc:
                 vol_smile_chain_space.forward(), svi_raw_params
             ).to_chain_space()
             # Do not take ATM, only 0.1 and 0.25 call/put deltas
-            strikes[idx : idx + NUMBER_OF_DOTS_PER_SMILE] = np.concatenate(
+            strikes[
+                NUMBER_OF_DOTS_PER_SMILE * idx : NUMBER_OF_DOTS_PER_SMILE * (idx + 1)
+            ] = np.concatenate(
                 (
                     chain_space_from_delta_space.Ks[:2],
                     chain_space_from_delta_space.Ks[-2:],
                 )
             )
             # NOTE: convert iv-s to implied variances
-            implied_variances[idx : idx + NUMBER_OF_DOTS_PER_SMILE] = (
+            implied_variances[
+                NUMBER_OF_DOTS_PER_SMILE * idx : NUMBER_OF_DOTS_PER_SMILE * (idx + 1)
+            ] = (
                 tenor
                 * np.concatenate(
                     (
@@ -206,6 +210,8 @@ class SSVICalc:
                 ** 2
             )
             # TODO: here the arbitrage can be tracked and fixed
+        print(implied_variances)
+        print(strikes)
 
         # get all the strikes and maturities grid
         strikes_to_maturities_grid: StrikesMaturitiesGrid = StrikesMaturitiesGrid(
