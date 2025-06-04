@@ -81,11 +81,6 @@ class Gamma_:
         ("rho", nb.float64),
         ("theta", nb.float64),
         ("zeta", nb.float64),
-        ("lambda_", nb.float64),
-        ("eta", nb.float64),
-        ("beta", nb.float64),
-        ("alpha", nb.float64),
-        ("gamma_", nb.float64),
     ]
 )
 class SVINaturalParams:
@@ -102,6 +97,15 @@ class SVINaturalParams:
         return np.array([self.delta_param, self.mu, self.rho, self.theta, self.zeta])
 
 
+@nb.experimental.jitclass(
+    [
+        ("eta", nb.float64),
+        ("lambda_", nb.float64),
+        ("alpha", nb.float64),
+        ("beta", nb.float64),
+        ("gamma_", nb.float64),
+    ]
+)
 class SSVIParams:
 
     def __init__(
@@ -201,7 +205,15 @@ class SSVICalc:
             TimesToMaturity(np.repeat(tenors_linspace, NUMBER_OF_DOTS_PER_SMILE)),
             Strikes(strikes),
         )
-        print(strikes_to_maturities_grid)
+        # make the array of thetas of the same size
+        thetas = np.repeat(thetas, NUMBER_OF_DOTS_PER_SMILE)
+        print(
+            self._jacobian_total_implied_var_ssvi(
+                SSVIParams(Eta(1.0), Lambda(1.0), Alpha(1.0), Beta(1.0), Gamma_(1.0)),
+                strikes_to_maturities_grid,
+                thetas,
+            )
+        )
 
         def clip_params(params: np.array) -> np.array:
             eps = 1e-5
@@ -278,7 +290,10 @@ class SSVICalc:
         # print(calibration_error)
 
     def _jacobian_total_implied_var_ssvi(
-        self, ssvi_params: SSVIParams, grid: StrikesMaturitiesGrid
+        self,
+        ssvi_params: SSVIParams,
+        grid: StrikesMaturitiesGrid,
+        thetas: nb.float64[:],
     ) -> nb.float64[:, :]:
         """Computes Jacobian w.r.t. SSVIParams."""
         Ks = grid.Ks
@@ -291,6 +306,87 @@ class SSVICalc:
             np.float64(0.0),
             np.float64(0.0),
         )
+        eta, lambda_, alpha, beta, gamma_ = ssvi_params.array()
+        jacs = np.zeros((5, n), dtype=np.float64)
+        for l in range(n):
+            K = Ks[l]
+            T = Ts[l]
+
+            theta_t = thetas[l]
+            print(theta_t, K, T)
+            k = np.log(K / F)
+            zeta_t = eta * theta_t ** (-lambda_)
+            rho_t = alpha * np.exp(-beta * theta_t) + gamma_
+
+            deta = (
+                theta_t
+                * (
+                    k * rho_t / theta_t**lambda_
+                    + k
+                    * (k * zeta_t + rho_t)
+                    / (
+                        theta_t**lambda_
+                        * np.sqrt(-(rho_t**2) + (k * zeta_t + rho_t) ** 2 + 1)
+                    )
+                )
+                / 2
+            )
+
+            dlambda_ = (
+                theta_t
+                * (
+                    -k * rho_t * zeta_t * np.log(theta_t)
+                    - k
+                    * zeta_t
+                    * (k * zeta_t + rho_t)
+                    * np.log(theta_t)
+                    / np.sqrt(-(rho_t**2) + (k * zeta_t + rho_t) ** 2 + 1)
+                )
+                / 2
+            )
+            dalpha = (
+                theta_t
+                * (
+                    k * zeta_t * np.exp(-beta * theta_t)
+                    + (
+                        -rho_t * np.exp(-beta * theta_t)
+                        + (k * zeta_t + rho_t) * np.exp(-beta * theta_t)
+                    )
+                    / np.sqrt(-(rho_t**2) + (k * zeta_t + rho_t) ** 2 + 1)
+                )
+                / 2
+            )
+            dbeta = (
+                theta_t
+                * (
+                    -alpha * k * theta_t * zeta_t * np.exp(-beta * theta_t)
+                    + (
+                        alpha * rho_t * theta_t * np.exp(-beta * theta_t)
+                        - alpha
+                        * theta_t
+                        * (k * zeta_t + rho_t)
+                        * np.exp(-beta * theta_t)
+                    )
+                    / np.sqrt(-(rho_t**2) + (k * zeta_t + rho_t) ** 2 + 1)
+                )
+                / 2
+            )
+            dgamma_ = (
+                theta_t
+                * (
+                    k * zeta_t
+                    + k * zeta_t / np.sqrt(-(rho_t**2) + (k * zeta_t + rho_t) ** 2 + 1)
+                )
+                / 2
+            )
+
+            jacs[0][l] = deta
+            jacs[1][l] = dlambda_
+            jacs[2][l] = dalpha
+            jacs[3][l] = dbeta
+            jacs[4][l] = dgamma_
+
+        return jacs
 
     def _total_implied_var_ssvi(
         self, F: nb.float64, K: nb.float64, params: nb.float64[:], theta_t: nb.float64
