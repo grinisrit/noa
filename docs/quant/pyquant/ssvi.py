@@ -141,7 +141,7 @@ class SSVICalc:
         self.min_mu = 1e-6
         self.tol = 1e-12
         self.svi = SVICalc()
-        self.cached_params = np.array([1.0, 0.2, 0.05, 0.0, 0.0])
+        self.cached_params = np.array([1.0, 0.2, 0.05, 0.1, 0.0])
         # eta, lambda, alpha, beta, gamma
 
     def calibrate(
@@ -233,10 +233,10 @@ class SSVICalc:
                 params[3],
                 params[4],
             )
-            eta = np_clip(eta, 0, 1000000.0)
+            eta = np_clip(eta, 0.0, 1000000.0)
             # NOTE: need to clip or explodes
             # alpha = np_clip(alpha, 0, 1.0)
-            beta = np_clip(beta, 0, 1000000.0)
+            beta = np_clip(beta, 0.0, 1000000.0)
             lambda_ = np_clip(lambda_, eps, 1 - eps)
 
             ssvi_params = np.array([eta, lambda_, alpha, beta, gamma_])
@@ -286,14 +286,13 @@ class SSVICalc:
                 F_ = res_.T @ res_
                 if F_ < F:
                     x, F, res, J = x_, F_, res_, J_
-                    mu /= nu1
+                    mu = max(self.min_mu, mu / nu1)
                     result_error = F / n_points
                 else:
                     i -= 1
-                    mu *= nu2
+                    mu = min(self.max_mu, mu * nu2)
                     continue
                 result_x = x
-
             return result_x, result_error
 
         calc_params, calibration_error = levenberg_marquardt(
@@ -332,8 +331,6 @@ class SSVICalc:
             zeta_t = eta * theta_t ** (-lambda_)
             rho_t = alpha * np.exp(-beta * theta_t) + gamma_
             assert -1 <= rho_t <= 1, f"It should be abs(rho)<=1. Now it is {rho_t}"
-
-            # NOTE: maybe we should assert but maybe clip
 
             deta = (
                 theta_t
