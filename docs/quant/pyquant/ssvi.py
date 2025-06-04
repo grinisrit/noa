@@ -151,7 +151,9 @@ class SSVICalc:
         thetas = np.zeros(number_of_delta_space_dots)
         n_points = NUMBER_OF_DOTS_PER_SMILE * number_of_delta_space_dots
         # write final IVs here to ehich we gonna calibrate
-        implied_vols = np.zeros(n_points)
+        implied_variances = np.zeros(n_points)
+        weights = np.ones(n_points)
+        weights = weights / weights.sum()
         # array for creating StrikesMaturitiesGrid
         strikes = np.zeros(n_points)
 
@@ -191,11 +193,16 @@ class SSVICalc:
                     chain_space_from_delta_space.Ks[-2:],
                 )
             )
-            implied_vols[idx : idx + NUMBER_OF_DOTS_PER_SMILE] = np.concatenate(
-                (
-                    chain_space_from_delta_space.sigmas[:2],
-                    chain_space_from_delta_space.sigmas[-2:],
+            # NOTE: convert iv-s to implied variances
+            implied_variances[idx : idx + NUMBER_OF_DOTS_PER_SMILE] = (
+                tenor
+                * np.concatenate(
+                    (
+                        chain_space_from_delta_space.sigmas[:2],
+                        chain_space_from_delta_space.sigmas[-2:],
+                    )
                 )
+                ** 2
             )
             # TODO: here the arbitrage can be tracked and fixed
 
@@ -207,13 +214,13 @@ class SSVICalc:
         )
         # make the array of thetas of the same size
         thetas = np.repeat(thetas, NUMBER_OF_DOTS_PER_SMILE)
-        print(
-            self._jacobian_total_implied_var_ssvi(
-                SSVIParams(Eta(1.0), Lambda(1.0), Alpha(1.0), Beta(1.0), Gamma_(1.0)),
-                strikes_to_maturities_grid,
-                thetas,
-            )
-        )
+        # print(
+        #     self._jacobian_total_implied_var_ssvi(
+        #         SSVIParams(Eta(4.0), Lambda(1.5), Alpha(1.1), Beta(2.0), Gamma_(0.3)),
+        #         strikes_to_maturities_grid,
+        #         thetas,
+        #     )
+        # )
 
         def clip_params(params: np.array) -> np.array:
             eps = 1e-5
@@ -231,63 +238,64 @@ class SSVICalc:
             ssvi_params = np.array([eta, lambda_, alpha, beta, gamma_])
             return ssvi_params
 
-        # def get_residuals(params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        def get_residuals(params: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+            ssvi_params = SSVIParams(
+                Eta(params[0]),
+                Lambda(params[1]),
+                Alpha(params[2]),
+                Beta(params[3]),
+                Gamma_(params[4]),
+            )
 
-        #     J = np.stack(
-        #         self._jacobian_total_implied_var_ssvi(
-        #             forward,
-        #             strikes,
-        #             params,
-        #         )
-        #     )
-        # svi_w = self._total_implied_var_ssvi(
-        #     forward,
-        #     strikes,
-        #     params,
-        # )
-        # res = svi_w - tot_vars
-        # return res * weights, J @ np.diag(weights)
+            ivs = self._grid_implied_variances(
+                ssvi_params, strikes_to_maturities_grid, thetas
+            )
+            residuals = (ivs - implied_variances) * weights
+            jacobian = self._jacobian_total_implied_var_ssvi(
+                ssvi_params, strikes_to_maturities_grid, thetas
+            ) @ np.diag(weights)
+            return residuals, jacobian
 
-        # def levenberg_marquardt(f, proj, x0):
-        #     x = x0.copy()
+        def levenberg_marquardt(f, proj, x0):
+            x = x0.copy()
 
-        #     mu = 1e-2
-        #     nu1 = 2.0
-        #     nu2 = 2.0
+            mu = 1e-2
+            nu1 = 2.0
+            nu2 = 2.0
 
-        #     res, J = f(x)
-        #     F = res.T @ res
+            res, J = f(x)
+            F = res.T @ res
 
-        #     result_x = x
-        #     result_error = F / n_points
+            result_x = x
+            result_error = F / n_points
 
-        # for i in range(self.num_iter):
-        #     if result_error < self.tol:
-        #         break
-        #     multipl = J @ J.T
-        #     I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
-        #     dx = np.linalg.solve(mu * I + multipl, J @ res)
-        #     x_ = proj(x - dx)
-        #     res_, J_ = f(x_)
-        #     F_ = res_.T @ res_
-        #     if F_ < F:
-        #         x, F, res, J = x_, F_, res_, J_
-        #         mu /= nu1
-        #         result_error = F / n_points
-        #     else:
-        #         i -= 1
-        #         mu *= nu2
-        #         continue
-        #     result_x = x
+            for i in range(self.num_iter):
+                if result_error < self.tol:
+                    break
+                multipl = J @ J.T
+                I = np.diag(np.diag(multipl)) + 1e-5 * np.eye(len(x))
+                dx = np.linalg.solve(mu * I + multipl, J @ res)
+                x_ = proj(x - dx)
+                res_, J_ = f(x_)
+                F_ = res_.T @ res_
+                if F_ < F:
+                    x, F, res, J = x_, F_, res_, J_
+                    mu /= nu1
+                    result_error = F / n_points
+                else:
+                    i -= 1
+                    mu *= nu2
+                    continue
+                result_x = x
 
-        # return result_x, result_error
+            return result_x, result_error
 
-        # calc_params, calibration_error = levenberg_marquardt(
-        #     get_residuals, clip_params, self.cached_params
-        # )
+        calc_params, calibration_error = levenberg_marquardt(
+            get_residuals, clip_params, self.cached_params
+        )
 
-        # print(calc_params)
-        # print(calibration_error)
+        print(calc_params)
+        print(calibration_error)
 
     def _jacobian_total_implied_var_ssvi(
         self,
@@ -299,6 +307,7 @@ class SSVICalc:
         Ks = grid.Ks
         Ts = grid.Ts
         n = len(Ks)
+        F = grid.S
         deta, dlambda_, dalpha, dbeta, dgamma_ = (
             np.float64(0.0),
             np.float64(0.0),
@@ -388,29 +397,33 @@ class SSVICalc:
 
         return jacs
 
-    def _total_implied_var_ssvi(
-        self, F: nb.float64, K: nb.float64, params: nb.float64[:], theta_t: nb.float64
-    ) -> nb.float64:
+    def _grid_implied_variances(
+        self,
+        ssvi_params: SSVIParams,
+        grid: StrikesMaturitiesGrid,
+        thetas: nb.float64[:],
+    ) -> nb.float64[:]:
+        """Calculates the premium of vanilla option under the SSVI model."""
+        Ks = grid.Ks
+        F = grid.S
+        eta, lambda_, alpha, beta, gamma_ = ssvi_params.array()
 
-        eta, lambda_, alpha, beta, gamma_ = (
-            params[0],
-            params[1],
-            params[2],
-            params[3],
-            params[4],
-        )
-        k = np.log(K / F)
-        rho_t = alpha * np.exp ** (-beta * theta_t) + gamma_
-        zeta_t = eta * theta_t ** (-lambda_)
-        w = (
-            theta_t
-            / 2
-            * (
-                1
-                + rho_t * zeta_t * k
-                + np.sqrt((zeta_t * k + rho_t) ** 2 + 1 - rho_t**2)
+        w = np.zeros_like(Ks)
+        for l in range(len(Ks)):
+            K = Ks[l]
+            theta_t = thetas[l]
+            k = np.log(K / F)
+            zeta_t = eta * theta_t ** (-lambda_)
+            rho_t = alpha * np.exp(-beta * theta_t) + gamma_
+            w[l] = (
+                theta_t
+                / 2
+                * (
+                    1
+                    + rho_t * k * zeta_t
+                    + np.sqrt(1 - rho_t**2 + (rho_t + zeta_t * k) ** 2)
+                )
             )
-        )
 
         return w
 
