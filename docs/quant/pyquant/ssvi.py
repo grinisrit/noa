@@ -136,7 +136,7 @@ class SSVICalc:
         self,
     ) -> None:
         # self.num_iter = 10000
-        self.num_iter = 100
+        self.num_iter = 20
         self.max_mu = 1e4
         self.min_mu = 1e-6
         self.tol = 1e-12
