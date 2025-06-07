@@ -135,7 +135,6 @@ class SSVICalc:
     def __init__(
         self,
     ) -> None:
-        # self.num_iter = 10000
         self.num_iter = 100
         self.max_mu = 1e4
         self.min_mu = 1e-6
@@ -180,10 +179,6 @@ class SSVICalc:
                 False,
                 True,
             )
-            svi_natural_params_array: SVINaturalParams = (
-                self.raw_to_natural_parametrization(svi_raw_params)
-            )
-            thetas[idx] = svi_natural_params_array.theta
 
             chain_space_from_delta_space: VolSmileChainSpace = self.svi.delta_space(
                 vol_smile_chain_space.forward(), svi_raw_params
@@ -210,6 +205,8 @@ class SSVICalc:
                 )
                 ** 2
             )
+            # ATM as theta
+            thetas[idx] = tenor * chain_space_from_delta_space.sigmas[2] ** 2
             # TODO: here the arbitrage can be tracked and fixed
         print("Implied variances to calibrate to:", implied_variances)
         print("Strikes from delta-space we calibrate to:", strikes)
@@ -259,6 +256,7 @@ class SSVICalc:
                 ssvi_params, strikes_to_maturities_grid, thetas
             )
             jacobian = jacobian @ np.diag(weights)
+
             return residuals, jacobian
 
         def levenberg_marquardt(f, proj, x0):
@@ -275,7 +273,6 @@ class SSVICalc:
             result_error = F / n_points
 
             for i in range(self.num_iter):
-                print("RESULT:", result_x, result_error)
                 if result_error < self.tol:
                     break
                 multipl = J @ J.T
@@ -293,6 +290,7 @@ class SSVICalc:
                     mu = min(self.max_mu, mu * nu2)
                     continue
                 result_x = x
+
             return result_x, result_error
 
         calc_params, calibration_error = levenberg_marquardt(
@@ -313,13 +311,7 @@ class SSVICalc:
         Ts = grid.Ts
         n = len(Ks)
         F = grid.S
-        deta, dlambda_, dalpha, dbeta, dgamma_ = (
-            np.float64(0.0),
-            np.float64(0.0),
-            np.float64(0.0),
-            np.float64(0.0),
-            np.float64(0.0),
-        )
+
         eta, lambda_, alpha, beta, gamma_ = ssvi_params.array()
         jacs = np.zeros((5, n), dtype=np.float64)
         for l in range(n):
