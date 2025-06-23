@@ -31,9 +31,9 @@ def noncentral_chisquare(
         they have the same shape.
     """
     # algorithm is summarized in [Andersen2007, section 3.2.4]
-    PSI_CRIT = 1.5  # threshold value for switching between sampling algorithms
-    m = df + nonc
-    s2 = 2*df + 4*nonc
+    PSI_CRIT = 1.5      # threshold value for switching between sampling algorithms
+    m = df + nonc       # mean of noncentral chi-squared distribution
+    s2 = 2*df + 4*nonc  # variance of noncentral chi-squared distribution
     psi = s2 / m.pow(2)
     # quadratic
     psi_inv = 1 / psi
@@ -157,6 +157,7 @@ def generate_heston(
 
     gamma2 = 0.5
     # regularity condition [Andersen 2007, section 4.3.2]
+    # TODO: seems like this only applies to the case when psi <= PSI_CRIT
     if rho > 0:  # always satisfied when rho <= 0
         L = rho*dt*(kappa/eps - 0.5*rho)
         R = 2*kappa/(eps*eps*(1 - torch.exp(-kappa*dt))) - rho/eps
