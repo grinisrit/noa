@@ -275,7 +275,7 @@ def forward_from_forward_rate(
 
 @nb.experimental.jitclass()
 class ForwardYieldCurve:
-    _spline: CubicSpline1D
+    _spline: PchipSpline1D
 
     def __init__(self, forward_yields: ForwardYields, times_to_maturity: TimesToMaturity):
         if not forward_yields.data.shape == times_to_maturity.data.shape:
@@ -283,7 +283,7 @@ class ForwardYieldCurve:
         if not is_sorted(times_to_maturity.data) and np.all(times_to_maturity.data > 0):
             raise ValueError('Times to maturity are invalid')
     
-        self._spline = CubicSpline1D(
+        self._spline = PchipSpline1D(
            XAxis(np.append(np.array([0.]), times_to_maturity.data)),
            YAxis(np.append(np.array([0.]), times_to_maturity.data*forward_yields.data)) 
         )
@@ -303,7 +303,7 @@ class ForwardYieldCurve:
 
 @nb.experimental.jitclass()
 class DiscountCurve:
-    _spline: CubicSpline1D
+    _spline: PchipSpline1D
 
     def __init__(self, discount_yields: DiscountYields, times_to_maturity: TimesToMaturity):
         if not discount_yields.data.shape == times_to_maturity.data.shape:
@@ -311,7 +311,7 @@ class DiscountCurve:
         if not is_sorted(times_to_maturity.data) and np.all(times_to_maturity.data > 0):
             raise ValueError('Times to maturity are invalid')
     
-        self._spline = CubicSpline1D(
+        self._spline = PchipSpline1D(
            XAxis(np.append(np.array([0.]), times_to_maturity.data)),
            YAxis(np.append(np.array([0.]), times_to_maturity.data*discount_yields.data)) 
         )

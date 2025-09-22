@@ -286,11 +286,11 @@ class Butterflies:
 ])
 class VolSurfaceDeltaSpace:
     FWD: ForwardCurve
-    ATM: CubicSpline1D
-    RR25: CubicSpline1D
-    BF25: CubicSpline1D
-    RR10: CubicSpline1D
-    BF10: CubicSpline1D
+    ATM: PchipSpline1D
+    RR25: PchipSpline1D
+    BF25: PchipSpline1D
+    RR10: PchipSpline1D
+    BF10: PchipSpline1D
 
     def __init__(
         self, 
@@ -305,27 +305,27 @@ class VolSurfaceDeltaSpace:
 
         self.FWD = forward_curve
 
-        self.ATM = CubicSpline1D(
+        self.ATM = PchipSpline1D(
             XAxis(straddles.T),
             YAxis(straddles.T*straddles.sigma*straddles.sigma)
         )
 
-        self.RR25 = CubicSpline1D(
+        self.RR25 = PchipSpline1D(
             XAxis(risk_reversals_25.T),
             YAxis(straddles.T*risk_reversals_25.sigma)
         )
 
-        self.BF25 = CubicSpline1D(
+        self.BF25 = PchipSpline1D(
             XAxis(butterflies_25.T),
             YAxis(straddles.T*butterflies_25.sigma)
         )
 
-        self.RR10 = CubicSpline1D(
+        self.RR10 = PchipSpline1D(
             XAxis(risk_reversals_10.T),
             YAxis(straddles.T*risk_reversals_10.sigma)
         )
 
-        self.BF10 = CubicSpline1D(
+        self.BF10 = PchipSpline1D(
             XAxis(butterflies_10.T),
             YAxis(straddles.T*butterflies_10.sigma)
         )
@@ -388,7 +388,7 @@ class VolSurfaceDeltaSpace:
         Ts = times_to_maturity.data
         atm = np.zeros_like(Ts)
         for i in range(len(Ts)):
-            atm[i] = self.ATM.apply(Ts[i]) / Ts[i]
+            atm[i] = np.sqrt(self.ATM.apply(Ts[i]) / Ts[i])
         return ImpliedVols(atm)
     
     def rr25_quotes(self, times_to_maturity: TimesToMaturity) -> VolatilityQuotes:
