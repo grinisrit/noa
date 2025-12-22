@@ -71,7 +71,7 @@ def generate_cir(
     Args:
         n_paths: Number of paths to simulate.
         timeline: Time steps
-        init_state: Initial states of the paths, i.e. v(0). Shape: (n_paths,).
+        init_state: Initial states of the paths, i.e. v(0). Can be any shape.
         kappa: Parameter κ.
         theta: Parameter θ.
         eps: Parameter ε.
@@ -80,25 +80,29 @@ def generate_cir(
             for automatic differentiation.
 
     Returns:
-        Simulated paths of CIR process. Shape: (n_paths, n_steps + 1).
+        Simulated paths of CIR process. Shape: (*init_state.shape, n_paths, n_steps + 1),
+        with time dimension at -2.
     """
     dt_steps = timeline.diff()
     n_steps = dt_steps.shape[0]
-    paths = torch.empty((n_paths, n_steps + 1), dtype=init_state.dtype)
-    paths[:, 0] = init_state
+    
+    # Paths shape: (*init_state.shape, n_paths, n_steps + 1) so time dimension is at -2
+    paths = torch.empty((*init_state.shape, n_paths, n_steps + 1), dtype=init_state.dtype, device=init_state.device)
+    paths[..., 0] = init_state.unsqueeze(-1).expand(*init_state.shape, n_paths)
 
     delta = 4 * kappa * theta / (eps * eps) 
     for i in range(0, n_steps):
         dt = dt_steps[i]
         exp = torch.exp(-kappa*dt)
         c_bar = 1 / (4*kappa) * eps * eps * (1 - exp)
-        v_cur = paths[:, i]
+        v_cur = paths[..., i]
         kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp))
         # [Grzelak2019, definition 8.1.1]
+        # noncentral_chisquare works element-wise, so it handles broadcasting correctly
         v_next = c_bar * noncentral_chisquare(delta, kappa_bar)
         if minimum_value is not None:
             v_next = torch.clamp(v_next, min=minimum_value)
-        paths[:, i+1] = v_next
+        paths[..., i+1] = v_next
     return paths
 
 
