@@ -48,6 +48,54 @@ def build_ifwd_key_curve_from_now_starting(key_ifwd_values, key_fwd_values, teno
     return build_ifwd_curve_from_now_starting(clamp_ifwd_vals, tenors)
 
 
+def evaluate_timeline(timeline: torch.Tensor, timestamps: torch.Tensor, values: torch.Tensor) -> torch.Tensor:
+    """
+    Pchip interpolate values over timestamps and evaluate over timeline.
+    
+    Args:
+        timeline: One-dimensional tensor of time points to evaluate at.
+            Must be monotonically increasing.
+        timestamps: One-dimensional tensor of time points where values are known.
+            Must be monotonically increasing and all values must be within the range
+            of timeline (i.e., timeline[0] <= timestamps[0] and timestamps[-1] <= timeline[-1]).
+        values: One-dimensional tensor of values corresponding to timestamps.
+            Must have the same length as timestamps.
+    
+    Returns:
+        One-dimensional tensor of interpolated values evaluated at timeline points.
+        Has the same length as timeline.
+    """
+    # Validate inputs
+    if timeline.dim() != 1:
+        raise ValueError(f"timeline must be one-dimensional, got shape {timeline.shape}")
+    if timestamps.dim() != 1:
+        raise ValueError(f"timestamps must be one-dimensional, got shape {timestamps.shape}")
+    if values.dim() != 1:
+        raise ValueError(f"values must be one-dimensional, got shape {values.shape}")
+    if timestamps.shape[0] != values.shape[0]:
+        raise ValueError(f"timestamps and values must have the same length, got {timestamps.shape[0]} and {values.shape[0]}")
+    if timestamps.shape[0] < 2:
+        raise ValueError(f"timestamps must have at least 2 points for interpolation, got {timestamps.shape[0]}")
+    
+    # Check that timestamps are within timeline range
+    if timeline.numel() > 0:
+        timeline_min = timeline.min()
+        timeline_max = timeline.max()
+        if timestamps.min() < timeline_min or timestamps.max() > timeline_max:
+            raise ValueError(
+                f"All timestamps must be within timeline range [{timeline_min.item():.6f}, {timeline_max.item():.6f}]. "
+                f"Got timestamps range [{timestamps.min().item():.6f}, {timestamps.max().item():.6f}]"
+            )
+    
+    # Create PCHIP spline from timestamps and values
+    spline = PchipSpline1D(timestamps, values)
+    
+    # Evaluate spline over timeline
+    result = spline.evaluate(timeline)
+    
+    return result
+
+
 def id_from_years(years: torch.Tensor, timeline: torch.Tensor) -> torch.Tensor:
     """
     Convert years to indices in the timeline.
@@ -181,7 +229,7 @@ def create_hull_white_model(
  
     alpha_curve = torch.zeros_like(timeline)
 
-    alpha_curve[0] = r0
+    alpha_curve[0] = r0 - x0
     alpha_curve[1:] = ois_ifwd_curve.derivative(timeline[1:]) - r0_fwd.derivative(timeline[1:])
     
     # Compute full rate paths: r_t = alpha_t + x_t
@@ -324,8 +372,26 @@ def create_hull_white_heston_model(
     assert lam.dim() == 0
     assert v0.dim() == 0
     assert kappa.dim() == 0
-    assert theta.dim() == 0
-    assert eps.dim() == 0
+    
+    # Allow theta and eps to be scalars (dim=0) or vectors matching timeline shape
+    timeline_len = timeline.shape[0]
+    if theta.dim() == 0:
+        # Scalar: use the same value for all steps
+        pass
+    elif theta.dim() == 1 and theta.shape[0] == timeline_len:
+        # Vector matching timeline: use values at each timeline point
+        pass
+    else:
+        raise ValueError(f"theta must be a scalar (dim=0) or have shape ({timeline_len},) matching timeline, got {theta.shape}")
+    
+    if eps.dim() == 0:
+        # Scalar: use the same value for all steps
+        pass
+    elif eps.dim() == 1 and eps.shape[0] == timeline_len:
+        # Vector matching timeline: use values at each timeline point
+        pass
+    else:
+        raise ValueError(f"eps must be a scalar (dim=0) or have shape ({timeline_len},) matching timeline, got {eps.shape}")
 
     # Generate CIR variance paths
     v_paths = generate_cir(n_paths, timeline, v0, kappa, theta, eps, 1e-6)
@@ -343,7 +409,7 @@ def create_hull_white_heston_model(
     
     alpha_curve = torch.zeros_like(timeline)
 
-    alpha_curve[0] = r0
+    alpha_curve[0] = r0 - x0
     alpha_curve[1:] = ois_ifwd_curve.derivative(timeline[1:]) - r0_fwd.derivative(timeline[1:])
     
     # Compute full rate paths: r_t = alpha_t + x_t
@@ -395,9 +461,20 @@ def hull_white_heston_model_asof(
     # Use alpha_curve[id:] for new_alpha_curve
     new_alpha_curve = model.alpha_curve[as_of_id:]
     
+    # Handle theta and eps: if they are vectors, slice them to match new_timeline
+    if model.theta.dim() == 0:
+        new_theta = model.theta
+    else:
+        new_theta = model.theta[as_of_id:]
+    
+    if model.eps.dim() == 0:
+        new_eps = model.eps
+    else:
+        new_eps = model.eps[as_of_id:]
+    
     # Branching:
     # v_paths_new will have shape (old_n_paths, n_paths, n_steps + 1)
-    v_paths_new = generate_cir(n_paths, new_timeline, v0_new, model.kappa, model.theta, model.eps, 1e-6)
+    v_paths_new = generate_cir(n_paths, new_timeline, v0_new, model.kappa, new_theta, new_eps, 1e-6)
     
     # x_paths_new will have shape (old_n_paths, n_paths, n_steps + 1)
     x_paths_new = generate_hull_white_heston(n_paths, new_timeline, x0_new, model.lam, v_paths_new)
@@ -422,8 +499,8 @@ def hull_white_heston_model_asof(
         timeline=new_timeline,
         lam=model.lam,
         kappa=model.kappa,
-        theta=model.theta,
-        eps=model.eps,
+        theta=new_theta,
+        eps=new_eps,
         x0=x0_new,
         v0=v0_new,
         x_paths=x_paths_new,
@@ -455,7 +532,17 @@ model_params = torch.tensor(
 @dataclass
 class KeyRateModel:
     timeline: torch.Tensor
-    params: torch.Tensor # as model_params example above
+    r0: torch.Tensor
+    a0: torch.Tensor
+    v0: torch.Tensor
+    kappa: torch.Tensor
+    theta: torch.Tensor
+    eps: torch.Tensor
+    x0: torch.Tensor
+    lam: torch.Tensor
+    k0: torch.Tensor
+    gamma: torch.Tensor
+    xi: torch.Tensor
     x_paths: torch.Tensor
     v_paths: torch.Tensor
     k_paths: torch.Tensor
@@ -476,7 +563,16 @@ def create_key_rate_model(
     key_ifwd_curve: PchipSpline1D,
     ois_ifwd_curve: PchipSpline1D,
     r0: torch.Tensor,
-    model_params: torch.Tensor
+    a0: torch.Tensor,
+    v0: torch.Tensor,
+    kappa: torch.Tensor,
+    theta: torch.Tensor,
+    eps: torch.Tensor,
+    x0: torch.Tensor,
+    lam: torch.Tensor,
+    k0: torch.Tensor,
+    gamma: torch.Tensor,
+    xi: torch.Tensor
 ) -> KeyRateModel:
     """
     Create a KeyRateModel from model parameters.
@@ -487,32 +583,19 @@ def create_key_rate_model(
         key_ifwd_curve: Key rate instantaneous forward curve
         ois_ifwd_curve: OIS instantaneous forward curve
         r0: Initial OIS rate
-        model_params: Tensor with 9 parameters:
-            [0] v0 - initial variance
-            [1] kappa - CIR mean reversion speed
-            [2] theta - CIR long-term variance
-            [3] eps - CIR volatility of variance
-            [4] x0 - initial OIS rate deviation
-            [5] lam - Hull-White mean reversion speed for x
-            [6] k0 - initial key rate spread deviation
-            [7] gamma - Hull-White mean reversion speed for k
-            [8] xi - Hull-White volatility for k
+        a0: Initial key rate
+        v0: Initial variance
+        kappa: CIR mean reversion speed
+        theta: CIR long-term variance
+        eps: CIR volatility of variance
+        x0: Initial OIS rate deviation
+        lam: Hull-White mean reversion speed for x
+        k0: Initial key rate spread deviation
+        gamma: Hull-White mean reversion speed for k
+        xi: Hull-White volatility for k
     """
     assert timeline.dim() == 1
     assert r0.dim() == 0
-    assert model_params.dim() == 1
-    assert model_params.shape[0] == 9
-    
-    # Extract parameters from model_params tensor
-    v0 = model_params[0]
-    kappa = model_params[1]
-    theta = model_params[2]
-    eps = model_params[3]
-    x0 = model_params[4]
-    lam = model_params[5]
-    k0 = model_params[6]
-    gamma = model_params[7]
-    xi = model_params[8]
 
     # Generate CIR variance paths
     v_paths = generate_cir(n_paths, timeline, v0, kappa, theta, eps, 1e-9)
@@ -538,17 +621,21 @@ def create_key_rate_model(
     # Compute f_curve and s_curve
     # f_curve is the OIS forward adjustment
     f_curve = torch.zeros_like(timeline)
-    f_curve[0] = r0
+    f_curve[0] = r0 - x0
     f_curve[1:] = ois_ifwd_curve.derivative(timeline[1:]) - r_fwd.derivative(timeline[1:])
     
     # s_curve is the key rate spread forward adjustment
     s_curve = torch.zeros_like(timeline)
-    s_curve[0] = 0.0
+    s_curve[0] = a0 - r0 - k0
     s_curve[1:] = key_ifwd_curve.derivative(timeline[1:]) - a_fwd.derivative(timeline[1:]) - f_curve[1:]
+    # Clamp s_curve values to +/- 0.01
+    s_curve = torch.clamp(s_curve, min=-0.01, max=0.01)
 
     # Compute full rate paths: r_t = f_curve_t + x_t, s_t = s_curve_t + k_t
     r_paths = f_curve.unsqueeze(0) + x_paths
     s_paths = s_curve.unsqueeze(0) + k_paths
+    # Clamp s_paths values to +/- 0.01
+    s_paths = torch.clamp(s_paths, min=-0.01, max=0.01)
 
     # Compute cumulative sum for discounting
     sum_r_dt = (dt * r_paths[:, :-1]).cumsum(-1)
@@ -562,7 +649,17 @@ def create_key_rate_model(
     
     return KeyRateModel(
         timeline=timeline,
-        params=model_params,
+        r0=r0,
+        a0=a0,
+        v0=v0,
+        kappa=kappa,
+        theta=theta,
+        eps=eps,
+        x0=x0,
+        lam=lam,
+        k0=k0,
+        gamma=gamma,
+        xi=xi,
         x_paths=x_paths,
         v_paths=v_paths,
         k_paths=k_paths,
@@ -582,7 +679,14 @@ def key_rate_model_asof(
     n_paths: int,
     model: KeyRateModel
 ) -> KeyRateModel:
+    """
+    Create a new KeyRateModel as of a specific time point.
     
+    Args:
+        as_of: Time point to create the model as of
+        n_paths: Number of simulation paths for the new model
+        model: Original KeyRateModel to create the new model from
+    """
     assert as_of.dim() == 0
     # Map as_of to timeline index using id_from_years
     as_of_id = id_from_years(as_of, model.timeline)
@@ -603,23 +707,26 @@ def key_rate_model_asof(
     new_f_curve = model.f_curve[as_of_id:]
     new_s_curve = model.s_curve[as_of_id:]
     
-    # Extract model parameters
-    kappa = model.params[1]
-    theta = model.params[2]
-    eps = model.params[3]
-    lam = model.params[5]
-    gamma = model.params[7]
-    xi = model.params[8]
+    # Handle theta and eps: if they are vectors, slice them to match new_timeline
+    if model.theta.dim() == 0:
+        new_theta = model.theta
+    else:
+        new_theta = model.theta[as_of_id:]
+    
+    if model.eps.dim() == 0:
+        new_eps = model.eps
+    else:
+        new_eps = model.eps[as_of_id:]
     
     # Branching:
     # v_paths_new will have shape (old_n_paths, n_paths, n_steps + 1)
-    v_paths_new = generate_cir(n_paths, new_timeline, v0_new, kappa, theta, eps, 1e-9)
+    v_paths_new = generate_cir(n_paths, new_timeline, v0_new, model.kappa, new_theta, new_eps, 1e-9)
     
     # x_paths_new will have shape (old_n_paths, n_paths, n_steps + 1)
-    x_paths_new = generate_hull_white_heston(n_paths, new_timeline, x0_new, lam, v_paths_new)
+    x_paths_new = generate_hull_white_heston(n_paths, new_timeline, x0_new, model.lam, v_paths_new)
     
     # k_paths_new will have shape (old_n_paths, n_paths, n_steps + 1)
-    k_paths_new = generate_hull_white(n_paths, new_timeline, k0_new, gamma, xi)
+    k_paths_new = generate_hull_white(n_paths, new_timeline, k0_new, model.gamma, model.xi)
     
     # Compute full rate paths: r_t = f_curve_t + x_t, s_t = s_curve_t + k_t
     # new_f_curve: (n_steps + 1,)
@@ -631,6 +738,8 @@ def key_rate_model_asof(
     s_curve_expanded = new_s_curve.view(1, 1, -1)
     r_paths_new = f_curve_expanded + x_paths_new  # shape: (old_n_paths, n_paths, n_steps + 1)
     s_paths_new = s_curve_expanded + k_paths_new  # shape: (old_n_paths, n_paths, n_steps + 1)
+    # Clamp s_paths_new values to +/- 0.01
+    s_paths_new = torch.clamp(s_paths_new, min=-0.01, max=0.01)
     
     # Compute cumulative sum for discounting
     # dt_new: (n_steps,) -> (1, 1, n_steps)
@@ -647,7 +756,17 @@ def key_rate_model_asof(
     
     return KeyRateModel(
         timeline=new_timeline,
-        params=model.params,
+        r0=model.r0,
+        a0=model.a0,
+        v0=model.v0,
+        kappa=model.kappa,
+        theta=new_theta,
+        eps=new_eps,
+        x0=model.x0,
+        lam=model.lam,
+        k0=model.k0,
+        gamma=model.gamma,
+        xi=model.xi,
         x_paths=x_paths_new,
         v_paths=v_paths_new,
         k_paths=k_paths_new,
@@ -694,7 +813,8 @@ def price_key_caplet_surface(model: KeyRateModel, vol_key_rate, fwd_key_rate):
     for i in range(model_key_fwd.numel()):
         T = key_fwd_ids[i]
         if T <= 0:
-            T = 1
+            model_key_fwd[i] = model.a0
+            continue
         tau = model.timeline[T]
         inv_B_T = torch.exp(-model.sum_r_dt[:, T]) 
         A_T = (model.sum_r_dt[:, T] + model.sum_s_dt[:, T]) / tau
@@ -733,23 +853,29 @@ def calibrate_caplet_key_surface(data_dir: str, n_paths: int):
 
     vol_key_rate['pv'] = caplet_premium_from_now_starting(vol_key_rate, key_rate_fwd_curve, ois_yield_curve).numpy()
 
-    model_params = torch.tensor(
-        [
-            0.3, #v0 - 0
-            0.01, #kappa - 1
-            0.3, #theta - 2
-            0.1, #epsilon - 3
-            0., #x0 - 4
-            2., #lam - 5
-            0., #k0 - 6
-            1., #gamma - 7
-            0.01, #xi - 8  
-        ],
-        requires_grad=True
-    )
+    # Define individual parameters
+    v0 = torch.tensor(0.3, requires_grad=True)
+    kappa = torch.tensor(0.01, requires_grad=True)
+    x0 = torch.tensor(0., requires_grad=True)
+    lam = torch.tensor(2., requires_grad=True)
+    k0 = torch.tensor(0., requires_grad=True)
+    gamma = torch.tensor(1., requires_grad=True)
+    xi = torch.tensor(0.01, requires_grad=True)
+    
+    # Create time-varying theta and eps using evaluate_timeline
+    # theta = 0.3 * ones_like(time_to_maturities), eps = 0.1 * ones_like(time_to_maturities)
+    time_to_maturities = torch.tensor(vol_key_rate.time_to_maturity.unique()).sort().values
+    theta_values = (0.3 * torch.ones_like(time_to_maturities)).requires_grad_(True)
+    eps_values = (0.1 * torch.ones_like(time_to_maturities)).requires_grad_(True)
+    
+    # Evaluate over timeline using PCHIP interpolation (inside optimization loop)
+    theta = evaluate_timeline(timeline, time_to_maturities, theta_values)
+    eps = evaluate_timeline(timeline, time_to_maturities, eps_values)
+    
+    a0 = r0 + k0  # Initial key rate
 
     # Initial model creation
-    model = create_key_rate_model(timeline, n_paths, key_ifwd_curve, ois_ifwd_curve, r0, model_params)
+    model = create_key_rate_model(timeline, n_paths, key_ifwd_curve, ois_ifwd_curve, r0, a0, v0, kappa, theta, eps, x0, lam, k0, gamma, xi)
     loss_vol, loss_fwd = price_key_caplet_surface(model, vol_key_rate, fwd_key_rate)
 
     prev_loss = -1
@@ -761,17 +887,33 @@ def calibrate_caplet_key_surface(data_dir: str, n_paths: int):
         if prev_loss > 0 and not (loss <= prev_loss):
             break
             
-        grad_error = torch.autograd.grad(loss, [model_params, key_ifwd_values])
+        # Compute gradients for individual parameters including theta_values and eps_values
+        grad_error = torch.autograd.grad(loss, [v0, kappa, x0, lam, k0, gamma, xi, theta_values, eps_values, key_ifwd_values])
         prev_loss = loss.detach()
 
-        key_ifwd_values = key_ifwd_values.detach() + learning_rate * grad_error[1]
+        key_ifwd_values = key_ifwd_values.detach() + learning_rate * grad_error[9]
         key_ifwd_values.requires_grad_()
         key_ifwd_curve = build_ifwd_key_curve_from_now_starting(
             key_ifwd_values, torch.tensor(fwd_key_rate.forward_rate.values), torch.tensor(fwd_key_rate.tenor.values))
 
-        model_params = model_params.detach() + learning_rate * grad_error[0]
-        model_params.requires_grad_()
-        model = create_key_rate_model(timeline, n_paths, key_ifwd_curve, ois_ifwd_curve, r0, model_params)
+        # Update individual parameters
+        v0 = (v0.detach() + learning_rate * grad_error[0]).requires_grad_()
+        kappa = (kappa.detach() + learning_rate * grad_error[1]).requires_grad_()
+        x0 = (x0.detach() + learning_rate * grad_error[2]).requires_grad_()
+        lam = (lam.detach() + learning_rate * grad_error[3]).requires_grad_()
+        k0 = (k0.detach() + learning_rate * grad_error[4]).requires_grad_()
+        gamma = (gamma.detach() + learning_rate * grad_error[5]).requires_grad_()
+        xi = (xi.detach() + learning_rate * grad_error[6]).requires_grad_()
+        theta_values = (theta_values.detach() + learning_rate * grad_error[7]).requires_grad_()
+        eps_values = (eps_values.detach() + learning_rate * grad_error[8]).requires_grad_()
+        
+        # Re-evaluate theta and eps over timeline using updated values
+        theta = evaluate_timeline(timeline, time_to_maturities, theta_values)
+        eps = evaluate_timeline(timeline, time_to_maturities, eps_values)
+        
+        a0 = r0 + k0
+        
+        model = create_key_rate_model(timeline, n_paths, key_ifwd_curve, ois_ifwd_curve, r0, a0, v0, kappa, theta, eps, x0, lam, k0, gamma, xi)
 
         loss_vol, loss_fwd = price_key_caplet_surface(model, vol_key_rate, fwd_key_rate)
 

@@ -73,8 +73,10 @@ def generate_cir(
         timeline: Time steps
         init_state: Initial states of the paths, i.e. v(0). Can be any shape.
         kappa: Parameter κ.
-        theta: Parameter θ.
-        eps: Parameter ε.
+        theta: Parameter θ. Can be a scalar tensor (dim=0) or a tensor with shape
+            matching timeline (n_steps + 1,) containing values for each timeline point.
+        eps: Parameter ε. Can be a scalar tensor (dim=0) or a tensor with shape
+            matching timeline (n_steps + 1,) containing values for each timeline point.
         minimum_value: On each step, the value of a process is clamped to the
             range [minimum_value, +∞). This may be needed in certain cases, e.g.
             for automatic differentiation.
@@ -85,18 +87,42 @@ def generate_cir(
     """
     dt_steps = timeline.diff()
     n_steps = dt_steps.shape[0]
+    timeline_len = timeline.shape[0]
+    
+    # Handle time-varying theta and eps
+    # They must be scalars (dim=0) or vectors matching timeline shape
+    if theta.dim() == 0:
+        # Scalar: use the same value for all steps
+        theta_is_scalar = True
+    elif theta.dim() == 1 and theta.shape[0] == timeline_len:
+        # Vector matching timeline: use values at each timeline point
+        theta_is_scalar = False
+    else:
+        raise ValueError(f"theta must be a scalar (dim=0) or have shape ({timeline_len},) matching timeline, got {theta.shape}")
+    
+    if eps.dim() == 0:
+        # Scalar: use the same value for all steps
+        eps_is_scalar = True
+    elif eps.dim() == 1 and eps.shape[0] == timeline_len:
+        # Vector matching timeline: use values at each timeline point
+        eps_is_scalar = False
+    else:
+        raise ValueError(f"eps must be a scalar (dim=0) or have shape ({timeline_len},) matching timeline, got {eps.shape}")
     
     # Paths shape: (*init_state.shape, n_paths, n_steps + 1) so time dimension is at -2
     paths = torch.empty((*init_state.shape, n_paths, n_steps + 1), dtype=init_state.dtype, device=init_state.device)
     paths[..., 0] = init_state.unsqueeze(-1).expand(*init_state.shape, n_paths)
 
-    delta = 4 * kappa * theta / (eps * eps) 
     for i in range(0, n_steps):
         dt = dt_steps[i]
+        # For step from i to i+1, use parameter values at timeline point i+1
+        theta_i = theta if theta_is_scalar else theta[i+1]
+        eps_i = eps if eps_is_scalar else eps[i+1]
+        delta = 4 * kappa * theta_i / (eps_i * eps_i)
         exp = torch.exp(-kappa*dt)
-        c_bar = 1 / (4*kappa) * eps * eps * (1 - exp)
+        c_bar = 1 / (4*kappa) * eps_i * eps_i * (1 - exp)
         v_cur = paths[..., i]
-        kappa_bar = v_cur * 4*kappa*exp / (eps * eps * (1 - exp))
+        kappa_bar = v_cur * 4*kappa*exp / (eps_i * eps_i * (1 - exp))
         # [Grzelak2019, definition 8.1.1]
         # noncentral_chisquare works element-wise, so it handles broadcasting correctly
         v_next = c_bar * noncentral_chisquare(delta, kappa_bar)
