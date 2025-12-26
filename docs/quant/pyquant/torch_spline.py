@@ -299,22 +299,148 @@ def natural_cubic_spline_coeffs(t, x):
     return t, a, b, c, d
 
 
+def _pchip_find_derivatives(x, y):
+    """
+    Compute derivatives for PCHIP interpolation.
+    
+    Uses the Fritsch-Carlson method to compute shape-preserving derivatives.
+    This ensures monotonicity is preserved and no spurious oscillations occur.
+    
+    Arguments:
+        x: One dimensional tensor of times. Must be monotonically increasing.
+        y: Tensor of values. Can be of any shape, but the last dimension must match x.size(0).
+    
+    Returns:
+        derivatives: Tensor of same shape as y containing derivatives at each knot.
+    """
+    n = x.size(0)
+    
+    # Compute slopes between consecutive points
+    h = x[1:] - x[:-1]  # shape: (n-1,)
+    # y[..., 1:] and y[..., :-1] work along the last dimension
+    # Reshape h to broadcast correctly: (n-1,) -> (1,)*len(y.shape[:-1]) + (n-1,)
+    h_expanded = h.view((1,) * (y.dim() - 1) + (-1,))
+    delta = (y[..., 1:] - y[..., :-1]) / h_expanded  # shape: (*y.shape[:-1], n-1)
+    
+    # Initialize derivatives
+    derivatives = torch.zeros_like(y)
+    
+    # Special case: only 2 points
+    if n == 2:
+        derivatives[..., 0] = delta[..., 0]
+        derivatives[..., 1] = delta[..., 0]
+        return derivatives
+    
+    # Endpoint derivatives (use one-sided differences with shape-preservation)
+    derivatives[..., 0] = delta[..., 0]
+    derivatives[..., -1] = delta[..., -1]
+    
+    # Interior point derivatives using Fritsch-Carlson method
+    for i in range(1, n - 1):
+        # Get the two adjacent slopes
+        delta_left = delta[..., i - 1]
+        delta_right = delta[..., i]
+        
+        # If signs differ or either is zero, set derivative to zero (preserve monotonicity)
+        # Use torch.where for element-wise condition
+        condition = delta_left * delta_right <= 0
+        w1 = 2 * h[i] + h[i - 1]
+        w2 = h[i] + 2 * h[i - 1]
+        harmonic_mean = (w1 + w2) / (w1 / delta_left + w2 / delta_right)
+        derivatives[..., i] = torch.where(condition, torch.zeros_like(delta_left), harmonic_mean)
+    
+    return derivatives
+
+
+def pchip_coeffs(x, y):
+    """
+    Calculate PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) coefficients.
+    
+    Arguments:
+        x: One dimensional tensor of times. Must be monotonically increasing.
+        y: Tensor of values. Can be of any shape, but the last dimension must match x.size(0).
+    
+    Returns:
+        Tuple of (x, a, b, c, d) where the coefficients define the piecewise cubic polynomial:
+        p(t) = a + b*(t-x[i]) + c*(t-x[i])^2 + d*(t-x[i])^3
+        for t in [x[i], x[i+1]]
+    """
+    if not x.is_floating_point():
+        raise ValueError("x must be floating point.")
+    if not y.is_floating_point():
+        raise ValueError("y must be floating point.")
+    if x.dim() != 1:
+        raise ValueError(f"x must be one dimensional. It instead has shape {tuple(x.shape)}.")
+    if y.shape[-1] != x.size(0):
+        raise ValueError(f"The last dimension of y must match x.size(0). Got y.shape[-1]={y.shape[-1]} and x.size(0)={x.size(0)}.")
+    if x.size(0) < 2:
+        raise ValueError(f"Must have at least 2 points. Got {x.size(0)}.")
+    
+    # Find derivatives at each knot
+    derivatives = _pchip_find_derivatives(x, y)
+    
+    # Compute coefficients for each interval
+    n = x.size(0)
+    h = x[1:] - x[:-1]  # shape: (n-1,)
+    # Reshape h to broadcast correctly with y
+    h_expanded = h.view((1,) * (y.dim() - 1) + (-1,))
+    
+    # For interval [x[i], x[i+1]], we use Hermite cubic with:
+    # p(x[i]) = y[i], p'(x[i]) = derivatives[i]
+    # p(x[i+1]) = y[i+1], p'(x[i+1]) = derivatives[i+1]
+    
+    # Coefficients: p(t) = a + b*dt + c*dt^2 + d*dt^3, where dt = t - x[i]
+    a = y[..., :-1]  # shape: (*y.shape[:-1], n-1)
+    b = derivatives[..., :-1]  # shape: (*y.shape[:-1], n-1)
+    
+    # Compute c and d coefficients
+    delta = (y[..., 1:] - y[..., :-1]) / h_expanded
+    c = (3 * delta - 2 * derivatives[..., :-1] - derivatives[..., 1:]) / h_expanded
+    d = (derivatives[..., :-1] + derivatives[..., 1:] - 2 * delta) / (h_expanded ** 2)
+    
+    # Reshape to match expected format (..., length-1, channels)
+    a = a.unsqueeze(-1)
+    b = b.unsqueeze(-1)
+    c = c.unsqueeze(-1)
+    d = d.unsqueeze(-1)
+    
+    return x, a, b, c, d
+
+
 class CubicSpline1D:
     """Calculates the natural cubic spline approximation to the batch of controls given. Also calculates its derivative.
     """
 
     def __init__(self, x, y):
         assert(x.dim() == 1)
-        assert(y.dim() == 1)
+        if y.shape[-1] != x.size(0):
+            raise ValueError(f"The last dimension of y must match x.size(0). Got y.shape[-1]={y.shape[-1]} and x.size(0)={x.size(0)}.")
         
+        # Store original x and y
+        self._x = x
+        self._y = y
+        
+        # natural_cubic_spline_coeffs expects shape (..., length, input_channels)
+        # If y has shape (*batch_dims, length), we add a channel dimension: (*batch_dims, length, 1)
+        y_with_channels = y.unsqueeze(-1)
 
-        t, a, b, c, d = natural_cubic_spline_coeffs(x, torch.unsqueeze(y, 1))
+        t, a, b, c, d = natural_cubic_spline_coeffs(x, y_with_channels)
 
         self._t = t
         self._a = a
         self._b = b
         self._c = c
         self._d = d
+    
+    @property
+    def x(self):
+        """Get the knot points (x values)."""
+        return self._x
+    
+    @property
+    def y(self):
+        """Get the values at knot points (y values)."""
+        return self._y
 
     def _interpret_t(self, t):
         maxlen = self._b.size(-2) - 1
@@ -342,3 +468,116 @@ class CubicSpline1D:
         else:
             raise ValueError('Derivative is not implemented for orders greater than 2.')
         return deriv
+
+
+class PchipSpline1D:
+    """
+    Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) in 1D.
+    
+    PCHIP is a shape-preserving cubic spline that:
+    - Preserves monotonicity of the data
+    - Avoids overshooting and spurious oscillations
+    - Has continuous first derivatives (C1 continuity)
+    - Is fully differentiable and compatible with PyTorch autodiff
+    
+    Unlike natural cubic splines which have C2 continuity but can overshoot,
+    PCHIP prioritizes shape preservation at the cost of C2 continuity.
+    """
+
+    def __init__(self, x, y):
+        """
+        Initialize PCHIP spline.
+        
+        Arguments:
+            x: One dimensional tensor of knot points. Must be monotonically increasing.
+            y: Tensor of values at the knot points. Can be of any shape, but the last dimension must match x.size(0).
+        """
+        assert x.dim() == 1, "x must be 1-dimensional"
+        if y.shape[-1] != x.size(0):
+            raise ValueError(f"The last dimension of y must match x.size(0). Got y.shape[-1]={y.shape[-1]} and x.size(0)={x.size(0)}.")
+
+        # Store original x and y
+        self._x = x
+        self._y = y
+
+        t, a, b, c, d = pchip_coeffs(x, y)
+
+        self._t = t
+        self._a = a
+        self._b = b
+        self._c = c
+        self._d = d
+    
+    @property
+    def x(self):
+        """Get the knot points (x values)."""
+        return self._x
+    
+    @property
+    def y(self):
+        """Get the values at knot points (y values)."""
+        return self._y
+
+    def _interpret_t(self, t):
+        """
+        Find which interval t belongs to and compute the offset within that interval.
+        
+        Arguments:
+            t: Tensor of query points (can be any shape)
+        
+        Returns:
+            fractional_part: Offset from the left endpoint of the interval
+            index: Index of the interval
+        """
+        maxlen = self._b.size(-2) - 1
+        index = torch.bucketize(t.detach(), self._t) - 1
+        index = index.clamp(0, maxlen)  # clamp because t may go outside of [t[0], t[-1]]; this is fine
+        # will never access the last element of self._t; this is correct behaviour
+        fractional_part = t - self._t[index]
+        return fractional_part, index
+
+    def evaluate(self, t):
+        """
+        Evaluate the PCHIP spline at given points.
+        
+        Arguments:
+            t: Tensor of query points (can be any shape)
+        
+        Returns:
+            Interpolated values at the query points
+        """
+        fractional_part, index = self._interpret_t(t)
+        fractional_part = fractional_part.unsqueeze(-1)
+        
+        # Horner's method: p(dt) = a + dt*(b + dt*(c + dt*d))
+        inner = self._c[..., index, :] + self._d[..., index, :] * fractional_part
+        inner = self._b[..., index, :] + inner * fractional_part
+        result = self._a[..., index, :] + inner * fractional_part
+        
+        return result.squeeze(-1)
+
+    def derivative(self, t, order=1):
+        """
+        Evaluate the derivative of the PCHIP spline at given points.
+        
+        Arguments:
+            t: Tensor of query points (can be any shape)
+            order: Order of derivative (1 or 2)
+        
+        Returns:
+            Derivative values at the query points
+        """
+        fractional_part, index = self._interpret_t(t)
+        fractional_part = fractional_part.unsqueeze(-1)
+        
+        if order == 1:
+            # p'(dt) = b + dt*(2*c + dt*3*d)
+            inner = 2 * self._c[..., index, :] + 3 * self._d[..., index, :] * fractional_part
+            deriv = self._b[..., index, :] + inner * fractional_part
+        elif order == 2:
+            # p''(dt) = 2*c + dt*6*d
+            deriv = 2 * self._c[..., index, :] + 6 * self._d[..., index, :] * fractional_part
+        else:
+            raise ValueError('Derivative is not implemented for orders greater than 2.')
+        
+        return deriv.squeeze(-1)

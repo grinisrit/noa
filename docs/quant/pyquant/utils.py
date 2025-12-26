@@ -153,3 +153,97 @@ class CubicSpline1D:
     def apply(self, x: nb.float64) -> nb.float64:
         ix = searchsorted(self._x0[1 : -1], x)
         return self._func_spline(x, ix)
+
+
+@nb.experimental.jitclass([
+    ("_x0", nb.float64[:]),
+    ("_a", nb.float64[:]),
+    ("_b", nb.float64[:]),
+    ("_c", nb.float64[:]),
+    ("_d", nb.float64[:]),
+])
+class PchipSpline1D:
+    def __init__(self, x: XAxis, y: YAxis):
+        self._x0 = x.data
+        self._calc_pchip_params(x.data, y.data)
+
+    def _calc_pchip_params(self, x: nb.float64[:], y: nb.float64[:]):
+        n = x.size - 1
+        
+        # Calculate differences
+        h = x[1:] - x[:-1]
+        delta = (y[1:] - y[:-1]) / h
+        
+        # Calculate slopes using PCHIP algorithm
+        slopes = self._pchip_slopes(x, y, delta)
+        
+        # Calculate cubic coefficients
+        a = y[:-1].copy()
+        b = slopes[:-1].copy()
+        c = (3 * delta - 2 * slopes[:-1] - slopes[1:]) / h
+        d = (slopes[:-1] + slopes[1:] - 2 * delta) / (h * h)
+        
+        self._a = a
+        self._b = b
+        self._c = c
+        self._d = d
+
+    def _pchip_slopes(self, x: nb.float64[:], y: nb.float64[:], delta: nb.float64[:]) -> nb.float64[:]:
+        """Calculate PCHIP slopes ensuring monotonicity."""
+        n = x.size
+        slopes = np.zeros(n)
+        
+        # For interior points, use PCHIP slope selection
+        for i in range(1, n - 1):
+            h1 = x[i] - x[i-1]
+            h2 = x[i+1] - x[i]
+            d1 = delta[i-1]
+            d2 = delta[i]
+            
+            # PCHIP slope selection
+            if d1 * d2 <= 0:
+                slopes[i] = 0.0
+            else:
+                w1 = 2 * h2 + h1
+                w2 = 2 * h1 + h2
+                slopes[i] = (w1 + w2) / (w1 / d1 + w2 / d2)
+        
+        # Handle endpoints
+        if n > 1:
+            # Left endpoint
+            if n == 2:
+                slopes[0] = delta[0]
+            else:
+                h1 = x[1] - x[0]
+                h2 = x[2] - x[1]
+                d1 = delta[0]
+                d2 = delta[1]
+                
+                if d1 * d2 <= 0:
+                    slopes[0] = 0.0
+                else:
+                    slopes[0] = (3 * h1 + 2 * h2) / (h1 / d1 + 2 * h2 / d2)
+            
+            # Right endpoint
+            if n == 2:
+                slopes[n-1] = delta[n-2]
+            else:
+                h1 = x[n-1] - x[n-2]
+                h2 = x[n-2] - x[n-3]
+                d1 = delta[n-2]
+                d2 = delta[n-3]
+                
+                if d1 * d2 <= 0:
+                    slopes[n-1] = 0.0
+                else:
+                    slopes[n-1] = (3 * h1 + 2 * h2) / (h1 / d1 + 2 * h2 / d2)
+        
+        return slopes
+
+    def _func_pchip(self, x: nb.float64, ix: nb.int64) -> nb.float64:
+        dx = x - self._x0[ix]
+        return self._a[ix] + (self._b[ix] + (self._c[ix] + self._d[ix] * dx) * dx) * dx
+    
+    def apply(self, x: nb.float64) -> nb.float64:
+        ix = searchsorted(self._x0[1 : -1], x)
+        return self._func_pchip(x, ix)
