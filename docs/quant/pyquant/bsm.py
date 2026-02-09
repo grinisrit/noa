@@ -37,8 +37,7 @@ def _get_A_diags(size, lambda_):
     """Computes diagonals of the A matrix (for implicit step)."""
     alpha = (1 + lambda_) * np.ones(size+1)
     beta = -0.5 * lambda_ * np.ones(size)
-    gamma = -0.5 * lambda_ * np.ones(size)
-    return alpha, beta, gamma
+    return alpha, beta
 
 
 @nb.njit()
@@ -119,7 +118,7 @@ def price_american_put_bsm(
     x = np.linspace(x_min, x_max, npoints_S)
     tau_array = np.linspace(0, tau_max, npoints_t)
     w_matrix = np.zeros((npoints_S, npoints_t))
-    alpha, beta, gamma = _get_A_diags(npoints_S - 1, lambda_)
+    alpha, beta = _get_A_diags(npoints_S - 1, lambda_)
     Bu, Bd = _get_crank_symtridiag_matrix(npoints_S, lambda_)
     
 
@@ -134,7 +133,7 @@ def price_american_put_bsm(
         # explicit step
         f = _dot_symtridiag_matvec(Bu, Bd, w) + d
         # implicit step
-        w_ = _brennan_schwartz(alpha, beta, gamma, f, _g_func(tau_array[nu + 1], x, k))
+        w_ = _brennan_schwartz(alpha, beta, beta, f, _g_func(tau_array[nu + 1], x, k))
         w_matrix[:, nu + 1] = w_
 
     V, S_array, t_array = _transform(w_matrix, x, tau_array, K, T, r, sigma)
