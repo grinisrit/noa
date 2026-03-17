@@ -530,7 +530,7 @@ class PchipSpline1D:
             index: Index of the interval
         """
         maxlen = self._b.size(-2) - 1
-        index = torch.bucketize(t.detach(), self._t) - 1
+        index = torch.bucketize(t.contiguous().detach(), self._t.contiguous()) - 1
         index = index.clamp(0, maxlen)  # clamp because t may go outside of [t[0], t[-1]]; this is fine
         # will never access the last element of self._t; this is correct behaviour
         fractional_part = t - self._t[index]
@@ -581,3 +581,24 @@ class PchipSpline1D:
             raise ValueError('Derivative is not implemented for orders greater than 2.')
         
         return deriv.squeeze(-1)
+    
+    def to(self, device):
+        """
+        Move all internal tensors to the specified device (CPU or GPU).
+        
+        Arguments:
+            device: torch.device or string ('cpu', 'cuda', 'cuda:0', etc.)
+        
+        Returns:
+            New PchipSpline1D instance with tensors on the specified device
+        """
+        # Create a new instance with moved tensors
+        new_spline = PchipSpline1D.__new__(PchipSpline1D)
+        new_spline._x = self._x.to(device)
+        new_spline._y = self._y.to(device)
+        new_spline._t = self._t.to(device)
+        new_spline._a = self._a.to(device)
+        new_spline._b = self._b.to(device)
+        new_spline._c = self._c.to(device)
+        new_spline._d = self._d.to(device)
+        return new_spline
