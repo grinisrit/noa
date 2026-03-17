@@ -34,8 +34,17 @@ data/
 tmp*
 *.numbers
 
-# RAG pipeline data (local only)
-docs/quant/ap/rag/data/
+# Local-only folders (reports, archives, RAG)
+docs/quant/affine_calibration/Final report/
+docs/quant/affine_calibration/Initial report/
+docs/quant/affine_calibration/archive/
+docs/quant/affine_calibration/multi_theta/archive/
+docs/quant/affine_calibration/rag/
+
+# Scratch files
+temp_original.ipynb
+test_torch.py
+
 *.xlsx
 
 # Notebooks temp data
