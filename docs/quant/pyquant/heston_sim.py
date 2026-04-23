@@ -177,12 +177,21 @@ def generate_heston(
     n_steps = dt_steps.shape[0]
 
     init_state_price = init_price * torch.ones(n_paths)
-    init_state_var = init_var * torch.ones(n_paths)
+    # Scalar init for CIR => var_paths shape (n_paths, n_steps+1). Using init_var *
+    # ones(n_paths) => init_state 1D (n_paths,) => generate_cir returns (n_paths, n_paths, n_steps+1)
+    # and var_paths[:, i] mis-indexes the middle axis, causing a 1000x333 vs 1000 broadcast error.
+    _iv = torch.as_tensor(init_var, dtype=init_state_price.dtype, device=init_state_price.device)
+    if _iv.dim() == 0 or _iv.numel() == 1:
+        init_state_var = _iv.reshape(())
+    elif _iv.shape == (n_paths,):
+        init_state_var = _iv
+    else:
+        raise ValueError(
+            f"init_var must be a scalar or tensor of shape ({n_paths},), got {tuple(_iv.shape)}"
+        )
 
     if init_state_price.shape != torch.Size((n_paths,)):
         raise ValueError('Shape of `init_state_price` must be (n_paths,)')
-    if init_state_var.shape != torch.Size((n_paths,)):
-        raise ValueError('Shape of `init_state_var` must be (n_paths,)')
 
     var_paths = generate_cir(n_paths, timeline, init_state_var, kappa, theta, eps, minimum_var)
     log_paths = torch.empty((n_paths, n_steps + 1), dtype=init_state_price.dtype)
@@ -211,8 +220,8 @@ def generate_heston(
         k3 = gamma1 * dt * (1 - rho * rho)
         k4 = gamma2 * dt * (1 - rho * rho)
 
-        v_i = var_paths[:, i]
-        v_next = var_paths[:, i+1]
+        v_i = var_paths[..., i]
+        v_next = var_paths[..., i + 1]
         next_vals = drift*dt + log_paths[:, i] + k0 + k1*v_i + k2*v_next + \
             torch.sqrt(k3*v_i + k4*v_next) * torch.randn_like(v_i)
         log_paths[:, i+1] = next_vals
