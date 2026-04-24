@@ -9,11 +9,36 @@ import click
 
 
 def build_ois_yield_curve_from_now_starting(forwards, tenors):
+    """
+    Build OIS yield (ZCB) curve with proper t=0 anchoring.
+    
+    At t=0, ZCB(0,0) = 1 (no discounting for zero time horizon).
+    """
     zcbs = 1 / (1 + tenors * forwards)
+    
+    # Anchor at t=0 with ZCB(0,0) = 1 (economically required)
+    if tenors[0] > 1e-6:
+        zcbs = torch.cat([torch.ones(1, dtype=zcbs.dtype, device=zcbs.device), zcbs])
+        tenors = torch.cat([torch.zeros(1, dtype=tenors.dtype, device=tenors.device), tenors])
+    
     return PchipSpline1D(tenors, zcbs)
 
 
 def build_fwd_curve(forwards, time_to_maturity):
+    """
+    Build forward curve spline with proper t=0 anchoring.
+    
+    Economically, f(0,0) = spot rate (overnight rate). If the first data point
+    is at t>0, we anchor at t=0 using the first available rate, since:
+    - 1-day rate ≈ overnight rate (negligible term premium)
+    - Central bank rates don't change intraday
+    
+    This ensures the spline doesn't extrapolate incorrectly when queried at t=0.
+    """
+    # Anchor at t=0 if first tenor > 0 (use first rate as spot rate)
+    if time_to_maturity[0] > 1e-6:
+        forwards = torch.cat([forwards[:1], forwards])
+        time_to_maturity = torch.cat([torch.zeros(1, dtype=time_to_maturity.dtype, device=time_to_maturity.device), time_to_maturity])
     return PchipSpline1D(time_to_maturity, forwards)
 
 
@@ -38,9 +63,24 @@ def caplet_premium_from_now_starting(vol_surface, key_rate_fwd_curve, ois_yield_
 
 
 def build_ifwd_curve_from_now_starting(forwards, tenors):
+    """
+    Build integrated forward curve spline with proper t=0 anchoring.
+    
+    The integrated forward curve I(0,t) = ∫₀ᵗ f(0,s)ds represents the
+    cumulative discount factor exponent: P(0,t) = exp(-I(0,t)).
+    
+    At t=0, I(0,0) = 0 (no time has passed, no discount accumulated).
+    """
     zcbs = 1 / (1 + tenors * forwards)
     log_zcbs = torch.log(zcbs)
-    return PchipSpline1D(tenors, - log_zcbs)
+    integrated = -log_zcbs
+    
+    # Anchor at t=0 with I(0,0) = 0 (economically required)
+    if tenors[0] > 1e-6:
+        integrated = torch.cat([torch.zeros(1, dtype=integrated.dtype, device=integrated.device), integrated])
+        tenors = torch.cat([torch.zeros(1, dtype=tenors.dtype, device=tenors.device), tenors])
+    
+    return PchipSpline1D(tenors, integrated)
 
 
 def build_ifwd_key_curve_from_now_starting(key_ifwd_values, key_fwd_values, tenors):
@@ -176,7 +216,7 @@ def generate_hull_white(
     dt_steps = timeline.diff()
     n_steps = dt_steps.shape[0]
     # Paths shape: (*init_state.shape, n_paths, n_steps + 1) so time dimension is at -2
-    paths = torch.empty((*init_state.shape, n_paths, n_steps + 1), dtype=init_state.dtype)
+    paths = torch.empty((*init_state.shape, n_paths, n_steps + 1), dtype=init_state.dtype, device=init_state.device)
     paths[..., 0] = init_state.unsqueeze(-1).expand(*init_state.shape, n_paths)
     for i in range(0, n_steps):
         x = paths[..., i].clone()
@@ -322,7 +362,7 @@ def generate_hull_white_heston(
     # var should have shape (*init_state.shape, n_paths, n_steps + 1)
     expected_var_shape = (*init_state.shape, n_paths, n_steps + 1)
     assert var.shape == expected_var_shape, f"var shape {var.shape} does not match expected shape {expected_var_shape}"
-    paths = torch.empty((*init_state.shape, n_paths, n_steps + 1), dtype=init_state.dtype)
+    paths = torch.empty((*init_state.shape, n_paths, n_steps + 1), dtype=init_state.dtype, device=init_state.device)
     paths[..., 0] = init_state.unsqueeze(-1).expand(*init_state.shape, n_paths)
     
     for i in range(0, n_steps):
@@ -792,9 +832,12 @@ def price_now_starting_avg_caplet(K, T , model):
 
 
 def price_key_caplet_surface(model: KeyRateModel, vol_key_rate, fwd_key_rate):
-    vol_ids = id_from_years(torch.tensor(vol_key_rate.time_to_maturity.values), model.timeline)-1 
-    tau_strikes = model.timeline[vol_ids] * torch.tensor(vol_key_rate.strike.values) 
-    market_pvs = torch.tensor(vol_key_rate.pv.values)
+    # Get device from model tensors
+    device = model.timeline.device
+    
+    vol_ids = id_from_years(torch.tensor(vol_key_rate.time_to_maturity.values, device=device), model.timeline)-1 
+    tau_strikes = model.timeline[vol_ids] * torch.tensor(vol_key_rate.strike.values, device=device) 
+    market_pvs = torch.tensor(vol_key_rate.pv.values, device=device)
     model_pvs = torch.zeros_like(market_pvs)
 
     for i in range(model_pvs.numel()):
@@ -804,10 +847,10 @@ def price_key_caplet_surface(model: KeyRateModel, vol_key_rate, fwd_key_rate):
         payoff = torch.clamp(model.sum_r_dt[:, T] + model.sum_s_dt[:, T] - tauK, min=1e-6) 
         model_pvs[i] = torch.mean(payoff * inv_B_T)
 
-    vol_key_rate['pv_model_key'] = model_pvs.detach().numpy()
+    vol_key_rate['pv_model_key'] = model_pvs.cpu().detach().numpy()
 
-    key_fwd_ids = id_from_years(torch.tensor(fwd_key_rate.time_to_maturity.values), model.timeline)-1
-    market_key_fwd = torch.tensor(fwd_key_rate.forward_rate.values)
+    key_fwd_ids = id_from_years(torch.tensor(fwd_key_rate.time_to_maturity.values, device=device), model.timeline)-1
+    market_key_fwd = torch.tensor(fwd_key_rate.forward_rate.values, device=device)
     model_key_fwd = torch.zeros_like(market_key_fwd)
     
     for i in range(model_key_fwd.numel()):
@@ -820,7 +863,7 @@ def price_key_caplet_surface(model: KeyRateModel, vol_key_rate, fwd_key_rate):
         A_T = (model.sum_r_dt[:, T] + model.sum_s_dt[:, T]) / tau
         model_key_fwd[i] = torch.mean(A_T * inv_B_T) / torch.mean(inv_B_T)
 
-    fwd_key_rate['fwd_model_key'] = model_key_fwd.detach().numpy()
+    fwd_key_rate['fwd_model_key'] = model_key_fwd.cpu().detach().numpy()
 
     return torch.sum((model_pvs - market_pvs) ** 2), torch.sum((market_key_fwd - model_key_fwd) ** 2)
  
