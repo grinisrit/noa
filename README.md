@@ -84,8 +84,8 @@ target_compile_options(your_target PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 ### KMath wrapper
 `NOA` is exposed within the `kotlin` library
-[KMath](https://github.com/mipt-npm/kmath) as a dedicated module
-[kmath-noa](https://github.com/mipt-npm/kmath/tree/feature/noa/kmath-noa).
+[KMath](https://github.com/SciProgCentre/kmath) as a dedicated module
+[kmath-noa](https://github.com/SciProgCentre/kmath/tree/feature/noa/kmath-noa).
 To build the [JNI wrapper](jnoa) you need to add `-DBUILD_JNOA=ON` setting `-DJAVA_HOME=<...>` if necessary. 
 This will produce the shared library `jnoa` to which
 you should point the `java.library.path` for the `JVM` to load it.
@@ -155,7 +155,7 @@ computations for muons in PMS.
 scheme for the Heston Model in QUANT and works on integration with Deep Hedging.
 
 * The JNI wrapper is being developed in collaboration with 
-[KMath contributors](https://github.com/mipt-npm/kmath/graphs/contributors).
+[KMath contributors](https://github.com/SciProgCentre/kmath/graphs/contributors).
 
 We welcome contributions to the project 
 and would love to hear about any feature requests
